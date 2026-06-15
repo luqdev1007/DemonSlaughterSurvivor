@@ -1,0 +1,16 @@
+{
+    "name": "DemonSlaughter.Infrastructure",
+    "rootNamespace": "",
+    "references": [
+        "GUID:0c0365a6cf4b80f4c9d81f4593820274"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

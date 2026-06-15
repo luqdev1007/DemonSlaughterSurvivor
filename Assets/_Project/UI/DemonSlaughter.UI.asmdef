@@ -1,0 +1,17 @@
+{
+    "name": "DemonSlaughter.UI",
+    "rootNamespace": "",
+    "references": [
+        "GUID:0c0365a6cf4b80f4c9d81f4593820274",
+        "GUID:33f17706fa278974186e2ec6082ee439"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
