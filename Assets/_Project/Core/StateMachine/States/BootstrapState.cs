@@ -1,5 +1,7 @@
 using Cysharp.Threading.Tasks;
 using DemonSlaughter.Core.Loading;
+using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace DemonSlaughter.Core.StateMachine.States
 {
@@ -18,8 +20,7 @@ namespace DemonSlaughter.Core.StateMachine.States
         {
             await _loadingScreen.ShowAsync();
 
-            // Здесь позже будет загрузка Addressables, конфигов и т.д.
-            await SimulateLoadingAsync();
+            await InitializeAddressables();
 
             await _stateMachine.Enter<MainMenuState>();
         }
@@ -29,13 +30,13 @@ namespace DemonSlaughter.Core.StateMachine.States
             return UniTask.CompletedTask;
         }
 
-        private async UniTask SimulateLoadingAsync()
+        private async UniTask InitializeAddressables()
         {
-            for (int i = 0; i <= 10; i++)
-            {
-                _loadingScreen.SetProgress(i / 10f);
-                await UniTask.Delay(100);
-            }
+            _loadingScreen.SetProgress(0f);
+
+            await Addressables.InitializeAsync();
+
+            _loadingScreen.SetProgress(1f);
         }
     }
 }
