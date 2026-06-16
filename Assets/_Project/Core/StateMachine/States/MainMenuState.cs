@@ -1,35 +1,41 @@
 ﻿using Cysharp.Threading.Tasks;
+using DemonSlaughter.Core.Loading;
 using DemonSlaughter.Core.Services;
-using DemonSlaughter.Core.StateMachine;
-using UnityEngine;
 
-public sealed class MainMenuState : IState
+namespace DemonSlaughter.Core.StateMachine.States
 {
-    private readonly GameStateMachine _stateMachine;
-    private readonly ISceneLoader _sceneLoader;
-
-    public MainMenuState(GameStateMachine stateMachine, ISceneLoader sceneLoader)
+    public sealed class MainMenuState : IState
     {
-        _stateMachine = stateMachine;
-        _sceneLoader = sceneLoader;
+        private readonly GameStateMachine _stateMachine;
+        private readonly ISceneLoader _sceneLoader;
+        private readonly ILoadingScreen _loadingScreen;
 
-        Debug.Log("MainMenuState ctor");
-    }
+        public MainMenuState(
+            GameStateMachine stateMachine,
+            ISceneLoader sceneLoader,
+            ILoadingScreen loadingScreen)
+        {
+            _stateMachine = stateMachine;
+            _sceneLoader = sceneLoader;
+            _loadingScreen = loadingScreen;
+        }
 
-    public async UniTask Enter()
-    {
-        Debug.Log("MainMenuState Enter");
+        public async UniTask Enter()
+        {
+            await _sceneLoader.LoadAsync("MainMenu");
 
-        await _sceneLoader.LoadAsync("MainMenu");
-    }
+            await _loadingScreen.HideAsync();
+        }
 
-    public UniTask Exit()
-    {
-        return UniTask.CompletedTask;
-    }
+        public UniTask Exit()
+        {
+            return UniTask.CompletedTask;
+        }
 
-    public async UniTask OnNewGame()
-    {
-        await _stateMachine.Enter<GameState>();
+        public async UniTask OnNewGame()
+        {
+            await _loadingScreen.ShowAsync();
+            await _stateMachine.Enter<GameState>();
+        }
     }
 }

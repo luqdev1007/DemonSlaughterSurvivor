@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 384349350}
   - component: {fileID: 384349349}
   - component: {fileID: 384349348}
+  - component: {fileID: 384349352}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -223,6 +224,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &384349352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 384349347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5674e81d28f35634cb7b237505cb4ca9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DemonSlaughter.UI::DemonSlaughter.UI.MainMenu.MainMenuView
+  _newGameButton: {fileID: 1020110937}
 --- !u!1 &509530888
 GameObject:
   m_ObjectHideFlags: 0
@@ -763,6 +777,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1654470948
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1654470950}
+  - component: {fileID: 1654470949}
+  m_Layer: 0
+  m_Name: MainMenuRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1654470949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1654470948}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b1370ed62f931347bb2774ef821b600, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DemonSlaughter.DependencyInjection.MainMenuLifetimeScope
+  parentReference:
+    TypeName: DemonSlaughter.DependencyInjection.ProjectLifetimeScope
+  autoRun: 1
+  autoInjectGameObjects: []
+--- !u!4 &1654470950
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1654470948}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1713363404
 GameObject:
   m_ObjectHideFlags: 0
@@ -1045,3 +1107,4 @@ SceneRoots:
   - {fileID: 877017624}
   - {fileID: 384349351}
   - {fileID: 904096326}
+  - {fileID: 1654470950}

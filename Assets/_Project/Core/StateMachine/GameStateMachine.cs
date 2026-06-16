@@ -1,18 +1,17 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using VContainer;
 
 namespace DemonSlaughter.Core.StateMachine
 {
     public sealed class GameStateMachine
     {
-        private readonly IObjectResolver _resolver;
+        private readonly IStateFactory _factory;
 
         private IExitableState _currentState;
 
-        public GameStateMachine(IObjectResolver resolver)
+        public GameStateMachine(IStateFactory factory)
         {
-            _resolver = resolver;
+            _factory = factory;
         }
 
         public async UniTask Enter<TState>() where TState : class, IState
@@ -22,9 +21,7 @@ namespace DemonSlaughter.Core.StateMachine
             if (_currentState != null)
                 await _currentState.Exit();
 
-            var state = _resolver.Resolve<TState>();
-
-            Debug.Log($"Resolved state: {typeof(TState).Name}");
+            var state = _factory.Create<TState>();
 
             _currentState = state;
 

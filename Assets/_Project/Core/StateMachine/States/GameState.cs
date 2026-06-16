@@ -1,34 +1,36 @@
 ﻿using Cysharp.Threading.Tasks;
 using DemonSlaughter.Core.Save;
 using DemonSlaughter.Core.Services;
-using DemonSlaughter.Core.StateMachine;
 using UnityEngine;
 
-public sealed class GameState : IState
+namespace DemonSlaughter.Core.StateMachine.States
 {
-    private readonly ISaveService _save;
-    private readonly ILevelRunner _levelRunner;
-
-    public GameState(ISaveService save, ILevelRunner levelRunner)
+    public sealed class GameState : IState
     {
-        _save = save;
-        _levelRunner = levelRunner;
-    }
+        private readonly ISaveService _save;
+        private readonly ILevelRunner _levelRunner;
 
-    public async UniTask Enter()
-    {
-        Debug.Log("GameState Enter START");
+        public GameState(ISaveService save, ILevelRunner levelRunner)
+        {
+            _save = save;
+            _levelRunner = levelRunner;
+        }
 
-        var data = _save.Load();
-        Debug.Log("Save loaded");
+        public async UniTask Enter()
+        {
+            Debug.Log("GameState Enter START");
 
-        await _levelRunner.RunLevel(data.CurrentLevelId);
+            var data = _save.Load();
+            Debug.Log("Save loaded");
 
-        Debug.Log("LevelRunner finished");
-    }
+            await _levelRunner.RunLevel(data.CurrentLevelId);
 
-    public UniTask Exit()
-    {
-        return UniTask.CompletedTask;
+            Debug.Log("LevelRunner finished");
+        }
+
+        public UniTask Exit()
+        {
+            return UniTask.CompletedTask;
+        }
     }
 }
