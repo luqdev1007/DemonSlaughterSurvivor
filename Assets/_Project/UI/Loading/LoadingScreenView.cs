@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using DemonSlaughter.Core.Loading;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,7 +10,12 @@ namespace DemonSlaughter.UI.Loading
     {
         [SerializeField] private CanvasGroup _canvasGroup;
         [SerializeField] private Slider _progressBar;
+
+        [Header("Animation")]
         [SerializeField] private float _fadeDuration = 0.3f;
+        [SerializeField] private Ease _fadeEase = Ease.InOutSine;
+        [SerializeField] private float _progressDuration = 0.2f;
+        [SerializeField] private Ease _progressEase = Ease.OutCubic;
 
         private void Awake()
         {
@@ -18,36 +24,47 @@ namespace DemonSlaughter.UI.Loading
             DontDestroyOnLoad(gameObject);
         }
 
-        public void SetProgress(float progress)
+        private void OnDestroy()
         {
+            _canvasGroup.DOKill();
+
             if (_progressBar != null)
-                _progressBar.value = progress;
+                _progressBar.DOKill();
         }
 
-        public async UniTask ShowAsync()
+        public UniTask ShowAsync()
         {
             _canvasGroup.blocksRaycasts = true;
-            await FadeAsync(0f, 1f);
+            return FadeAsync(1f);
         }
 
-        public async UniTask HideAsync()
+        public UniTask HideAsync()
         {
-            await FadeAsync(1f, 0f);
-            _canvasGroup.blocksRaycasts = false;
+            return FadeAsync(0f).ContinueWith(() =>
+                _canvasGroup.blocksRaycasts = false);
         }
 
-        private async UniTask FadeAsync(float from, float to)
+        public void SetProgress(float progress)
         {
-            float elapsed = 0f;
+            if (_progressBar == null) return;
 
-            while (elapsed < _fadeDuration)
-            {
-                elapsed += Time.deltaTime;
-                _canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / _fadeDuration);
-                await UniTask.Yield();
-            }
+            _progressBar
+                .DOValue(progress, _progressDuration)
+                .SetEase(_progressEase)
+                .SetUpdate(true);
+        }
 
-            _canvasGroup.alpha = to;
+        private UniTask FadeAsync(float targetAlpha)
+        {
+            var utcs = new UniTaskCompletionSource();
+
+            _canvasGroup
+                .DOFade(targetAlpha, _fadeDuration)
+                .SetEase(_fadeEase)
+                .SetUpdate(true)
+                .OnComplete(() => utcs.TrySetResult());
+
+            return utcs.Task;
         }
     }
 }
