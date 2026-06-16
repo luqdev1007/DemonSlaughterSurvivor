@@ -1,0 +1,135 @@
+fileFormatVersion: 2
+guid: 7cc818ec48cf2f349afc37fbc8f2e256
+timeCreated: 1455286752
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: LongSword_1A
+    100002: LongSword_1A2
+    100004: LongSword_1B
+    100006: LongSword_1B2
+    100008: LongSword_1C
+    100010: LongSword_1C2
+    100012: ShortSword_1A
+    100014: ShortSword_1A2
+    100016: ShortSword_1B
+    100018: ShortSword_1B2
+    100020: //RootNode
+    400000: LongSword_1A
+    400002: LongSword_1A2
+    400004: LongSword_1B
+    400006: LongSword_1B2
+    400008: LongSword_1C
+    400010: LongSword_1C2
+    400012: ShortSword_1A
+    400014: ShortSword_1A2
+    400016: ShortSword_1B
+    400018: ShortSword_1B2
+    400020: //RootNode
+    2300000: LongSword_1A
+    2300002: LongSword_1A2
+    2300004: LongSword_1B
+    2300006: LongSword_1B2
+    2300008: LongSword_1C
+    2300010: LongSword_1C2
+    2300012: ShortSword_1A
+    2300014: ShortSword_1A2
+    2300016: ShortSword_1B
+    2300018: ShortSword_1B2
+    3300000: LongSword_1A
+    3300002: LongSword_1A2
+    3300004: LongSword_1B
+    3300006: LongSword_1B2
+    3300008: LongSword_1C
+    3300010: LongSword_1C2
+    3300012: ShortSword_1A
+    3300014: ShortSword_1A2
+    3300016: ShortSword_1B
+    3300018: ShortSword_1B2
+    4300000: ShortSword_1B2
+    4300002: LongSword_1B2
+    4300004: ShortSword_1A2
+    4300006: ShortSword_1A
+    4300008: ShortSword_1B
+    4300010: LongSword_1C
+    4300012: LongSword_1C2
+    4300014: LongSword_1A
+    4300016: LongSword_1A2
+    4300018: LongSword_1B
+    6400000: LongSword_1A
+    6400002: LongSword_1A2
+    6400004: LongSword_1B
+    6400006: LongSword_1B2
+    6400008: LongSword_1C
+    6400010: LongSword_1C2
+    6400012: ShortSword_1A
+    6400014: ShortSword_1A2
+    6400016: ShortSword_1B
+    6400018: ShortSword_1B2
+    7400000: Default Take
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -10,17 +10,21 @@ namespace DemonSlaughter.Infrastructure.Services
     {
         private readonly ISceneLoader _sceneLoader;
         private readonly ILoadingScreen _loadingScreen;
+        private readonly GameplayReadySignal _readySignal;
 
-        // Маппинг levelId -> Addressables адрес сцены
         private static readonly string[] LevelAddresses = new[]
         {
-            "Gameplay", // 0 - первый уровень за Гатса
+            "Gameplay",
         };
 
-        public LevelRunner(ISceneLoader sceneLoader, ILoadingScreen loadingScreen)
+        public LevelRunner(
+            ISceneLoader sceneLoader,
+            ILoadingScreen loadingScreen,
+            GameplayReadySignal readySignal)
         {
             _sceneLoader = sceneLoader;
             _loadingScreen = loadingScreen;
+            _readySignal = readySignal;
         }
 
         public async UniTask RunLevel(int levelId)
@@ -37,6 +41,17 @@ namespace DemonSlaughter.Infrastructure.Services
                 _loadingScreen.SetProgress(value));
 
             await _sceneLoader.LoadAddressableAsync(LevelAddresses[levelId], progress);
+
+            await WaitForReadyAsync();
+
+            await _loadingScreen.HideAsync();
+        }
+
+        private UniTask WaitForReadyAsync()
+        {
+            var utcs = new UniTaskCompletionSource();
+            _readySignal.OnReady += () => utcs.TrySetResult();
+            return utcs.Task;
         }
     }
 }

@@ -1,0 +1,163 @@
+fileFormatVersion: 2
+guid: 9049eda9944af0340a49e305c7c6d6ed
+timeCreated: 1479664715
+licenseType: Store
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: Castle_Arch_Door_4M_Basic_Small
+    100002: Castle_Arch_Door_4M_Small
+    100004: Castle_Ladder_4M
+    100006: //RootNode
+    100008: Chains_1A
+    100010: Chains_1A2
+    100012: Chains_1A2_Small
+    100014: Chains_1A_Small
+    100016: Chains_1B
+    100018: Chains_1B2
+    100020: Chains_1B2_Small
+    100022: Chains_1B_Small
+    100024: Lantern_1A
+    100026: Lantern_1A_Small
+    100028: Lantern_Holder_1A
+    100030: Lantern_Holder_1A_Full
+    400000: Castle_Arch_Door_4M_Basic_Small
+    400002: Castle_Arch_Door_4M_Small
+    400004: Castle_Ladder_4M
+    400006: //RootNode
+    400008: Chains_1A
+    400010: Chains_1A2
+    400012: Chains_1A2_Small
+    400014: Chains_1A_Small
+    400016: Chains_1B
+    400018: Chains_1B2
+    400020: Chains_1B2_Small
+    400022: Chains_1B_Small
+    400024: Lantern_1A
+    400026: Lantern_1A_Small
+    400028: Lantern_Holder_1A
+    400030: Lantern_Holder_1A_Full
+    2300000: Castle_Arch_Door_4M_Basic_Small
+    2300002: Castle_Arch_Door_4M_Small
+    2300004: Castle_Ladder_4M
+    2300006: Chains_1A
+    2300008: Chains_1A2
+    2300010: Chains_1A2_Small
+    2300012: Chains_1A_Small
+    2300014: Chains_1B
+    2300016: Chains_1B2
+    2300018: Chains_1B2_Small
+    2300020: Chains_1B_Small
+    2300022: Lantern_1A
+    2300024: Lantern_1A_Small
+    2300026: Lantern_Holder_1A
+    2300028: Lantern_Holder_1A_Full
+    3300000: Castle_Arch_Door_4M_Basic_Small
+    3300002: Castle_Arch_Door_4M_Small
+    3300004: Castle_Ladder_4M
+    3300006: Chains_1A
+    3300008: Chains_1A2
+    3300010: Chains_1A2_Small
+    3300012: Chains_1A_Small
+    3300014: Chains_1B
+    3300016: Chains_1B2
+    3300018: Chains_1B2_Small
+    3300020: Chains_1B_Small
+    3300022: Lantern_1A
+    3300024: Lantern_1A_Small
+    3300026: Lantern_Holder_1A
+    3300028: Lantern_Holder_1A_Full
+    4300000: Lantern_Holder_1A
+    4300002: Lantern_1A_Small
+    4300004: Chains_1A_Small
+    4300006: Chains_1B_Small
+    4300008: Chains_1B2_Small
+    4300010: Chains_1A2_Small
+    4300012: Lantern_Holder_1A_Full
+    4300014: Castle_Arch_Door_4M_Basic_Small
+    4300016: Castle_Arch_Door_4M_Small
+    4300018: Lantern_1A
+    4300020: Chains_1A2
+    4300022: Chains_1B2
+    4300024: Chains_1B
+    4300026: Chains_1A
+    4300028: Castle_Ladder_4M
+    6400000: Castle_Arch_Door_4M_Basic_Small
+    6400002: Castle_Arch_Door_4M_Small
+    6400004: Castle_Ladder_4M
+    6400006: Chains_1A
+    6400008: Chains_1A2
+    6400010: Chains_1A2_Small
+    6400012: Chains_1A_Small
+    6400014: Chains_1B
+    6400016: Chains_1B2
+    6400018: Chains_1B2_Small
+    6400020: Chains_1B_Small
+    6400022: Lantern_1A
+    6400024: Lantern_1A_Small
+    6400026: Lantern_Holder_1A
+    6400028: Lantern_Holder_1A_Full
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleRotations: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

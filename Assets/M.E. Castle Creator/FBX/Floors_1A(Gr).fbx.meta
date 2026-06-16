@@ -1,0 +1,117 @@
+fileFormatVersion: 2
+guid: ed4cd332f563376469030ad478711982
+timeCreated: 1454699256
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Castle_Wall_Floor_Hatch_1A
+    100002: Castle_Wall_Floor_Hatch_1A2
+    100004: Castle_Wall_Floor_Hatch_1A3
+    100006: Floor_Hatch_1A
+    100008: Floor_Hatch_1A2
+    100010: Floor_Hatch_1B
+    100012: Floor_Hatch_1B2
+    100014: //RootNode
+    400000: Castle_Wall_Floor_Hatch_1A
+    400002: Castle_Wall_Floor_Hatch_1A2
+    400004: Castle_Wall_Floor_Hatch_1A3
+    400006: Floor_Hatch_1A
+    400008: Floor_Hatch_1A2
+    400010: Floor_Hatch_1B
+    400012: Floor_Hatch_1B2
+    400014: //RootNode
+    2300000: Castle_Wall_Floor_Hatch_1A
+    2300002: Castle_Wall_Floor_Hatch_1A2
+    2300004: Castle_Wall_Floor_Hatch_1A3
+    2300006: Floor_Hatch_1A
+    2300008: Floor_Hatch_1A2
+    2300010: Floor_Hatch_1B
+    2300012: Floor_Hatch_1B2
+    3300000: Castle_Wall_Floor_Hatch_1A
+    3300002: Castle_Wall_Floor_Hatch_1A2
+    3300004: Castle_Wall_Floor_Hatch_1A3
+    3300006: Floor_Hatch_1A
+    3300008: Floor_Hatch_1A2
+    3300010: Floor_Hatch_1B
+    3300012: Floor_Hatch_1B2
+    4300000: Floor_Hatch_1B2
+    4300002: Floor_Hatch_1B
+    4300004: Floor_Hatch_1A2
+    4300006: Floor_Hatch_1A
+    4300008: Castle_Wall_Floor_Hatch_1A3
+    4300010: Castle_Wall_Floor_Hatch_1A2
+    4300012: Castle_Wall_Floor_Hatch_1A
+    6400000: Castle_Wall_Floor_Hatch_1A
+    6400002: Castle_Wall_Floor_Hatch_1A2
+    6400004: Castle_Wall_Floor_Hatch_1A3
+    6400006: Floor_Hatch_1A
+    6400008: Floor_Hatch_1A2
+    6400010: Floor_Hatch_1B
+    6400012: Floor_Hatch_1B2
+    7400000: Default Take
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

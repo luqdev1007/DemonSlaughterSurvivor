@@ -1,0 +1,165 @@
+fileFormatVersion: 2
+guid: 63fdd5c109b94464eb452c0bb65eff2f
+timeCreated: 1454628905
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Bridge_Corner_1A
+    100002: Bridge_Corner_1A2
+    100004: Bridge_Corner_1B
+    100006: Bridge_Corner_1B2
+    100008: Bridge_Corner_1C
+    100010: Bridge_Corner_1C2
+    100012: Castle_Wall_3A2_Stairs
+    100014: Castle_Wall_3B2_Stairs
+    100016: Castle_Wall_3C2_Stairs
+    100018: Castle_Wall_Corner_1A2_Half
+    100020: Castle_Wall_Corner_1A_Half
+    100022: Castle_Wall_Corner_1B2_Half
+    100024: Castle_Wall_Corner_1B_Half
+    100026: Castle_Wall_Corner_1C2_Half
+    100028: Castle_Wall_Corner_1C_Half
+    100030: //RootNode
+    400000: Bridge_Corner_1A
+    400002: Bridge_Corner_1A2
+    400004: Bridge_Corner_1B
+    400006: Bridge_Corner_1B2
+    400008: Bridge_Corner_1C
+    400010: Bridge_Corner_1C2
+    400012: Castle_Wall_3A2_Stairs
+    400014: Castle_Wall_3B2_Stairs
+    400016: Castle_Wall_3C2_Stairs
+    400018: Castle_Wall_Corner_1A2_Half
+    400020: Castle_Wall_Corner_1A_Half
+    400022: Castle_Wall_Corner_1B2_Half
+    400024: Castle_Wall_Corner_1B_Half
+    400026: Castle_Wall_Corner_1C2_Half
+    400028: Castle_Wall_Corner_1C_Half
+    400030: //RootNode
+    2300000: Bridge_Corner_1A
+    2300002: Bridge_Corner_1A2
+    2300004: Bridge_Corner_1B
+    2300006: Bridge_Corner_1B2
+    2300008: Bridge_Corner_1C
+    2300010: Bridge_Corner_1C2
+    2300012: Castle_Wall_3A2_Stairs
+    2300014: Castle_Wall_3B2_Stairs
+    2300016: Castle_Wall_3C2_Stairs
+    2300018: Castle_Wall_Corner_1A2_Half
+    2300020: Castle_Wall_Corner_1A_Half
+    2300022: Castle_Wall_Corner_1B2_Half
+    2300024: Castle_Wall_Corner_1B_Half
+    2300026: Castle_Wall_Corner_1C2_Half
+    2300028: Castle_Wall_Corner_1C_Half
+    3300000: Bridge_Corner_1A
+    3300002: Bridge_Corner_1A2
+    3300004: Bridge_Corner_1B
+    3300006: Bridge_Corner_1B2
+    3300008: Bridge_Corner_1C
+    3300010: Bridge_Corner_1C2
+    3300012: Castle_Wall_3A2_Stairs
+    3300014: Castle_Wall_3B2_Stairs
+    3300016: Castle_Wall_3C2_Stairs
+    3300018: Castle_Wall_Corner_1A2_Half
+    3300020: Castle_Wall_Corner_1A_Half
+    3300022: Castle_Wall_Corner_1B2_Half
+    3300024: Castle_Wall_Corner_1B_Half
+    3300026: Castle_Wall_Corner_1C2_Half
+    3300028: Castle_Wall_Corner_1C_Half
+    4300000: Castle_Wall_Corner_1A_Half
+    4300002: Bridge_Corner_1A2
+    4300004: Bridge_Corner_1C2
+    4300006: Bridge_Corner_1B2
+    4300008: Castle_Wall_Corner_1B_Half
+    4300010: Castle_Wall_Corner_1C_Half
+    4300012: Bridge_Corner_1B
+    4300014: Bridge_Corner_1C
+    4300016: Castle_Wall_Corner_1B2_Half
+    4300018: Castle_Wall_Corner_1C2_Half
+    4300020: Castle_Wall_Corner_1A2_Half
+    4300022: Bridge_Corner_1A
+    4300024: Castle_Wall_3A2_Stairs
+    4300026: Castle_Wall_3B2_Stairs
+    4300028: Castle_Wall_3C2_Stairs
+    6400000: Bridge_Corner_1A
+    6400002: Bridge_Corner_1A2
+    6400004: Bridge_Corner_1B
+    6400006: Bridge_Corner_1B2
+    6400008: Bridge_Corner_1C
+    6400010: Bridge_Corner_1C2
+    6400012: Castle_Wall_3A2_Stairs
+    6400014: Castle_Wall_3B2_Stairs
+    6400016: Castle_Wall_3C2_Stairs
+    6400018: Castle_Wall_Corner_1A2_Half
+    6400020: Castle_Wall_Corner_1A_Half
+    6400022: Castle_Wall_Corner_1B2_Half
+    6400024: Castle_Wall_Corner_1B_Half
+    6400026: Castle_Wall_Corner_1C2_Half
+    6400028: Castle_Wall_Corner_1C_Half
+    7400000: Default Take
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

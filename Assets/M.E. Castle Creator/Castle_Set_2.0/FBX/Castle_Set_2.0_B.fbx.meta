@@ -1,0 +1,181 @@
+fileFormatVersion: 2
+guid: 2621deb7ed37e6b45b2d86277ed67cf7
+timeCreated: 1479595085
+licenseType: Store
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: Castle_Arch_1A
+    100002: Castle_Arch_1A2
+    100004: Castle_Arch_2M
+    100006: Castle_Arch_2M_B
+    100008: Castle_Arch_4M
+    100010: Castle_Arch_4M_B
+    100012: Castle_Pillar_2M
+    100014: Castle_Pillar_4M
+    100016: Castle_Pillar_Base_2M
+    100018: Castle_Pillar_Base_2M_2
+    100020: Castle_Pillar_Base_4M
+    100022: Castle_Pillar_Base_4M_2
+    100024: Castle_Pillar_Lining_2M
+    100026: Castle_Pillar_Lining_4M
+    100028: Castle_Pillar_Wood_2M
+    100030: Castle_Pillar_Wood_4M
+    100032: //RootNode
+    100034: Castle_Wall_Crenelations_Extension_2M_2B
+    100036: Castle_Wall_Crenelations_Extension_2M_B
+    400000: Castle_Arch_1A
+    400002: Castle_Arch_1A2
+    400004: Castle_Arch_2M
+    400006: Castle_Arch_2M_B
+    400008: Castle_Arch_4M
+    400010: Castle_Arch_4M_B
+    400012: Castle_Pillar_2M
+    400014: Castle_Pillar_4M
+    400016: Castle_Pillar_Base_2M
+    400018: Castle_Pillar_Base_2M_2
+    400020: Castle_Pillar_Base_4M
+    400022: Castle_Pillar_Base_4M_2
+    400024: Castle_Pillar_Lining_2M
+    400026: Castle_Pillar_Lining_4M
+    400028: Castle_Pillar_Wood_2M
+    400030: Castle_Pillar_Wood_4M
+    400032: //RootNode
+    400034: Castle_Wall_Crenelations_Extension_2M_2B
+    400036: Castle_Wall_Crenelations_Extension_2M_B
+    2300000: Castle_Arch_1A
+    2300002: Castle_Arch_1A2
+    2300004: Castle_Arch_2M
+    2300006: Castle_Arch_2M_B
+    2300008: Castle_Arch_4M
+    2300010: Castle_Arch_4M_B
+    2300012: Castle_Pillar_2M
+    2300014: Castle_Pillar_4M
+    2300016: Castle_Pillar_Base_2M
+    2300018: Castle_Pillar_Base_2M_2
+    2300020: Castle_Pillar_Base_4M
+    2300022: Castle_Pillar_Base_4M_2
+    2300024: Castle_Pillar_Lining_2M
+    2300026: Castle_Pillar_Lining_4M
+    2300028: Castle_Pillar_Wood_2M
+    2300030: Castle_Pillar_Wood_4M
+    2300032: Castle_Wall_Crenelations_Extension_2M_2B
+    2300034: Castle_Wall_Crenelations_Extension_2M_B
+    3300000: Castle_Arch_1A
+    3300002: Castle_Arch_1A2
+    3300004: Castle_Arch_2M
+    3300006: Castle_Arch_2M_B
+    3300008: Castle_Arch_4M
+    3300010: Castle_Arch_4M_B
+    3300012: Castle_Pillar_2M
+    3300014: Castle_Pillar_4M
+    3300016: Castle_Pillar_Base_2M
+    3300018: Castle_Pillar_Base_2M_2
+    3300020: Castle_Pillar_Base_4M
+    3300022: Castle_Pillar_Base_4M_2
+    3300024: Castle_Pillar_Lining_2M
+    3300026: Castle_Pillar_Lining_4M
+    3300028: Castle_Pillar_Wood_2M
+    3300030: Castle_Pillar_Wood_4M
+    3300032: Castle_Wall_Crenelations_Extension_2M_2B
+    3300034: Castle_Wall_Crenelations_Extension_2M_B
+    4300000: Castle_Arch_2M_B
+    4300002: Castle_Arch_4M_B
+    4300004: Castle_Arch_1A2
+    4300006: Castle_Pillar_Lining_2M
+    4300008: Castle_Pillar_Lining_4M
+    4300010: Castle_Pillar_Wood_2M
+    4300012: Castle_Pillar_Wood_4M
+    4300014: Castle_Arch_1A
+    4300016: Castle_Arch_2M
+    4300018: Castle_Arch_4M
+    4300020: Castle_Pillar_Base_4M_2
+    4300022: Castle_Pillar_Base_2M_2
+    4300024: Castle_Pillar_Base_2M
+    4300026: Castle_Pillar_Base_4M
+    4300028: Castle_Pillar_2M
+    4300030: Castle_Pillar_4M
+    4300032: Castle_Wall_Crenelations_Extension_2M_2B
+    4300034: Castle_Wall_Crenelations_Extension_2M_B
+    6400000: Castle_Arch_1A
+    6400002: Castle_Arch_1A2
+    6400004: Castle_Arch_2M
+    6400006: Castle_Arch_2M_B
+    6400008: Castle_Arch_4M
+    6400010: Castle_Arch_4M_B
+    6400012: Castle_Pillar_2M
+    6400014: Castle_Pillar_4M
+    6400016: Castle_Pillar_Base_2M
+    6400018: Castle_Pillar_Base_2M_2
+    6400020: Castle_Pillar_Base_4M
+    6400022: Castle_Pillar_Base_4M_2
+    6400024: Castle_Pillar_Lining_2M
+    6400026: Castle_Pillar_Lining_4M
+    6400028: Castle_Pillar_Wood_2M
+    6400030: Castle_Pillar_Wood_4M
+    6400032: Castle_Wall_Crenelations_Extension_2M_2B
+    6400034: Castle_Wall_Crenelations_Extension_2M_B
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleRotations: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

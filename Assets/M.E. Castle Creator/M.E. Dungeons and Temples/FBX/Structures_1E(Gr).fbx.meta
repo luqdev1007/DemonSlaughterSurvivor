@@ -1,0 +1,165 @@
+fileFormatVersion: 2
+guid: c77565df2a7a0d64e9e6b053d7c9dc9d
+timeCreated: 1455200677
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Angled_Pillar_1A
+    100002: Angled_Pillar_1A2
+    100004: Double_Rails_1A
+    100006: Floor_Block_2A
+    100008: Floor_Block_2A2
+    100010: Inner_Railing_1A
+    100012: Inner_Railing_1A2
+    100014: Inner_Railing_1A3
+    100016: Inner_Railing_Corner_1A
+    100018: Outer_Railing_1A
+    100020: Outer_Railing_Corner_1A
+    100022: Railing_Post_1A
+    100024: Railing_Post_1A2
+    100026: Stone_Rail_1A
+    100028: Stone_Rail_1B
+    100030: //RootNode
+    400000: Angled_Pillar_1A
+    400002: Angled_Pillar_1A2
+    400004: Double_Rails_1A
+    400006: Floor_Block_2A
+    400008: Floor_Block_2A2
+    400010: Inner_Railing_1A
+    400012: Inner_Railing_1A2
+    400014: Inner_Railing_1A3
+    400016: Inner_Railing_Corner_1A
+    400018: Outer_Railing_1A
+    400020: Outer_Railing_Corner_1A
+    400022: Railing_Post_1A
+    400024: Railing_Post_1A2
+    400026: Stone_Rail_1A
+    400028: Stone_Rail_1B
+    400030: //RootNode
+    2300000: Angled_Pillar_1A
+    2300002: Angled_Pillar_1A2
+    2300004: Double_Rails_1A
+    2300006: Floor_Block_2A
+    2300008: Floor_Block_2A2
+    2300010: Inner_Railing_1A
+    2300012: Inner_Railing_1A2
+    2300014: Inner_Railing_1A3
+    2300016: Inner_Railing_Corner_1A
+    2300018: Outer_Railing_1A
+    2300020: Outer_Railing_Corner_1A
+    2300022: Railing_Post_1A
+    2300024: Railing_Post_1A2
+    2300026: Stone_Rail_1A
+    2300028: Stone_Rail_1B
+    3300000: Angled_Pillar_1A
+    3300002: Angled_Pillar_1A2
+    3300004: Double_Rails_1A
+    3300006: Floor_Block_2A
+    3300008: Floor_Block_2A2
+    3300010: Inner_Railing_1A
+    3300012: Inner_Railing_1A2
+    3300014: Inner_Railing_1A3
+    3300016: Inner_Railing_Corner_1A
+    3300018: Outer_Railing_1A
+    3300020: Outer_Railing_Corner_1A
+    3300022: Railing_Post_1A
+    3300024: Railing_Post_1A2
+    3300026: Stone_Rail_1A
+    3300028: Stone_Rail_1B
+    4300000: Inner_Railing_1A
+    4300002: Inner_Railing_1A2
+    4300004: Angled_Pillar_1A2
+    4300006: Angled_Pillar_1A
+    4300008: Stone_Rail_1B
+    4300010: Stone_Rail_1A
+    4300012: Inner_Railing_1A3
+    4300014: Inner_Railing_Corner_1A
+    4300016: Railing_Post_1A
+    4300018: Outer_Railing_Corner_1A
+    4300020: Double_Rails_1A
+    4300022: Railing_Post_1A2
+    4300024: Outer_Railing_1A
+    4300026: Floor_Block_2A2
+    4300028: Floor_Block_2A
+    6400000: Angled_Pillar_1A
+    6400002: Angled_Pillar_1A2
+    6400004: Double_Rails_1A
+    6400006: Floor_Block_2A
+    6400008: Floor_Block_2A2
+    6400010: Inner_Railing_1A
+    6400012: Inner_Railing_1A2
+    6400014: Inner_Railing_1A3
+    6400016: Inner_Railing_Corner_1A
+    6400018: Outer_Railing_1A
+    6400020: Outer_Railing_Corner_1A
+    6400022: Railing_Post_1A
+    6400024: Railing_Post_1A2
+    6400026: Stone_Rail_1A
+    6400028: Stone_Rail_1B
+    7400000: Default Take
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

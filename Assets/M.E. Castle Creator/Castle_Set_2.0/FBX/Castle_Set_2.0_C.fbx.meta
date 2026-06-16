@@ -1,0 +1,133 @@
+fileFormatVersion: 2
+guid: b0a4842a3dacb3c45ac7b7a2dea7dca7
+timeCreated: 1479600562
+licenseType: Store
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: Castle_Arch_Door_4M
+    100002: Castle_Arch_Door_4M_Basic
+    100004: Castle_Arch_Doorway_4M
+    100006: Castle_Arch_Doorway_4M_Basic
+    100008: Castle_Arch_Doorway_4M_Half_A
+    100010: Castle_Arch_Doorway_4M_Half_B
+    100012: //RootNode
+    100014: Castle_Window_1A
+    100016: Castle_Window_1A2
+    100018: Castle_Window_1A2_Lit
+    100020: Castle_Window_1A_Lit
+    400000: Castle_Arch_Door_4M
+    400002: Castle_Arch_Door_4M_Basic
+    400004: Castle_Arch_Doorway_4M
+    400006: Castle_Arch_Doorway_4M_Basic
+    400008: Castle_Arch_Doorway_4M_Half_A
+    400010: Castle_Arch_Doorway_4M_Half_B
+    400012: //RootNode
+    400014: Castle_Window_1A
+    400016: Castle_Window_1A2
+    400018: Castle_Window_1A2_Lit
+    400020: Castle_Window_1A_Lit
+    2300000: Castle_Arch_Door_4M
+    2300002: Castle_Arch_Door_4M_Basic
+    2300004: Castle_Arch_Doorway_4M
+    2300006: Castle_Arch_Doorway_4M_Basic
+    2300008: Castle_Arch_Doorway_4M_Half_A
+    2300010: Castle_Arch_Doorway_4M_Half_B
+    2300012: Castle_Window_1A
+    2300014: Castle_Window_1A2
+    2300016: Castle_Window_1A2_Lit
+    2300018: Castle_Window_1A_Lit
+    3300000: Castle_Arch_Door_4M
+    3300002: Castle_Arch_Door_4M_Basic
+    3300004: Castle_Arch_Doorway_4M
+    3300006: Castle_Arch_Doorway_4M_Basic
+    3300008: Castle_Arch_Doorway_4M_Half_A
+    3300010: Castle_Arch_Doorway_4M_Half_B
+    3300012: Castle_Window_1A
+    3300014: Castle_Window_1A2
+    3300016: Castle_Window_1A2_Lit
+    3300018: Castle_Window_1A_Lit
+    4300000: Castle_Window_1A_Lit
+    4300002: Castle_Window_1A2_Lit
+    4300004: Castle_Arch_Door_4M
+    4300006: Castle_Arch_Door_4M_Basic
+    4300008: Castle_Window_1A2
+    4300010: Castle_Window_1A
+    4300012: Castle_Arch_Doorway_4M_Half_A
+    4300014: Castle_Arch_Doorway_4M_Half_B
+    4300016: Castle_Arch_Doorway_4M_Basic
+    4300018: Castle_Arch_Doorway_4M
+    6400000: Castle_Arch_Door_4M
+    6400002: Castle_Arch_Door_4M_Basic
+    6400004: Castle_Arch_Doorway_4M
+    6400006: Castle_Arch_Doorway_4M_Basic
+    6400008: Castle_Arch_Doorway_4M_Half_A
+    6400010: Castle_Arch_Doorway_4M_Half_B
+    6400012: Castle_Window_1A
+    6400014: Castle_Window_1A2
+    6400016: Castle_Window_1A2_Lit
+    6400018: Castle_Window_1A_Lit
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleRotations: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

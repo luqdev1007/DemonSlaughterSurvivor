@@ -1,0 +1,153 @@
+fileFormatVersion: 2
+guid: 6d564736ddddbbe41b4736918d765efe
+timeCreated: 1454536102
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Castle_Tower_3A
+    100002: Castle_Tower_3A2
+    100004: Castle_Tower_3A3
+    100006: Castle_Tower_3A4
+    100008: Castle_Tower_4A
+    100010: Castle_Tower_4A2
+    100012: Castle_Tower_4A3
+    100014: Castle_Tower_4A4
+    100016: Small_Steps_1A
+    100018: Small_Steps_1A2
+    100020: Tower_Walls_Filler_1A
+    100022: Tower_Walls_Filler_1B
+    100024: Tower_Walls_Filler_1C
+    100026: //RootNode
+    400000: Castle_Tower_3A
+    400002: Castle_Tower_3A2
+    400004: Castle_Tower_3A3
+    400006: Castle_Tower_3A4
+    400008: Castle_Tower_4A
+    400010: Castle_Tower_4A2
+    400012: Castle_Tower_4A3
+    400014: Castle_Tower_4A4
+    400016: Small_Steps_1A
+    400018: Small_Steps_1A2
+    400020: Tower_Walls_Filler_1A
+    400022: Tower_Walls_Filler_1B
+    400024: Tower_Walls_Filler_1C
+    400026: //RootNode
+    2300000: Castle_Tower_3A
+    2300002: Castle_Tower_3A2
+    2300004: Castle_Tower_3A3
+    2300006: Castle_Tower_3A4
+    2300008: Castle_Tower_4A
+    2300010: Castle_Tower_4A2
+    2300012: Castle_Tower_4A3
+    2300014: Castle_Tower_4A4
+    2300016: Small_Steps_1A
+    2300018: Small_Steps_1A2
+    2300020: Tower_Walls_Filler_1A
+    2300022: Tower_Walls_Filler_1B
+    2300024: Tower_Walls_Filler_1C
+    3300000: Castle_Tower_3A
+    3300002: Castle_Tower_3A2
+    3300004: Castle_Tower_3A3
+    3300006: Castle_Tower_3A4
+    3300008: Castle_Tower_4A
+    3300010: Castle_Tower_4A2
+    3300012: Castle_Tower_4A3
+    3300014: Castle_Tower_4A4
+    3300016: Small_Steps_1A
+    3300018: Small_Steps_1A2
+    3300020: Tower_Walls_Filler_1A
+    3300022: Tower_Walls_Filler_1B
+    3300024: Tower_Walls_Filler_1C
+    4300000: Castle_Tower_4A
+    4300002: Castle_Tower_4A2
+    4300004: Castle_Tower_3A2
+    4300006: Castle_Tower_3A
+    4300008: Castle_Tower_4A3
+    4300010: Tower_Walls_Filler_1C
+    4300012: Tower_Walls_Filler_1A
+    4300014: Tower_Walls_Filler_1B
+    4300016: Small_Steps_1A2
+    4300018: Small_Steps_1A
+    4300020: Castle_Tower_3A4
+    4300022: Castle_Tower_4A4
+    4300024: Castle_Tower_3A3
+    6400000: Castle_Tower_3A
+    6400002: Castle_Tower_3A2
+    6400004: Castle_Tower_3A3
+    6400006: Castle_Tower_3A4
+    6400008: Castle_Tower_4A
+    6400010: Castle_Tower_4A2
+    6400012: Castle_Tower_4A3
+    6400014: Castle_Tower_4A4
+    6400016: Small_Steps_1A
+    6400018: Small_Steps_1A2
+    6400020: Tower_Walls_Filler_1A
+    6400022: Tower_Walls_Filler_1B
+    6400024: Tower_Walls_Filler_1C
+    7400000: Default Take
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

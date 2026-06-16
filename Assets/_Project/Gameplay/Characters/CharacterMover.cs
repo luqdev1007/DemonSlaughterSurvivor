@@ -22,6 +22,8 @@ namespace DemonSlaughter.Gameplay.Characters
             _controller.SimpleMove(direction * _speed);
 
             transform.rotation = Quaternion.LookRotation(direction);
+
+            Debug.Log(_controller.velocity);
         }
     }
 }

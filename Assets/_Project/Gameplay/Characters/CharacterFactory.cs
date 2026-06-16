@@ -23,7 +23,6 @@ namespace DemonSlaughter.Gameplay.Characters
             var prefab = await _assetProvider.LoadAsync<GameObject>(config.AddressableAddress);
             var instance = Object.Instantiate(prefab, spawnPoint, Quaternion.identity);
 
-            // Инжектируем зависимости в MonoBehaviour компоненты
             _resolver.InjectGameObject(instance);
 
             var mover = instance.GetComponent<CharacterMover>();

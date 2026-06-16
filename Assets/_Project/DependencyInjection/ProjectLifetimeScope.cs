@@ -41,6 +41,11 @@ namespace DemonSlaughter.DependencyInjection
 
             // Entry point
             builder.RegisterEntryPoint<GameEntryPoint>();
+
+            // Misc
+            builder.Register<GameplayReadySignal>(Lifetime.Singleton);
+            builder.Register<IGameplayReadySignal>(c =>
+                c.Resolve<GameplayReadySignal>(), Lifetime.Singleton);
         }
     }
 }

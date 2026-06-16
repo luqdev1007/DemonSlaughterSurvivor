@@ -1,0 +1,195 @@
+fileFormatVersion: 2
+guid: 5261ab5fed140a34cb25b2d3b797c420
+timeCreated: 1454636355
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Castle_Pillars_1A2
+    100002: Castle_Pillars_1A3
+    100004: Castle_Pillars_1A4
+    100006: Castle_Pillars_2A2
+    100008: Castle_Pillars_2A3
+    100010: Castle_Pillars_2A4
+    100012: Castle_Wall_1A_005
+    100014: Roof_1A
+    100016: Wall_1A
+    100018: Wall_1B
+    100020: Wall_Door_1A
+    100022: Wall_Door_1A2
+    100024: Wall_Door_1A3
+    100026: Wall_Structure_1A
+    100028: Wall_Structure_1A2
+    100030: Wall_Structure_1B
+    100032: Wall_Structure_1B2
+    100034: Wall_Window_1A
+    100036: Wall_Window_1A2
+    100038: Wall_Window_1A3
+    100040: //RootNode
+    400000: Castle_Pillars_1A2
+    400002: Castle_Pillars_1A3
+    400004: Castle_Pillars_1A4
+    400006: Castle_Pillars_2A2
+    400008: Castle_Pillars_2A3
+    400010: Castle_Pillars_2A4
+    400012: Castle_Wall_1A_005
+    400014: Roof_1A
+    400016: Wall_1A
+    400018: Wall_1B
+    400020: Wall_Door_1A
+    400022: Wall_Door_1A2
+    400024: Wall_Door_1A3
+    400026: Wall_Structure_1A
+    400028: Wall_Structure_1A2
+    400030: Wall_Structure_1B
+    400032: Wall_Structure_1B2
+    400034: Wall_Window_1A
+    400036: Wall_Window_1A2
+    400038: Wall_Window_1A3
+    400040: //RootNode
+    2300000: Castle_Pillars_1A2
+    2300002: Castle_Pillars_1A3
+    2300004: Castle_Pillars_1A4
+    2300006: Castle_Pillars_2A2
+    2300008: Castle_Pillars_2A3
+    2300010: Castle_Pillars_2A4
+    2300012: Castle_Wall_1A_005
+    2300014: Roof_1A
+    2300016: Wall_1A
+    2300018: Wall_1B
+    2300020: Wall_Door_1A
+    2300022: Wall_Door_1A2
+    2300024: Wall_Door_1A3
+    2300026: Wall_Structure_1A
+    2300028: Wall_Structure_1A2
+    2300030: Wall_Structure_1B
+    2300032: Wall_Structure_1B2
+    2300034: Wall_Window_1A
+    2300036: Wall_Window_1A2
+    2300038: Wall_Window_1A3
+    3300000: Castle_Pillars_1A2
+    3300002: Castle_Pillars_1A3
+    3300004: Castle_Pillars_1A4
+    3300006: Castle_Pillars_2A2
+    3300008: Castle_Pillars_2A3
+    3300010: Castle_Pillars_2A4
+    3300012: Castle_Wall_1A_005
+    3300014: Roof_1A
+    3300016: Wall_1A
+    3300018: Wall_1B
+    3300020: Wall_Door_1A
+    3300022: Wall_Door_1A2
+    3300024: Wall_Door_1A3
+    3300026: Wall_Structure_1A
+    3300028: Wall_Structure_1A2
+    3300030: Wall_Structure_1B
+    3300032: Wall_Structure_1B2
+    3300034: Wall_Window_1A
+    3300036: Wall_Window_1A2
+    3300038: Wall_Window_1A3
+    4300000: Wall_Structure_1B
+    4300002: Castle_Wall_1A_005
+    4300004: Wall_Structure_1A2
+    4300006: Wall_Structure_1A
+    4300008: Wall_Window_1A2
+    4300010: Castle_Pillars_2A3
+    4300012: Castle_Pillars_2A4
+    4300014: Castle_Pillars_2A2
+    4300016: Wall_Door_1A2
+    4300018: Wall_Window_1A3
+    4300020: Wall_Door_1A3
+    4300022: Wall_Window_1A
+    4300024: Wall_Door_1A
+    4300026: Castle_Pillars_1A3
+    4300028: Roof_1A
+    4300030: Wall_Structure_1B2
+    4300032: Castle_Pillars_1A4
+    4300034: Castle_Pillars_1A2
+    4300036: Wall_1A
+    4300038: Wall_1B
+    6400000: Castle_Pillars_1A2
+    6400002: Castle_Pillars_1A3
+    6400004: Castle_Pillars_1A4
+    6400006: Castle_Pillars_2A2
+    6400008: Castle_Pillars_2A3
+    6400010: Castle_Pillars_2A4
+    6400012: Castle_Wall_1A_005
+    6400014: Roof_1A
+    6400016: Wall_1A
+    6400018: Wall_1B
+    6400020: Wall_Door_1A
+    6400022: Wall_Door_1A2
+    6400024: Wall_Door_1A3
+    6400026: Wall_Structure_1A
+    6400028: Wall_Structure_1A2
+    6400030: Wall_Structure_1B
+    6400032: Wall_Structure_1B2
+    6400034: Wall_Window_1A
+    6400036: Wall_Window_1A2
+    6400038: Wall_Window_1A3
+    7400000: Default Take
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
