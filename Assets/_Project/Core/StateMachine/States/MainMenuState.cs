@@ -1,6 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using DemonSlaughter.Core.Services;
 using DemonSlaughter.Core.StateMachine;
+using UnityEngine;
 
 public sealed class MainMenuState : IState
 {
@@ -11,14 +12,15 @@ public sealed class MainMenuState : IState
     {
         _stateMachine = stateMachine;
         _sceneLoader = sceneLoader;
+
+        Debug.Log("MainMenuState ctor");
     }
 
     public async UniTask Enter()
     {
-        await _sceneLoader.LoadAsync("MainMenu");
+        Debug.Log("MainMenuState Enter");
 
-        // пока временно:
-        // позже сюда придет UI событие
+        await _sceneLoader.LoadAsync("MainMenu");
     }
 
     public UniTask Exit()

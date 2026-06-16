@@ -27,6 +27,8 @@ namespace DemonSlaughter.DependencyInjection
             builder.Register<GameState>(Lifetime.Singleton);
 
             builder.Register<ISaveService, JsonSaveService>(Lifetime.Singleton);
+
+            builder.Register<ILevelRunner, LevelRunner>(Lifetime.Singleton);
         }
     }
 }
