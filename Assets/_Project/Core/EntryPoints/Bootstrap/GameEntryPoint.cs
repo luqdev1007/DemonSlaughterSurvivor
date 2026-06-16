@@ -28,6 +28,8 @@ namespace DemonSlaughter.Core.EntryPoints.Bootstrap
             Debug.Log("Services inited, start loading main menu scene");
 
             await _sceneLoader.LoadAsync("MainMenu");
+
+            Debug.Log("MainMenu loaded");
         }
     }
 }
