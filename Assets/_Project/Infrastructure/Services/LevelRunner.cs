@@ -8,14 +8,11 @@ namespace DemonSlaughter.Infrastructure.Services
     {
         public async UniTask RunLevel(int levelId)
         {
-            Debug.Log($"RunLevel: {levelId}");
+            Debug.Log($"RunLevel START: {levelId}");
 
             await UniTask.Delay(500);
 
-            // пока просто заглушка
-            // позже тут будет:
-            // - load Addressables config
-            // - init gameplay scene systems
+            Debug.Log("RunLevel END");
         }
     }
 }

@@ -2,6 +2,7 @@
 using DemonSlaughter.Core.Save;
 using DemonSlaughter.Core.Services;
 using DemonSlaughter.Core.StateMachine;
+using UnityEngine;
 
 public sealed class GameState : IState
 {
@@ -16,9 +17,14 @@ public sealed class GameState : IState
 
     public async UniTask Enter()
     {
+        Debug.Log("GameState Enter START");
+
         var data = _save.Load();
+        Debug.Log("Save loaded");
 
         await _levelRunner.RunLevel(data.CurrentLevelId);
+
+        Debug.Log("LevelRunner finished");
     }
 
     public UniTask Exit()

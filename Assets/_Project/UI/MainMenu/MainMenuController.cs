@@ -9,11 +9,18 @@ public sealed class MainMenuController : MonoBehaviour
     [Inject]
     public void Construct(GameStateMachine stateMachine)
     {
+        Debug.Log($"INJECT: {GetEntityId()}");
         _stateMachine = stateMachine;
+    }
+
+    private void Awake()
+    {
+        Debug.Log($"Controller Awake: {GetEntityId()}");
     }
 
     public void OnNewGameClicked()
     {
+        Debug.Log($"CLICK: {GetEntityId()}");
         EnterGame();
     }
 
