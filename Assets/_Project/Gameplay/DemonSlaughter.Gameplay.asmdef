@@ -2,7 +2,10 @@
     "name": "DemonSlaughter.Gameplay",
     "rootNamespace": "",
     "references": [
-        "GUID:0c0365a6cf4b80f4c9d81f4593820274"
+        "GUID:0c0365a6cf4b80f4c9d81f4593820274",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:75469ad4d38634e559750d17036d5f7c",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
