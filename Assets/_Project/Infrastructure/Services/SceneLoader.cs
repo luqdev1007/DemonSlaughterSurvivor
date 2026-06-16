@@ -1,7 +1,8 @@
 using Cysharp.Threading.Tasks;
+using DemonSlaughter.Core.Services;
 using UnityEngine.SceneManagement;
 
-namespace DemonSlaughter.Core.Services
+namespace DemonSlaughter.Infrastructure.Services
 {
     public sealed class SceneLoader : ISceneLoader
     {
