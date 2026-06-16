@@ -1,5 +1,7 @@
 using Cysharp.Threading.Tasks;
-using DemonSlaughter.Core.Services;
+using DemonSlaughter.Core.Save;
+using DemonSlaughter.Core.StateMachine;
+using DemonSlaughter.Core.StateMachine.States;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -7,11 +9,11 @@ namespace DemonSlaughter.Core.EntryPoints.Bootstrap
 {
     public sealed class GameEntryPoint : IStartable
     {
-        private readonly ISceneLoader _sceneLoader;
+        private readonly GameStateMachine _stateMachine;
 
-        public GameEntryPoint(ISceneLoader sceneLoader)
+        public GameEntryPoint(GameStateMachine stateMachine)
         {
-            _sceneLoader = sceneLoader;
+            _stateMachine = stateMachine;
         }
 
         public void Start()
@@ -19,17 +21,9 @@ namespace DemonSlaughter.Core.EntryPoints.Bootstrap
             RunAsync().Forget();
         }
 
-        private async UniTaskVoid RunAsync()
+        private async UniTask RunAsync()
         {
-            Debug.Log("Bootstrap started");
-
-            await UniTask.Delay(1000);
-
-            Debug.Log("Services inited, start loading main menu scene");
-
-            await _sceneLoader.LoadAsync("MainMenu");
-
-            Debug.Log("MainMenu loaded");
+            await _stateMachine.Enter<BootstrapState>();
         }
     }
 }
