@@ -19,7 +19,7 @@ namespace DemonSlaughter.Gameplay.Characters
         public void Start()
         {
             _inputHandler.MoveInput
-                .Subscribe(input => _mover.Move(input))
+                .Subscribe(input => _mover.SetInput(input))
                 .AddTo(_disposable);
         }
 

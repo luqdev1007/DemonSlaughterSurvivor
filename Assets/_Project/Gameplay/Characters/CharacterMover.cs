@@ -7,6 +7,7 @@ namespace DemonSlaughter.Gameplay.Characters
     {
         private CharacterController _controller;
         private float _speed;
+        private Vector2 _currentInput;
 
         public void Initialize(float speed)
         {
@@ -14,16 +15,19 @@ namespace DemonSlaughter.Gameplay.Characters
             _speed = speed;
         }
 
-        public void Move(Vector2 input)
+        public void SetInput(Vector2 input)
         {
-            if (input == Vector2.zero) return;
+            _currentInput = input;
+        }
 
-            var direction = new Vector3(input.x, 0f, input.y);
+        private void Update()
+        {
+            if (_currentInput == Vector2.zero) 
+                return;
+
+            var direction = new Vector3(_currentInput.x, 0f, _currentInput.y);
             _controller.SimpleMove(direction * _speed);
-
             transform.rotation = Quaternion.LookRotation(direction);
-
-            Debug.Log(_controller.velocity);
         }
     }
 }
