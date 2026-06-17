@@ -1,38 +1,47 @@
 using Cysharp.Threading.Tasks;
 using DemonSlaughter.Core.Configs;
 using DemonSlaughter.Core.Services;
+using DemonSlaughter.Gameplay.ECS;
+using DemonSlaughter.Gameplay.ECS.Components;
 using UnityEngine;
-using VContainer;
-using VContainer.Unity;
 
 namespace DemonSlaughter.Gameplay.Characters
 {
     public sealed class CharacterFactory
     {
         private readonly IAssetProvider _assetProvider;
-        private readonly IObjectResolver _resolver;
+        private readonly EcsPipeline _pipeline;
 
-        public CharacterFactory(IAssetProvider assetProvider, IObjectResolver resolver)
+        public CharacterFactory(IAssetProvider assetProvider, EcsPipeline pipeline)
         {
             _assetProvider = assetProvider;
-            _resolver = resolver;
+            _pipeline = pipeline;
         }
 
-        public async UniTask<PlayerController> CreateAsync(CharacterConfig config, Vector3 spawnPoint)
+        public async UniTask<int> CreatePlayerAsync(CharacterConfig config, Vector3 spawnPoint)
         {
             var prefab = await _assetProvider.LoadAsync<GameObject>(config.AddressableAddress);
             var instance = Object.Instantiate(prefab, spawnPoint, Quaternion.identity);
 
-            _resolver.InjectGameObject(instance);
+            return SetupEntity(config, instance.transform);
+        }
 
-            var mover = instance.GetComponent<CharacterMover>();
-            mover.Initialize(config.MoveSpeed);
+        private int SetupEntity(CharacterConfig config, Transform instanceTransform)
+        {
+            var world = _pipeline.World;
+            var entity = world.NewEntity();
 
-            var inputActions = new PlayerInputSystem();
-            var inputHandler = instance.GetComponent<PlayerInputHandler>();
-            inputHandler.Initialize(inputActions);
+            world.GetPool<PlayerTagComponent>().Add(entity);
 
-            return new PlayerController(inputHandler, mover);
+            ref var movement = ref world.GetPool<MovementComponent>().Add(entity);
+            movement.Speed = config.MoveSpeed;
+
+            world.GetPool<MoveInputComponent>().Add(entity);
+
+            ref var transformRef = ref world.GetPool<TransformRefComponent>().Add(entity);
+            transformRef.Value = instanceTransform;
+
+            return entity;
         }
     }
 }

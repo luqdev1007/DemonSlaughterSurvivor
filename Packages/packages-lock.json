@@ -23,6 +23,20 @@
       "dependencies": {},
       "hash": "acc1c7bc9ea34c33b830e40316fca52553878d29"
     },
+    "com.leopotam.ecslite": {
+      "version": "https://github.com/Leopotam/ecslite.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "d46f3b209ea163810823aeea7d2610d38ad6cdf8"
+    },
+    "com.leopotam.ecslite.di": {
+      "version": "https://github.com/Leopotam/ecslite-di.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "482b14e87c09cd1bf3f8f3dffc5c0099f00a693a"
+    },
     "com.unity.addressables": {
       "version": "2.9.1",
       "depth": 0,

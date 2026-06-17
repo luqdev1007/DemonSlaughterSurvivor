@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using DemonSlaughter.Core.Configs;
 using DemonSlaughter.Core.Services;
 using DemonSlaughter.Gameplay.Characters;
+using DemonSlaughter.Gameplay.ECS;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -10,22 +11,26 @@ namespace DemonSlaughter.Gameplay
     public sealed class GameplayEntryPoint : IStartable
     {
         private readonly CharacterFactory _characterFactory;
+        private readonly EcsPipeline _pipeline;
+        private readonly EcsRunner _ecsRunner;
+        private readonly IGameplayReadySignal _readySignal;
         private readonly CharacterConfig _gatsConfig;
         private readonly Vector3 _spawnPoint;
-        private readonly IGameplayReadySignal _readySignal;
-
-        private PlayerController _playerController;
 
         public GameplayEntryPoint(
             CharacterFactory characterFactory,
+            EcsPipeline pipeline,
+            EcsRunner ecsRunner,
+            IGameplayReadySignal readySignal,
             CharacterConfig gatsConfig,
-            Vector3 spawnPoint,
-            IGameplayReadySignal readySignal)
+            Vector3 spawnPoint)
         {
             _characterFactory = characterFactory;
+            _pipeline = pipeline;
+            _ecsRunner = ecsRunner;
+            _readySignal = readySignal;
             _gatsConfig = gatsConfig;
             _spawnPoint = spawnPoint;
-            _readySignal = readySignal;
         }
 
         public void Start()
@@ -35,12 +40,12 @@ namespace DemonSlaughter.Gameplay
 
         private async UniTask InitializeAsync()
         {
-            _playerController = await _characterFactory.CreateAsync(_gatsConfig, _spawnPoint);
-            _playerController.Start();
+            await _characterFactory.CreatePlayerAsync(_gatsConfig, _spawnPoint);
 
-            Debug.Log("Player spawned and ready");
+            _ecsRunner.Initialize(_pipeline);
 
-            // Сцена готова — сигналим наружу
+            Debug.Log("ECS initialized, player spawned");
+
             _readySignal.Fire();
         }
     }

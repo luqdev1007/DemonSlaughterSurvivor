@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 283b97716102c624fae6c709e58704b2
   m_SerializeEntries:
   - m_GUID: 052faaac586de48259a63d0c4782560b
-    m_Address: PlayerInputSystem
+    m_Address: PlayerInputActions
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
