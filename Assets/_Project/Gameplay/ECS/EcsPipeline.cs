@@ -16,7 +16,9 @@ namespace DemonSlaughter.Gameplay.ECS
 
             _systems = new EcsSystems(_world)
                 .Add(new PlayerInputSystem(inputActions))
-                .Add(new MovementSystem());
+                .Add(new MovementSystem())
+                .Add(new AnimationSystem())
+                ;
         }
 
         public void Initialize()

@@ -21,12 +21,12 @@ namespace DemonSlaughter.Gameplay.Characters
         public async UniTask<int> CreatePlayerAsync(CharacterConfig config, Vector3 spawnPoint)
         {
             var prefab = await _assetProvider.LoadAsync<GameObject>(config.AddressableAddress);
-            var instance = Object.Instantiate(prefab, spawnPoint, Quaternion.identity);
+            GameObject instance = Object.Instantiate(prefab, spawnPoint, Quaternion.identity);
 
-            return SetupEntity(config, instance.transform);
+            return SetupEntity(config, instance);
         }
 
-        private int SetupEntity(CharacterConfig config, Transform instanceTransform)
+        private int SetupEntity(CharacterConfig config, GameObject instance)
         {
             var world = _pipeline.World;
             var entity = world.NewEntity();
@@ -39,7 +39,10 @@ namespace DemonSlaughter.Gameplay.Characters
             world.GetPool<MoveInputComponent>().Add(entity);
 
             ref var transformRef = ref world.GetPool<TransformRefComponent>().Add(entity);
-            transformRef.Value = instanceTransform;
+            transformRef.Value = instance.transform;
+
+            ref var animatorRef = ref world.GetPool<AnimatorRefComponent>().Add(entity);
+            animatorRef.Value = instance.GetComponentInChildren<Animator>();
 
             return entity;
         }

@@ -11,11 +11,13 @@ namespace DemonSlaughter.Gameplay
     public sealed class GameplayEntryPoint : IStartable
     {
         private readonly CharacterFactory _characterFactory;
-        private readonly EcsPipeline _pipeline;
-        private readonly EcsRunner _ecsRunner;
-        private readonly IGameplayReadySignal _readySignal;
         private readonly CharacterConfig _gatsConfig;
         private readonly Vector3 _spawnPoint;
+
+        private readonly EcsPipeline _pipeline;
+        private readonly EcsRunner _ecsRunner;
+
+        private readonly IGameplayReadySignal _readySignal;
 
         public GameplayEntryPoint(
             CharacterFactory characterFactory,
