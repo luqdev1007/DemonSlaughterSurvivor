@@ -44,6 +44,8 @@ namespace DemonSlaughter.Gameplay.Characters
             ref var animatorRef = ref world.GetPool<AnimatorRefComponent>().Add(entity);
             animatorRef.Value = instance.GetComponentInChildren<Animator>();
 
+            world.GetPool<CameraTargetTag>().Add(entity);
+
             return entity;
         }
     }

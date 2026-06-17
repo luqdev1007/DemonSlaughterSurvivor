@@ -7,6 +7,7 @@ using DemonSlaughter.Infrastructure.Services;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
+using Unity.Cinemachine;
 
 namespace DemonSlaughter.DependencyInjection
 {
@@ -14,6 +15,7 @@ namespace DemonSlaughter.DependencyInjection
     {
         [SerializeField] private CharacterConfig _berserkCharacterConfig;
         [SerializeField] private Transform _spawnPoint;
+        [SerializeField] private CinemachineCamera _virtualCamera;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -21,6 +23,9 @@ namespace DemonSlaughter.DependencyInjection
             var inputActions = new PlayerInputActions();
             inputActions.Enable();
             builder.RegisterInstance(inputActions);
+
+            // camera
+            builder.RegisterInstance(_virtualCamera);
 
             // ECS
             builder.Register<EcsPipeline>(Lifetime.Singleton);
