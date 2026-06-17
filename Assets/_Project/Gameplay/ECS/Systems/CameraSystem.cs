@@ -1,3 +1,4 @@
+using DemonSlaughter.Gameplay.Camera;
 using DemonSlaughter.Gameplay.ECS.Components;
 using Leopotam.EcsLite;
 using Unity.Cinemachine;
@@ -7,10 +8,12 @@ namespace DemonSlaughter.Gameplay.ECS.Systems
     public sealed class CameraSystem : IEcsInitSystem
     {
         private readonly CinemachineCamera _virtualCamera;
+        private readonly CameraOcclusionHandler _occlusionHandler;
 
-        public CameraSystem(CinemachineCamera virtualCamera)
+        public CameraSystem(CinemachineCamera virtualCamera, CameraOcclusionHandler occlusionHandler)
         {
             _virtualCamera = virtualCamera;
+            _occlusionHandler = occlusionHandler;
         }
 
         public void Init(IEcsSystems systems)
@@ -28,6 +31,7 @@ namespace DemonSlaughter.Gameplay.ECS.Systems
             {
                 ref var transformRef = ref transformPool.Get(entity);
                 _virtualCamera.Follow = transformRef.Value;
+                _occlusionHandler.SetTarget(transformRef.Value);
                 break;
             }
         }

@@ -1,13 +1,14 @@
 using DemonSlaughter.Core.Configs;
 using DemonSlaughter.Core.Services;
 using DemonSlaughter.Gameplay;
+using DemonSlaughter.Gameplay.Camera;
 using DemonSlaughter.Gameplay.Characters;
 using DemonSlaughter.Gameplay.ECS;
 using DemonSlaughter.Infrastructure.Services;
+using Unity.Cinemachine;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
-using Unity.Cinemachine;
 
 namespace DemonSlaughter.DependencyInjection
 {
@@ -16,6 +17,7 @@ namespace DemonSlaughter.DependencyInjection
         [SerializeField] private CharacterConfig _berserkCharacterConfig;
         [SerializeField] private Transform _spawnPoint;
         [SerializeField] private CinemachineCamera _virtualCamera;
+        [SerializeField] private CameraOcclusionHandler _occlusionHandler;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -26,6 +28,7 @@ namespace DemonSlaughter.DependencyInjection
 
             // camera
             builder.RegisterInstance(_virtualCamera);
+            builder.RegisterInstance(_occlusionHandler);
 
             // ECS
             builder.Register<EcsPipeline>(Lifetime.Singleton);

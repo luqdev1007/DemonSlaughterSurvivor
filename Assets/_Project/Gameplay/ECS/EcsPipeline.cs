@@ -1,3 +1,4 @@
+using DemonSlaughter.Gameplay.Camera;
 using DemonSlaughter.Gameplay.ECS.Systems;
 using Leopotam.EcsLite;
 using Unity.Cinemachine;
@@ -11,7 +12,10 @@ namespace DemonSlaughter.Gameplay.ECS
 
         public EcsWorld World => _world;
 
-        public EcsPipeline(PlayerInputActions inputActions, CinemachineCamera virtualCamera)
+        public EcsPipeline(
+            PlayerInputActions inputActions, 
+            CinemachineCamera virtualCamera, 
+            CameraOcclusionHandler cameraOcclusionHandler)
         {
             _world = new EcsWorld();
 
@@ -19,7 +23,7 @@ namespace DemonSlaughter.Gameplay.ECS
                 .Add(new PlayerInputSystem(inputActions))
                 .Add(new MovementSystem())
                 .Add(new AnimationSystem())
-                .Add(new CameraSystem(virtualCamera))
+                .Add(new CameraSystem(virtualCamera, cameraOcclusionHandler))
                 ;
         }
 
