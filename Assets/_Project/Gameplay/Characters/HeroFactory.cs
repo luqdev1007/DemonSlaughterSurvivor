@@ -8,18 +8,18 @@ using UnityEngine;
 
 namespace DemonSlaughter.Gameplay.Characters
 {
-    public sealed class CharacterFactory
+    public sealed class HeroFactory
     {
         private readonly IAssetProvider _assetProvider;
         private readonly EcsPipeline _pipeline;
 
-        public CharacterFactory(IAssetProvider assetProvider, EcsPipeline pipeline)
+        public HeroFactory(IAssetProvider assetProvider, EcsPipeline pipeline)
         {
             _assetProvider = assetProvider;
             _pipeline = pipeline;
         }
 
-        public async UniTask<int> CreatePlayerAsync(CharacterConfig config, Vector3 spawnPoint)
+        public async UniTask<int> CreatePlayerAsync(HeroConfig config, Vector3 spawnPoint)
         {
             var prefab = await _assetProvider.LoadAsync<GameObject>(config.AddressableAddress);
             GameObject instance = Object.Instantiate(prefab, spawnPoint, Quaternion.identity);
@@ -27,11 +27,12 @@ namespace DemonSlaughter.Gameplay.Characters
             return SetupEntity(config, instance);
         }
 
-        private int SetupEntity(CharacterConfig config, GameObject instance)
+        private int SetupEntity(HeroConfig config, GameObject instance)
         {
             var world = _pipeline.World;
             var entity = world.NewEntity();
 
+            // base
             world.GetPool<PlayerTagComponent>().Add(entity);
             world.GetPool<CameraTargetTag>().Add(entity);
             world.GetPool<MoveInputComponent>().Add(entity);
@@ -45,8 +46,6 @@ namespace DemonSlaughter.Gameplay.Characters
             ref var animatorRef = ref world.GetPool<AnimatorRefComponent>().Add(entity);
             animatorRef.Value = instance.GetComponentInChildren<Animator>();
 
-            world.GetPool<MoveInputComponent>().Add(entity);
-
             // Combat
             ref var attackState = ref world.GetPool<AttackStateComponent>().Add(entity);
             attackState.Cooldown = 0f;
@@ -57,7 +56,7 @@ namespace DemonSlaughter.Gameplay.Characters
             detector.DetectionRadius = config.DetectionRadius;
             detector.DetectionAngle = config.DetectionAngle;
 
-            // weapon
+            // Weapon setup
             var swordBone = instance.transform.FindDeepChild(config.SwordBoneName);
             var hitboxAdapter = swordBone.gameObject.AddComponent<SwordHitboxEcsAdapter>();
             hitboxAdapter.Initialize(world, entity, config.AttackDamage);
@@ -65,7 +64,9 @@ namespace DemonSlaughter.Gameplay.Characters
             var swordHitbox = swordBone.GetComponent<SwordHitbox>();
 
             var animatorGO = instance.GetComponentInChildren<Animator>().gameObject;
-            var eventReceiver = animatorGO.AddComponent<AttackAnimationEventReceiver>();
+
+            var eventReceiver = animatorGO.GetComponent<AttackAnimationEventReceiver>();
+
             eventReceiver.Initialize(world, entity, config.AttackCooldown, swordHitbox);
 
             ref var weapon = ref world.GetPool<WeaponComponent>().Add(entity);

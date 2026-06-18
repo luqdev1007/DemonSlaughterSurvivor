@@ -10,18 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: Configs
+  m_Name: Enemies
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
-  m_GroupName: Configs
-  m_GUID: 675b23d66de988e4596566a86c158140
+  m_GroupName: Enemies
+  m_GUID: 0b013d007f797814a86f3f243bf919f5
   m_SerializeEntries:
-  - m_GUID: bfa316516fdcf144cbd74f2f0a8d7da6
-    m_Address: Config_Enemy_Troll
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e248cff713cb8874cb81ae2664d68f2d
-    m_Address: Config_Hero_Berserk
+  - m_GUID: 867034caa316f3c4e8d8f4f0a1f9aeef
+    m_Address: Enemy_Troll
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -29,5 +24,5 @@ MonoBehaviour:
   m_Settings: {fileID: 11400000, guid: 9caa0a012b1729c4793134d82144acda, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 2acd9621f712a4f4ea8bdee37d7de84d, type: 2}
-    - {fileID: 11400000, guid: 5444c23214f00b94199159c43b4e29b2, type: 2}
+    - {fileID: 11400000, guid: ada027a7e17cc764180733429b17cfd6, type: 2}
+    - {fileID: 11400000, guid: 235c11f56aa11204587139c9fab23e46, type: 2}
