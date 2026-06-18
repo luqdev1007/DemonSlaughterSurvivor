@@ -15,7 +15,8 @@ namespace DemonSlaughter.Gameplay.ECS
         public EcsPipeline(
             PlayerInputActions inputActions, 
             CinemachineCamera virtualCamera, 
-            CameraOcclusionHandler cameraOcclusionHandler)
+            CameraOcclusionHandler cameraOcclusionHandler,
+            string[] attackTriggers)
         {
             _world = new EcsWorld();
 
@@ -24,6 +25,9 @@ namespace DemonSlaughter.Gameplay.ECS
                 .Add(new MovementSystem())
                 .Add(new AnimationSystem())
                 .Add(new CameraSystem(virtualCamera, cameraOcclusionHandler))
+                .Add(new AttackDetectionSystem())       
+                .Add(new AttackSystem(attackTriggers)) 
+                .Add(new AttackCooldownSystem())       
                 ;
         }
 

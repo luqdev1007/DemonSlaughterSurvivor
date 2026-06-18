@@ -14,3 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: DemonSlaughter.Core::DemonSlaughter.Core.Configs.CharacterConfig
   <AddressableAddress>k__BackingField: Character_Berserk
   <MoveSpeed>k__BackingField: 5
+  <AttackCooldown>k__BackingField: 0.8
+  <AttackDamage>k__BackingField: 25
+  <DetectionRadius>k__BackingField: 3
+  <DetectionAngle>k__BackingField: 120
+  <HitboxRadius>k__BackingField: 0.4
+  <SwordBoneName>k__BackingField: Sword
+  <AttackAnimationTriggers>k__BackingField:
+  - AttackSpin
+  - AttackFlip
+  - AttackLeftSlash
+  - AttackRightSlash
+  - AttackJump
