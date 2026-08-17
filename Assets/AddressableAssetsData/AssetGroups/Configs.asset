@@ -14,17 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Configs
   m_GUID: 675b23d66de988e4596566a86c158140
-  m_SerializeEntries:
-  - m_GUID: bfa316516fdcf144cbd74f2f0a8d7da6
-    m_Address: Config_Enemy_Troll
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e248cff713cb8874cb81ae2664d68f2d
-    m_Address: Config_Hero_Berserk
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 9caa0a012b1729c4793134d82144acda, type: 2}
   m_SchemaSet:

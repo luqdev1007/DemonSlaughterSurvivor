@@ -128,7 +128,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 67193619}
-  - component: {fileID: 67193618}
   m_Layer: 0
   m_Name: GameplayRoot
   m_TagString: Untagged
@@ -136,30 +135,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &67193618
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 67193617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b01be2112bb8e744082d2566982b3ec8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DemonSlaughter.DependencyInjection.GameplayLifetimeScope
-  parentReference:
-    TypeName: DemonSlaughter.DependencyInjection.ProjectLifetimeScope
-  autoRun: 1
-  autoInjectGameObjects: []
-  _berserkCharacterConfig: {fileID: 11400000, guid: e248cff713cb8874cb81ae2664d68f2d, type: 2}
-  _enemyTrollConfig: {fileID: 11400000, guid: bfa316516fdcf144cbd74f2f0a8d7da6, type: 2}
-  _spawnPoint: {fileID: 1755105975}
-  _enemySpawnPoints:
-  - {fileID: 1856695746}
-  - {fileID: 782971730}
-  _virtualCamera: {fileID: 1518293186}
-  _occlusionHandler: {fileID: 1520405820}
 --- !u!4 &67193619
 Transform:
   m_ObjectHideFlags: 0
@@ -559,101 +534,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1518293184
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1518293187}
-  - component: {fileID: 1518293186}
-  - component: {fileID: 1518293188}
-  m_Layer: 0
-  m_Name: HeroCamera
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1518293186
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1518293184}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
-  Priority:
-    Enabled: 0
-    m_Value: 0
-  OutputChannel: 1
-  StandbyUpdate: 2
-  m_StreamingVersion: 20241001
-  m_LegacyPriority: 0
-  Target:
-    TrackingTarget: {fileID: 0}
-    LookAtTarget: {fileID: 0}
-    CustomLookAtTarget: 0
-  Lens:
-    FieldOfView: 60
-    OrthographicSize: 5
-    NearClipPlane: 0.3
-    FarClipPlane: 1000
-    Dutch: 0
-    ModeOverride: 0
-    PhysicalProperties:
-      GateFit: 2
-      SensorSize: {x: 21.946, y: 16.002}
-      LensShift: {x: 0, y: 0}
-      FocusDistance: 10
-      Iso: 200
-      ShutterSpeed: 0.005
-      Aperture: 16
-      BladeCount: 5
-      Curvature: {x: 2, y: 11}
-      BarrelClipping: 0.25
-      Anamorphism: 0
-  BlendHint: 0
---- !u!4 &1518293187
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1518293184}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
-  m_LocalPosition: {x: 4.70835, y: 16.24649, z: -8.58907}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 55, y: 0, z: 0}
---- !u!114 &1518293188
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1518293184}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b617507da6d07e749b7efdb34e1173e1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineFollow
-  TrackerSettings:
-    BindingMode: 4
-    PositionDamping: {x: 1, y: 1, z: 1}
-    AngularDampingMode: 0
-    RotationDamping: {x: 1, y: 1, z: 1}
-    QuaternionDamping: 1
-  FollowOffset: {x: 0, y: 15, z: -10}
 --- !u!1 &1520405814
 GameObject:
   m_ObjectHideFlags: 0
@@ -667,7 +547,6 @@ GameObject:
   - component: {fileID: 1520405815}
   - component: {fileID: 1520405818}
   - component: {fileID: 1520405819}
-  - component: {fileID: 1520405820}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -825,24 +704,6 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
---- !u!114 &1520405820
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1520405814}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d11b98eef7ad7af408b50a0e15eac83f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DemonSlaughter.Gameplay::DemonSlaughter.Gameplay.Camera.CameraOcclusionHandler
-  _occlusionLayers:
-    serializedVersion: 2
-    m_Bits: 64
-  _fadeAlpha: 0.25
-  _sphereCastRadius: 0.5
-  _fadeDuration: 0.2
 --- !u!1 &1755105974
 GameObject:
   m_ObjectHideFlags: 0
@@ -911,7 +772,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 67193619}
   - {fileID: 1520405817}
-  - {fileID: 1518293187}
   - {fileID: 877017624}
   - {fileID: 1755105975}
   - {fileID: 1507889141}

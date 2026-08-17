@@ -536,7 +536,6 @@ GameObject:
   - component: {fileID: 4232449530784101524}
   - component: {fileID: 8234064462262043976}
   - component: {fileID: 9069142111611160712}
-  - component: {fileID: 7256350464169935830}
   m_Layer: 5
   m_Name: LoadingScreen
   m_TagString: Untagged
@@ -625,21 +624,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &7256350464169935830
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5916247273479518319}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a12e7278305021b4f9bb1a8296fe73f6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DemonSlaughter.UI::DemonSlaughter.UI.Loading.LoadingScreenView
-  _canvasGroup: {fileID: 9069142111611160712}
-  _progressBar: {fileID: 6066935167733395454}
-  _fadeDuration: 0.3
 --- !u!1 &7125770626957334081
 GameObject:
   m_ObjectHideFlags: 0
