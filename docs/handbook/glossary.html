@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Глоссарий · Справочник</title>
+    <link rel="stylesheet" href="handbook.css">
+</head>
+<body data-page="glossary">
+
+<header class="site-header">
+    <a class="brand" href="index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="index.html">Оглавление</a>
+    </nav>
+</header>
+
+<div class="wrap">
+    <div class="content">
+
+        <h1>Глоссарий</h1>
+
+        <p class="lead">
+            Термины по алфавиту: латиница, затем кириллица. У каждого — русское объяснение,
+            английский идентификатор и ссылка на урок, где он разбирался.
+        </p>
+
+        <div class="glossary-nav">
+            <a href="#latin">A&ndash;Z</a>
+            <a href="#cyrillic">А&ndash;Я</a>
+        </div>
+
+        <h2 id="latin">Латиница</h2>
+
+        <div class="term">
+            <span class="term-name" id="assembly-definition">Определение сборки</span>
+            <span class="term-en">Assembly Definition, asmdef</span>
+            <p class="term-body">
+                Файл в папке проекта, объявляющий, что эта папка и всё под ней компилируется
+                в отдельную .NET-сборку с заданным именем и заданным списком ссылок.
+                Даёт три вещи: инкрементальную компиляцию, читаемый граф зависимостей и —
+                главное — границу между слоями, которую держит компилятор, а не дисциплина.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#what-asmdef-gives">01 · Что даёт asmdef</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="assembly-csharp">Сборка по умолчанию</span>
+            <span class="term-en">Assembly-CSharp</span>
+            <p class="term-body">
+                Сборка, в которую Unity складывает все скрипты, не накрытые ни одним asmdef.
+                Внутри неё каждый класс видит каждый — то есть архитектурных границ не
+                существует физически. В этом проекте не используется: у всех сборок
+                <code>autoReferenced: false</code>, поэтому забытый вне asmdef скрипт падает
+                с ошибкой вместо того, чтобы молча скомпилироваться.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#without-asmdef">01 · Что делает Unity без asmdef</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="autoreferenced">Автоссылка из сборки по умолчанию</span>
+            <span class="term-en">autoReferenced</span>
+            <p class="term-body">
+                Поле asmdef. При <code>true</code> сборка автоматически видна из
+                <code>Assembly-CSharp</code>. В проекте выставлено <code>false</code> у всех
+                сборок — это страховка от скриптов, случайно оказавшихся вне asmdef.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#asmdef-shape">01 · Форма файла</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="cs0246">Ошибка CS0246</span>
+            <span class="term-en">CS0246: type or namespace not found</span>
+            <p class="term-body">
+                Ошибка компилятора «тип или пространство имён не найдено». В контексте asmdef —
+                нормальный, ожидаемый результат попытки пересечь границу слоя: если
+                <code>Game.Simulation</code> не ссылается на <code>Game.View</code>, то
+                <code>using Game.View</code> даёт именно её. Основной инструмент проверки
+                того, что границы расставлены верно.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#checklist">01 · Чек-лист приёмки</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="includeplatforms">Ограничение по платформам</span>
+            <span class="term-en">includePlatforms / excludePlatforms</span>
+            <p class="term-body">
+                Поля asmdef, ограничивающие список платформ, для которых собирается сборка.
+                <code>includePlatforms: ["Editor"]</code> — обязательный признак сборки
+                с редакторным кодом: <code>UnityEditor</code> доступен в Play Mode и
+                недоступен в билде, поэтому редакторный код в runtime-сборке ломает
+                только сборку проекта, а в редакторе выглядит здоровым.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#pitfall-editor-code">01 · Editor-код в runtime-сборке</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="noenginereferences">Сборка без движка</span>
+            <span class="term-en">noEngineReferences</span>
+            <p class="term-body">
+                Поле asmdef. При <code>true</code> сборка компилируется без ссылок на
+                <code>UnityEngine</code>: недоступны <code>Vector3</code>, <code>Mathf</code>,
+                <code>Time</code> и всё остальное. Строгий способ добиться того, чтобы симуляция
+                физически не знала о движке; цена — собственный математический слой.
+                В этом проекте выбран <code>false</code>, обоснование — журнал решений
+                <code>PROGRESS.md</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#no-engine-references">01 · noEngineReferences</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="overridereferences">Ручное управление ссылками на dll</span>
+            <span class="term-en">overrideReferences / precompiledReferences</span>
+            <p class="term-body">
+                Пара полей asmdef. По умолчанию сборка видит все скомпилированные dll,
+                помеченные как auto-referenced (в этом проекте — <code>DOTween.dll</code>).
+                <code>overrideReferences: true</code> отключает это поведение, и тогда
+                доступны только dll, перечисленные в <code>precompiledReferences</code>.
+                Способ запретить конкретную библиотеку в конкретном слое.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#packages">01 · Куда ложатся пакеты</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="rootnamespace">Корневое пространство имён сборки</span>
+            <span class="term-en">rootNamespace</span>
+            <p class="term-body">
+                Поле asmdef. Unity подставляет его в шапку каждого нового скрипта,
+                создаваемого в этой папке. Пустое поле означает файлы без namespace
+                и массовое переименование позже — а переименование ломает ссылки
+                на MonoBehaviour в префабах.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#pitfall-rootnamespace">01 · rootNamespace пустой</a></span>
+        </div>
+
+        <h2 id="cyrillic">Кириллица</h2>
+
+        <div class="term">
+            <span class="term-name" id="di-boundary">Граница двух DI</span>
+            <span class="term-en">DI boundary</span>
+            <p class="term-body">
+                Разделение зон ответственности между VContainer (всё вне симуляции: сервисы,
+                сцены, UI, сейвы) и LeoECS Lite DI (передача shared-данных в системы).
+                Держится не договорённостью, а составом ссылок: <code>Game.Simulation</code>
+                не ссылается на <code>VContainer</code>, поэтому система физически не может
+                достать контейнер, и единственный оставшийся путь получить сервис —
+                <code>EcsSystems.Inject()</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#di-boundary">01 · Граница двух DI</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="dependency-inversion">Инверсия зависимостей</span>
+            <span class="term-en">Dependency Inversion</span>
+            <p class="term-body">
+                Приём, разводящий направление зависимости и направление потока данных.
+                Симуляция порождает данные для View, но зависеть от View не имеет права:
+                интерфейс объявляется на нейтральном уровне (<code>Game.Core</code>),
+                реализация живёт наверху, нижний слой работает с интерфейсом.
+                Из того же принципа следует запрет синглтонов: синглтон — это способ
+                достать верхний слой из нижнего, минуя инверсию.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#dependency-inversion">01 · Направление зависимости</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="missing-script">Оторванная ссылка на скрипт</span>
+            <span class="term-en">Missing (Mono Script)</span>
+            <p class="term-body">
+                Состояние компонента в сцене или префабе, когда Unity не может найти класс
+                по сохранённой ссылке. Ссылка хранится как пара «GUID скрипта плюс имя сборки»,
+                поэтому переименование asmdef обрывает её по всему проекту — молча, при
+                чистой консоли и компилирующемся коде. Отсюда правило: имя сборки
+                фиксируется до того, как первый её скрипт повешен на префаб.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#pitfall-rename">01 · Переименовал asmdef</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="cyclic-references">Циклическая зависимость сборок</span>
+            <span class="term-en">cyclic references</span>
+            <p class="term-body">
+                Ситуация, когда две сборки ссылаются друг на друга напрямую или через цепочку.
+                Компилятор не собирает при этом <em>весь</em> проект, включая сборки, к циклу
+                не относящиеся, а IDE продолжает показывать старое состояние и выглядит здоровой.
+                Профилактика: создавать сборки строго сверху вниз по графу и связывать
+                соседей по слою через интерфейс в <code>Game.Core</code>, а не напрямую.
+            </p>
+            <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#pitfall-cycle">01 · Циклическая зависимость</a></span>
+        </div>
+
+        <div class="site-footer">
+            Новый термин добавляется в тот же заход, что и урок, в котором он появился.
+        </div>
+
+    </div>
+</div>
+
+<script src="lessons.js"></script>
+<script src="handbook.js"></script>
+</body>
+</html>

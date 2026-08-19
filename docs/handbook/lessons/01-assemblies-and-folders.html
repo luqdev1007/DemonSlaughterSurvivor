@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>01 · Сборки, папки, корень namespace</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>01 · Сборки, папки, корень namespace</h1>
+
+        <div class="lesson-meta">
+            шаг 1 роадмапа (бутстрап) · блок 0 · 2026-08-19<br>
+            Доки проекта: <code>ARCHITECTURE.md</code> §2, §14, §15 · <code>CLAUDE.md</code> §5, §7 ·
+            журнал решений <code>PROGRESS.md</code>
+        </div>
+
+        <p class="lead">
+            Почему этот блок первый, а не восьмой: код пишется по ходу шага. Пока нет
+            <code>asmdef</code>, всё падает в <code>Assembly-CSharp</code>. Перенос кода под asmdef позже — это смена
+            имени сборки, а ссылки на MonoBehaviour в сценах и префабах хранятся как пара
+            «GUID скрипта плюс имя сборки». Меняешь сборку — получаешь Missing Script по всему
+            проекту, молча, без единой ошибки в консоли. В этом проекте это, судя по мёртвым
+            <code>DemonSlaughter.*.csproj</code> в корне, уже один раз произошло.
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="without-asmdef">1.1 Что делает Unity без asmdef</h3>
+
+        <p>
+            Все скрипты в <code>Assets/</code> компилируются в одну сборку — <code>Assembly-CSharp.dll</code>
+            (плюс <code>Assembly-CSharp-firstpass</code> для <code>Plugins/</code> и <code>*-Editor</code> для <code>Editor/</code>).
+            Одна сборка = каждый класс видит каждый класс. Никаких границ не существует
+            физически, только в голове разработчика.
+        </p>
+
+        <h3 id="what-asmdef-gives">1.2 Что даёт asmdef</h3>
+
+        <p>
+            Assembly Definition — файл, объявляющий: «папка и всё под ней компилируется в
+            отдельную сборку с таким-то именем и вот такими ссылками». Три следствия:
+        </p>
+
+        <ul>
+            <li>
+                <strong>(а) Время компиляции.</strong> Правишь файл в <code>Game.Simulation</code> — пересобирается
+                <code>Game.Simulation</code> и то, что на неё ссылается. <code>Game.UI</code> и <code>Game.Meta</code> не
+                трогаются. На старте это экономия секунд, на проекте с сотней систем —
+                минут в день.
+            </li>
+            <li>
+                <strong>(б) Граница, которую держит компилятор.</strong> Если <code>Game.Simulation</code> не ссылается
+                на <code>Game.View</code>, то <code>using Game.View</code> — ошибка <code>CS0246</code>. Не замечание на
+                ревью, не «надо бы почистить». Ошибка сборки.
+            </li>
+            <li>
+                <strong>(в) Явный, читаемый граф зависимостей.</strong> Открыл asmdef — увидел, от чего
+                зависит слой. Без него граф существует только как сумма всех <code>using</code>
+                в проекте, и никто его не знает целиком.
+            </li>
+        </ul>
+
+        <p>
+            Пункт (б) — единственная причина, по которой asmdef обязателен здесь.
+            <code>ARCHITECTURE.md</code> §2 говорит «зависимости только вниз». Правило, не подкреплённое
+            компилятором, — это пожелание. Пожелания протекают в два часа ночи, когда до
+            починки бага остался один <code>using</code>.
+        </p>
+
+        <h3 id="alternatives">1.3 Альтернативы и почему они хуже</h3>
+
+        <ul>
+            <li>
+                <strong>Только namespace-конвенция плюс самодисциплина.</strong> Работает ровно до первого
+                аврала. В соло-разработке ревьюера, который поймает нарушение, не
+                существует.
+            </li>
+            <li>
+                <strong>Внешние анализаторы</strong> (NDepend, кастомные Roslyn-правила). Работает, но это
+                ещё одна инфраструктура, которую надо ставить, настраивать и чинить после
+                апдейта Unity. Asmdef уже в коробке.
+            </li>
+            <li>
+                <strong>Одна сборка «пока проект маленький».</strong> Соблазнительно и дёшево сегодня.
+                Цена приходит потом: перенос в asmdef на 300 файлах — это разбор
+                циклических зависимостей, которые к тому моменту уже сплелись.
+            </li>
+        </ul>
+
+        <h3 id="downside">1.4 Обратная сторона</h3>
+
+        <p>
+            Asmdef превращает циклическую зависимость из «оно как-то работает» в ошибку
+            компиляции всего проекта разом. Это плюс, но означает: направление зависимостей
+            надо задать правильно с первого дня, а не разруливать на ходу.
+        </p>
+
+        <h3 id="dependency-inversion">1.5 Главная теоретическая идея блока: направление зависимости не равно направлению потока данных</h3>
+
+        <p>
+            Симуляция порождает данные, которые нужны View. Поток данных идёт из Simulation
+            в View. Зависимость за потоком не следует: <code>Game.Simulation</code> не имеет права знать
+            про <code>Game.View</code>. В этом проекте не следует и обратная — <code>Game.View</code> тоже не
+            ссылается на <code>Game.Simulation</code> (<code>ARCHITECTURE.md</code> §15): вьюхи не должны знать
+            про ECS. Оба слоя встречаются на интерфейсе, объявленном в <code>Game.Core</code>:
+            симуляция его вызывает, вьюха реализует.
+        </p>
+
+        <p>
+            Когда нижнему слою всё-таки нужно позвать верхний, зависимость инвертируется:
+            интерфейс объявляется на нейтральном уровне (<code>Game.Core</code>), реализация живёт
+            наверху, нижний слой работает с интерфейсом. Это Dependency Inversion, и в
+            блоке 1 (composition root) он же объяснит, почему синглтоны запрещены: синглтон
+            — это способ достать верхний слой из нижнего, минуя всякую инверсию.
+        </p>
+
+        </section>
+
+        <!-- ============================================ ПРИВЯЗКА К СТЕКУ = -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="assembly-graph">2.1 Граф из ARCHITECTURE.md §15 и что в нём не сходится</h3>
+
+        <p>Заявлено было:</p>
+
+<pre><code><span class="t">Game.Core</span>         <span class="p">→</span> <span class="c">(нет зависимостей от проекта)</span>
+<span class="t">Game.Configs</span>      <span class="p">→</span> Core
+<span class="t">Game.Simulation</span>   <span class="p">→</span> Core, Configs
+<span class="t">Game.View</span>         <span class="p">→</span> Core, Configs
+<span class="t">Game.UI</span>           <span class="p">→</span> Core, Configs
+<span class="t">Game.Meta</span>         <span class="p">→</span> Core, Configs
+<span class="t">Game.Bootstrap</span>    <span class="p">→</span> всё</code></pre>
+
+        <p>Три дырки, которые пришлось закрыть до создания файлов:</p>
+
+        <h4>Дырка 1. Слоя Services в §15 не было</h4>
+
+        <p>
+            В §2 слой Services есть (загрузка, аудио, ввод), в §15 сборки под него нет.
+            <code>InputService</code>, аудио, загрузчик сцен, файловый I/O сейвов — жить им негде.
+        </p>
+
+        <div class="note decision">
+            <span class="note-title">Решение проекта</span>
+            <p>
+                Заведена восьмая сборка <code>Game.Services</code> → <code>Core</code>, <code>Configs</code>:
+                <code>Game.Core</code> держит только интерфейсы, <code>Game.Services</code> — реализации.
+                Обоснование и рассмотренные варианты — журнал решений <code>PROGRESS.md</code>,
+                запись от 2026-08-19.
+            </p>
+        </div>
+
+        <h4>Дырка 2. Game.UI не видит Game.Meta</h4>
+
+        <p>
+            А HUD обязан показывать валюту, экран
+            меты — ветку перков. Это не ошибка доки, это намеренная жёсткость: связь
+            идёт через интерфейс в <code>Game.Core</code> (например, <code>IMetaProgress</code>), <code>Game.Meta</code> его
+            реализует, <code>Game.UI</code> потребляет. Так же связываются любые два соседа по слою.
+        </p>
+
+        <div class="note">
+            <p>
+                Запомнить как правило: <strong>соседи не ссылаются друг на друга, соседи
+                встречаются в Core.</strong>
+            </p>
+        </div>
+
+        <h4>Дырка 3. Симуляция и ScriptableObject</h4>
+
+        <p>
+            <code>Game.Simulation</code> → <code>Game.Configs</code>, а конфиги — это ScriptableObject,
+            то есть <code>UnityEngine.Object</code>. При этом <code>ARCHITECTURE.md</code> §1 говорит «симуляция
+            не знает о Unity». Формально противоречие. Практически решается на границе:
+            Bootstrap читает SO и складывает из них plain-структуры, а системы получают
+            снимок данных, а не ссылку на ассет. Это тема блока 5, но помнить нужно уже
+            сейчас — от неё зависит, ссылается ли <code>Game.Simulation</code> на <code>Game.Configs</code> вообще.
+        </p>
+
+        <h3 id="packages">2.2 Куда ложатся пакеты</h3>
+
+        <p>Имена сборок пакетов (ссылаться надо на них, не на имена пакетов):</p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Сборка</th><th>Что это</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>Leopotam.EcsLite</code></td><td>ядро ECS</td></tr>
+                <tr><td><code>Leopotam.EcsLite.Di</code></td><td>атрибуты инъекции в системы</td></tr>
+                <tr><td><code>VContainer</code></td><td>DI вне ECS</td></tr>
+                <tr><td><code>UniTask</code></td><td>async</td></tr>
+                <tr><td><code>R3.Unity</code></td><td>реактивность (ядро R3 — dll из NuGet)</td></tr>
+                <tr><td><code>DOTween</code></td><td>precompiled dll в <code>Assets/Plugins/Demigiant</code></td></tr>
+                <tr><td><code>Unity.Cinemachine</code>, <code>Unity.InputSystem</code></td><td>по потребности</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h4 id="di-boundary">Граница двух DI</h4>
+
+        <p>Ключевой момент, который и есть граница двух DI из <code>ARCHITECTURE.md</code>:</p>
+
+        <div class="note warn">
+            <p>
+                <code>Game.Simulation</code> ссылается на <code>Leopotam.EcsLite</code> и <code>Leopotam.EcsLite.Di</code>,
+                и <strong>НЕ ссылается</strong> на <code>VContainer</code>.
+            </p>
+        </div>
+
+        <p>
+            Это не стилистика. Пока в <code>Game.Simulation</code> нет ссылки на <code>VContainer</code>, ни одна
+            система физически не может дёрнуть контейнер, объявить VContainer-атрибут
+            инъекции или зарезолвить зависимость на лету. Единственный оставшийся путь
+            передать сервис в систему — тот, что зафиксирован в журнале решений:
+            <code>EcsSystems.Inject()</code> и поля с атрибутами LeoECS Lite DI. Решение из <code>PROGRESS.md</code>
+            становится не договорённостью, а свойством сборки.
+        </p>
+
+        <p>
+            <code>DOTween.dll</code> лежит в <code>Assets/Plugins</code> и в <code>.meta</code> не помечен как explicitly
+            referenced — значит доступен всем сборкам автоматически, отдельная настройка
+            <code>precompiledReferences</code> не нужна. Если позже понадобится запретить DOTween в
+            Simulation — это делается флагом <code>overrideReferences</code> на самой Simulation.
+        </p>
+
+        <h3 id="no-engine-references">2.3 noEngineReferences у Game.Simulation</h3>
+
+        <p>
+            Был соблазн поставить у <code>Game.Simulation</code> <code>noEngineReferences: true</code> и получить
+            буквальное «симуляция не знает о Unity»: не скомпилируется ничего из <code>UnityEngine</code>.
+        </p>
+
+        <p>Что строгий режим даёт реально:</p>
+
+        <ul>
+            <li>
+                <code>Time.deltaTime</code> внутри системы становится невозможен. А это настоящий класс
+                багов: deltaTime обязан приходить в тик снаружи, иначе детерминизм и пауза
+                ломаются молча.
+            </li>
+            <li><code>UnityEngine.Random</code> внутри симуляции — тот же класс багов.</li>
+        </ul>
+
+        <p>Что он стоит:</p>
+
+        <ul>
+            <li>
+                Нет <code>Vector2</code>/<code>Vector3</code>, <code>Mathf</code>, <code>Quaternion</code>. Нужен свой математический слой
+                или Unity.Mathematics.
+            </li>
+            <li>Каждый конфиг придётся конвертировать в свои типы, включая позиции.</li>
+            <li>
+                Пакет LeoECS Lite сам по себе engine-free, так что он не мешает — мешает
+                объём ручной работы.
+            </li>
+        </ul>
+
+        <div class="note decision">
+            <span class="note-title">Решение проекта</span>
+            <p>
+                Выбран <code>noEngineReferences: false</code>. Портируемость симуляции на сервер проекту
+                не нужна, а математический слой — неделя работы в обмен на чистоту, которой
+                никто не воспользуется. Два названных класса багов закрыты дешевле:
+                deltaTime приходит параметром в тик (блок 1 шага 1), рандом — собственным
+                сервисом с фиксируемым сидом, который всё равно нужен для воспроизводимых
+                забегов. Обоснование целиком — журнал решений <code>PROGRESS.md</code>,
+                запись от 2026-08-19.
+            </p>
+        </div>
+
+        <p>
+            Практическая граница вместо формальной: <code>Game.Simulation</code> может использовать
+            <code>Vector2</code>/<code>Vector3</code>/<code>Mathf</code> как типы-значения, но не имеет права трогать <code>GameObject</code>,
+            <code>MonoBehaviour</code>, <code>Transform</code>, <code>Time</code>, <code>Physics</code>, <code>SceneManager</code>, <code>Resources</code>. Запрет на
+            <code>GameObject</code> и <code>MonoBehaviour</code> при этом обеспечен не дисциплиной, а тем, что
+            <code>Game.Simulation</code> не видит <code>Game.View</code>.
+        </p>
+
+        </section>
+
+        <!-- ============================================== СКЕЛЕТ API ==== -->
+        <section data-kind="api">
+
+        <h2 id="api">Скелет API</h2>
+
+        <p>
+            Здесь скелет — это не сигнатуры классов (классов в блоке нет), а содержимое
+            asmdef. Ниже поля, которые надо заполнить осознанно; остальные оставить по
+            умолчанию.
+        </p>
+
+        <h3 id="asmdef-shape">3.1 Форма файла</h3>
+
+<pre><code><span class="p">{</span>
+    <span class="a">"name"</span><span class="p">:</span> <span class="s">"Game.Core"</span><span class="p">,</span>
+    <span class="a">"rootNamespace"</span><span class="p">:</span> <span class="s">"Game.Core"</span><span class="p">,</span>
+    <span class="a">"references"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="a">"includePlatforms"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="a">"excludePlatforms"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="a">"allowUnsafeCode"</span><span class="p">:</span> <span class="k">false</span><span class="p">,</span>
+    <span class="a">"overrideReferences"</span><span class="p">:</span> <span class="k">false</span><span class="p">,</span>
+    <span class="a">"precompiledReferences"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="a">"autoReferenced"</span><span class="p">:</span> <span class="k">false</span><span class="p">,</span>
+    <span class="a">"defineConstraints"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="a">"versionDefines"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="a">"noEngineReferences"</span><span class="p">:</span> <span class="k">false</span>
+<span class="p">}</span></code></pre>
+
+        <p>Про поля, которые важны:</p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Поле</th><th>Чем важно</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>name</code></td>
+                    <td>Имя сборки. Совпадает с именем файла. После первого коммита
+                        не переименовывается никогда — см. подводные камни.</td>
+                </tr>
+                <tr>
+                    <td><code>rootNamespace</code></td>
+                    <td>Unity подставит его в шапку каждого нового скрипта в этой
+                        папке. Пустое поле = скрипты без namespace = массовая правка
+                        через полгода. Заполнять обязательно.</td>
+                </tr>
+                <tr>
+                    <td><code>references</code></td>
+                    <td>Ссылки. Unity по умолчанию пишет их как <code>GUID:xxxxxxxx</code> —
+                        нечитаемо, но переживает переименование сборок. Оставить как
+                        есть, на строковые имена не переключать.</td>
+                </tr>
+                <tr>
+                    <td><code>autoReferenced</code></td>
+                    <td>Если <code>true</code>, <code>Assembly-CSharp</code> автоматически видит эту сборку.
+                        <code>Assembly-CSharp</code> в проекте не нужен вообще — ставим <code>false</code> во всех
+                        восьми. Это ещё и страховка: случайный <code>.cs</code>, забытый вне asmdef,
+                        не скомпилируется и сразу себя обнаружит.</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3 id="references">3.2 Состав ссылок</h3>
+
+<pre><code><span class="t">Game.Core</span>
+    references<span class="p">:</span> UniTask
+    <span class="c">(интерфейсы сервисов асинхронны — загрузка, сейвы; без UniTask
+     интерфейс придётся объявлять на Task, а потом переписывать)</span>
+
+<span class="t">Game.Configs</span>
+    references<span class="p">:</span> Game.Core
+
+<span class="t">Game.Services</span>
+    references<span class="p">:</span> Game.Core, Game.Configs, UniTask, R3.Unity,
+                Unity.InputSystem
+    <span class="c">НЕ ссылается: Game.Simulation, Game.View, Game.UI, Game.Meta</span>
+
+<span class="t">Game.Simulation</span>
+    references<span class="p">:</span> Game.Core, Game.Configs,
+                Leopotam.EcsLite, Leopotam.EcsLite.Di
+    <span class="c">НЕ ссылается: VContainer, Game.Services, Game.View, Game.UI,
+                  Game.Meta, R3.Unity, UniTask</span>
+
+<span class="t">Game.View</span>
+    references<span class="p">:</span> Game.Core, Game.Configs, UniTask
+                <span class="c">(DOTween доступен автоматически)</span>
+
+<span class="t">Game.UI</span>
+    references<span class="p">:</span> Game.Core, Game.Configs, VContainer, R3.Unity, UniTask
+    <span class="c">НЕ ссылается: Game.Meta, Game.Simulation</span>
+
+<span class="t">Game.Meta</span>
+    references<span class="p">:</span> Game.Core, Game.Configs, UniTask
+    <span class="c">НЕ ссылается: Game.UI</span>
+
+<span class="t">Game.Bootstrap</span>
+    references<span class="p">:</span> все семь плюс VContainer, Leopotam.EcsLite,
+                Leopotam.EcsLite.Di, UniTask</code></pre>
+
+        <h3 id="creation-order">3.3 Порядок создания</h3>
+
+        <p>
+            Строго сверху вниз по графу — тогда циклическая зависимость физически не
+            возникнет, потому что на момент создания сборки ссылаться вверх ещё не на что:
+        </p>
+
+        <ol>
+            <li><code>Game.Core</code></li>
+            <li><code>Game.Configs</code></li>
+            <li><code>Game.Services</code>, <code>Game.Simulation</code>, <code>Game.View</code>, <code>Game.UI</code>, <code>Game.Meta</code> — в любом порядке</li>
+            <li><code>Game.Bootstrap</code></li>
+        </ol>
+
+        <h3 id="folders">3.4 Раскладка папок (ARCHITECTURE.md §14)</h3>
+
+<pre><code>Assets/_Project/
+  Bootstrap/      <span class="c">Game.Bootstrap.asmdef</span>
+  Configs/        <span class="c">Game.Configs.asmdef</span>
+  Core/           <span class="c">Game.Core.asmdef</span>
+  Services/       <span class="c">Game.Services.asmdef</span>
+  Simulation/     <span class="c">Game.Simulation.asmdef</span>
+    Components/
+    Systems/
+    Services/     <span class="c">сервисы симуляции, внутри ECS-границы</span>
+  View/           <span class="c">Game.View.asmdef</span>
+  UI/             <span class="c">Game.UI.asmdef</span>
+  Meta/           <span class="c">Game.Meta.asmdef</span>
+  Art/ Prefabs/ Scenes/ Resources/ Addressables/   <span class="c">без кода</span></code></pre>
+
+        <div class="note warn">
+            <p>
+                <code>_Project/Services/</code> и <code>_Project/Simulation/Services/</code> — разные вещи и путать их нельзя.
+                Первое — сервисы приложения (ввод, аудио, загрузка), они пересекают границу ECS.
+                Второе — сервисы симуляции (spatial hash, фабрики сущностей, пайплайн статов),
+                они живут внутри границы и наружу не выходят.
+            </p>
+        </div>
+
+        <p>Существующее, требующее решения:</p>
+
+        <ul>
+            <li><code>_Project/Develop/{Editor,Runtime}</code> — пустые, в §14 отсутствуют. Удалить.</li>
+            <li>
+                <code>_Project/Resources</code> — пустая. Пустой <code>Resources</code> безвреден, но <code>Resources</code> как
+                механизм загрузки конфликтует с уже стоящим Addressables. Оставить пустой,
+                вопрос загрузки закрывается в блоке 5.
+            </li>
+            <li><code>_Project/Addressables</code> и <code>AddressableAssetsData</code> — оставить, не трогать до блока 5.</li>
+            <li>
+                Корневые <code>DemonSlaughter.*.csproj</code> и <code>Assembly-CSharp*.csproj</code> — мёртвые
+                артефакты, лежат в <code>.gitignore</code>, удаляются вручную после регенерации.
+            </li>
+        </ul>
+
+        <p>
+            Editor-сборок пока не создаём: первая понадобится в блоке 5 под валидацию
+            <code>ContentRegistry</code>, там и появится <code>Game.Configs.Editor</code> с <code>includePlatforms: ["Editor"]</code>.
+            Сборка под тесты — тоже не сейчас: Test Framework в проекте стоит, но тесты
+            осознанно вынесены за шаг 1 (журнал решений <code>PROGRESS.md</code>, запись
+            от 2026-08-19; условие возврата — шаг 5).
+        </p>
+
+        </section>
+
+        <!-- ========================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <p>Симптомы, а не теория.</p>
+
+        <h3 id="pitfall-rename">Переименовал asmdef — компоненты отвалились</h3>
+        <p>
+            <span class="symptom">Симптом:</span> в сценах и префабах Missing (Mono Script), консоль чистая, код
+            компилируется. <strong>Причина:</strong> ссылка на скрипт хранится как GUID плюс имя
+            сборки. <strong>Вывод:</strong> имя asmdef фиксируется один раз. Если менять всё же надо —
+            до того, как хоть один скрипт из неё повешен на префаб.
+        </p>
+
+        <h3 id="pitfall-cycle">Циклическая зависимость</h3>
+        <p>
+            <span class="symptom">Симптом:</span> «Assembly with name X has cyclic references», и не компилируется
+            <strong>НИЧЕГО</strong>, включая сборки, к циклу не относящиеся. IDE при этом показывает
+            старое состояние и выглядит здоровой — легко потерять полчаса, доверяя ей.
+            <strong>Профилактика:</strong> порядок создания из 3.3 и правило «соседи встречаются в Core».
+        </p>
+
+        <h3 id="pitfall-missing-asmdef">Забыл asmdef в новой папке</h3>
+        <p>
+            <span class="symptom">Симптом:</span> код компилируется и видит вообще всё, границы «работают» ровно до
+            момента, когда обнаружится, что не работают. При <code>autoReferenced: false</code> у
+            всех сборок такой файл, наоборот, сразу упадёт с <code>CS0246</code> — поэтому <code>false</code> и
+            ставим.
+        </p>
+
+        <h3 id="pitfall-editor-code">Editor-код в runtime-сборке</h3>
+        <p>
+            <span class="symptom">Симптом:</span> в редакторе всё зелено, билд падает на <code>UnityEditor</code>. <strong>Причина:</strong>
+            <code>UnityEditor</code> доступен в Play Mode и недоступен в билде. Всё, что использует
+            <code>UnityEditor</code>, живёт в сборке с <code>includePlatforms: ["Editor"]</code>, без исключений.
+            Директива <code>UNITY_EDITOR</code> внутри runtime-сборки — рабочий, но грязный обход;
+            для инспекторов и валидаторов нужна именно Editor-сборка.
+        </p>
+
+        <h3 id="pitfall-package-name">Ссылка на пакет по имени пакета</h3>
+        <p>
+            <span class="symptom">Симптом:</span> в списке references нужного не находится. <strong>Причина:</strong> искать надо
+            <code>Leopotam.EcsLite</code>, а не <code>com.leopotam.ecslite</code>. Имя сборки не равно имени
+            пакета.
+        </p>
+
+        <h3 id="pitfall-rootnamespace">rootNamespace пустой</h3>
+        <p>
+            <span class="symptom">Симптом:</span> через месяц половина файлов без namespace, а исправление —
+            массовое переименование, ломающее ссылки на MonoBehaviour (см. первый
+            пункт). Заполнять сразу.
+        </p>
+
+        <h3 id="pitfall-api-level">Смена apiCompatibilityLevel или платформы после создания сборок</h3>
+        <p>
+            <span class="symptom">Симптом:</span> часть сборок собирается, часть — нет. В проекте .NET Standard 2.1,
+            NuGet-пакеты (R3 и его зависимости) собраны под него. Уровень не трогать.
+        </p>
+
+        <h3 id="pitfall-empty">Пустая сборка</h3>
+        <p>
+            Не ошибка. asmdef без единого <code>.cs</code> компилируется в пустую dll, предупреждений
+            нет. Значит скелет папок можно создать целиком заранее.
+        </p>
+
+        </section>
+
+        <!-- ========================================= ЧЕК-ЛИСТ ПРИЁМКИ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <ul class="checklist">
+            <li>В <code>Assets/_Project</code> есть восемь папок по §14 и восемь asmdef по §15.</li>
+            <li>У всех восьми заполнен <code>rootNamespace</code> вида <code>Game.&lt;Layer&gt;</code>.</li>
+            <li>У всех восьми <code>autoReferenced: false</code>.</li>
+            <li>Проект компилируется, консоль чистая.</li>
+            <li><code>Assets/_Project/Develop</code> удалён.</li>
+            <li>После Regenerate project files в корне лежат <code>Game.*.csproj</code>, а
+                <code>DemonSlaughter.*.csproj</code> удалены вручную.</li>
+            <li class="key"><strong>Главная проверка:</strong> временный файл в <code>Assets/_Project/Simulation</code> со
+                строкой <code>using Game.View</code> даёт ошибку <code>CS0246</code>. После проверки файл
+                удалить. Без этого шага блок не принят — всё остальное можно сделать
+                правильно на вид и ошибиться в ссылках.</li>
+            <li class="key">Обратная сторона: <code>using Game.Simulation</code> из файла в
+                <code>Assets/_Project/View</code> <strong>тоже даёт <code>CS0246</code></strong>. View и Simulation — соседи,
+                прямой ссылки между ними нет ни в одну сторону; связь пойдёт через
+                интерфейс в <code>Game.Core</code> (см. 1.5 и 2.1).</li>
+            <li class="key">Проверка, что ссылки вообще расставлены, а не забыты все разом:
+                <code>using Game.Core</code> из файла в <code>Assets/_Project/View</code> <strong>компилируется</strong>.</li>
+            <li>В <code>Game.Simulation.asmdef</code> в references отсутствует <code>VContainer</code>.</li>
+            <li><code>using VContainer</code> в файле внутри Simulation даёт <code>CS0246</code>.</li>
+            <li>Отдельно, вне сборок: <code>manifest.json</code> содержит семь запиненных SHA,
+                Unity переоткрыт, Package Manager не показывает изменений
+                и не тянет ничего заново.</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Справочник · Demon Slaughter Survivor</title>
+    <link rel="stylesheet" href="handbook.css">
+</head>
+<body data-page="index">
+
+<header class="site-header">
+    <a class="brand" href="index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+    <div class="content">
+
+        <h1>Справочник</h1>
+
+        <p class="lead">
+            Теория, накопленная по ходу разработки: как работают паттерны, почему они такие,
+            какие есть альтернативы и где грабли. Учебник, к которому возвращаются через месяцы.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Границы справочника</span>
+            <p>
+                Здесь — <strong>теория</strong>. Решения по проекту живут в
+                <code>PROGRESS.md</code> (журнал решений) и <code>ARCHITECTURE.md</code> (правила),
+                отчёты по сессиям — в <code>docs/recons/</code>.
+                Если в уроке упомянут выбор, сделанный в проекте, — здесь только ссылка,
+                обоснование не дублируется.
+            </p>
+        </div>
+
+        <div class="search-box">
+            <input type="search" id="lesson-search" placeholder="Поиск по заголовкам, тегам и описаниям" autocomplete="off">
+        </div>
+
+        <div id="lesson-list"></div>
+
+        <h2 id="errata">Исправления</h2>
+        <p>
+            Готовый урок не переписывается. Исключение — фактическая ошибка:
+            она правится, и сюда добавляется строка.
+        </p>
+        <div id="errata-list"></div>
+
+        <div class="site-footer">
+            Открывается двойным кликом, без сервера и без интернета.
+            Добавление урока — файл в <code>lessons/</code> плюс объект в <code>lessons.js</code>.
+        </div>
+
+    </div>
+</div>
+
+<script src="lessons.js"></script>
+<script src="handbook.js"></script>
+</body>
+</html>
