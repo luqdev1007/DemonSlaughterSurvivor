@@ -1,7 +1,24 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#4ce7dd3cc54e37e2ed6dc59cb5a047f3dccb3f50",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
+      },
+      "hash": "4ce7dd3cc54e37e2ed6dc59cb5a047f3dccb3f50"
+    },
     "com.cysharp.r3": {
-      "version": "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity",
+      "version": "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity#3fed50ae5c7e123073f6e50218b2a0e6310d50b4",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -10,28 +27,28 @@
       "hash": "3fed50ae5c7e123073f6e50218b2a0e6310d50b4"
     },
     "com.cysharp.unitask": {
-      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask#e5acc106ee196bc5a32fb14cdf2987b0f96d11e0",
       "depth": 0,
       "source": "git",
       "dependencies": {},
       "hash": "e5acc106ee196bc5a32fb14cdf2987b0f96d11e0"
     },
     "com.github-glitchenzo.nugetforunity": {
-      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity#acc1c7bc9ea34c33b830e40316fca52553878d29",
       "depth": 0,
       "source": "git",
       "dependencies": {},
       "hash": "acc1c7bc9ea34c33b830e40316fca52553878d29"
     },
     "com.leopotam.ecslite": {
-      "version": "https://github.com/Leopotam/ecslite.git",
+      "version": "https://github.com/Leopotam/ecslite.git#d46f3b209ea163810823aeea7d2610d38ad6cdf8",
       "depth": 0,
       "source": "git",
       "dependencies": {},
       "hash": "d46f3b209ea163810823aeea7d2610d38ad6cdf8"
     },
     "com.leopotam.ecslite.di": {
-      "version": "https://github.com/Leopotam/ecslite-di.git",
+      "version": "https://github.com/Leopotam/ecslite-di.git#482b14e87c09cd1bf3f8f3dffc5c0099f00a693a",
       "depth": 0,
       "source": "git",
       "dependencies": {},
@@ -152,6 +169,13 @@
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
       "depth": 3,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.2",
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -290,7 +314,7 @@
       "url": "https://packages.unity.com"
     },
     "jp.hadashikick.vcontainer": {
-      "version": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+      "version": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#5103bfc467dbb3d7b995dd2f2c5944e9f077dc29",
       "depth": 0,
       "source": "git",
       "dependencies": {},
