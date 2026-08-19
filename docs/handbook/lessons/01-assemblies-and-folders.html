@@ -71,8 +71,11 @@
             </li>
             <li>
                 <strong>(б) Граница, которую держит компилятор.</strong> Если <code>Game.Simulation</code> не ссылается
-                на <code>Game.View</code>, то <code>using Game.View</code> — ошибка <code>CS0246</code>. Не замечание на
-                ревью, не «надо бы почистить». Ошибка сборки.
+                на <code>Game.View</code>, то <code>using Game.View</code> — ошибка компиляции. Не замечание на
+                ревью, не «надо бы почистить». Ошибка сборки. Код ошибки зависит от того,
+                существует ли корень имени: если целиком неизвестно (<code>using VContainer</code>) — это
+                <code>CS0246</code>, а если известен только корень (<code>Game</code> есть, <code>Game.View</code> не видна) —
+                <code>CS0234</code>. Разница чисто диагностическая, границу держат обе.
             </li>
             <li>
                 <strong>(в) Явный, читаемый граф зависимостей.</strong> Открыл asmdef — увидел, от чего
@@ -529,10 +532,30 @@
             NuGet-пакеты (R3 и его зависимости) собраны под него. Уровень не трогать.
         </p>
 
-        <h3 id="pitfall-empty">Пустая сборка</h3>
+        <h3 id="pitfall-empty">Пустая сборка не видна в IDE</h3>
         <p>
-            Не ошибка. asmdef без единого <code>.cs</code> компилируется в пустую dll, предупреждений
-            нет. Значит скелет папок можно создать целиком заранее.
+            asmdef без единого <code>.cs</code> — не ошибка: он компилируется в пустую dll, предупреждений
+            нет, скелет папок можно создать целиком заранее. Но <strong>Unity генерирует
+            <code>.csproj</code> только для сборок, в которых есть хотя бы один скрипт</strong>, и в решение
+            (<code>.sln</code>/<code>.slnx</code>) попадают только сгенерированные проекты.
+        </p>
+        <p>
+            <span class="symptom">Симптом:</span> открыл решение — сборок проекта в нём нет вообще; создал первый
+            скрипт — он не принадлежит ни одному проекту, <code>using</code> на соседний слой
+            подчёркнут красным, автодополнение пустое. Выглядит как сломанные asmdef,
+            хотя asmdef в порядке и Unity компилирует без единой ошибки.
+        </p>
+        <p>
+            <strong>Следствие, важное на практике:</strong> пока сборка пуста, IDE про неё не знает, и
+            проверять границы по красным подчёркиваниям бесполезно. Источник правды —
+            консоль Unity, а не редактор. Сборка появится в решении сама, как только
+            в ней окажется первый настоящий файл.
+        </p>
+        <p>
+            Рядом живёт вторая ловушка того же рода: <code>.csproj</code> и <code>.sln</code> от прошлых
+            состояний проекта не удаляются автоматически. Осиротевший файл решения
+            со старым именем проекта открывается пустым — и это тоже читается как
+            «asmdef не работают».
         </p>
 
         </section>
@@ -548,20 +571,26 @@
             <li>У всех восьми <code>autoReferenced: false</code>.</li>
             <li>Проект компилируется, консоль чистая.</li>
             <li><code>Assets/_Project/Develop</code> удалён.</li>
-            <li>После Regenerate project files в корне лежат <code>Game.*.csproj</code>, а
-                <code>DemonSlaughter.*.csproj</code> удалены вручную.</li>
+            <li>Осиротевшие <code>.csproj</code> и <code>.sln</code> от прошлых состояний проекта удалены вручную —
+                Unity их не убирает. <code>Game.*.csproj</code> при этом появятся не сразу: проект
+                генерируется только для сборки, в которой есть хотя бы один скрипт
+                (см. «Пустая сборка не видна в IDE»).</li>
             <li class="key"><strong>Главная проверка:</strong> временный файл в <code>Assets/_Project/Simulation</code> со
-                строкой <code>using Game.View</code> даёт ошибку <code>CS0246</code>. После проверки файл
-                удалить. Без этого шага блок не принят — всё остальное можно сделать
-                правильно на вид и ошибиться в ссылках.</li>
+                строкой <code>using Game.View</code> даёт <code>CS0234</code> («View does not exist in the namespace
+                Game»). После проверки файл удалить. Без этого шага блок не принят —
+                всё остальное можно сделать правильно на вид и ошибиться в ссылках.</li>
             <li class="key">Обратная сторона: <code>using Game.Simulation</code> из файла в
-                <code>Assets/_Project/View</code> <strong>тоже даёт <code>CS0246</code></strong>. View и Simulation — соседи,
+                <code>Assets/_Project/View</code> <strong>тоже даёт <code>CS0234</code></strong>. View и Simulation — соседи,
                 прямой ссылки между ними нет ни в одну сторону; связь пойдёт через
                 интерфейс в <code>Game.Core</code> (см. 1.5 и 2.1).</li>
             <li class="key">Проверка, что ссылки вообще расставлены, а не забыты все разом:
-                <code>using Game.Core</code> из файла в <code>Assets/_Project/View</code> <strong>компилируется</strong>.</li>
+                <code>using Game.Core</code> из файла в <code>Assets/_Project/View</code> <strong>компилируется</strong>.
+                Важно: namespace существует только если его кто-то объявил — пока
+                <code>Game.Core</code> пуста, этот <code>using</code> тоже упадёт, и упадёт по другой причине.
+                Значит в пробнике для Core должен лежать хоть один тип.</li>
             <li>В <code>Game.Simulation.asmdef</code> в references отсутствует <code>VContainer</code>.</li>
-            <li><code>using VContainer</code> в файле внутри Simulation даёт <code>CS0246</code>.</li>
+            <li><code>using VContainer</code> в файле внутри Simulation даёт <code>CS0246</code> — здесь
+                именно 246, потому что корня <code>VContainer</code> компилятор не знает вовсе.</li>
             <li>Отдельно, вне сборок: <code>manifest.json</code> содержит семь запиненных SHA,
                 Unity переоткрыт, Package Manager не показывает изменений
                 и не тянет ничего заново.</li>

@@ -70,14 +70,18 @@
         </div>
 
         <div class="term">
-            <span class="term-name" id="cs0246">Ошибка CS0246</span>
-            <span class="term-en">CS0246: type or namespace not found</span>
+            <span class="term-name" id="cs0246">Ошибки CS0246 и CS0234</span>
+            <span class="term-en">CS0246 / CS0234: type or namespace not found</span>
             <p class="term-body">
-                Ошибка компилятора «тип или пространство имён не найдено». В контексте asmdef —
-                нормальный, ожидаемый результат попытки пересечь границу слоя: если
-                <code>Game.Simulation</code> не ссылается на <code>Game.View</code>, то
-                <code>using Game.View</code> даёт именно её. Основной инструмент проверки
-                того, что границы расставлены верно.
+                Ошибки компилятора «тип или пространство имён не найдено». В контексте asmdef —
+                нормальный, ожидаемый результат попытки пересечь границу слоя, и основной
+                инструмент проверки того, что границы расставлены верно.
+                <code>CS0246</code> выдаётся, когда корень имени неизвестен целиком
+                (<code>using VContainer</code> из сборки без ссылки на VContainer).
+                <code>CS0234</code> — когда корень известен, а вложенная часть недоступна
+                (<code>using Game.View</code> из <code>Game.Simulation</code>: namespace
+                <code>Game</code> существует, <code>Game.View</code> из этой сборки не виден).
+                Разница диагностическая, границу держат обе.
             </p>
             <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#checklist">01 · Чек-лист приёмки</a></span>
         </div>
