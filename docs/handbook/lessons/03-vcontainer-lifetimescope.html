@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>03 · VContainer: скоупы, времена жизни, точки входа</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>03 · VContainer: скоупы, времена жизни, точки входа</h1>
+
+        <div class="lesson-meta">
+            шаг 1 роадмапа (бутстрап) · блок 2 · 2026-08-20<br>
+            Доки проекта: <code>CLAUDE.md</code> §7 · <code>ARCHITECTURE.md</code> §3, §9, §10, §16 ·
+            <code>GDD.md</code> §6 · журнал решений <code>PROGRESS.md</code> от 2026-08-20<br>
+            Опирается на урок <a href="02-composition-root.html#what-is-root">02 · Что такое корень композиции</a>,
+            <a href="02-composition-root.html#two-di">02 · Два DI</a> и
+            <a href="02-composition-root.html#play-from-any-scene">02 · Запуск не с той сцены</a><br>
+            Версия VContainer: git <code>5103bfc</code>, Unity <code>6000.4.11f1</code>.
+            Всё, помеченное как проверенное, проверялось на этом проекте, а не взято из документации.
+        </div>
+
+        <p class="lead">
+            Блок 1 отвечал на вопрос «кто соединяет слои» и отвечал словами: корень композиции.
+            Этот блок отвечает на вопрос «как он выглядит в коде». У VContainer корень — это
+            <code>MonoBehaviour</code> по имени <code>LifetimeScope</code>, и почти всё
+            неочевидное в нём растёт из одного факта: <strong>скоуп — это объект сцены</strong>,
+            у которого есть <code>Awake</code>, <code>OnDestroy</code> и своя судьба при смене
+            сцены. Отсюда и порядок инициализации, и правила времени жизни, и способ корректно
+            перезапустить забег.
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="what-is-scope">1.1 Скоуп: контейнер плюс время жизни</h3>
+
+        <p>
+            Контейнер из урока 02 — это структура «тип → как его сделать» плюс хранилище уже
+            сделанного. Скоуп добавляет к нему ровно одно, зато определяющее:
+            <strong>границу существования</strong>. Всё, что скоуп создал, умирает вместе с ним.
+        </p>
+
+        <p>
+            В VContainer скоуп представлен классом <code>LifetimeScope</code> — наследником
+            <code>MonoBehaviour</code>. Это решение библиотеки, и оно не косметическое:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Из того, что скоуп — компонент</th><th>Следует</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>У него есть <code>Awake</code></td>
+                    <td>Момент построения графа привязан к жизненному циклу Unity, а не к вызову
+                        из кода. Он выполняется до <code>Awake</code> обычных компонентов:
+                        у <code>LifetimeScope</code> стоит
+                        <code>[DefaultExecutionOrder(-5000)]</code>.</td>
+                </tr>
+                <tr>
+                    <td>У него есть <code>OnDestroy</code></td>
+                    <td>Уничтожение объекта или выгрузка сцены автоматически разбирает контейнер.
+                        Забыть освободить нельзя — Unity сделает это за вас.</td>
+                </tr>
+                <tr>
+                    <td>Он живёт в сцене или в префабе</td>
+                    <td>Ссылки на префабы и объекты сцены задаются в инспекторе, а не в коде.
+                        Взамен появляется целый класс проблем «объект не там, где думали»
+                        (см. 2.4).</td>
+                </tr>
+                <tr>
+                    <td>Он умеет <code>DontDestroyOnLoad</code></td>
+                    <td>Скоуп, переживающий смену сцен, — это ровно то, чем должен быть
+                        проектный уровень.</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Наследник переопределяет один метод — <code>Configure(IContainerBuilder)</code>.
+            Это и есть фаза <code>Register</code> из урока 02. Фазу <code>Resolve</code>
+            VContainer выполняет сам в конце построения, фазу <code>Release</code> —
+            в <code>OnDestroy</code>.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Ключевое различие терминов</span>
+            <p>
+                <strong><code>LifetimeScope</code></strong> — компонент, объект сцены, то, что
+                видно в иерархии. <strong>Контейнер</strong> (<code>IObjectResolver</code>) —
+                то, что этот компонент построил и держит в свойстве <code>Container</code>.
+                Скоупов в приложении может быть несколько, и каждый владеет своим контейнером;
+                контейнеры связаны в дерево, скоупы — тоже. Это одно дерево, но два разных
+                объекта на каждом узле, и путать их дорого: «уничтожить скоуп» и «разобрать
+                контейнер» — разные операции с разными последствиями.
+            </p>
+        </div>
+
+        <h3 id="registration">1.2 Регистрация: <code>Register</code> и <code>RegisterInstance</code></h3>
+
+        <p>Две принципиально разные операции, которые легко перепутать.</p>
+
+        <ul>
+            <li><strong><code>Register&lt;T&gt;(lifetime)</code></strong> — «когда попросят,
+                создай <code>T</code> сам». Контейнер разбирает конструктор, рекурсивно
+                добывает аргументы, создаёт объект и — если объект <code>IDisposable</code> —
+                берёт на себя его уничтожение.</li>
+            <li><strong><code>RegisterInstance(obj)</code></strong> — «вот готовый объект,
+                раздавай его». Контейнер ничего не создаёт. <strong>И ничего не уничтожает:</strong>
+                объекты, отданные через <code>RegisterInstance</code>, исключены из списка
+                на <code>Dispose</code>. Проверено на проекте: <code>IDisposable</code>,
+                зарегистрированный как готовый экземпляр, не получает <code>Dispose()</code>
+                ни при уничтожении скоупа, ни при выходе из Play Mode.</li>
+        </ul>
+
+        <p>
+            Правило простое: <em>кто создал, тот и уничтожает</em> (<code>ARCHITECTURE.md</code> §1).
+            Отдали контейнеру тип — уборка на нём. Отдали готовый экземпляр — уборка на вас.
+        </p>
+
+        <p>
+            Отдельно — <strong>под какими именами</strong> регистрация видна. Один вызов
+            <code>Register</code> может объявить несколько «лиц» одного объекта:
+        </p>
+
+<pre><code><span class="c">// один объект, два имени — так надо</span>
+builder<span class="p">.</span>Register<span class="p">&lt;</span><span class="t">SaveService</span><span class="p">&gt;(</span><span class="t">Lifetime</span><span class="p">.</span>Singleton<span class="p">).</span>As<span class="p">&lt;</span><span class="t">ISaveService</span><span class="p">&gt;().</span>AsSelf<span class="p">();</span>
+
+<span class="c">// то же самое, но через AsImplementedInterfaces — все интерфейсы разом</span>
+builder<span class="p">.</span>Register<span class="p">&lt;</span><span class="t">SaveService</span><span class="p">&gt;(</span><span class="t">Lifetime</span><span class="p">.</span>Singleton<span class="p">).</span>AsImplementedInterfaces<span class="p">();</span>
+
+<span class="c">// два отдельных вызова для одного класса — так нельзя</span>
+builder<span class="p">.</span>Register<span class="p">&lt;</span><span class="t">SaveService</span><span class="p">&gt;(</span><span class="t">Lifetime</span><span class="p">.</span>Singleton<span class="p">).</span>As<span class="p">&lt;</span><span class="t">ISaveService</span><span class="p">&gt;();</span>
+<span class="err">builder</span><span class="p">.</span><span class="err">Register</span><span class="p">&lt;</span><span class="t">SaveService</span><span class="p">&gt;(</span><span class="t">Lifetime</span><span class="p">.</span>Singleton<span class="p">).</span>AsSelf<span class="p">();</span>  <span class="c">// ← падение при построении</span></code></pre>
+
+        <p>
+            Что именно происходит в третьем случае — проверено: контейнер <strong>не собирается</strong>
+            и бросает <code>System.ArgumentException: An item with the same key has already been
+            added. Key: (Game.Services.SaveService, )</code> прямо на построении, то есть внутри
+            <code>Awake</code> скоупа. Это хорошая новость: ошибка громкая и мгновенная.
+            Молчаливый вариант той же беды выглядит иначе — см. подводный камень
+            <a href="#pitfall-two-impls">Две реализации под одним интерфейсом</a>.
+        </p>
+
+        <h3 id="lifetimes">1.3 Три времени жизни</h3>
+
+        <p>
+            <code>Lifetime</code> отвечает на вопрос «сколько экземпляров и кто их убирает».
+            Значений три, и все три в проекте понадобятся.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Сколько экземпляров</th>
+                    <th>Кто уничтожает</th>
+                    <th>Когда брать</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>Singleton</code></td>
+                    <td>Один на контейнер, в котором объявлен. Дочерние скоупы получают
+                        <em>тот же</em> экземпляр.</td>
+                    <td>Контейнер, при своём <code>Dispose</code>.</td>
+                    <td>Сервисы проектного уровня: ввод, сейвы, аудио, <code>ContentRegistry</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>Scoped</code></td>
+                    <td>Один на каждый скоуп. Два дочерних скоупа — два разных экземпляра.</td>
+                    <td>Свой скоуп, при своём <code>Dispose</code>.</td>
+                    <td>Всё, что живёт один забег: <code>RunContext</code>, мир ECS, spatial hash,
+                        пулы.</td>
+                </tr>
+                <tr>
+                    <td><code>Transient</code></td>
+                    <td>Новый на каждый <code>Resolve</code>.</td>
+                    <td><strong>Никто.</strong> Контейнер его не отслеживает.</td>
+                    <td>Мелкие объекты без состояния и без ресурсов. Для
+                        <code>IDisposable</code> — опасно.</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>Проверено на проекте, все три строки таблицы:</p>
+
+        <ul>
+            <li>дочерний скоуп без собственной регистрации отдаёт <em>тот же</em> объект,
+                что и родитель;</li>
+            <li><code>Scoped</code> стабилен внутри своего скоупа и уничтожается вместе с ним;</li>
+            <li><code>Transient</code> отдаёт новый объект на каждый <code>Resolve</code>,
+                и при <code>Dispose</code> контейнера его <code>Dispose()</code>
+                <strong>не вызывается</strong> — ни в корневом контейнере, ни в дочернем.</li>
+        </ul>
+
+        <div class="note warn">
+            <span class="note-title">Ловушка со словом Singleton</span>
+            <p>
+                <code>Lifetime.Singleton</code> означает «один на контейнер», а не «один на
+                приложение». Если тот же тип с тем же <code>Singleton</code> зарегистрировать
+                <em>ещё раз</em> в дочернем скоупе, дочерний создаст свой экземпляр, а
+                родительский о нём не узнает. Проверено: два объекта, оба «синглтоны»,
+                состояние не сходится, ошибок нет. Отсюда правило одного уровня в 2.1.
+            </p>
+        </div>
+
+        <h3 id="hierarchy">1.4 Иерархия скоупов</h3>
+
+        <p>
+            Дочерний скоуп <strong>не копирует</strong> регистрации родителя. Он ищет у себя,
+            и, если не нашёл, спрашивает родителя — и так вверх до корня. Поиск идёт только
+            в одну сторону.
+        </p>
+
+<pre><code><span class="c">// проектный скоуп</span>
+<span class="t">ISaveService</span>      <span class="c">// Singleton</span>
+<span class="t">IInputService</span>     <span class="c">// Singleton</span>
+        <span class="p">│</span>
+        <span class="p">▼</span>  дочерний
+<span class="c">// скоуп забега</span>
+<span class="t">RunContext</span>        <span class="c">// Scoped</span>
+<span class="t">EcsWorld</span>          <span class="c">// Scoped</span>
+
+<span class="c">// забег видит ISaveService  — поиск ушёл вверх и нашёлся у родителя</span>
+<span class="c">// проект НЕ видит RunContext — вниз поиск не идёт, будет исключение</span></code></pre>
+
+        <p>
+            Проверено: попытка достать регистрацию дочернего скоупа из родительского даёт
+            <code>VContainerException</code>. Это не недоработка, а несущее свойство: именно
+            оно физически запрещает проектному сервису зависеть от забега.
+        </p>
+
+        <p>
+            <strong>Что ломается, если зарегистрировать сервис не на том уровне</strong> —
+            два симметричных случая, оба тихие:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Ошибка</th><th>Что происходит</th><th>Как выглядит для игрока</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Проектный сервис объявлен в скоупе забега</td>
+                    <td>Он умирает вместе с забегом и создаётся заново на следующем. Всё
+                        накопленное между забегами теряется.</td>
+                    <td>Валюта, набранная за забег, исчезает при возврате в меню —
+                        а <code>GDD.md</code> §6 требует обратного.</td>
+                </tr>
+                <tr>
+                    <td>Объект забега объявлен в проектном скоупе</td>
+                    <td>Он переживает забег. Второй забег стартует с состоянием первого:
+                        непочищенным миром, старым <code>RunContext</code>, живыми вьюхами
+                        из прошлого прогона.</td>
+                    <td>Первый забег нормальный, второй — со странностями. Классическое
+                        «после рестарта игра ведёт себя иначе».</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3 id="entry-points">1.5 Точки входа</h3>
+
+        <p>
+            Контейнер умеет создавать объекты, но кто-то должен запустить процесс. В Unity этим
+            обычно занимается <code>MonoBehaviour</code>: <code>Start</code>, <code>Update</code>,
+            <code>OnDestroy</code>. Точки входа VContainer — те же события, но у обычных C#-классов,
+            которым не нужен объект сцены.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Интерфейс</th><th>Метод</th><th>Когда вызывается</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>IInitializable</code></td><td><code>Initialize()</code></td>
+                    <td>Сразу при построении контейнера, синхронно, внутри <code>Awake</code> скоупа</td></tr>
+                <tr><td><code>IPostInitializable</code></td><td><code>PostInitialize()</code></td>
+                    <td>Там же, после всех <code>Initialize</code></td></tr>
+                <tr><td><code>IStartable</code></td><td><code>Start()</code></td>
+                    <td>Следующий кадр, в <code>EarlyUpdate</code> — <em>до</em> <code>Start</code> у MonoBehaviour</td></tr>
+                <tr><td><code>IPostStartable</code></td><td><code>PostStart()</code></td>
+                    <td>Тот же кадр, <em>после</em> <code>Start</code> у MonoBehaviour</td></tr>
+                <tr><td><code>IFixedTickable</code></td><td><code>FixedTick()</code></td><td>Каждый <code>FixedUpdate</code></td></tr>
+                <tr><td><code>ITickable</code></td><td><code>Tick()</code></td><td>Каждый кадр, в <code>Update</code></td></tr>
+                <tr><td><code>ILateTickable</code></td><td><code>LateTick()</code></td><td>Каждый кадр, в <code>LateUpdate</code></td></tr>
+                <tr><td><code>IAsyncStartable</code></td><td><code>StartAsync(token)</code></td><td>Тот же момент, что <code>IStartable</code>, но на UniTask</td></tr>
+                <tr><td><code>IDisposable</code></td><td><code>Dispose()</code></td><td>При уничтожении скоупа</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Все они регистрируются одним вызовом <code>RegisterEntryPoint&lt;T&gt;()</code> — он
+            объявляет тип под всеми реализованными интерфейсами сразу, поэтому один класс может
+            быть и <code>IStartable</code>, и <code>ITickable</code>, и <code>IDisposable</code>.
+        </p>
+
+        <p>
+            <strong>Зачем это вместо <code>MonoBehaviour</code>.</strong> Точка входа —
+            обычный класс с конструктором, а значит: зависимости видны в сигнатуре
+            (урок 02, 1.6), объект нельзя случайно продублировать перетаскиванием в сцену,
+            порядок вызова задаётся регистрацией, а не полем Script Execution Order,
+            и класс не привязан к тому, есть ли он в текущей сцене.
+        </p>
+
+        <h3 id="order">1.6 Порядок инициализации — с точностью до кадра</h3>
+
+        <p>
+            Всё ниже снято с живого проекта, а не взято из README. Кадр — значение
+            <code>Time.frameCount</code>.
+        </p>
+
+<pre><code><span class="c">кадр 0  Awake скоупа</span>
+          Configure<span class="p">(</span>builder<span class="p">)</span>                  <span class="c">// фаза Register</span>
+          конструкторы сервисов и точек входа  <span class="c">// фаза Resolve: зависимость раньше зависимого</span>
+          <span class="t">IInitializable</span><span class="p">.</span>Initialize
+          <span class="t">IPostInitializable</span><span class="p">.</span>PostInitialize
+<span class="c">кадр 0  Awake обычных MonoBehaviour</span>          <span class="c">// уже с готовым контейнером</span>
+
+<span class="c">кадр 1</span>  <span class="t">IStartable</span><span class="p">.</span>Start
+        <span class="t">MonoBehaviour</span><span class="p">.</span>Start
+        <span class="t">IPostStartable</span><span class="p">.</span>PostStart
+        <span class="t">IFixedTickable</span><span class="p">.</span>FixedTick <span class="p">→</span> <span class="t">ITickable</span><span class="p">.</span>Tick <span class="p">→</span> <span class="t">ILateTickable</span><span class="p">.</span>LateTick
+
+<span class="c">кадр N</span>  OnDestroy скоупа
+          <span class="t">IDisposable</span><span class="p">.</span>Dispose                 <span class="c">// в порядке, обратном созданию</span></code></pre>
+
+        <p>Три следствия, которые стоят того, чтобы их запомнить:</p>
+
+        <ul>
+            <li><strong><code>Initialize</code> — это ещё <code>Awake</code>.</strong> Сцена
+                загружена не полностью, другие компоненты своих <code>Awake</code> ещё не прошли.
+                Всё, что требует готовой сцены, идёт в <code>Start</code>, а не в
+                <code>Initialize</code>.</li>
+            <li><strong><code>IStartable.Start</code> раньше <code>MonoBehaviour.Start</code>,
+                а <code>IPostStartable.PostStart</code> — позже.</strong> Это точный инструмент:
+                если точке входа нужно, чтобы вьюхи уже отработали свой <code>Start</code>,
+                берётся <code>IPostStartable</code>.</li>
+            <li><strong>Уничтожение идёт в обратном порядке создания</strong> — проверено:
+                точка входа уничтожается раньше сервиса, от которого зависела. То есть
+                зависимость всегда ещё жива в тот момент, когда зависимый от неё объект
+                убирается за собой.</li>
+        </ul>
+
+        </section>
+
+        <!-- ============================================ ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="two-scopes">2.1 Два скоупа проекта</h3>
+
+        <p>
+            Решение зафиксировано в журнале <code>PROGRESS.md</code> от 2026-08-20 и здесь
+            не пересказывается, а разворачивается в терминах VContainer.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th></th><th><code>ProjectLifetimeScope</code></th><th><code>RunLifetimeScope</code></th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Чем является для VContainer</td>
+                    <td>Корневой скоуп: <code>Parent == null</code>, <code>IsRoot == true</code>,
+                        строит собственный <code>Container</code></td>
+                    <td>Дочерний скоуп: строится от контейнера родителя, владеет
+                        <code>ScopedContainer</code></td></tr>
+                <tr><td>Где физически</td>
+                    <td>Префаб, назначенный в <code>VContainerSettings</code>; при старте
+                        инстанцируется в <code>DontDestroyOnLoad</code> (см. 2.4)</td>
+                    <td>Объект в игровой сцене либо создаётся кодом через
+                        <code>CreateChild</code></td></tr>
+                <tr><td>Время жизни регистраций</td>
+                    <td><code>Lifetime.Singleton</code></td>
+                    <td><code>Lifetime.Scoped</code></td></tr>
+                <tr><td>Кто уничтожает</td>
+                    <td>Никто до выхода из игры</td>
+                    <td><code>Dispose()</code> при завершении забега либо <code>OnDestroy</code>
+                        при выгрузке сцены</td></tr>
+                <tr><td>Что внутри</td>
+                    <td>Сервисы, <code>ContentRegistry</code>, мета, сейвы, настройки,
+                        постоянные экраны</td>
+                    <td><code>RunContext</code>, <code>EcsWorld</code>, <code>EcsSystems</code>,
+                        сервисы симуляции, вьюхи, пулы, HUD</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="note decision">
+            <span class="note-title">Правило одного уровня</span>
+            <p>
+                Каждый тип регистрируется ровно на одном уровне. Не «на всякий случай и там,
+                и там» — это ровно тот случай из 1.3, когда получаются два объекта, оба
+                считающие себя единственными. Сомневаетесь, куда положить, — задайте один
+                вопрос: <em>должен ли этот объект пережить рестарт забега?</em> Ответ и есть
+                уровень.
+            </p>
+        </div>
+
+        <h3 id="restart">2.2 Рестарт забега</h3>
+
+        <p>
+            Вся конструкция существует ради этого сценария, поэтому он расписан по шагам.
+            Проверено на живом проекте целиком, включая второй заход.
+        </p>
+
+<pre><code><span class="c">// 1. игрок выбирает воспоминание в меню.</span>
+<span class="c">//    сценарий старта собирает RunContext и создаёт дочерний скоуп</span>
+runScope <span class="p">=</span> projectScope<span class="p">.</span>CreateChild<span class="p">&lt;</span><span class="t">RunLifetimeScope</span><span class="p">&gt;(</span>installer<span class="p">);</span>
+
+<span class="c">// 2. забег идёт. RunContext, EcsWorld, пулы — Scoped, живут в этом скоупе</span>
+
+<span class="c">// 3. игрок умирает или добивает мини-босса.</span>
+<span class="c">//    итог забега уходит наверх ДАННЫМИ: сколько сфер, что выпало.</span>
+<span class="c">//    проектная мета принимает итог и пишет сейв</span>
+
+<span class="c">// 4. разбор</span>
+runScope<span class="p">.</span>Dispose<span class="p">();</span>
+<span class="c">//    → Dispose у точек входа забега</span>
+<span class="c">//    → Dispose у всех Scoped-объектов, включая EcsWorld</span>
+<span class="c">//    → проектные синглтоны не тронуты вообще</span>
+
+<span class="c">// 5. «ещё раз» — тот же вызов, что в шаге 1.</span>
+<span class="c">//    новый RunContext, новый мир, ТЕ ЖЕ сервисы и та же мета</span></code></pre>
+
+        <p>
+            Обратите внимание, чего в этом списке <strong>нет</strong>: нигде не написано
+            «очистить мир», «сбросить пулы», «отписаться». Освобождение не пишется руками —
+            оно следует из того, что объект зарегистрирован как <code>Scoped</code>.
+            Это и есть то, что покупается двумя уровнями вместо одного.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Условие, при котором это перестаёт работать</span>
+            <p>
+                Проектный объект удержал ссылку на объект забега — подписался на его событие,
+                положил в поле, закешировал. Тогда после <code>Dispose</code> ссылка остаётся
+                и указывает на разобранный мир. Отсюда правило владения из журнала решений:
+                ссылка допустима <strong>только вниз</strong>, от забега к проекту. Итог забега
+                поднимается наверх копией данных, а не ссылкой на живой объект.
+            </p>
+        </div>
+
+        <h3 id="ecs-boundary">2.3 Где рождается <code>EcsWorld</code></h3>
+
+        <p>
+            Урок 02 (2.2) объяснил, почему LeoECS Lite DI — не второй контейнер. Здесь видно,
+            где именно проходит стык.
+        </p>
+
+<pre><code><span class="c">// Game.Bootstrap — скоуп забега знает конкретные типы, ему можно.</span>
+<span class="c">// EcsWorld и EcsSystems создаёт точка входа забега, а не Configure:</span>
+<span class="c">// в Configure логики нет, там только регистрации (урок 02, 3.2).</span>
+
+<span class="k">public sealed class</span> <span class="t">RunEntryPoint</span> <span class="p">:</span> <span class="t">IInitializable</span><span class="p">,</span> <span class="t">ITickable</span><span class="p">,</span> <span class="t">IDisposable</span>
+<span class="p">{</span>
+    <span class="c">// Initialize: создать EcsWorld, собрать EcsSystems в порядке ARCHITECTURE.md §10,</span>
+    <span class="c">//             отдать системам сервисы через ecsSystems.Inject(...), затем Init()</span>
+    <span class="c">// Tick:       ecsSystems.Run() — ровно один вызов, deltaTime приходит параметром</span>
+    <span class="c">// Dispose:    ecsSystems.Destroy(), world.Destroy() — в этом порядке</span>
+<span class="p">}</span></code></pre>
+
+        <p>Три границы, которые здесь держатся:</p>
+
+        <ul>
+            <li><code>Game.Simulation</code> не ссылается на VContainer — это записано в asmdef,
+                и это значит, что системы не могут получить контейнер даже намеренно
+                (<code>ARCHITECTURE.md</code> §15).</li>
+            <li>Сервисы попадают в системы только через <code>EcsSystems.Inject()</code>.
+                VContainer их создал, LeoECS Lite DI разложил по полям — владелец один.</li>
+            <li>Один <code>Tick</code> на весь мир. Порядок систем задан списком, а не
+                порядком объектов в иерархии сцены (<code>ARCHITECTURE.md</code> §1, п. 5
+                о детерминированном порядке).</li>
+        </ul>
+
+        <div class="note">
+            <span class="note-title">Про <code>RegisterInstance</code> и <code>EcsWorld</code></span>
+            <p>
+                Соблазн: создать мир в <code>Configure</code> и отдать его через
+                <code>RegisterInstance</code>. Два довода против. Первый: <code>Configure</code>
+                перестаёт быть только регистрацией. Второй, более неприятный: как показано в 1.2,
+                объекты из <code>RegisterInstance</code> контейнер не уничтожает — мир останется
+                жив после <code>Dispose</code> скоупа, и это ровно тот баг, ради предотвращения
+                которого скоупа два.
+            </p>
+        </div>
+
+        <h3 id="root-prefab">2.4 Решение по запуску не с той сцены</h3>
+
+        <p>
+            Отложенный вопрос из урока 02, 2.4 закрыт. Решение —
+            <strong>четвёртый вариант</strong>, которого в списке блока 1 не было, потому что
+            он не про наш код, а про механизм внутри VContainer.
+        </p>
+
+        <p>
+            У VContainer есть ассет настроек <code>VContainerSettings</code> с полем
+            <code>RootLifetimeScope</code>. Если положить туда префаб скоупа, а сам ассет —
+            в <code>Project Settings → Player → Preloaded Assets</code>, библиотека при загрузке
+            первой сцены сама инстанцирует префаб и помещает его в <code>DontDestroyOnLoad</code>.
+        </p>
+
+        <p>Проверено на живом проекте, оба направления:</p>
+
+        <ul>
+            <li>сцена, в которой лежит <em>только</em> дочерний скоуп, запускается: корневой
+                префаб поднимается сам, оказывается в <code>DontDestroyOnLoad</code>, дочерний
+                скоуп находит его родителем, зависимости резолвятся;</li>
+            <li>без назначенного префаба та же сцена даёт
+                <code>VContainerException: No such registration of type: ...</code> —
+                осиротевший скоуп строится как собственный корень и падает на первой же
+                чужой зависимости.</li>
+        </ul>
+
+        <p>
+            Почему именно это, а не редакторный хук из варианта (б) и не автономный сценовый
+            скоуп из варианта (в): <strong>путь инициализации остаётся один</strong>. Корень
+            всегда рождается одинаково, из одного и того же префаба. Варианты (б) и (в) заводят
+            второй путь, а второй путь — это баг, воспроизводимый через раз.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Чего это решение не делает</span>
+            <p>
+                Оно поднимает сервисы, но не создаёт <code>RunContext</code> — его собирает
+                сценарий старта забега. Значит запуск прямо с <code>Gameplay</code> даст живые
+                сервисы и <strong>громкое падение</strong> на отсутствующем <code>RunContext</code>.
+                Так и задумано: лучше исключение с внятным текстом, чем забег, тихо стартовавший
+                с дефолтными параметрами и ведущий себя не так, как настоящий. Отладочный
+                <code>RunContext</code> по умолчанию не заводится — это отдельное решение,
+                если оно вообще понадобится.
+            </p>
+        </div>
+
+        <h3 id="teardown">2.5 Возврат в меню и порядок разрушения</h3>
+
+        <p>
+            Забег заканчивается двумя способами, и они не эквивалентны с точки зрения VContainer.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Способ</th><th>Что происходит</th><th>Риск</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Явный <code>runScope.Dispose()</code></td>
+                    <td>Контейнер разбирается, затем объект скоупа уничтожается. Момент известен
+                        и контролируется.</td>
+                    <td>Забыть вызвать — тогда старый скоуп доживёт до загрузки следующей сцены
+                        и умрёт «когда-нибудь».</td>
+                </tr>
+                <tr>
+                    <td>Выгрузка сцены со скоупом</td>
+                    <td><code>OnDestroy</code> вызовет разбор сам.</td>
+                    <td>Момент задаёт загрузчик сцен, а не игровой код. Если что-то должно
+                        произойти <em>до</em> разбора — например записать итог забега, — оно
+                        обязано случиться раньше и не в <code>Dispose</code>.</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Практический вывод: <strong>итог забега уходит в мету до начала разбора</strong>,
+            явным шагом завершения. Класть запись сейва в <code>Dispose</code> точки входа —
+            значит поставить сохранение прогресса игрока в зависимость от порядка уничтожения
+            объектов. Порядок этот детерминирован (1.6), но полагаться на него в вопросе
+            «сохранилась ли валюта игрока» не стоит.
+        </p>
+
+        </section>
+
+        <!-- ============================================== СКЕЛЕТ API ==== -->
+        <section data-kind="api">
+
+        <h2 id="api">Скелет API</h2>
+
+        <p>
+            Сигнатуры без тел. Состав сервисов по-прежнему не фиксируется наперёд
+            (урок 02, риск Р-2): в блоке 2 появляется только то, без чего не запускается
+            приложение.
+        </p>
+
+        <h3 id="api-project-scope">3.1 Проектный скоуп</h3>
+
+<pre><code><span class="c">// Assets/_Project/Bootstrap/ProjectLifetimeScope.cs</span>
+<span class="c">// namespace Game.Bootstrap</span>
+
+<span class="k">public sealed class</span> <span class="t">ProjectLifetimeScope</span> <span class="p">:</span> <span class="t">LifetimeScope</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="t">GameObject</span> _loadingScreenPrefab<span class="p">;</span>
+
+    <span class="k">protected override void</span> Configure<span class="p">(</span><span class="t">IContainerBuilder</span> builder<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <p>Три правила из урока 02, 3.2 остаются в силе и здесь проверяются глазами:</p>
+
+        <ul>
+            <li>внутри только <code>Register*</code> и вызовы установщиков — ни одного
+                <code>if</code> по состоянию игры;</li>
+            <li>ни одного <code>Resolve</code>;</li>
+            <li>регистрируется интерфейс (плюс <code>AsSelf</code>, если нужен и класс), а не
+                двумя отдельными вызовами.</li>
+        </ul>
+
+        <div class="note warn">
+            <span class="note-title">Про поле <code>_loadingScreenPrefab</code></span>
+            <p>
+                Имя выбрано не случайно: ровно такое поле осталось в сцене от мёртвых скриптов
+                прошлой версии проекта (урок 02, подводный камень
+                <a href="02-composition-root.html#pitfall-dead-refs">Мёртвая ссылка</a>).
+                Если новый скрипт повесить на <em>тот же</em> объект, Unity подставит старое
+                значение в новое поле с совпадающим именем. Объект был удалён и собирается
+                заново именно поэтому — но значение поля в инспекторе всё равно нужно проверить
+                глазами.
+            </p>
+        </div>
+
+        <h3 id="api-installer">3.2 Установщик</h3>
+
+<pre><code><span class="c">// Установщик — часть корня, а не место для логики.</span>
+<span class="c">// Заводится, когда Configure перестаёт читаться с одного экрана,</span>
+<span class="c">// и не раньше: пустой установщик — это лишний файл.</span>
+
+<span class="k">public sealed class</span> <span class="t">ServicesInstaller</span> <span class="p">:</span> <span class="t">IInstaller</span>
+<span class="p">{</span>
+    <span class="k">public void</span> Install<span class="p">(</span><span class="t">IContainerBuilder</span> builder<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-core">3.3 Интерфейсы в <code>Game.Core</code></h3>
+
+<pre><code><span class="c">// Assets/_Project/Core/Services/ISceneLoader.cs</span>
+<span class="c">// namespace Game.Core.Services</span>
+
+<span class="k">public interface</span> <span class="t">ISceneLoader</span>
+<span class="p">{</span>
+    <span class="t">UniTask</span> LoadAsync<span class="p">(</span><span class="k">string</span> sceneId<span class="p">,</span> <span class="t">CancellationToken</span> token<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c">// Реализация — в Game.Services, туда же уходит знание про SceneManager.</span>
+<span class="c">// Game.Core не должен узнать, что сцены вообще существуют как объекты Unity.</span></code></pre>
+
+        <p>
+            Требования к интерфейсу не изменились (урок 02, 3.1): стабильный строковый ID вместо
+            имени ассета, ни одного типа из <code>Game.Services</code>, <code>Game.View</code>,
+            <code>Game.UI</code> в сигнатурах, асинхронность на <code>UniTask</code>.
+        </p>
+
+        <h3 id="api-entry-point">3.4 Точка входа бутстрапа</h3>
+
+<pre><code><span class="c">// Assets/_Project/Bootstrap/BootstrapEntryPoint.cs</span>
+<span class="c">// Сценарий старта приложения. Логика живёт здесь, а не в Configure.</span>
+
+<span class="k">public sealed class</span> <span class="t">BootstrapEntryPoint</span> <span class="p">:</span> <span class="t">IAsyncStartable</span>
+<span class="p">{</span>
+    <span class="k">public</span> BootstrapEntryPoint<span class="p">(</span><span class="t">ISceneLoader</span> sceneLoader<span class="p">);</span>
+
+    <span class="k">public</span> <span class="t">UniTask</span> StartAsync<span class="p">(</span><span class="t">CancellationToken</span> token<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Почему <code>IAsyncStartable</code>, а не <code>IInitializable</code>: загрузка
+            сцены асинхронна, а <code>Initialize</code> выполняется внутри <code>Awake</code>,
+            где сцена ещё не готова (1.6). Правило <code>CLAUDE.md</code> §7 «никаких
+            <code>async</code> внутри ECS-систем» здесь не нарушается: точка входа — не система
+            и живёт по другую сторону границы.
+        </p>
+
+        <h3 id="api-run-scope">3.5 Форма корня забега</h3>
+
+        <p>Пишется в блоке 3 вместе с миром ECS. Форма фиксируется здесь, потому что от неё зависит 2.2.</p>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">RunLifetimeScope</span> <span class="p">:</span> <span class="t">LifetimeScope</span>
+<span class="p">{</span>
+    <span class="c">// Configure: RunContext, EcsWorld, EcsSystems, сервисы симуляции — всё Lifetime.Scoped</span>
+    <span class="k">protected override void</span> Configure<span class="p">(</span><span class="t">IContainerBuilder</span> builder<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="anti-shapes">3.6 Формы, которых быть не должно</h3>
+
+<pre><code><span class="c">// Ветвление по состоянию игры в корне — корень снова знает всё обо всех</span>
+<span class="k">protected override void</span> Configure<span class="p">(</span><span class="t">IContainerBuilder</span> builder<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="err">save.HasProgress</span><span class="p">)</span> builder<span class="p">.</span>Register<span class="p">&lt;</span><span class="t">ContinueFlow</span><span class="p">&gt;(...);</span>   <span class="c">// ← нет</span>
+<span class="p">}</span>
+
+<span class="c">// Проектный сервис, знающий про забег: ссылка вверх по времени жизни</span>
+<span class="k">public class</span> <span class="t">SaveService</span>
+<span class="p">{</span>
+    <span class="k">public void</span> Bind<span class="p">(</span><span class="err">RunContext run</span><span class="p">);</span>                          <span class="c">// ← нет</span>
+    <span class="k">public void</span> ApplyRunResult<span class="p">(</span><span class="t">RunResult</span> result<span class="p">);</span>            <span class="c">// ← да, копия данных</span>
+<span class="p">}</span>
+
+<span class="c">// Тот же тип на двух уровнях: два «синглтона», состояние не сходится</span>
+<span class="c">// в проектном:</span> builder<span class="p">.</span>Register<span class="p">&lt;</span><span class="t">AudioService</span><span class="p">&gt;(</span><span class="t">Lifetime</span><span class="p">.</span>Singleton<span class="p">);</span>
+<span class="c">// в забеге:   </span> <span class="err">builder</span><span class="p">.</span><span class="err">Register</span><span class="p">&lt;</span><span class="t">AudioService</span><span class="p">&gt;(</span><span class="t">Lifetime</span><span class="p">.</span>Singleton<span class="p">);</span>   <span class="c">// ← нет</span></code></pre>
+
+        </section>
+
+        <!-- ========================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-two-impls">Две реализации под одним интерфейсом</h3>
+        <p>
+            <span class="symptom">Симптом:</span> контейнер собирается, ошибок нет, но работает
+            «не тот» объект. Проверено: если под одним интерфейсом зарегистрированы две разные
+            реализации, <code>Resolve</code> отдаёт <strong>последнюю зарегистрированную</strong>,
+            а <code>IReadOnlyList&lt;T&gt;</code> отдаёт обе. Это не ошибка библиотеки — так
+            устроена поддержка коллекций, — но при случайной двойной регистрации выглядит
+            как мистика. Дважды зарегистрировать <em>один и тот же класс</em>, наоборот, нельзя:
+            построение падает с <code>ArgumentException</code> (1.2).
+        </p>
+
+        <h3 id="pitfall-transient-dispose">Transient с ресурсом не освобождается</h3>
+        <p>
+            <span class="symptom">Симптом:</span> утечка, которую не видно: файловые хендлы,
+            подписки, нативные буферы копятся, пока приложение не начнёт тормозить.
+            Проверено: контейнер не отслеживает <code>Transient</code>-объекты и не вызывает
+            им <code>Dispose()</code>. Правило: <code>IDisposable</code> — это
+            <code>Singleton</code> или <code>Scoped</code>; если объект действительно нужен
+            во множестве экземпляров, его выдаёт фабрика, и уборка — забота владельца.
+        </p>
+
+        <h3 id="pitfall-register-instance">RegisterInstance и уборка</h3>
+        <p>
+            <span class="symptom">Симптом:</span> тот же, что выше, но у объекта, который
+            «точно зарегистрирован в контейнере». Причина: <code>RegisterInstance</code>
+            отдаёт готовый объект, и VContainer сознательно не берёт на себя чужое владение.
+            Проверено на <code>IDisposable</code>-экземпляре: <code>Dispose()</code> не
+            вызывается ни разу.
+        </p>
+
+        <h3 id="pitfall-singleton-in-child">«Синглтон», которых два</h3>
+        <p>
+            <span class="symptom">Симптом:</span> один код пишет в сервис, другой читает и не
+            видит записанного. Ошибок нет. Причина: тип с <code>Lifetime.Singleton</code>
+            объявлен и в проектном скоупе, и в скоупе забега. Проверено: дочерний скоуп,
+            повторно объявивший тот же тип, создаёт собственный экземпляр. Лечится удалением
+            лишней регистрации, а не попыткой «сделать его совсем глобальным».
+        </p>
+
+        <h3 id="pitfall-scope-orphan">Скоуп без родителя молча ждёт</h3>
+        <p>
+            <span class="symptom">Симптом:</span> скоуп есть в сцене, а его <code>Configure</code>
+            не вызывался, точки входа не стартовали, консоль чистая. Причина: если у скоупа
+            указан <em>тип</em> родителя, а родителя в сцене нет, VContainer не бросает
+            исключение наружу, а кладёт скоуп в очередь ожидания до появления родителя.
+            Отличать от случая 2.4, где родитель не указан вовсе: там скоуп строится как
+            собственный корень и падает громко.
+        </p>
+
+        <h3 id="pitfall-initialize-scene">Initialize, которому нужна сцена</h3>
+        <p>
+            <span class="symptom">Симптом:</span> <code>NullReferenceException</code> или
+            пустая ссылка в <code>Initialize</code>, при том что тот же код в
+            <code>Start</code> работает. Причина: <code>Initialize</code> выполняется внутри
+            <code>Awake</code> скоупа (1.6), когда остальные компоненты сцены ещё не
+            проснулись. Лечится переносом в <code>IStartable</code>, а если нужно после
+            <code>Start</code> у вьюх — в <code>IPostStartable</code>.
+        </p>
+
+        <h3 id="pitfall-preloaded">Ассет настроек выпал из Preloaded Assets</h3>
+        <p>
+            <span class="symptom">Симптом:</span> вчера работало, сегодня при запуске с любой
+            сцены нет ни одного сервиса. Причина: ссылка на <code>VContainerSettings</code>
+            в <code>Project Settings → Player → Preloaded Assets</code> — обычное поле
+            настроек проекта, которое теряется при неаккуратном мердже
+            <code>ProjectSettings.asset</code> и не имеет никакой защиты. Это цена решения 2.4,
+            и она уходит в чек-лист.
+        </p>
+
+        <h3 id="pitfall-two-monobehaviours">Две MonoBehaviour в одном файле</h3>
+        <p>
+            <span class="symptom">Симптом:</span> компонент добавляется кодом и работает, но
+            после сохранения сцены или префаба превращается в Missing; в YAML у него
+            <code>m_Script: {fileID: 0}</code>. Причина: Unity связывает с файлом скрипта
+            только класс, чьё имя совпадает с именем файла. Наткнулись на это при проверке
+            этого урока на живом проекте. Правило простое и общее:
+            <strong>один <code>MonoBehaviour</code> — один файл, имя файла равно имени класса.</strong>
+        </p>
+
+        <h3 id="pitfall-save-in-dispose">Сохранение прогресса в Dispose</h3>
+        <p>
+            <span class="symptom">Симптом:</span> прогресс теряется в части случаев выхода —
+            например при выходе из игры или при выгрузке сцены загрузчиком. Причина: запись
+            сейва оказалась в <code>Dispose</code> и поехала вместе с порядком уничтожения.
+            Итог забега обязан уходить в мету явным шагом до начала разбора (2.5).
+        </p>
+
+        </section>
+
+        <!-- ========================================= ЧЕК-ЛИСТ ПРИЁМКИ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p>
+            Первый блок, где есть что проверять компиляцией и запуском. Пункты, отмеченные
+            галочкой, — те, без которых блок не считается закрытым.
+        </p>
+
+        <p><strong>Структура кода</strong></p>
+
+        <ul class="checklist">
+            <li class="key"><code>ProjectLifetimeScope</code> лежит в
+                <code>Assets/_Project/Bootstrap</code>, namespace <code>Game.Bootstrap</code>,
+                файл назван по классу.</li>
+            <li class="key">Первый интерфейс сервиса лежит в <code>Assets/_Project/Core</code>,
+                его реализация — в <code>Assets/_Project/Services</code>. В сигнатурах
+                интерфейса нет ни одного типа из <code>Game.Services</code>,
+                <code>Game.View</code>, <code>Game.UI</code>.</li>
+            <li class="key">В <code>Configure</code> нет ни одного <code>if</code> по состоянию
+                игры и ни одного <code>Resolve</code>.</li>
+            <li>Ни один класс не регистрируется двумя отдельными вызовами
+                <code>Register</code>; несколько лиц — через <code>As</code>/<code>AsSelf</code>
+                в одном вызове.</li>
+            <li>Ни один <code>IDisposable</code> не зарегистрирован как
+                <code>Lifetime.Transient</code>.</li>
+            <li>В проекте по-прежнему ноль <code>static</code>-полей, ноль
+                <code>FindObjectOfType</code>, ноль <code>Resolve</code> вне
+                <code>Game.Bootstrap</code>.</li>
+        </ul>
+
+        <p><strong>Сцена и настройки</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Префаб проектного скоупа создан и назначен в поле
+                <code>RootLifetimeScope</code> ассета <code>VContainerSettings</code>.</li>
+            <li class="key">Ассет <code>VContainerSettings</code> присутствует в
+                <code>Project Settings → Player → Preloaded Assets</code>. Проверять после
+                каждого мерджа <code>ProjectSettings.asset</code>.</li>
+            <li>В сцене <code>Bootstrap</code> нет второго объекта со скоупом — иначе
+                корней окажется два.</li>
+            <li>Поле <code>_loadingScreenPrefab</code> в инспекторе содержит то, что вы туда
+                положили, а не то, что осталось от прошлой версии проекта.</li>
+            <li>Консоль чистая, Missing-компонентов в сцене нет.</li>
+        </ul>
+
+        <p><strong>Поведение — проверяется запуском, а не чтением кода</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Play из сцены <code>Bootstrap</code>: объект скоупа появляется
+                в разделе <code>DontDestroyOnLoad</code>, а не в самой сцене.</li>
+            <li class="key">Play из сцены <code>Gameplay</code>: сервисы живы (корень поднялся
+                сам), а падение — <strong>только</strong> на отсутствующем
+                <code>RunContext</code>, с внятным <code>VContainerException</code>.
+                Молчаливого старта быть не должно.</li>
+            <li>Лог в <code>Initialize</code> точки входа появляется в том же кадре, что и
+                <code>Awake</code> скоупа; лог в <code>Start</code> — в следующем.</li>
+            <li>Выход из Play Mode вызывает <code>Dispose</code> у точек входа и у
+                <code>Singleton</code>-сервисов, причём точка входа уничтожается раньше
+                сервиса, от которого зависела.</li>
+            <li>Второй вход в Play Mode ведёт себя ровно так же, как первый. Разошлось —
+                искать <code>static</code>, а не ошибку в скоупе
+                (урок 02, <a href="02-composition-root.html#pitfall-static">подводный камень</a>).</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему <code>Lifetime.Singleton</code> — это «один на
+                контейнер», а не «один на приложение», и что произойдёт при регистрации
+                одного типа на двух уровнях (1.3).</li>
+            <li class="key">Понятно, почему рестарт забега не требует ни одной строки
+                «очистить мир» (2.2).</li>
+            <li>Понятно, почему итог забега уходит в мету копией данных, а не ссылкой (2.2, 2.5).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>

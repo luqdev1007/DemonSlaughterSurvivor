@@ -30,6 +30,16 @@ window.HANDBOOK_LESSONS = [
         tags: ["Composition Root", "Service Locator", "DI", "VContainer", "синглтоны"],
         summary: "Единственная точка приложения, которая знает все конкретные типы: три фазы работы контейнера, правило одного Resolve и почему запрет синглтонов, GameObject.Find и FindObjectOfType — три следствия одного решения."
     },
+    {
+        n: 3,
+        step: 1,
+        block: 2,
+        title: "VContainer: скоупы, времена жизни, точки входа",
+        file: "lessons/03-vcontainer-lifetimescope.html",
+        date: "2026-08-20",
+        tags: ["VContainer", "LifetimeScope", "Lifetime", "IStartable", "ITickable", "IDisposable", "child scope"],
+        summary: "Как корень композиции выглядит в коде: LifetimeScope как MonoBehaviour, три времени жизни и что каждое значит в паре скоупов проект/забег, порядок вызова точек входа с точностью до кадра и правило, по которому забег пересоздаётся, а проект — нет."
+    },
     // NEW LESSONS GO HERE
 ];
 
@@ -37,15 +47,25 @@ window.HANDBOOK_LESSONS = [
    правится только фактическая ошибка, и сюда добавляется строка. */
 window.HANDBOOK_ERRATA = [
     {
+        date: "2026-08-20",
+        lesson: 2,
+        text: "Подводный камень «Интерфейс и класс зарегистрированы отдельно» утверждал, что получаются два молчаливых экземпляра. Проверено на VContainer 5103bfc: две отдельные регистрации одного и того же класса падают при построении контейнера с System.ArgumentException «An item with the same key has already been added. Key: (Тип, )», то есть внутри Awake скоупа. Молча дублируется другой случай — две РАЗНЫЕ реализации под одним интерфейсом: контейнер собирается, Resolve отдаёт последнюю зарегистрированную, а IReadOnlyList<T> отдаёт обе."
+    },
+    {
+        date: "2026-08-20",
+        lesson: 2,
+        text: "Раздел 2.4 и подводный камень «Работает с Bootstrap, падает с Gameplay» называли симптомом NullReferenceException. Для скоупа это неверно: осиротевший LifetimeScope строится как собственный корень и падает с VContainerException «No such registration of type: ...». NullReferenceException — симптом для обычных MonoBehaviour, которым никто не проинжектил поля."
+    },
+    {
         date: "2026-08-19",
         lesson: 1,
         text: "В разделе 1.5 и в чек-листе утверждалось, что Game.View ссылается на Game.Simulation. Неверно: ARCHITECTURE.md §15 даёт Game.View → Core, Configs, прямой ссылки между View и Simulation нет ни в одну сторону, связь идёт через интерфейс в Game.Core. Формулировка 1.5 и пункт чек-листа исправлены."
-    }
+    },
     {
         date: "2026-08-19",
         lesson: 1,
         text: "Пункт чек-листа требовал увидеть Game.*.csproj сразу после Regenerate project files. Неверно: Unity генерирует .csproj только для сборок, содержащих хотя бы один скрипт, поэтому пустые сборки не попадают ни в один .csproj и ни в одно решение. Пункт чек-листа исправлен, подводный камень «Пустая сборка» переписан с описанием симптома."
-    }
+    },
     {
         date: "2026-08-19",
         lesson: 1,
