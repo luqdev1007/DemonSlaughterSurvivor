@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>04 · Точка входа ECS: мир, системы, инъекция</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>04 · Точка входа ECS: мир, системы, инъекция</h1>
+
+        <div class="lesson-meta">
+            шаг 1 роадмапа (бутстрап) · блок 3 · 2026-08-21<br>
+            Доки проекта: <code>CLAUDE.md</code> §7 · <code>ARCHITECTURE.md</code> §1, §3, §9, §10, §15 ·
+            журнал решений <code>PROGRESS.md</code> от 2026-08-20 и 2026-08-21<br>
+            Опирается на урок <a href="03-vcontainer-lifetimescope.html#two-scopes">03 · Два скоупа проекта</a>,
+            <a href="03-vcontainer-lifetimescope.html#restart">03 · Рестарт забега</a> и
+            <a href="02-composition-root.html#two-di">02 · Два DI</a><br>
+            Версии: LeoECS Lite <code>d46f3b2</code>, LeoECS Lite DI <code>482b14e</code>,
+            VContainer <code>5103bfc</code>, Unity <code>6000.4.11f1</code>.
+            Всё, помеченное как проверенное, проверялось на этом проекте.
+        </div>
+
+        <p class="lead">
+            Блок 2 закончился приложением, которое стартует и доходит до меню. Этот блок
+            отвечает на вопрос, что происходит, когда игрок нажимает «играть»: кто создаёт мир
+            ECS, кто им владеет, как в системы попадают сервисы и как всё это корректно
+            разбирается на выходе. Главная мысль блока — <strong>мир ECS не глобален и не вечен.
+            Это объект со временем жизни ровно в один забег</strong>, и вся конструкция
+            выстроена вокруг этого факта.
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="world-and-systems">1.1 <code>EcsWorld</code> и <code>EcsSystems</code>: два разных объекта</h3>
+
+        <p>Их постоянно путают, а владение у них разное.</p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th></th><th><code>EcsWorld</code></th><th><code>EcsSystems</code></th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Что хранит</td>
+                    <td>Сущности, пулы компонентов, фильтры. Все <strong>данные</strong>.</td>
+                    <td>Упорядоченный список систем. Всё <strong>поведение</strong>.</td></tr>
+                <tr><td>Кто создаёт</td>
+                    <td><code>new EcsWorld()</code></td>
+                    <td><code>new EcsSystems(world)</code> — знает свой мир</td></tr>
+                <tr><td>Как уничтожается</td>
+                    <td><code>world.Destroy()</code></td>
+                    <td><code>systems.Destroy()</code></td></tr>
+                <tr><td>Уничтожает ли другого</td>
+                    <td>—</td>
+                    <td><strong>Нет.</strong> Проверено: после <code>systems.Destroy()</code>
+                        мир жив (<code>IsAlive() == true</code>)</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Это самое важное следствие всего раздела: <strong>уничтожать нужно оба, в правильном
+            порядке, и никто об этом не напомнит.</strong> Забыли <code>world.Destroy()</code> —
+            ни ошибки, ни предупреждения, проверено. Мир просто остаётся жить со всеми
+            сущностями и пулами до конца работы приложения, и на следующем забеге их станет
+            вдвое больше.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Разделение из ARCHITECTURE.md §1</span>
+            <p>
+                «Данные отдельно от поведения» в LeoECS не пожелание, а устройство библиотеки:
+                данные физически в мире, поведение физически в списке систем. Компонент —
+                <code>struct</code> и только поля, это держит компилятор через ограничение
+                <code>where T : struct</code>. Система — класс без состояния, всё, что ей нужно,
+                приходит инъекцией.
+            </p>
+        </div>
+
+        <h3 id="system-lifecycle">1.2 Жизненный цикл системы</h3>
+
+        <p>
+            Система реализует те интерфейсы, которые ей нужны, — все они необязательны и
+            независимы.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Интерфейс</th><th>Метод</th><th>Когда</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>IEcsPreInitSystem</code></td><td><code>PreInit</code></td>
+                    <td>При <code>systems.Init()</code>, до всех <code>Init</code></td></tr>
+                <tr><td><code>IEcsInitSystem</code></td><td><code>Init</code></td>
+                    <td>При <code>systems.Init()</code>, один раз</td></tr>
+                <tr><td><code>IEcsRunSystem</code></td><td><code>Run</code></td>
+                    <td>На каждый <code>systems.Run()</code></td></tr>
+                <tr><td><code>IEcsPostRunSystem</code></td><td><code>PostRun</code></td>
+                    <td>Тот же <code>Run()</code>, после всех <code>Run</code></td></tr>
+                <tr><td><code>IEcsDestroySystem</code></td><td><code>Destroy</code></td>
+                    <td>При <code>systems.Destroy()</code></td></tr>
+                <tr><td><code>IEcsPostDestroySystem</code></td><td><code>PostDestroy</code></td>
+                    <td>Там же, после всех <code>Destroy</code></td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>Два факта о порядке, оба проверены на проекте:</p>
+
+        <ul>
+            <li><strong><code>Run</code> идёт в порядке добавления.</strong> Добавили A, потом B —
+                каждый кадр выполняется A, затем B.</li>
+            <li><strong><code>Destroy</code> идёт в обратном порядке.</strong> Добавили A, потом B —
+                уничтожается сначала B, потом A. Ровно как у VContainer
+                (<a href="03-vcontainer-lifetimescope.html#order">урок 03, 1.6</a>): зависимый
+                убирается раньше того, от чего зависел.</li>
+        </ul>
+
+        <p>
+            Отдельно: <code>systems.Run()</code> до <code>systems.Init()</code> бросает
+            исключение <code>Cant run without initialization</code>, а
+            <code>systems.Add()</code> после <code>Init()</code> — <code>Cant add system after
+            initialization</code>. Обе проверки живут под <code>#if DEBUG</code>, то есть
+            в билде их нет. Полагаться на них как на защиту нельзя; они инструмент отладки.
+        </p>
+
+        <h3 id="injection">1.3 Инъекция в системы</h3>
+
+        <p>
+            Система — класс без конструкторных зависимостей: LeoECS создаёт её не сам, её
+            создаёт тот, кто собирает список. Поэтому зависимости приходят в поля, и делает это
+            <strong>отдельный пакет</strong> — LeoECS Lite DI, один вызов
+            <code>systems.Inject(...)</code>.
+        </p>
+
+        <p>Механика буквально такая: пройти по всем системам, по всем их полям, и заполнить те, чей тип — известный «инъект».</p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Тип поля</th><th>Что кладётся</th><th>Откуда берётся</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>EcsWorldInject</code></td><td>сам мир</td><td>из <code>EcsSystems</code></td></tr>
+                <tr><td><code>EcsPoolInject&lt;T&gt;</code></td><td>пул компонента <code>T</code></td><td>из мира</td></tr>
+                <tr><td><code>EcsFilterInject&lt;Inc&lt;…&gt;, Exc&lt;…&gt;&gt;</code></td><td>готовый фильтр и пулы включённых компонентов</td><td>из мира</td></tr>
+                <tr><td><code>EcsCustomInject&lt;T&gt;</code></td><td>ваш сервис</td><td>из аргументов <code>Inject(...)</code>, по совпадению типа</td></tr>
+                <tr><td><code>EcsSharedInject&lt;T&gt;</code></td><td>общий объект</td><td>из второго аргумента конструктора <code>EcsSystems</code></td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Первые три заполняются сами, без единого аргумента у <code>Inject()</code> — им
+            достаточно мира. Аргументы нужны только для <code>EcsCustomInject</code>.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Три свойства, из-за которых это ломается тихо</span>
+            <p>
+                <strong>Первое.</strong> <code>Inject()</code> обходит те системы, что уже
+                добавлены. Вызвали его <em>до</em> <code>Add()</code> — не заполнится ничего,
+                включая мир, пулы и фильтры. Проверено: ни ошибки, ни предупреждения, все поля
+                остаются <code>null</code>, а падает потом, в первом <code>Run</code>.
+            </p>
+            <p>
+                <strong>Второе.</strong> <code>EcsCustomInject&lt;T&gt;</code>, для которого
+                в аргументах не нашлось объекта подходящего типа, остаётся <code>null</code>.
+                Молча. Проверено.
+            </p>
+            <p>
+                <strong>Третье.</strong> Совпадение ищется по типу, и берётся <em>первый</em>
+                подходящий аргумент. Передали два объекта, реализующих один интерфейс, —
+                выиграет тот, что раньше в списке.
+            </p>
+        </div>
+
+        <p>
+            И главное, ради чего <a href="02-composition-root.html#two-di">урок 02, 2.2</a>
+            настаивал на разнице: <strong>это не контейнер</strong>. Здесь нет времён жизни,
+            нет построения графа, нет рекурсии по конструкторам. Есть проход рефлексией по
+            полям и присваивание готовых ссылок. Объекты создал VContainer, LeoECS Lite DI
+            только разложил их по местам — владелец остался один.
+        </p>
+
+        <h3 id="order">1.4 Порядок систем — это порядок <code>Add</code></h3>
+
+        <p>
+            В LeoECS Lite нет механизма групп, приоритетов или атрибутов сортировки. Порядок
+            выполнения — буквально порядок вызовов <code>Add()</code>. Отсюда прямое следствие
+            для <code>ARCHITECTURE.md</code> §10: тринадцать групп существуют только как
+            дисциплина чтения, и держать их обязан один файл, который читается сверху вниз.
+        </p>
+
+        <p>
+            Это ровно то, чего требует принцип 5 из <code>ARCHITECTURE.md</code> §1
+            («детерминированный порядок»). Плата за простоту — если список расползётся по
+            нескольким местам, порядок систем перестанет быть виден целиком, и <code>Abilities</code>
+            однажды окажется после <code>Movement</code>. Ошибка при этом не проявится как
+            исключение: рывок просто начнёт срабатывать на кадр позже.
+        </p>
+
+        </section>
+
+        <!-- ============================================ ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="where-world-lives">2.1 Где живёт мир</h3>
+
+        <p>
+            В скоупе забега. Решение принято в блоке 2 и записано в журнал
+            <code>PROGRESS.md</code>: <code>EcsWorld</code>, <code>EcsSystems</code>,
+            <code>RunContext</code> и сервисы симуляции — это <code>Lifetime.Scoped</code>,
+            то есть живут ровно один забег.
+        </p>
+
+        <p>
+            Практический смысл виден на рестарте. Мир не «чистится» и не «сбрасывается» — он
+            уничтожается вместе со скоупом, а следующий забег получает новый.
+            <a href="03-vcontainer-lifetimescope.html#restart">Урок 03, 2.2</a> объяснял, почему
+            это дешевле корректного сброса; здесь добавляется деталь: <code>EcsWorld</code>
+            <strong>не реализует <code>IDisposable</code></strong>, у него метод
+            <code>Destroy()</code>. Значит VContainer его не уберёт, даже если зарегистрировать.
+            Владельца надо назвать явно.
+        </p>
+
+        <h3 id="who-starts">2.2 Кто запускает забег</h3>
+
+        <p>
+            Второе решение блока, тоже в журнале: забег запускает <code>RunLauncher</code> —
+            интерфейс в <code>Game.Core</code>, реализация в <code>Game.Bootstrap</code>.
+            Не меню и не загрузчик сцен.
+        </p>
+
+        <p>Порядок внутри запуска и почему именно такой:</p>
+
+<pre><code><span class="c">// 1. собрать RunContext</span>
+<span class="c">//    что выбрал игрок + правила меты + сид. Только стабильные ID (§4)</span>
+
+<span class="c">// 2. загрузить сцену уровня, LoadSceneMode.Single</span>
+<span class="c">//    решение от 2026-08-21: аддитивной загрузки в проекте нет</span>
+
+<span class="c">// 3. создать дочерний скоуп</span>
+runScope <span class="p">=</span> projectScope<span class="p">.</span>CreateChild<span class="p">&lt;</span><span class="t">RunLifetimeScope</span><span class="p">&gt;(</span>b <span class="p">=&gt;</span> b<span class="p">.</span>RegisterInstance<span class="p">(</span>runContext<span class="p">));</span>
+<span class="c">//    последним: вьюхам нужна уже загруженная арена</span></code></pre>
+
+        <p>
+            <code>RunLifetimeScope</code> <strong>создаётся кодом, а не лежит в сцене</strong>.
+            Причина механическая: сценовый <code>LifetimeScope</code> строит себя сам в
+            <code>Awake</code> (<a href="03-vcontainer-lifetimescope.html#order">урок 03, 1.6</a>),
+            то есть до того, как кто-то успеет передать ему <code>RunContext</code>. Штатный
+            способ передать параметры сценовому скоупу — статический стек
+            <code>LifetimeScope.Enqueue</code>, то есть глобальное состояние: ровно то, от чего
+            уходили в блоке 1. <code>CreateChild(installer)</code> делает то же самое явно.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Цена этого решения</span>
+            <p>
+                <code>CreateChild</code> вешает объект скоупа под проектный корень, а тот живёт
+                в <code>DontDestroyOnLoad</code>. Значит выгрузка сцены уровня скоуп забега
+                <strong>не уничтожит</strong> — он переживёт смену сцены вместе с миром ECS.
+                Разбирать обязан тот, кто создал. Забыли — забег утёк молча, и первый симптом
+                появится на втором забеге в виде удвоенного тика.
+            </p>
+        </div>
+
+        <h3 id="split">2.3 Кто что собирает: <code>Simulation</code> или <code>Bootstrap</code></h3>
+
+        <p>
+            Соблазн — собрать весь список систем в <code>Bootstrap</code>, раз он всё видит.
+            Так делать не стоит: порядок систем — это правило симуляции
+            (<code>ARCHITECTURE.md</code> §10), и жить оно должно рядом с системами, иначе при
+            добавлении новой системы придётся править чужой слой.
+        </p>
+
+        <p>Разделение получается такое:</p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Шаг</th><th>Кто делает</th><th>Почему</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>new EcsWorld()</code></td><td>Bootstrap</td>
+                    <td>Владение и время жизни — вопрос композиции</td></tr>
+                <tr><td><code>Add()</code> всех систем в порядке §10</td><td>Simulation</td>
+                    <td>Порядок — правило симуляции, живёт рядом с системами</td></tr>
+                <tr><td><code>Inject(...)</code> сервисов</td><td>Bootstrap</td>
+                    <td>Только он знает конкретные реализации сервисов</td></tr>
+                <tr><td><code>Init()</code></td><td>Bootstrap</td>
+                    <td>Должен идти строго после <code>Inject</code> (1.3)</td></tr>
+                <tr><td><code>Run()</code> каждый кадр</td><td>Bootstrap</td>
+                    <td>Тик приходит из Unity, симуляция о кадрах не знает</td></tr>
+                <tr><td><code>Destroy()</code></td><td>Bootstrap</td>
+                    <td>Зеркало владения</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Контракт между слоями получается узкий: симуляция отдаёт наружу один метод
+            «собери мне системы в правильном порядке», всё остальное делает корень.
+        </p>
+
+        <h3 id="tick">2.4 Тик и <code>deltaTime</code></h3>
+
+        <p>
+            Точка входа забега — обычная точка входа VContainer из блока 2:
+            <code>ITickable</code> вызывает <code>systems.Run()</code> раз в кадр.
+            Дальше начинается неочевидное.
+        </p>
+
+        <p>
+            Сигнатура <code>IEcsRunSystem.Run(IEcsSystems systems)</code> <strong>не принимает
+            <code>deltaTime</code></strong>. А журнал решений от 2026-08-19 требует, чтобы
+            время приходило параметром, а не читалось из <code>UnityEngine.Time</code> внутри
+            систем — иначе симуляция привязывается к Unity и перестаёт быть воспроизводимой.
+        </p>
+
+        <p>
+            Решение — маленький изменяемый объект, который инжектится в системы один раз, а
+            обновляется каждый кадр точкой входа:
+        </p>
+
+<pre><code><span class="c">// Bootstrap, каждый кадр:</span>
+_clock<span class="p">.</span>Delta <span class="p">=</span> <span class="t">Time</span><span class="p">.</span>deltaTime<span class="p">;</span>   <span class="c">// единственный писатель во всём проекте</span>
+_systems<span class="p">.</span>Run<span class="p">();</span>
+
+<span class="c">// Simulation, в системе:</span>
+<span class="k">private</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">SimulationClock</span><span class="p">&gt;</span> _clock<span class="p">;</span>   <span class="c">// только чтение</span></code></pre>
+
+        <p>
+            Правило вокруг него — <strong>один писатель</strong>. Оно уже записано в
+            <code>ARCHITECTURE.md</code> §17 как ориентир из соседнего проекта, и это первый
+            случай, когда оно применяется здесь. Два писателя у общего изменяемого объекта дают
+            рассинхронизацию без единой ошибки.
+        </p>
+
+        <h3 id="teardown">2.5 Разбор</h3>
+
+<pre><code><span class="c">// RunEntryPoint.Dispose — порядок обязателен</span>
+_systems<span class="p">.</span>Destroy<span class="p">();</span>   <span class="c">// сначала поведение: системы ещё могут трогать мир</span>
+_world<span class="p">.</span>Destroy<span class="p">();</span>     <span class="c">// потом данные</span></code></pre>
+
+        <p>
+            Порядок именно такой, потому что <code>IEcsDestroySystem.Destroy</code> получает
+            <code>IEcsSystems</code> и вправе работать с миром — например снять регистрации или
+            вернуть объекты в пул. Уничтожив мир первым, вы дадите системам мёртвый мир.
+        </p>
+
+        <p>
+            Кто вызывает <code>Dispose</code> — VContainer, при разборе скоупа забега. Это уже
+            проверено в блоке 2: точка входа получает <code>Dispose</code> раньше сервисов, от
+            которых зависит. То есть к моменту уничтожения мира сервисы симуляции ещё живы.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Почему мир не отдают контейнеру</span>
+            <p>
+                <code>EcsWorld</code> не <code>IDisposable</code>, поэтому VContainer его
+                не уберёт ни при какой регистрации. Плюс отдать его через
+                <code>RegisterInstance</code> — значит попасть в подводный камень из
+                <a href="03-vcontainer-lifetimescope.html#pitfall-register-instance">урока 03</a>:
+                готовые экземпляры контейнер не уничтожает. Владелец мира — точка входа забега,
+                и это записано одним предложением, а не подразумевается.
+            </p>
+        </div>
+
+        <h3 id="asmdef-boundary">2.6 Граница сборки симуляции</h3>
+
+        <p>
+            <code>ARCHITECTURE.md</code> §15 держал границу двух DI отсутствием ссылки на
+            VContainer. В этом блоке выяснилось, что список ссылок asmdef закрывает не всё.
+        </p>
+
+        <p>
+            <span class="symptom">Проверено:</span> <code>using R3;</code> внутри
+            <code>Game.Simulation</code> компилировался, хотя ссылки на пакет R3 у сборки нет.
+            Причина: <code>R3.dll</code> из <code>Assets/Packages</code> — precompiled-библиотека
+            вне asmdef, а такие видны всем сборкам проекта автоматически.
+        </p>
+
+        <p>
+            Лечится двумя полями asmdef: <code>overrideReferences: true</code> и пустой
+            <code>precompiledReferences</code>. После этого тот же <code>using</code> даёт
+            <code>CS0246</code>. Проверено, что цена нулевая: LeoECS Lite и LeoECS Lite DI
+            подключены как asmdef-пакеты и флагом не задеты, число подмешанных NuGet-библиотек
+            стало нулём.
+        </p>
+
+        <p>
+            Смысл ровно тот же, что у запрета ссылки на VContainer: <strong>красная линия должна
+            держаться компилятором.</strong> <code>CLAUDE.md</code> §7 запрещает подписки R3 и
+            <code>async</code> внутри ECS-систем — до этой правки запрет держался вниманием
+            разработчика.
+        </p>
+
+        </section>
+
+        <!-- ============================================== СКЕЛЕТ API ==== -->
+        <section data-kind="api">
+
+        <h2 id="api">Скелет API</h2>
+
+        <p>
+            Сигнатуры без тел. Игровой логики в блоке нет и быть не должно: движение — шаг 2,
+            спавн — шаг 3, боёвка — шаг 4 (<code>GDD.md</code> §12). Здесь появляется только
+            каркас, в который они потом встанут.
+        </p>
+
+        <h3 id="api-core">3.1 <code>Game.Core</code>: контракт запуска</h3>
+
+<pre><code><span class="c">// RunContext — параметры забега (ARCHITECTURE.md §9).</span>
+<span class="c">// Только стабильные строковые ID: иначе Core потянет за собой Configs</span>
+<span class="c">// и перестанет быть нейтральным.</span>
+
+<span class="k">public sealed class</span> <span class="t">RunContext</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">string</span> LevelId <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">string</span> CharacterId <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="t">RunMode</span> Mode <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">int</span> Seed <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">public enum</span> <span class="t">RunMode</span> <span class="p">{</span> Story<span class="p">,</span> Endless <span class="p">}</span>
+
+<span class="c">// Что выбрал игрок. Меню умеет собрать это и больше ничего не знает.</span>
+<span class="k">public readonly struct</span> <span class="t">RunRequest</span>
+<span class="p">{</span>
+    <span class="k">public</span> RunRequest<span class="p">(</span><span class="k">string</span> levelId<span class="p">,</span> <span class="k">string</span> characterId<span class="p">,</span> <span class="t">RunMode</span> mode<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">public interface</span> <span class="t">IRunLauncher</span>
+<span class="p">{</span>
+    <span class="t">UniTask</span> StartAsync<span class="p">(</span><span class="t">RunRequest</span> request<span class="p">,</span> <span class="t">CancellationToken</span> ct<span class="p">);</span>
+    <span class="k">void</span> Stop<span class="p">();</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-launcher">3.2 <code>Game.Bootstrap</code>: запускатель</h3>
+
+<pre><code><span class="c">// Владеет скоупом забега. Это его единственная обязанность помимо запуска.</span>
+
+<span class="k">public sealed class</span> <span class="t">RunLauncher</span> <span class="p">:</span> <span class="t">IRunLauncher</span><span class="p">,</span> <span class="t">IDisposable</span>
+<span class="p">{</span>
+    <span class="k">public</span> RunLauncher<span class="p">(</span><span class="t">ProjectLifetimeScope</span> projectScope<span class="p">,</span> <span class="t">ISceneLoader</span> sceneLoader<span class="p">);</span>
+
+    <span class="c">// собрать RunContext → загрузить сцену → CreateChild&lt;RunLifetimeScope&gt;</span>
+    <span class="k">public</span> <span class="t">UniTask</span> StartAsync<span class="p">(</span><span class="t">RunRequest</span> request<span class="p">,</span> <span class="t">CancellationToken</span> ct<span class="p">);</span>
+
+    <span class="c">// Dispose скоупа. Идемпотентно: второй вызов ничего не делает</span>
+    <span class="k">public</span> <span class="k">void</span> Stop<span class="p">();</span>
+
+    <span class="c">// страховка на выход из игры посреди забега</span>
+    <span class="k">public</span> <span class="k">void</span> Dispose<span class="p">();</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-run-scope">3.3 Скоуп забега</h3>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">RunLifetimeScope</span> <span class="p">:</span> <span class="t">LifetimeScope</span>
+<span class="p">{</span>
+    <span class="c">// Только регистрации, всё — Lifetime.Scoped:</span>
+    <span class="c">//   RunEntryPoint как точку входа,</span>
+    <span class="c">//   SimulationClock,</span>
+    <span class="c">//   позже — сервисы симуляции из ARCHITECTURE.md §14.</span>
+    <span class="c">// RunContext сюда приходит installer'ом снаружи, здесь не создаётся.</span>
+    <span class="k">protected override void</span> Configure<span class="p">(</span><span class="t">IContainerBuilder</span> builder<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-entry-point">3.4 Точка входа забега</h3>
+
+<pre><code><span class="c">// Владелец мира и систем. Единственное место, где они создаются и уничтожаются.</span>
+
+<span class="k">public sealed class</span> <span class="t">RunEntryPoint</span> <span class="p">:</span> <span class="t">IInitializable</span><span class="p">,</span> <span class="t">ITickable</span><span class="p">,</span> <span class="t">IDisposable</span>
+<span class="p">{</span>
+    <span class="k">public</span> RunEntryPoint<span class="p">(</span><span class="t">RunContext</span> context<span class="p">,</span> <span class="t">SimulationClock</span> clock<span class="p">);</span>
+
+    <span class="c">// new EcsWorld() → RunSystems.Build(world) → Inject(...) → Init()</span>
+    <span class="c">// порядок обязателен, см. подводные камни</span>
+    <span class="k">public</span> <span class="k">void</span> Initialize<span class="p">();</span>
+
+    <span class="c">// clock.Delta = Time.deltaTime; systems.Run();</span>
+    <span class="k">public</span> <span class="k">void</span> Tick<span class="p">();</span>
+
+    <span class="c">// systems.Destroy(); world.Destroy(); — именно в таком порядке</span>
+    <span class="k">public</span> <span class="k">void</span> Dispose<span class="p">();</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-run-systems">3.5 <code>Game.Simulation</code>: список систем</h3>
+
+<pre><code><span class="c">// Единственное место, где виден порядок из ARCHITECTURE.md §10 целиком.</span>
+<span class="c">// Читается сверху вниз. Новая система вставляется в свою группу,</span>
+<span class="c">// а не дописывается в конец.</span>
+
+<span class="k">public static class</span> <span class="t">RunSystems</span>
+<span class="p">{</span>
+    <span class="k">public static</span> <span class="t">IEcsSystems</span> Build<span class="p">(</span><span class="t">EcsWorld</span> world<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c">// внутри Build — только Add в порядке групп:</span>
+<span class="c">//  1. Input          6. Weapons         11. Progression</span>
+<span class="c">//  2. Abilities      7. AttackLifetime  12. ViewSync</span>
+<span class="c">//  3. Spawn          8. Collision       13. Cleanup</span>
+<span class="c">//  4. AI             9. Damage</span>
+<span class="c">//  5. Movement      10. Death</span>
+<span class="c">// в блоке 3 все группы пустые — это нормально и это каркас</span></code></pre>
+
+        <h3 id="api-clock">3.6 Часы симуляции</h3>
+
+<pre><code><span class="c">// Game.Simulation/Services. Живёт внутри границы ECS,</span>
+<span class="c">// но пишется снаружи — Bootstrap видит Simulation, обратное неверно.</span>
+
+<span class="k">public sealed class</span> <span class="t">SimulationClock</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">float</span> Delta<span class="p">;</span>     <span class="c">// пишет только RunEntryPoint.Tick</span>
+    <span class="k">public</span> <span class="k">float</span> Elapsed<span class="p">;</span>   <span class="c">// он же</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-shapes">3.7 Формы компонента и системы</h3>
+
+        <p>
+            Настоящие компоненты и системы приезжают начиная с шага 2. Здесь фиксируется только
+            форма, чтобы первая же из них не разошлась с конвенциями <code>CLAUDE.md</code> §5.
+        </p>
+
+<pre><code><span class="c">// Компонент: struct, только поля, существительное без суффикса</span>
+<span class="k">public struct</span> <span class="t">Health</span>      <span class="p">{</span> <span class="k">public float</span> Current<span class="p">;</span> <span class="k">public float</span> Max<span class="p">;</span> <span class="p">}</span>
+<span class="k">public struct</span> <span class="t">MoveSpeed</span>   <span class="p">{</span> <span class="k">public float</span> Value<span class="p">;</span> <span class="p">}</span>
+
+<span class="c">// Тег: пустой struct</span>
+<span class="k">public struct</span> <span class="t">Player</span>      <span class="p">{</span> <span class="p">}</span>
+
+<span class="c">// Событие одного кадра: суффикс Event, чистится группой Cleanup</span>
+<span class="k">public struct</span> <span class="t">DamageEvent</span> <span class="p">{</span> <span class="k">public int</span> Target<span class="p">;</span> <span class="k">public float</span> Amount<span class="p">;</span> <span class="p">}</span>
+
+<span class="c">// Система: класс без состояния, всё приходит инъекцией</span>
+<span class="k">public sealed class</span> <span class="t">ApplyDamageSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">DamageEvent</span><span class="p">&gt;&gt;</span> _events<span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">Health</span><span class="p">&gt;</span> _health<span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">SimulationClock</span><span class="p">&gt;</span> _clock<span class="p">;</span>
+
+    <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            <code>readonly</code> у полей-инъектов работает: проверено, рефлексия их заполняет.
+            Это удобно — поле нельзя переприсвоить случайно, а инъекция всё равно проходит.
+        </p>
+
+        <h3 id="anti-shapes">3.8 Формы, которых быть не должно</h3>
+
+<pre><code><span class="c">// Unity внутри системы — граница ARCHITECTURE.md §1 и §3</span>
+<span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">var</span> dt <span class="p">=</span> <span class="err">Time.deltaTime</span><span class="p">;</span>                    <span class="c">// ← нет, только через SimulationClock</span>
+    <span class="err">GameObject.Instantiate</span><span class="p">(</span>prefab<span class="p">);</span>            <span class="c">// ← нет, это дело View</span>
+    <span class="k">var</span> hits <span class="p">=</span> <span class="err">Physics.OverlapSphere</span><span class="p">(...);</span>     <span class="c">// ← нет, свой spatial hash (§12)</span>
+<span class="p">}</span>
+
+<span class="c">// Аллокации в тике — CLAUDE.md §7</span>
+<span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">var</span> targets <span class="p">=</span> <span class="err">new List</span><span class="p">&lt;</span><span class="k">int</span><span class="p">&gt;();</span>              <span class="c">// ← нет</span>
+    <span class="k">var</span> nearest <span class="p">=</span> targets<span class="p">.</span><span class="err">OrderBy</span><span class="p">(</span>x <span class="p">=&gt;</span> x<span class="p">).</span>First<span class="p">();</span>  <span class="c">// ← нет, LINQ и замыкание</span>
+<span class="p">}</span>
+
+<span class="c">// Порядок вызовов при сборке</span>
+systems<span class="p">.</span><span class="err">Inject</span><span class="p">(</span>service<span class="p">);</span>      <span class="c">// ← нет: Inject до Add не заполнит ничего</span>
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">SomeSystem</span><span class="p">());</span>
+systems<span class="p">.</span>Init<span class="p">();</span>
+
+<span class="c">// Мир, отданный контейнеру</span>
+builder<span class="p">.</span><span class="err">RegisterInstance</span><span class="p">(</span><span class="k">new</span> <span class="t">EcsWorld</span><span class="p">());</span>   <span class="c">// ← нет: контейнер его не уничтожит</span></code></pre>
+
+        </section>
+
+        <!-- ========================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-inject-order">Inject вызван до Add</h3>
+        <p>
+            <span class="symptom">Симптом:</span> <code>NullReferenceException</code> в первом же
+            <code>Run</code>, причём во всех системах сразу. Причина: <code>Inject()</code>
+            обходит уже добавленные системы, а их ещё не было. Проверено: молча остаются
+            <code>null</code> не только пользовательские сервисы, но и мир, пулы и фильтры.
+            Правильный порядок один и запоминается как формула:
+            <strong><code>Add</code> → <code>Inject</code> → <code>Init</code></strong>.
+        </p>
+
+        <h3 id="pitfall-missing-service">Сервис забыли передать в Inject</h3>
+        <p>
+            <span class="symptom">Симптом:</span> та же <code>NullReferenceException</code>, но
+            в одной системе и только в той ветке кода, где сервис используется. Проверено:
+            <code>EcsCustomInject&lt;T&gt;</code> без подходящего аргумента остаётся
+            <code>null</code> без единого сообщения. Особенно неприятно, когда система
+            обращается к сервису не каждый кадр, а по событию: баг всплывёт через неделю.
+        </p>
+
+        <h3 id="pitfall-world-leak">Забыли world.Destroy()</h3>
+        <p>
+            <span class="symptom">Симптом:</span> первый забег нормальный, со второго растёт
+            потребление памяти, а число сущностей не падает между забегами. Проверено:
+            <code>systems.Destroy()</code> мир не трогает, <code>IsAlive()</code> остаётся
+            <code>true</code>, ошибок и предупреждений нет. Единственная защита — правило
+            «оба <code>Destroy</code> в одном методе, рядом, в правильном порядке».
+        </p>
+
+        <h3 id="pitfall-empty-entity">Empty entity detected before EcsWorld.Destroy()</h3>
+        <p>
+            <span class="symptom">Симптом:</span> исключение при выходе из забега, текст точный:
+            <code>Empty entity detected before EcsWorld.Destroy()</code>. Проверено. Причина —
+            сущность, у которой нет ни одного компонента: кто-то вызвал
+            <code>world.NewEntity()</code> и не добавил компонент, либо удалил последний.
+            LeoECS считает такую сущность утечкой и отказывается уничтожать мир. Проверка живёт
+            под <code>#if DEBUG</code>, то есть в билде исключения не будет, а утечка останется.
+        </p>
+
+        <h3 id="pitfall-destroy-order">Мир уничтожен раньше систем</h3>
+        <p>
+            <span class="symptom">Симптом:</span> исключения внутри
+            <code>IEcsDestroySystem.Destroy</code> при выходе из забега. Причина:
+            <code>world.Destroy()</code> вызван до <code>systems.Destroy()</code>, и системы
+            получили мёртвый мир. Порядок зеркальный созданию: сначала поведение, потом данные.
+        </p>
+
+        <h3 id="pitfall-double-tick">Мир тикает дважды</h3>
+        <p>
+            <span class="symptom">Симптом:</span> всё движется с двойной скоростью, кулдауны
+            истекают вдвое быстрее, при этом <code>deltaTime</code> корректный. Причина: два
+            объекта зовут <code>systems.Run()</code> — например точка входа осталась
+            зарегистрированной, а рядом появился <code>MonoBehaviour</code> с
+            <code>Update</code>. Или прошлый скоуп забега не был разобран (2.2) и продолжает
+            тикать свой мир.
+        </p>
+
+        <h3 id="pitfall-order-silent">Система добавлена не в свою группу</h3>
+        <p>
+            <span class="symptom">Симптом:</span> механика работает, но «на кадр позже» —
+            рывок не отменяет движение, урон применяется после смерти, вьюха отстаёт от
+            симуляции. Исключений нет, тесты не падают. Причина: систему дописали в конец
+            списка вместо её группы из §10. Это самая дорогая ошибка блока, потому что она не
+            выглядит как ошибка.
+        </p>
+
+        <h3 id="pitfall-struct-class">Компонент объявлен классом</h3>
+        <p>
+            <span class="symptom">Симптом:</span> ошибка компиляции на
+            <code>where T : struct</code>. Здесь всё хорошо: компилятор ловит это сразу.
+            Хуже родственная ошибка, которую он не ловит, — ссылочное поле внутри
+            <code>struct</code>-компонента: массив, список или ссылка на объект Unity. Формально
+            это компилируется, фактически ломает и копирование, и представление о том, что
+            компонент — данные.
+        </p>
+
+        <h3 id="pitfall-precompiled">R3 или UniTask внутри системы</h3>
+        <p>
+            <span class="symptom">Симптом:</span> до правки asmdef — никакого симптома,
+            компилируется молча. Проверено: precompiled-библиотеки вне asmdef видны всем
+            сборкам, поэтому <code>using R3;</code> в <code>Game.Simulation</code> работал.
+            После <code>overrideReferences: true</code> даёт <code>CS0246</code>. Если такая
+            ошибка появилась — это не поломка сборки, а сработавшая защита: подписки и
+            <code>async</code> внутри симуляции запрещены <code>CLAUDE.md</code> §7.
+        </p>
+
+        </section>
+
+        <!-- ========================================= ЧЕК-ЛИСТ ПРИЁМКИ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Структура кода</strong></p>
+
+        <ul class="checklist">
+            <li class="key"><code>RunContext</code> лежит в <code>Game.Core</code> и содержит
+                только стабильные строковые ID — ни одной прямой ссылки на конфиг
+                (<code>ARCHITECTURE.md</code> §4, §9).</li>
+            <li class="key">Порядок систем виден целиком в одном файле в
+                <code>Game.Simulation</code> и читается сверху вниз группами из §10.</li>
+            <li class="key">Мир и системы создаются и уничтожаются в одном классе —
+                <code>RunEntryPoint</code>. Больше нигде нет ни <code>new EcsWorld</code>,
+                ни <code>Destroy</code>.</li>
+            <li>Порядок сборки — <code>Add</code> → <code>Inject</code> → <code>Init</code>.</li>
+            <li>В <code>Dispose</code> сначала <code>systems.Destroy()</code>, затем
+                <code>world.Destroy()</code>.</li>
+            <li>Ни один компонент не класс, ни в одном компоненте нет ссылочных полей.</li>
+            <li>В <code>Game.Simulation</code> нет <code>using UnityEngine</code> с
+                <code>Time</code>, <code>GameObject</code>, <code>Physics</code>,
+                <code>Resources</code>, <code>SceneManager</code>.</li>
+            <li><code>SimulationClock</code> пишется ровно в одном месте — в
+                <code>Tick</code> точки входа.</li>
+        </ul>
+
+        <p><strong>Сборки</strong></p>
+
+        <ul class="checklist">
+            <li class="key">У <code>Game.Simulation</code> выставлены
+                <code>overrideReferences: true</code> и пустой
+                <code>precompiledReferences</code>.</li>
+            <li>Проверено вручную: <code>using R3;</code> внутри <code>Game.Simulation</code>
+                даёт <code>CS0246</code>, а после удаления строки сборка снова компилируется.</li>
+            <li><code>Game.Simulation</code> по-прежнему не ссылается на VContainer.</li>
+        </ul>
+
+        <p><strong>Поведение — проверяется запуском</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Забег стартует: скоуп забега появляется в иерархии, лог из
+                <code>Initialize</code> точки входа приходит один раз.</li>
+            <li class="key">Временная система с логом в <code>Run</code> показывает <strong>один</strong>
+                вызов на кадр. Два — искать второй тик (подводный камень выше). Систему после
+                проверки удалить.</li>
+            <li class="key">Временная система с <code>EcsCustomInject&lt;SimulationClock&gt;</code>
+                видит ненулевой <code>Delta</code> — значит <code>Inject</code> отработал и
+                порядок вызовов верный.</li>
+            <li>Выход из забега: <code>Dispose</code> точки входа приходит, исключений нет.</li>
+            <li class="key">Второй забег подряд: новый мир, счётчик сущностей начинается с нуля,
+                тик по-прежнему один на кадр. Это главная проверка всей конструкции двух
+                скоупов.</li>
+            <li>Возврат в меню и запуск третьего забега не роняют приложение и не оставляют
+                тикающий мир.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему <code>Inject</code> обязан идти между
+                <code>Add</code> и <code>Init</code>, и что произойдёт при нарушении (1.3).</li>
+            <li class="key">Понятно, почему <code>EcsSystems.Inject</code> — не второй контейнер
+                (1.3 и <a href="02-composition-root.html#two-di">урок 02, 2.2</a>).</li>
+            <li>Понятно, почему скоуп забега создаётся кодом, а не лежит в сцене (2.2).</li>
+            <li>Понятно, почему <code>deltaTime</code> не читается внутри систем, и какое
+                правило защищает <code>SimulationClock</code> от рассинхронизации (2.4).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>

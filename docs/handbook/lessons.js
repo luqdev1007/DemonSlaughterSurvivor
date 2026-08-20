@@ -40,6 +40,16 @@ window.HANDBOOK_LESSONS = [
         tags: ["VContainer", "LifetimeScope", "Lifetime", "IStartable", "ITickable", "IDisposable", "child scope"],
         summary: "Как корень композиции выглядит в коде: LifetimeScope как MonoBehaviour, три времени жизни и что каждое значит в паре скоупов проект/забег, порядок вызова точек входа с точностью до кадра и правило, по которому забег пересоздаётся, а проект — нет."
     },
+    {
+        n: 4,
+        step: 1,
+        block: 3,
+        title: "Точка входа ECS: мир, системы, инъекция",
+        file: "lessons/04-ecs-entry-point.html",
+        date: "2026-08-21",
+        tags: ["LeoECS Lite", "EcsWorld", "EcsSystems", "EcsSystems.Inject", "RunContext", "asmdef"],
+        summary: "Мир ECS не глобален и не вечен: кто его создаёт и уничтожает, почему Inject обязан идти между Add и Init, как порядок систем держится одним файлом и чем закрывается граница сборки симуляции."
+    },
     // NEW LESSONS GO HERE
 ];
 

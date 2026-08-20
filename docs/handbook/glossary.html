@@ -141,6 +141,21 @@
         <h2 id="cyrillic">Кириллица</h2>
 
         <div class="term">
+            <span class="term-name" id="precompiled-reference">Библиотека вне asmdef</span>
+            <span class="term-en">precompiled reference, overrideReferences</span>
+            <p class="term-body">
+                Готовая .dll, лежащая в проекте без собственного asmdef, — например пакеты
+                NuGet в <code>Assets/Packages</code>. Такие библиотеки видны <strong>всем</strong>
+                сборкам проекта автоматически, в обход списка ссылок asmdef. Проверено на проекте:
+                <code>using R3;</code> компилировался внутри <code>Game.Simulation</code>, у которой
+                ссылки на R3 нет. Закрывается двумя полями asmdef —
+                <code>overrideReferences: true</code> и пустым <code>precompiledReferences</code>;
+                после этого тот же <code>using</code> даёт <code>CS0246</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#asmdef-boundary">04 · Граница сборки симуляции</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="dependency-injection">Внедрение зависимостей</span>
             <span class="term-en">Dependency Injection, DI</span>
             <p class="term-body">
@@ -226,6 +241,35 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="ecs-inject">Инъекция в системы</span>
+            <span class="term-en">EcsSystems.Inject, LeoECS Lite DI</span>
+            <p class="term-body">
+                Один проход рефлексией по полям всех добавленных систем, заполняющий поля
+                известных типов: <code>EcsWorldInject</code>, <code>EcsPoolInject&lt;T&gt;</code>,
+                <code>EcsFilterInject&lt;…&gt;</code> берутся из мира, <code>EcsCustomInject&lt;T&gt;</code> —
+                из аргументов вызова по совпадению типа. <strong>Не контейнер:</strong> ничего не
+                создаёт, времён жизни не знает, графа не строит. Обязан вызываться строго между
+                <code>Add</code> и <code>Init</code> — иначе не заполнится ничего, и молча.
+            </p>
+            <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#injection">04 · Инъекция в системы</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="ecs-component">Компонент ECS</span>
+            <span class="term-en">component</span>
+            <p class="term-body">
+                Единица данных на сущности: <code>struct</code>, только поля, имя —
+                существительное без суффикса (<code>Health</code>, <code>MoveSpeed</code>).
+                Ограничение <code>where T : struct</code> держит компилятор, а вот ссылочное поле
+                внутри компонента — массив, список, ссылка на объект Unity — компилируется молча
+                и ломает представление о компоненте как о данных. Пустой <code>struct</code> —
+                тег (<code>Player</code>, <code>Dead</code>); компонент с суффиксом
+                <code>Event</code> живёт один кадр и удаляется группой <code>Cleanup</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#api-shapes">04 · Формы компонента и системы</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="root-lifetime-scope">Корневой скоуп проекта</span>
             <span class="term-en">RootLifetimeScope, VContainerSettings</span>
             <p class="term-body">
@@ -267,6 +311,21 @@
                 служит сцена или сам контейнер.
             </p>
             <span class="term-src">Урок <a href="lessons/02-composition-root.html#service-locator">02 · Локатор служб</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="ecs-world">Мир ECS</span>
+            <span class="term-en">EcsWorld</span>
+            <p class="term-body">
+                Хранилище сущностей, пулов компонентов и фильтров — все данные симуляции.
+                В этом проекте не глобален и не вечен: живёт ровно один забег, регистрируется
+                как <code>Lifetime.Scoped</code> в <a href="#lifetimescope">скоупе</a> забега.
+                Уничтожается методом <code>Destroy()</code>, а не <code>Dispose()</code>, — значит
+                контейнер за него не отвечает и владельца надо назвать явно. Проверено:
+                <code>EcsSystems.Destroy()</code> мир не трогает, и забытый
+                <code>world.Destroy()</code> не даёт ни ошибки, ни предупреждения.
+            </p>
+            <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#world-and-systems">04 · EcsWorld и EcsSystems</a></span>
         </div>
 
         <div class="term">
@@ -312,6 +371,19 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="ecs-pool">Пул компонентов</span>
+            <span class="term-en">EcsPool&lt;T&gt;</span>
+            <p class="term-body">
+                Хранилище всех компонентов одного типа в мире, с доступом по сущности:
+                <code>Add</code>, <code>Get</code>, <code>Has</code>, <code>Del</code>.
+                Система не хранит компоненты у себя — она получает пул инъекцией
+                (<code>EcsPoolInject&lt;T&gt;</code>) и работает через него. Именно поэтому
+                система остаётся классом без состояния.
+            </p>
+            <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#injection">04 · Инъекция в системы</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="singleton">Синглтон</span>
             <span class="term-en">Singleton</span>
             <p class="term-body">
@@ -324,6 +396,21 @@
                 непредсказуемый порядок уничтожения синглтонов на <code>MonoBehaviour</code>.
             </p>
             <span class="term-src">Урок <a href="lessons/02-composition-root.html#singleton">02 · Синглтон и static</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="ecs-system">Система ECS</span>
+            <span class="term-en">IEcsInitSystem, IEcsRunSystem, IEcsDestroySystem</span>
+            <p class="term-body">
+                Единица поведения: класс без состояния, реализующий нужные ему интерфейсы
+                жизненного цикла. Порядок выполнения задаётся <strong>порядком вызовов
+                <code>Add</code></strong> — механизма групп или приоритетов в LeoECS Lite нет,
+                поэтому тринадцать групп из <code>ARCHITECTURE.md</code> §10 держит один файл,
+                читаемый сверху вниз. <code>Run</code> идёт в порядке добавления,
+                <code>Destroy</code> — в обратном. Система, дописанная в конец вместо своей
+                группы, не даёт исключения: механика просто срабатывает на кадр позже.
+            </p>
+            <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#order">04 · Порядок систем</a></span>
         </div>
 
         <div class="term">
@@ -371,6 +458,19 @@
                 читаться с одного экрана, и не раньше.
             </p>
             <span class="term-src">Урок <a href="lessons/03-vcontainer-lifetimescope.html#api-installer">03 · Установщик</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="ecs-filter">Фильтр ECS</span>
+            <span class="term-en">EcsFilter</span>
+            <p class="term-body">
+                Набор сущностей, подходящих под маску «есть эти компоненты, нет вон тех»
+                (<code>Inc&lt;…&gt;</code> и <code>Exc&lt;…&gt;</code>). Мир поддерживает фильтры в
+                актуальном состоянии сам, при добавлении и удалении компонентов, поэтому обход
+                фильтра в <code>Run</code> не стоит поиска и не аллоцирует. Приходит в систему
+                инъекцией вместе с пулами включённых компонентов.
+            </p>
+            <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#injection">04 · Инъекция в системы</a></span>
         </div>
 
         <div class="term">
