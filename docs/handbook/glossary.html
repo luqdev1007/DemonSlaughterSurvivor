@@ -141,6 +141,19 @@
         <h2 id="cyrillic">Кириллица</h2>
 
         <div class="term">
+            <span class="term-name" id="dependency-injection">Внедрение зависимостей</span>
+            <span class="term-en">Dependency Injection, DI</span>
+            <p class="term-body">
+                Способ получить зависимость, при котором объект не создаёт её сам и не ищет
+                глобально, а получает снаружи — через конструктор либо, когда конструктор
+                недоступен (<code>MonoBehaviour</code>, ECS-система), через поле или метод.
+                Сам по себе приём ничего не решает, а переносит задачу сборки в одно место:
+                этим местом становится <a href="#composition-root">корень композиции</a>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/02-composition-root.html#injection-kinds">02 · Виды инъекции</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="di-boundary">Граница двух DI</span>
             <span class="term-en">DI boundary</span>
             <p class="term-body">
@@ -152,6 +165,20 @@
                 <code>EcsSystems.Inject()</code>.
             </p>
             <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#di-boundary">01 · Граница двух DI</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="object-graph">Граф объектов</span>
+            <span class="term-en">object graph</span>
+            <p class="term-body">
+                Сеть созданных объектов и ссылок между ними, которую контейнер строит на фазе
+                <code>Resolve</code>. Из графа выводятся порядок создания (сначала то, от чего
+                зависят) и порядок разрушения (обратный). Ценность корня композиции в том, что
+                граф в нём существует целиком и в одном месте; локатор служб размазывает его
+                по всему коду, и ответ на вопрос «кто создал этот объект» перестаёт
+                существовать.
+            </p>
+            <span class="term-src">Урок <a href="lessons/02-composition-root.html#what-is-root">02 · Что такое корень композиции</a></span>
         </div>
 
         <div class="term">
@@ -169,6 +196,36 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="composition-root">Корень композиции</span>
+            <span class="term-en">Composition Root</span>
+            <p class="term-body">
+                Единственное место приложения, где известны все конкретные типы сразу и где
+                собирается граф объектов. Стоит максимально близко к точке входа. Работает в
+                три фазы: <code>Register</code> (объявить, что чем закрывается),
+                <code>Resolve</code> (построить граф — ровно один раз) и <code>Release</code>
+                (разобрать в обратном порядке). Логики в корне нет: он только соединяет.
+                В этом проекте корней два уровня — проектный, живущий всё приложение, и корень
+                забега, умирающий вместе с забегом.
+            </p>
+            <span class="term-src">Урок <a href="lessons/02-composition-root.html#what-is-root">02 · Что такое корень композиции</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="service-locator">Локатор служб</span>
+            <span class="term-en">Service Locator</span>
+            <p class="term-body">
+                Глобальный реестр, у которого объект сам спрашивает нужную реализацию
+                (<code>Services.Get&lt;T&gt;()</code>). Внешне похож на внедрение зависимостей, но
+                прячет зависимость из сигнатуры, переносит ошибку конфигурации из компиляции
+                в рантайм, делает порядок инициализации неявным и не даёт собрать объект в
+                отрыве от окружения. <code>GameObject.Find</code>, <code>FindObjectOfType</code>
+                и любой <code>Resolve</code> в игровом коде — это тот же локатор, где реестром
+                служит сцена или сам контейнер.
+            </p>
+            <span class="term-src">Урок <a href="lessons/02-composition-root.html#service-locator">02 · Локатор служб</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="missing-script">Оторванная ссылка на скрипт</span>
             <span class="term-en">Missing (Mono Script)</span>
             <p class="term-body">
@@ -179,6 +236,36 @@
                 фиксируется до того, как первый её скрипт повешен на префаб.
             </p>
             <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#pitfall-rename">01 · Переименовал asmdef</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="domain-reload">Перезагрузка домена</span>
+            <span class="term-en">Domain Reload</span>
+            <p class="term-body">
+                Пересоздание домена приложения при входе в Play Mode и при перекомпиляции,
+                в ходе которого <code>static</code>-поля обнуляются. Начиная с Unity 2019
+                перезагрузку можно отключить ради быстрого входа в Play Mode — и тогда
+                <code>static</code>-состояние переживает остановку игры. Симптом: первый запуск
+                после компиляции исправен, второй ведёт себя иначе, а перезапуск редактора
+                «чинит» проблему. Поэтому код не имеет права полагаться на то, что
+                <code>static</code> обнулится.
+            </p>
+            <span class="term-src">Урок <a href="lessons/02-composition-root.html#singleton">02 · Синглтон и static</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="singleton">Синглтон</span>
+            <span class="term-en">Singleton</span>
+            <p class="term-body">
+                Частный случай локатора служб, где реестр состоит из одного элемента.
+                Главная претензия не в глобальности, а в том, что объект сам управляет своим
+                временем жизни: решает, когда родиться, и не решает, когда умереть. Это прямо
+                противоречит требованию «один владелец у каждого объекта»
+                (<code>ARCHITECTURE.md</code> §1). В Unity добавляются два своих механизма:
+                выживание <code>static</code>-состояния при отключённой перезагрузке домена и
+                непредсказуемый порядок уничтожения синглтонов на <code>MonoBehaviour</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/02-composition-root.html#singleton">02 · Синглтон и static</a></span>
         </div>
 
         <div class="term">

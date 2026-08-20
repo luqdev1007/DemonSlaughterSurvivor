@@ -20,6 +20,16 @@ window.HANDBOOK_LESSONS = [
         tags: ["asmdef", "Assembly Definition", "namespace", "DI boundary"],
         summary: "Зачем архитектурную границу держит компилятор, а не дисциплина: раскладка восьми сборок проекта, направление зависимостей и цена ошибки в имени сборки."
     },
+    {
+        n: 2,
+        step: 1,
+        block: 1,
+        title: "Корень композиции против локатора служб",
+        file: "lessons/02-composition-root.html",
+        date: "2026-08-19",
+        tags: ["Composition Root", "Service Locator", "DI", "VContainer", "синглтоны"],
+        summary: "Единственная точка приложения, которая знает все конкретные типы: три фазы работы контейнера, правило одного Resolve и почему запрет синглтонов, GameObject.Find и FindObjectOfType — три следствия одного решения."
+    },
     // NEW LESSONS GO HERE
 ];
 
