@@ -1,3 +1,4 @@
+using Game.Core;
 using Game.Services;
 using UnityEngine;
 using VContainer;
@@ -11,9 +12,9 @@ namespace Game.Bootstrap
 
         protected override void Configure(IContainerBuilder builder)
         {
-            builder.RegisterEntryPoint<BootstrapEntryPoint>();
+            builder.Register<SceneLoader>(Lifetime.Singleton).As<ISceneLoader>();
 
-            builder.Register<SceneLoader>(Lifetime.Singleton).AsImplementedInterfaces();
+            builder.RegisterEntryPoint<BootstrapEntryPoint>();
         }
     }
 }
