@@ -14,6 +14,8 @@ namespace Game.Bootstrap
         {
             builder.Register<SceneLoader>(Lifetime.Singleton).As<ISceneLoader>();
 
+            builder.Register<RunLauncher>(Lifetime.Singleton).As<IRunLauncher>();
+
             builder.RegisterEntryPoint<BootstrapEntryPoint>();
         }
     }
