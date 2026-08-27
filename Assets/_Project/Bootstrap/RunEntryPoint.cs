@@ -1,6 +1,6 @@
 using Game.Core;
-using Game.Simulation.Systems;
 using Game.Simulation.Services;
+using Game.Simulation.Systems;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
@@ -37,8 +37,7 @@ namespace Game.Bootstrap
 
         public void Tick()
         {
-            _clock.Delta = Time.deltaTime;
-            _clock.Elapsed += Time.deltaTime;
+            _clock.Advance(Time.deltaTime);
 
             _systems.Run();
         }

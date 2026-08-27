@@ -11,7 +11,7 @@ namespace Game.Core
         }
 
         public string LevelId { get; }
-        public string CharacterId { get;  }
+        public string CharacterId { get; }
         public RunMode Mode { get; }
         public int Seed { get; }
     }
