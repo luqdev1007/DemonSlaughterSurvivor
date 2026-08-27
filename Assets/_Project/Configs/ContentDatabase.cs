@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace Game.Configs
 {
+    [CreateAssetMenu(fileName = "ContentDatabase", menuName = "Game/Content/Database")]
     public sealed class ContentDatabase : ScriptableObject
     {
         [SerializeField] private ContentConfig[] _entries;

@@ -48,3 +48,5 @@ MonoBehaviour:
     TypeName: 
   autoRun: 1
   autoInjectGameObjects: []
+  _contentDatabase: {fileID: 11400000, guid: d145920a83201df43b99c931517ec75b, type: 2}
+  _scenesConfig: {fileID: 11400000, guid: df4ee6e99fbfeaf41aadf4181ded7907, type: 2}

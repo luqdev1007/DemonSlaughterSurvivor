@@ -2,8 +2,11 @@ using UnityEngine;
 
 namespace Game.Configs
 {
+    [CreateAssetMenu(fileName = "Level", menuName = "Game/Content/Level")]
     public sealed class LevelConfig : ContentConfig
     {
-        [field: SerializeField] public string SceneName { get; private set; }
+        [SerializeField] private string _sceneName;
+
+        public string SceneName => _sceneName;
     }
 }
