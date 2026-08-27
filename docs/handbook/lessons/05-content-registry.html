@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>05 · Реестр контента: стабильные ID</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>05 · Реестр контента: стабильные ID</h1>
+
+        <div class="lesson-meta">
+            шаг 1 роадмапа (бутстрап) · блок 4 · 2026-08-27<br>
+            Доки проекта: <code>CLAUDE.md</code> §7 (красные линии про ID и сейвы), §8 (техдолг про имена сцен) ·
+            <code>ARCHITECTURE.md</code> §4, §9, §14, §15, §16 ·
+            журнал решений <code>PROGRESS.md</code> от 2026-08-20 и 2026-08-21<br>
+            Опирается на урок <a href="04-ecs-entry-point.html#api-core">04 · RunContext</a>,
+            <a href="01-assemblies-and-folders.html#what-asmdef-gives">01 · Что даёт asmdef</a> и
+            <a href="02-composition-root.html#two-di">02 · Два DI</a><br>
+            Версии: Unity <code>6000.4.11f1</code>, VContainer <code>5103bfc</code>,
+            Addressables <code>2.9.1</code> (в архитектуре роли пока не имеет).
+            Всё, помеченное как проверенное, проверялось на этом проекте.
+        </div>
+
+        <p class="lead">
+            Блок 3 закончился забегом, который стартует по <code>RunContext</code>. Внутри
+            контекста лежат строки — <code>LevelId</code>, <code>CharacterId</code>, — и пока
+            что <code>RunLauncher</code> честно передаёт <code>LevelId</code> прямо в загрузчик
+            сцен как имя сцены. Этот блок отвечает на вопрос, как строка превращается в конфиг,
+            и почему на этот вопрос нельзя ответить «прямой ссылкой». Главная мысль блока —
+            <strong>идентификатор контента это не удобство, а контракт совместимости с сейвом,
+            который игрок записал полгода назад</strong>.
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="contract">1.1 Идентификатор — контракт с прошлым</h3>
+
+        <p>
+            У любой единицы контента есть имя в редакторе, путь в проекте, место в списке и
+            GUID ассета. Ни одно из этих свойств не годится на роль идентификатора, и причина
+            всегда одна и та же: <strong>идентификатор попадает наружу игры</strong> — в сейв,
+            в облачную синхронизацию, в таблицу дропа, в конфиг DLC. Всё, что уехало наружу,
+            обязано остаться понятным следующей версии билда.
+        </p>
+
+        <p>
+            Источников идентификатора, которые находятся вне кода, у нас четыре, и все четыре
+            появятся в MVP:
+        </p>
+
+        <ul>
+            <li><strong>Сейв</strong> — что открыто, что куплено в общей ветке, какой персонаж
+                выбран последним (<code>ARCHITECTURE.md</code> §16).</li>
+            <li><strong>Дроп и генерация</strong> — таблица «что выпадает» ссылается на предметы
+                строкой, потому что таблица это данные, а не код.</li>
+            <li><strong>Мета-магазин</strong> — покупка записывается как «куплен вот этот ID».</li>
+            <li><strong>Патч и DLC</strong> — новая единица контента появляется без пересборки
+                того, что её раздаёт.</li>
+        </ul>
+
+        <p>
+            Отсюда точное значение слова «стабильный». Оно не про уникальность и не про
+            читаемость — оно про <strong>неизменность после первого релиза</strong>. Всё
+            остальное в ассете свободно меняется всегда:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Что меняем</th><th>Можно ли после релиза</th><th>Почему</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Имя файла ассета</td><td>да, свободно</td>
+                    <td>ID лежит внутри ассета, а не в имени</td></tr>
+                <tr><td>Папка, в которой лежит ассет</td><td>да, свободно</td>
+                    <td>путь не участвует в поиске</td></tr>
+                <tr><td>Порядок в списках и таблицах</td><td>да, свободно</td>
+                    <td>индекс никуда не сохраняется</td></tr>
+                <tr><td>Отображаемое имя, иконка, баланс</td><td>да, это и есть работа патча</td>
+                    <td>данные записи, не её ключ</td></tr>
+                <tr><td><strong>Строковый ID</strong></td><td><strong>нет, никогда</strong></td>
+                    <td>на него ссылаются сейвы игроков</td></tr>
+                <tr><td>Тип записи (уровень стал персонажем)</td><td>практически нет</td>
+                    <td>сейв ждёт по этому ID запись прежнего типа</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="note warn">
+            <span class="note-title">Как выглядит поломка</span>
+            <p>
+                Не как исключение. Игрок обновляет игру, заходит — и у него закрыт персонаж, за
+                которого он играл сорок часов, потому что ассет переименовали и ID уехал вместе
+                с именем. Ошибки в консоли нет, стектрейса нет, воспроизвести без старого сейва
+                нельзя. Это и делает правило жёстким: цена ошибки не в отладке, а в том, что
+                починить у конкретного игрока уже нечего.
+            </p>
+        </div>
+
+        <h3 id="not-reference">1.2 Почему не ссылка, не <code>enum</code> и не путь</h3>
+
+        <p>
+            Все альтернативы выглядят дешевле, и у каждой есть ровно один момент, в который она
+            ломается.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Вариант</th><th>Чем привлекает</th><th>Где ломается</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Прямая ссылка на конфиг</td>
+                    <td>компилятор проверяет, переименование безопасно</td>
+                    <td>ссылку нельзя записать в JSON-сейв; и <code>Game.Core</code> не имеет
+                        права видеть <code>Game.Configs</code> (§15), а <code>RunContext</code>
+                        живёт именно в Core</td></tr>
+                <tr><td><code>enum</code></td>
+                    <td>опечатка — ошибка компиляции</td>
+                    <td>сериализуется как <code>int</code>: значение, вставленное в середину,
+                        сдвигает все следующие, и сейв начинает читать чужой контент. DLC не
+                        может дописать значение в чужой <code>enum</code></td></tr>
+                <tr><td>Путь в <code>Resources</code></td>
+                    <td>ничего не надо регистрировать</td>
+                    <td>путь и есть ID: переименовали папку — сломали сейвы. Плюс всё
+                        содержимое <code>Resources</code> безусловно едет в билд</td></tr>
+                <tr><td>Имя ассета (<code>name</code>)</td>
+                    <td>поле заполнять не надо</td>
+                    <td>то же самое, и вдобавок Unity разрешает два ассета с одинаковым именем
+                        в разных папках</td></tr>
+                <tr><td>GUID ассета</td>
+                    <td>действительно стабилен и уникален</td>
+                    <td>нечитаем в сейве и в таблицах, теряется при пересоздании ассета, и это
+                        редакторное понятие: в рантайме его не достать без Addressables</td></tr>
+                <tr><td>Адрес Addressables</td>
+                    <td>строка, стабильная, готовая</td>
+                    <td>привязывает контент-модель к пакету: решили отказаться от
+                        Addressables — переписываем сейвы</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Остаётся собственное строковое поле в самом ассете. Здесь есть развилка, которую
+            стоит проговорить: ID можно хранить <strong>внутри записи</strong>
+            (<code>[SerializeField] private string _id;</code>) или <strong>ключом в таблице
+            реестра</strong> (список пар «строка → ссылка на конфиг»).
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th></th><th>ID внутри записи</th><th>ID ключом в таблице</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Дубликаты</td><td>возможны, ловятся валидацией</td>
+                    <td>невозможны, если таблица — словарь</td></tr>
+                <tr><td>Забыть указать</td><td>пустой ID, ловится валидацией</td>
+                    <td>невозможно</td></tr>
+                <tr><td>Забыть зарегистрировать</td><td>запись просто не видна реестру</td>
+                    <td>то же самое</td></tr>
+                <tr><td>Знает ли запись свой ID</td><td><strong>да</strong></td>
+                    <td>нет — конфиг в руках не может сказать, кто он</td></tr>
+                <tr><td>Перенос ассета в другой проект</td><td>ID едет вместе с ним</td>
+                    <td>ID остаётся в чужой таблице</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Решающий довод — четвёртая строка. Дроп, сейв и UI постоянно идут в обратную
+            сторону: «вот выпавший предмет, запиши его в сейв», «вот выбранный персонаж, положи
+            его ID в <code>RunContext</code>». Если запись не знает своего ID, для обратного
+            направления придётся держать второй словарь, и рассинхронизация двух словарей —
+            вопрос времени. Поэтому <strong>ID внутри записи, а уникальность держит валидация</strong>.
+        </p>
+
+        <h3 id="not-locator">1.3 Реестр — это не локатор служб</h3>
+
+        <p>
+            Возражение возникает сразу, и оно правильное: блок 1 был целиком про отказ от
+            Service Locator (<a href="02-composition-root.html#two-di">урок 02</a>), а тут мы
+            заводим объект, у которого спрашивают «дай мне вот это по ключу». Разница есть, и
+            она проходит по трём линиям.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th></th><th>Service Locator</th><th>Реестр контента</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Что выдаёт</td><td>поведение — сервисы, реализации интерфейсов</td>
+                    <td>данные — конфиги, только для чтения</td></tr>
+                <tr><td>Откуда ключ</td><td>тип, известный в момент компиляции</td>
+                    <td>строка, известная только в рантайме: из сейва, из таблицы дропа,
+                        из выбора игрока</td></tr>
+                <tr><td>Заменяется ли инъекцией</td><td>да, и обязан быть заменён</td>
+                    <td>нет: инжектить «вот этот конкретный персонаж» некуда — какой именно,
+                        выяснится после загрузки сейва</td></tr>
+                <tr><td>Прячет ли зависимости</td><td>да, класс тайно тянет что угодно</td>
+                    <td>нет: зависимость от реестра объявлена в конструкторе, как любая другая</td></tr>
+                <tr><td>Как получают его самого</td><td>из статики</td>
+                    <td>инъекцией из проектного скоупа</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="note">
+            <span class="note-title">Правило-детектор</span>
+            <p>
+                Если ключ поиска можно было бы записать в коде как <code>typeof(T)</code> — это
+                локатор, и его надо заменить инъекцией через конструктор. Если ключ приходит из
+                данных и в коде его записать нельзя — это реестр, и он законен. Проверка
+                занимает секунду и разводит два внешне одинаковых объекта.
+            </p>
+        </div>
+
+        <h3 id="fail-fast">1.4 Валидация: упасть на старте вместо тишины</h3>
+
+        <p>
+            У реестра три класса ошибок наполнения, и все три без проверки проявляются молча.
+        </p>
+
+        <ul>
+            <li><strong>Пустой ID.</strong> Новый ассет создан, поле не заполнено. Запись
+                недостижима: по <code>""</code> её никто не спросит.</li>
+            <li><strong>Дубликат ID.</strong> Скопировали конфиг через <code>Ctrl+D</code>, ID
+                скопировался вместе с ним. В словаре останется один из двух — какой именно,
+                зависит от порядка обхода списка. Дальше персонаж молча получает чужие статы.</li>
+            <li><strong>Пустая ячейка в списке.</strong> Запись удалили из проекта, ссылка в
+                базе стала <code>None</code>. При обходе — <code>NullReferenceException</code>
+                в неочевидном месте.</li>
+        </ul>
+
+        <p>
+            Проверять всё это надо в <strong>конструкторе реестра</strong>, то есть при
+            построении проектного скоупа, то есть до первого кадра игры. Приложение не должно
+            запуститься. Формулировка звучит грубо, но альтернатива хуже: игра, которая
+            стартовала с подменённым дубликатом контентом, выглядит рабочей и портит сейвы всё
+            время, пока никто не заметил.
+        </p>
+
+        <p>
+            Это тот же принцип, что и «запуск прямо с <code>Gameplay</code> обязан падать
+            громко» из журнала решений от 2026-08-20. Разница между «упало на старте» и
+            «работает неправильно» — это разница между пятью минутами и неделей.
+        </p>
+
+        </section>
+
+        <!-- ======================================= ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="assemblies">2.1 Три сборки и одна граница</h3>
+
+        <p>
+            <code>ARCHITECTURE.md</code> §14 кладёт <code>ContentRegistry</code> в
+            <code>Core/</code>. §15 запрещает <code>Game.Core</code> ссылаться на
+            <code>Game.Configs</code>. А конфиги — это <code>ScriptableObject</code>, и живут
+            они именно в <code>Game.Configs</code>. Противоречия нет, но разрез придётся
+            сделать аккуратно:
+        </p>
+
+<pre><code><span class="c">// Game.Core — чистый C#, ничего не знает про ScriptableObject</span>
+<span class="k">interface</span> <span class="t">IContentEntry</span>       <span class="c">// «у меня есть Id»</span>
+<span class="k">interface</span> <span class="t">IContentRegistry</span>    <span class="c">// «спроси меня по Id»</span>
+<span class="k">class</span>     <span class="t">ContentRegistry</span>     <span class="c">// словари и валидация</span>
+
+<span class="c">// Game.Configs — Unity-часть</span>
+<span class="k">abstract class</span> <span class="t">ContentConfig</span> <span class="p">:</span> <span class="t">ScriptableObject</span><span class="p">,</span> <span class="t">IContentEntry</span>
+<span class="k">sealed class</span> <span class="t">LevelConfig</span> <span class="p">:</span> <span class="t">ContentConfig</span>
+<span class="k">sealed class</span> <span class="t">ContentDatabase</span> <span class="p">:</span> <span class="t">ScriptableObject</span>   <span class="c">// список всех записей</span>
+
+<span class="c">// Game.Bootstrap — собирает одно из другого</span>
+<span class="k">new</span> <span class="t">ContentRegistry</span><span class="p">(</span>database<span class="p">.</span>Entries<span class="p">)</span></code></pre>
+
+        <p>
+            Стрелка идёт снизу вверх: <code>Configs</code> знает про <code>Core</code>, обратное
+            неверно. Реестру всё равно, чем является запись, — ему нужно только
+            <code>Id</code>. Это ровно тот приём, которым в §15 вообще держатся границы слоёв:
+            «связь через интерфейс, объявленный в <code>Game.Core</code>».
+        </p>
+
+        <div class="note">
+            <span class="note-title">Почему не положить реестр в Game.Configs</span>
+            <p>
+                Тогда все, кому нужен реестр, обязаны видеть <code>Game.Configs</code>: и
+                <code>Game.Meta</code>, и <code>Game.Services</code>, и <code>Game.UI</code>.
+                <code>Game.Meta</code> — это сейвы, и он начал бы зависеть от
+                <code>ScriptableObject</code>. Сейв, который зависит от типов Unity, нельзя ни
+                прочитать в тесте, ни разобрать инструментом. В <code>Core</code> реестр
+                остаётся обычным C#: словарь, список, строка.
+            </p>
+        </div>
+
+        <h3 id="where-entries">2.2 Откуда реестр берёт записи</h3>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Способ</th><th>Оценка</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Явный список в <code>ContentDatabase</code></td>
+                    <td><strong>берём.</strong> Видно, что в игре есть; ничего лишнего в билде;
+                        работает в рантайме без пакетов</td></tr>
+                <tr><td><code>Resources.LoadAll</code></td>
+                    <td>нет: папка становится контрактом, всё её содержимое едет в билд
+                        целиком</td></tr>
+                <tr><td><code>AssetDatabase.FindAssets</code></td>
+                    <td>нет: редакторный API. Ровно та ловушка из <code>CLAUDE.md</code> §8, на
+                        которую напоролись 2026-08-20 — компилируется в редакторе, падает на
+                        билде</td></tr>
+                <tr><td>Метки Addressables</td>
+                    <td>рабочий вариант, но старт приложения становится асинхронным, а пакет —
+                        обязательным. Не сейчас</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Цена явного списка одна: забыл добавить новый конфиг — его для игры не существует.
+            Симптом при этом громкий (исключение с ID в тексте при первом обращении), поэтому
+            цена приемлемая. Редакторная кнопка «собрать список из папки» может появиться
+            позже, но она <strong>заполняет</strong> список, а не заменяет его: список остаётся
+            тем, что уехало в билд.
+        </p>
+
+        <h3 id="who-asks">2.3 Кто спрашивает реестр, а кто не должен</h3>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Кто</th><th>Зачем</th><th>Метод</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>RunLauncher</code></td>
+                    <td><code>LevelId</code> → <code>LevelConfig</code> → имя сцены</td>
+                    <td><code>Get</code> — промах здесь это ошибка кода</td></tr>
+                <tr><td>Фабрика сущностей (шаг 2)</td>
+                    <td><code>CharacterId</code> → <code>CharacterConfig</code> → компоненты</td>
+                    <td><code>Get</code>, один раз на старте забега</td></tr>
+                <tr><td>UI выбора персонажа</td>
+                    <td>показать всех доступных</td>
+                    <td><code>All&lt;CharacterConfig&gt;()</code></td></tr>
+                <tr><td>Загрузка сейва (<code>Game.Meta</code>)</td>
+                    <td>развернуть сохранённые ID</td>
+                    <td><strong><code>TryGet</code></strong> — единственное место, где промах
+                        нормален</td></tr>
+                <tr><td>Системы ECS</td>
+                    <td>—</td>
+                    <td>не обращаются вообще</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Четвёртая строка — не мелочь. Патч имеет право вырезать контент: предмет убрали,
+            перк переработали. Сейв игрока при этом продолжает ссылаться на исчезнувший ID, и
+            загрузка обязана это пережить — пропустить запись, а не упасть. Именно ради этого
+            случая в интерфейсе есть <code>TryGet</code>, и только ради него: во всём остальном
+            промах означает ошибку в коде и должен быть исключением.
+        </p>
+
+        <p>
+            Последняя строка — правило, а не граница. Формально <code>Game.Simulation</code>
+            ссылается на <code>Game.Configs</code> и <code>Game.Core</code>, то есть технически
+            система может взять реестр. Не надо: конфиг разворачивается в компоненты один раз
+            фабрикой, дальше симуляция работает со своими данными. Чтение конфига в тике — это
+            и лишняя косвенность, и нарушение <code>ARCHITECTURE.md</code> §3.
+        </p>
+
+        <p>
+            Живёт реестр на проектном скоупе, <code>Lifetime.Singleton</code>: он переживает
+            забеги и ничего о них не знает. Правило владения из §9 («ссылка допустима только
+            вниз») он не нарушает по построению — в нём лежат только ассеты.
+        </p>
+
+        <h3 id="scene-names">2.4 Что закрывается по именам сцен, а что остаётся</h3>
+
+        <p>
+            В <code>CLAUDE.md</code> §8 висит пункт «идентификаторы сцен — строковыми литералами
+            в коде», и условие возврата там записано прямо: «появление
+            <code>ContentRegistry</code>». Мест сейчас два:
+        </p>
+
+<pre><code><span class="c">// BootstrapEntryPoint — литерал сцены загрузочного потока</span>
+_sceneLoader<span class="p">.</span>LoadAsync<span class="p">(</span><span class="err">"MainMenu"</span><span class="p">,</span> ct<span class="p">);</span>
+
+<span class="c">// RunLauncher — хуже: ID контента используется как имя ассета</span>
+_sceneLoader<span class="p">.</span>LoadAsync<span class="p">(</span><span class="err">request.LevelId</span><span class="p">,</span> ct<span class="p">);</span></code></pre>
+
+        <p>
+            Второе чинится реестром напрямую: <code>LevelConfig</code> получает поле
+            <code>SceneName</code>, и связь «ID уровня ↔ имя сцены» становится данными, а не
+            совпадением. Первое реестром <strong>не</strong> чинится, и это стоит понимать
+            отчётливо: главное меню — не единица контента. У него нет ID в сейве, оно не
+            выпадает из дропа, оно не приезжает в DLC. Складывать его в реестр — значит
+            соврать про то, чем оно является.
+        </p>
+
+        <p>
+            Предложение: маленький <code>ScenesConfig</code> с явными полями под сцены
+            загрузочного потока, ссылка на него в проектном скоупе. Два механизма вместо одного
+            — осознанно: они отвечают на разные вопросы.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Чего блок 4 не закрывает</span>
+            <p>
+                Имя сцены остаётся строкой. Переименовали сцену в проекте — <code>LevelConfig</code>
+                об этом не узнает, и падение будет в рантайме. Что даёт правка: таких строк
+                становится <strong>одна</strong>, она лежит в данных, и её можно проверить
+                редакторным валидатором против списка Build Settings. Полностью проблема
+                снимается только типизированной ссылкой на сцену
+                (<a href="#pitfall-sceneasset">см. подводный камень</a>) или Addressables, и это
+                отдельное решение, а не побочный эффект этого блока.
+            </p>
+        </div>
+
+        <h3 id="addressables-seam">2.5 Точка расширения под Addressables</h3>
+
+        <p>
+            <code>ARCHITECTURE.md</code> §4 называет реестр «готовой точкой расширения под
+            Addressables». Смысл этой фразы такой: сегодня таблица хранит <em>сам объект</em>,
+            завтра она может хранить <em>способ его получить</em>, и снаружи это выглядит
+            одинаково.
+        </p>
+
+<pre><code><span class="c">// сегодня: ссылка лежит в базе, всё загружено вместе с ней</span>
+<span class="t">LevelConfig</span> level <span class="p">=</span> _content<span class="p">.</span>Get<span class="p">&lt;</span><span class="t">LevelConfig</span><span class="p">&gt;(</span>id<span class="p">);</span>
+
+<span class="c">// завтра: рядом появляется асинхронный путь, старый остаётся</span>
+<span class="t">UniTask</span><span class="p">&lt;</span><span class="t">T</span><span class="p">&gt;</span> LoadAsync<span class="p">&lt;</span><span class="t">T</span><span class="p">&gt;(</span><span class="k">string</span> id<span class="p">);</span></code></pre>
+
+        <p>
+            Чтобы завтра это стоило дёшево, сегодня достаточно не делать двух вещей. Первая — не
+            раздавать конфиги «навсегда»: кто-то закэширует ссылку в поле, переживёт выгрузку
+            бандла и получит мёртвый объект. Вторая — не считать, что <code>Get</code>
+            синхронный по природе; он синхронный по текущему решению. Строить асинхронность
+            сейчас не нужно: пакет в проекте есть, роли не имеет, а лишний асинхронный старт в
+            бутстрапе — это цена без выгоды.
+        </p>
+
+        </section>
+
+        <!-- ============================================= СКЕЛЕТ API ==== -->
+        <section data-kind="api">
+
+        <h2 id="api">Скелет API</h2>
+
+        <p>
+            Сигнатуры без тел. Реализация — работа разработчика.
+        </p>
+
+        <h3 id="api-core-contract">3.1 <code>Game.Core</code>: контракт</h3>
+
+<pre><code><span class="c">// Всё, что реестр знает о записи. ScriptableObject здесь не упоминается —</span>
+<span class="c">// иначе Game.Core потянет Game.Configs (ARCHITECTURE.md §15).</span>
+<span class="k">public interface</span> <span class="t">IContentEntry</span>
+<span class="p">{</span>
+    <span class="k">string</span> Id <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">public interface</span> <span class="t">IContentRegistry</span>
+<span class="p">{</span>
+    <span class="c">// Промах — ошибка кода. Кидает ContentNotFoundException с ID в тексте.</span>
+    <span class="t">T</span> Get<span class="p">&lt;</span><span class="t">T</span><span class="p">&gt;(</span><span class="k">string</span> id<span class="p">)</span> <span class="k">where</span> <span class="t">T</span> <span class="p">:</span> <span class="k">class</span><span class="p">,</span> <span class="t">IContentEntry</span><span class="p">;</span>
+
+    <span class="c">// Промах допустим. Единственный пользователь — загрузка сейва (2.3).</span>
+    <span class="k">bool</span> TryGet<span class="p">&lt;</span><span class="t">T</span><span class="p">&gt;(</span><span class="k">string</span> id<span class="p">,</span> <span class="k">out</span> <span class="t">T</span> entry<span class="p">)</span> <span class="k">where</span> <span class="t">T</span> <span class="p">:</span> <span class="k">class</span><span class="p">,</span> <span class="t">IContentEntry</span><span class="p">;</span>
+
+    <span class="c">// Список собран заранее, в конструкторе. Вызов ничего не аллоцирует.</span>
+    <span class="t">IReadOnlyList</span><span class="p">&lt;</span><span class="t">T</span><span class="p">&gt;</span> All<span class="p">&lt;</span><span class="t">T</span><span class="p">&gt;()</span> <span class="k">where</span> <span class="t">T</span> <span class="p">:</span> <span class="k">class</span><span class="p">,</span> <span class="t">IContentEntry</span><span class="p">;</span>
+
+    <span class="k">bool</span> Contains<span class="p">(</span><span class="k">string</span> id<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-registry">3.2 <code>Game.Core</code>: реестр</h3>
+
+<pre><code><span class="c">// Чистый C#: ни одного типа Unity. Проверяется тестом без редактора.</span>
+<span class="k">public sealed class</span> <span class="t">ContentRegistry</span> <span class="p">:</span> <span class="t">IContentRegistry</span>
+<span class="p">{</span>
+    <span class="c">// Строит таблицы и валидирует. Пустой ID, дубликат или null</span>
+    <span class="c">// в списке — ContentValidationException прямо здесь (1.4).</span>
+    <span class="k">public</span> <span class="t">ContentRegistry</span><span class="p">(</span><span class="t">IEnumerable</span><span class="p">&lt;</span><span class="t">IContentEntry</span><span class="p">&gt;</span> entries<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">public sealed class</span> <span class="t">ContentNotFoundException</span> <span class="p">:</span> <span class="t">Exception</span> <span class="p">{</span> <span class="p">}</span>
+<span class="k">public sealed class</span> <span class="t">ContentValidationException</span> <span class="p">:</span> <span class="t">Exception</span> <span class="p">{</span> <span class="p">}</span></code></pre>
+
+        <p>
+            Внутри — два поля: словарь <code>id → IContentEntry</code> для поиска и словарь
+            <code>Type → список</code> для <code>All</code>. Оба заполняются один раз в
+            конструкторе. Отдельные словари на каждый тип не нужны: ID уникален глобально, и
+            <code>Get&lt;T&gt;</code> проверяет тип найденной записи — запрос персонажа по ID
+            уровня обязан быть ошибкой, а не пустым результатом.
+        </p>
+
+        <h3 id="api-configs">3.3 <code>Game.Configs</code>: база записи и конкретный конфиг</h3>
+
+<pre><code><span class="c">// Общий предок всего контента. Даёт ID и ничего больше.</span>
+<span class="k">public abstract class</span> <span class="t">ContentConfig</span> <span class="p">:</span> <span class="t">ScriptableObject</span><span class="p">,</span> <span class="t">IContentEntry</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="k">string</span> _id<span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">string</span> Id <span class="p">=&gt;</span> _id<span class="p">;</span>   <span class="c">// только чтение, автозаполнения нет (см. камни)</span>
+<span class="p">}</span>
+
+<span class="c">// Первый настоящий конфиг проекта. Снимает техдолг CLAUDE.md §8.</span>
+<span class="k">public sealed class</span> <span class="t">LevelConfig</span> <span class="p">:</span> <span class="t">ContentConfig</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="k">string</span> _sceneName<span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">string</span> SceneName <span class="p">=&gt;</span> _sceneName<span class="p">;</span>
+    <span class="c">// позже: условие победы, таймлайн волн, музыка, мини-босс</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-database">3.4 <code>Game.Configs</code>: база контента</h3>
+
+<pre><code><span class="c">// Единственный список всего, что есть в игре. Ссылка на него —</span>
+<span class="c">// в проектном скоупе, то есть в префабе корня.</span>
+<span class="k">public sealed class</span> <span class="t">ContentDatabase</span> <span class="p">:</span> <span class="t">ScriptableObject</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="t">List</span><span class="p">&lt;</span><span class="t">ContentConfig</span><span class="p">&gt;</span> _entries<span class="p">;</span>
+
+    <span class="k">public</span> <span class="t">IReadOnlyList</span><span class="p">&lt;</span><span class="t">ContentConfig</span><span class="p">&gt;</span> Entries <span class="p">=&gt;</span> _entries<span class="p">;</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-bootstrap">3.5 <code>Game.Bootstrap</code>: сборка и использование</h3>
+
+<pre><code><span class="c">// ProjectLifetimeScope — ссылка на базу приходит из инспектора префаба.</span>
+<span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="t">ContentDatabase</span> _contentDatabase<span class="p">;</span>
+
+<span class="c">// Configure: реестр строится здесь, значит и падает здесь — до первого кадра.</span>
+<span class="c">// Lifetime.Singleton: переживает забеги, ссылок вниз не держит (§9).</span></code></pre>
+
+<pre><code><span class="c">// RunLauncher.StartAsync — то, ради чего блок и делается.</span>
+<span class="c">// Было:  await _sceneLoader.LoadAsync(request.LevelId, ct);</span>
+<span class="c">// Стало:</span>
+<span class="t">LevelConfig</span> level <span class="p">=</span> _content<span class="p">.</span>Get<span class="p">&lt;</span><span class="t">LevelConfig</span><span class="p">&gt;(</span>request<span class="p">.</span>LevelId<span class="p">);</span>
+<span class="k">await</span> _sceneLoader<span class="p">.</span>LoadAsync<span class="p">(</span>level<span class="p">.</span>SceneName<span class="p">,</span> ct<span class="p">);</span></code></pre>
+
+        <p>
+            Обрати внимание, что <code>RunContext</code> не меняется вообще: в нём как лежали
+            строки, так и лежат. Реестр не «уточняет» контекст — он разворачивает его на
+            границе, там, где нужен ассет. Это и есть причина, по которой
+            <code>RunContext</code> с самого начала держит ID, а не ссылки
+            (<a href="04-ecs-entry-point.html#api-core">урок 04, 3.1</a>).
+        </p>
+
+        <h3 id="anti-shapes">3.6 Формы, которых быть не должно</h3>
+
+<pre><code><span class="k">public</span> <span class="k">string</span> Id <span class="p">=&gt;</span> <span class="err">name</span><span class="p">;</span>                          <span class="c">// ← нет: имя ассета не контракт</span>
+
+<span class="k">void</span> <span class="t">OnValidate</span><span class="p">()</span> <span class="p">{</span> _id <span class="p">=</span> <span class="err">name.ToLower()</span><span class="p">;</span> <span class="p">}</span>       <span class="c">// ← нет: тот же дефект, отложенный</span>
+
+<span class="k">public enum</span> <span class="t">CharacterId</span> <span class="p">{</span> <span class="err">Berserker</span><span class="p">,</span> <span class="err">Mage</span> <span class="p">}</span>       <span class="c">// ← нет: int в сейве (1.2)</span>
+
+<span class="t">ContentRegistry</span><span class="p">.</span><span class="err">Instance</span><span class="p">.</span>Get<span class="p">&lt;</span><span class="t">LevelConfig</span><span class="p">&gt;(</span>id<span class="p">);</span>       <span class="c">// ← нет: статика, CLAUDE.md §7</span>
+
+<span class="k">var</span> all <span class="p">=</span> _content<span class="p">.</span><span class="err">All</span><span class="p">&lt;</span><span class="t">EnemyConfig</span><span class="p">&gt;();</span>              <span class="c">// ← нет, если это внутри Run()</span>
+
+_content<span class="p">.</span>Get<span class="p">&lt;</span><span class="t">CharacterConfig</span><span class="p">&gt;(</span>id<span class="p">).</span><span class="err">BaseHealth</span> <span class="p">=</span> <span class="err">50</span><span class="p">;</span>   <span class="c">// ← нет: правка ассета в рантайме</span></code></pre>
+
+        </section>
+
+        <!-- ======================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-name-as-id">ID берётся из имени ассета</h3>
+        <p>
+            <span class="symptom">Симптом:</span> никакого — до патча, который переименовывает
+            ассет. После него у игрока пропадает прогресс по этой единице контента, ошибок в
+            консоли нет. Самая дорогая ошибка блока, потому что проявляется у игроков, а не у
+            разработчика: в редакторе всё всегда согласовано.
+        </p>
+
+        <h3 id="pitfall-autofill">Автозаполнение ID в <code>OnValidate</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> выглядит как удобство и работает месяцами.
+            Ловушка в том, что связь «имя ассета → ID» восстанавливается: переименовали ассет —
+            <code>OnValidate</code> послушно переписал ID, и мы вернулись к предыдущему камню,
+            только теперь незаметно для того, кто переименовывал. Пустое поле, падающее на
+            валидации, честнее.
+        </p>
+
+        <h3 id="pitfall-duplicate">Дубликат ID после <code>Ctrl+D</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> без валидации — персонаж молча получает статы
+            соседа, причём какого именно, зависит от порядка записей в списке. Перетасовали
+            список — поведение изменилось. С валидацией — исключение на старте приложения с
+            обоими именами ассетов в тексте. Дублирование конфига копированием это нормальный
+            рабочий приём, так что случай не редкий, а регулярный.
+        </p>
+
+        <h3 id="pitfall-null-return">Промах возвращает <code>null</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> <code>NullReferenceException</code> через
+            несколько кадров и в чужом классе — например при развёртке конфига в компоненты,
+            где уже не видно, какой ID спрашивали. Правильно: <code>Get</code> кидает исключение
+            с ID в тексте прямо в точке промаха, а «может не быть» выражается отдельным
+            <code>TryGet</code>, который вызывающий обязан обработать явно.
+        </p>
+
+        <h3 id="pitfall-sceneasset">Поле <code>SceneAsset</code> в <code>LevelConfig</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> в редакторе всё компилируется и работает,
+            билд падает с ошибкой компиляции на неизвестном типе. <code>SceneAsset</code> живёт
+            в <code>UnityEditor</code>, а модули <code>UnityEditor.*</code> автоматически
+            подключаются к editor-компиляции любой сборки и отсутствуют в player-компиляции.
+            Это третий пункт <code>CLAUDE.md</code> §8, напоролись 2026-08-20 на
+            <code>ProjectAuditor</code>. Обходной приём существует — обёртка с полем под
+            <code>#if UNITY_EDITOR</code>, которая на сохранении пишет имя в обычную строку, — но
+            это отдельное решение, а не часть блока 4.
+        </p>
+
+        <h3 id="pitfall-runtime-edit">Правка конфига в Play Mode</h3>
+        <p>
+            <span class="symptom">Симптом:</span> баланс «сам изменился» между запусками.
+            <code>ScriptableObject</code> — общий объект, а не копия: изменение поля в Play Mode
+            остаётся в ассете после выхода. Реестр делает конфиги доступными отовсюду, поэтому
+            правило «конфиг только для чтения» с этого блока перестаёт быть теоретическим. Всё,
+            что меняется, идёт через пайплайн модификаторов (<code>ARCHITECTURE.md</code> §5,
+            красная линия <code>CLAUDE.md</code> §7).
+        </p>
+
+        <h3 id="pitfall-registry-dump">Реестр обрастает обязанностями</h3>
+        <p>
+            <span class="symptom">Симптом:</span> через полгода это единственный класс, который
+            знает всё: и таблицу ID, и загрузку сцен, и кэш созданных объектов, и фабрики.
+            Реестр выдаёт данные по идентификатору — и всё. Как только в нём появляется метод,
+            который что-то <em>делает</em>, он превращается ровно в тот локатор, от которого
+            уходили в блоке 1 (1.3).
+        </p>
+
+        <h3 id="pitfall-alloc">Аллокации в <code>All&lt;T&gt;()</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> в этом блоке — никакого, реестр в тике не
+            участвует. Но если <code>All</code> реализован фильтрацией общего словаря на каждый
+            вызов, он аллоцирует список, и первая же система, которая позовёт его в
+            <code>Run</code>, нарушит красную линию <code>CLAUDE.md</code> §7. Списки по типам
+            собираются один раз в конструкторе — тогда неправильный вызов остаётся
+            неправильным, но хотя бы не мусорит.
+        </p>
+
+        <h3 id="pitfall-missing-in-save">Сейв ссылается на вырезанный контент</h3>
+        <p>
+            <span class="symptom">Симптом:</span> игра падает при загрузке сейва после патча,
+            вырезавшего предмет. Это не ошибка реестра, а ошибка вызывающего: загрузка сейва —
+            единственное место, где промах ожидаем, и там нужен <code>TryGet</code> с явной
+            обработкой. Проверять стоит заранее, потому что первый вырезанный контент появится
+            задолго до релиза.
+        </p>
+
+        <h3 id="pitfall-id-style">ID придуман «на потом»</h3>
+        <p>
+            <span class="symptom">Симптом:</span> через год в проекте живут
+            <code>berserker</code>, <code>Character_Mage</code>, <code>lvl-01</code> и
+            <code>item.sword.02</code>. Формально всё работает, фактически ни найти, ни
+            отсортировать. Соглашение стоит принять сейчас и записать — например
+            <code>character.berserker</code>, <code>level.crypt_01</code>. Важно: префикс это
+            <strong>соглашение для человека</strong>, а не структура для парсинга. Код, который
+            разбирает ID на части, делает формат ID частью контракта — и тогда переименовать
+            группу становится нельзя.
+        </p>
+
+        </section>
+
+        <!-- ========================================= ЧЕК-ЛИСТ ПРИЁМКИ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Структура кода</strong></p>
+
+        <ul class="checklist">
+            <li class="key"><code>IContentEntry</code>, <code>IContentRegistry</code> и
+                <code>ContentRegistry</code> лежат в <code>Game.Core</code> и не содержат ни
+                одного типа Unity.</li>
+            <li class="key"><code>Game.Core</code> по-прежнему не ссылается на
+                <code>Game.Configs</code> — проверить компиляцией, не глазами.</li>
+            <li><code>ContentConfig</code> хранит ID сериализованным полем; свойство
+                <code>Id</code> только на чтение.</li>
+            <li>Нигде нет <code>OnValidate</code>, заполняющего <code>_id</code> автоматически.</li>
+            <li>Нигде нет <code>Resources.LoadAll</code>, <code>AssetDatabase</code> и
+                статического доступа к реестру.</li>
+            <li>Реестр не умеет ничего, кроме выдачи записей по ID.</li>
+        </ul>
+
+        <p><strong>Валидация — проверяется намеренной поломкой</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Два конфига с одинаковым ID → исключение при старте приложения, в
+                тексте оба имени ассетов.</li>
+            <li class="key">Пустой ID → исключение при старте.</li>
+            <li>Пустая ячейка в списке <code>ContentDatabase</code> → исключение при старте, а
+                не <code>NullReferenceException</code> позже.</li>
+            <li class="key"><code>Get&lt;LevelConfig&gt;("нет-такого")</code> → исключение с ID
+                в тексте. <code>TryGet</code> в том же случае возвращает <code>false</code> и не
+                кидает.</li>
+            <li><code>Get&lt;CharacterConfig&gt;(id_уровня)</code> → исключение, а не
+                <code>null</code>: тип проверяется.</li>
+            <li>После каждой проверки поломку откатить и убедиться, что приложение снова
+                стартует.</li>
+        </ul>
+
+        <p><strong>Стабильность — главная проверка блока</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Переименование ассета <code>LevelConfig</code> в проекте не ломает
+                старт забега.</li>
+            <li class="key">Перемещение ассета в другую папку не ломает старт забега.</li>
+            <li class="key">Перестановка элементов в <code>ContentDatabase</code> ничего не
+                меняет.</li>
+            <li>Переименование сцены ломает старт — и это ожидаемо: чинится в одном месте, в
+                <code>LevelConfig.SceneName</code> (2.4).</li>
+        </ul>
+
+        <p><strong>Интеграция</strong></p>
+
+        <ul class="checklist">
+            <li class="key"><code>RunLauncher</code> не передаёт <code>LevelId</code> в
+                <code>ISceneLoader</code>; имя сцены берётся из <code>LevelConfig</code>.
+                Комментарий <code>TODO ContentRegistry</code> удалён.</li>
+            <li><code>BootstrapEntryPoint</code> не содержит литерала <code>"MainMenu"</code>.</li>
+            <li>Реестр зарегистрирован <code>Lifetime.Singleton</code> на проектном скоупе.</li>
+            <li>Забег стартует и рестартует, консоль чистая — повторить сценарий приёмки
+                блока 3.</li>
+            <li>Пункт техдолга <code>CLAUDE.md</code> §8 про литералы сцен вычеркнут,
+                <code>PROGRESS.md</code> обновлён.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему ID — контракт с сейвом, а не удобство поиска (1.1).</li>
+            <li class="key">Понятно, чем реестр контента отличается от Service Locator, и как
+                отличить их за секунду (1.3).</li>
+            <li>Понятно, почему ID лежит внутри записи, а не ключом в таблице (1.2).</li>
+            <li>Понятно, почему валидация падает на старте приложения, а не логирует
+                предупреждение (1.4).</li>
+            <li>Понятно, почему <code>TryGet</code> нужен ровно одному вызывающему (2.3).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>

@@ -50,6 +50,16 @@ window.HANDBOOK_LESSONS = [
         tags: ["LeoECS Lite", "EcsWorld", "EcsSystems", "EcsSystems.Inject", "RunContext", "asmdef"],
         summary: "Мир ECS не глобален и не вечен: кто его создаёт и уничтожает, почему Inject обязан идти между Add и Init, как порядок систем держится одним файлом и чем закрывается граница сборки симуляции."
     },
+    {
+        n: 5,
+        step: 1,
+        block: 4,
+        title: "Реестр контента: стабильные ID",
+        file: "lessons/05-content-registry.html",
+        date: "2026-08-27",
+        tags: ["ContentRegistry", "стабильные ID", "ScriptableObject", "сейвы", "Addressables", "fail fast"],
+        summary: "Идентификатор контента как контракт с сейвом, а не удобство поиска: почему не ссылка, не enum и не имя ассета, чем реестр отличается от локатора служб, где проходит граница Core/Configs и что именно закрывается по именам сцен."
+    },
     // NEW LESSONS GO HERE
 ];
 

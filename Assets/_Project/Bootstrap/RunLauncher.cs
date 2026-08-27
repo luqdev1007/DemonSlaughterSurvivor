@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Game.Configs;
 using Game.Core;
 using System;
 using System.Threading;
@@ -13,25 +14,27 @@ namespace Game.Bootstrap
         private readonly ProjectLifetimeScope _projectScope;
         private readonly ISceneLoader _sceneLoader;
         private readonly ISeedSource _seedSource;
+        private readonly IContentRegistry _content;
 
         private RunLifetimeScope _runScope;
 
-        public RunLauncher(ProjectLifetimeScope projectScope, ISceneLoader sceneLoader, ISeedSource seedSource)
+        public RunLauncher(ProjectLifetimeScope projectScope, ISceneLoader sceneLoader, ISeedSource seedSource, IContentRegistry content)
         {
             _projectScope = projectScope;
             _sceneLoader = sceneLoader;
             _seedSource = seedSource;
+            _content = content;
         }
 
         public async UniTask StartAsync(RunRequest request, CancellationToken ct)
         {
-            // A run in progress is torn down before the next one loads: two live worlds would tick in parallel.
             Stop();
 
             RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next());
 
-            // TODO ContentRegistry (step 1, block 4): LevelId is a content ID, not a scene name.
-            await _sceneLoader.LoadAsync(request.LevelId, ct);
+            LevelConfig level = _content.Get<LevelConfig>(request.LevelId);
+
+            await _sceneLoader.LoadAsync(level.SceneName, ct);
 
             _runScope = _projectScope.CreateChild<RunLifetimeScope>(
                 builder => builder.RegisterInstance(runContext),
