@@ -13,8 +13,6 @@ namespace Game.Simulation.Systems
 
         private readonly EcsWorldInject _world = default;
 
-        // Every view ever created by the simulation, not only the player's:
-        // Destroy has to hand all of them back, and later spawners add to the same pool.
         private readonly EcsFilterInject<Inc<View>> _viewed = default;
 
         private readonly EcsPoolInject<Player> _players = default;
@@ -31,27 +29,21 @@ namespace Game.Simulation.Systems
 
         public void Init(IEcsSystems systems)
         {
-            // A broken character id fails here, naming the id, and not as a null three systems later.
             CharacterConfig character = _content.Value.Get<CharacterConfig>(_context.Value.CharacterId);
 
             int entity = _world.Value.NewEntity();
 
             _players.Value.Add(entity);
 
-            // Add returns a ref to the freshly created component, so the write goes into the pool.
             ref Position position = ref _positions.Value.Add(entity);
             position.Value = StartPosition;
 
-            // Not zero: the character has to look somewhere before the first step,
-            // and LookRotation of a zero vector throws.
             ref Facing facing = ref _facings.Value.Add(entity);
             facing.Value = Vector3.forward;
 
             ref MoveSpeed speed = ref _speeds.Value.Add(entity);
             speed.Value = character.MoveSpeed;
 
-            // Empty on purpose: the filters of the Input and Movement groups need the components
-            // to exist, and their values are written every tick anyway.
             _intents.Value.Add(entity);
             _velocities.Value.Add(entity);
 
@@ -61,8 +53,6 @@ namespace Game.Simulation.Systems
 
         public void Destroy(IEcsSystems systems)
         {
-            // world.Destroy() drops entities but knows nothing about Unity objects:
-            // whoever asked the factory for a view is the one who has to give it back.
             foreach (int entity in _viewed.Value)
             {
                 ref View view = ref _views.Value.Get(entity);

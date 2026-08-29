@@ -48,8 +48,6 @@ namespace Game.Bootstrap
             _world = new EcsWorld();
             _systems = RunSystems.Build(_world);
 
-            // Strictly between Build and Init: the injected fields of every system
-            // are still empty until this call, and Init is where systems start reading them.
             _systems.Inject(
                 _context,
                 _clock,
@@ -68,9 +66,6 @@ namespace Game.Bootstrap
 
             int steps = 0;
 
-            // Frames are drawn as fast as the hardware manages; the simulation always advances
-            // by the same FixedDelta. That is what keeps i-frames, cooldowns and dash distance
-            // from becoming a function of the frame rate.
             while (_accumulator >= FixedDelta && steps < MaxStepsPerFrame)
             {
                 _clock.Advance(FixedDelta);
@@ -81,9 +76,6 @@ namespace Game.Bootstrap
                 steps++;
             }
 
-            // Hit the ceiling: drop the debt instead of carrying it into the next frame.
-            // Without this the accumulator only grows, every frame runs more ticks than the last,
-            // and the game locks up without ever recovering — the death spiral.
             if (steps == MaxStepsPerFrame)
                 _accumulator = 0f;
         }

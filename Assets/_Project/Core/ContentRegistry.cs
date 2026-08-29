@@ -10,11 +10,6 @@ namespace Game.Core
         private readonly Dictionary<Type, List<IContentEntry>> _byType = new();
         private readonly Dictionary<Type, object> _typedCache = new();
 
-        /// <summary>
-        /// Builds the lookup tables and validates the whole set at once:
-        /// an empty slot, an empty id or a duplicate id fails here, before the first frame.
-        /// All problems are reported together, not one per launch.
-        /// </summary>
         public ContentRegistry(IEnumerable<IContentEntry> entries)
         {
             if (entries == null)
@@ -35,8 +30,6 @@ namespace Game.Core
 
                 if (string.IsNullOrWhiteSpace(entry.Id))
                 {
-                    // ToString of a ScriptableObject is "AssetName (Type)", so the asset
-                    // is named in the message without Core knowing anything about Unity.
                     errors.Add($"[{index}] empty id on {entry}");
                     continue;
                 }
@@ -72,8 +65,6 @@ namespace Game.Core
             if (_byId.TryGetValue(id, out IContentEntry entry) == false)
                 throw new ContentNotFoundException($"No content with id '{id}'. Requested type: {typeof(T).Name}.");
 
-            // A wrong type is a different mistake than a wrong id, and the message must say so:
-            // otherwise the search starts from a typo that does not exist.
             if (entry is T typed == false)
                 throw new ContentNotFoundException(
                     $"Content with id '{id}' is {entry.GetType().Name}, but {typeof(T).Name} was requested.");
@@ -96,10 +87,6 @@ namespace Game.Core
             return value != null;
         }
 
-        /// <summary>
-        /// Entries of exactly this type — descendants are not included.
-        /// The list is built once per type and cached: never call this inside the simulation tick.
-        /// </summary>
         public IReadOnlyList<T> All<T>() where T : class, IContentEntry
         {
             Type type = typeof(T);
