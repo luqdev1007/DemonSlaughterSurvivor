@@ -1,4 +1,4 @@
-﻿namespace Game.Simulation.Assets._Project.Simulation.Components
+namespace Game.Simulation.Components
 {
     public struct Player { }
 }

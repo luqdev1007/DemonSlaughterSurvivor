@@ -1,6 +1,6 @@
 using Leopotam.EcsLite;
 
-namespace Game.Simulation
+namespace Game.Simulation.Systems
 {
     public sealed class FaceVelocitySystem : IEcsRunSystem
     {

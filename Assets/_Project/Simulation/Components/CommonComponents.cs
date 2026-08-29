@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-namespace Game.Simulation.Assets._Project.Simulation.Components
+namespace Game.Simulation.Components
 {
     public struct Position { public Vector3 Value; }
     public struct Facing { public Vector3 Value; }

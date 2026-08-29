@@ -2,7 +2,7 @@ using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-namespace Game.Simulation
+namespace Game.Simulation.Systems
 {
     public sealed class MoveSystem : IEcsRunSystem
     {

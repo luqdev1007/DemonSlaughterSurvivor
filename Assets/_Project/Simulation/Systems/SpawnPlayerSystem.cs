@@ -1,9 +1,9 @@
 using Game.Core;
-using Game.Simulation.Assets._Project.Simulation.Components;
+using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-namespace Game.Simulation
+namespace Game.Simulation.Systems
 {
     public sealed class SpawnPlayerSystem : IEcsInitSystem, IEcsDestroySystem
     {
