@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 75176785}
   - component: {fileID: 75176784}
   m_Layer: 0
-  m_Name: TEST
+  m_Name: DebugRunStarter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

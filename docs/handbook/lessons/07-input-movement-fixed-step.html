@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>07 · Ввод, движение и фиксированный шаг симуляции</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>07 · Ввод, движение и фиксированный шаг симуляции</h1>
+
+        <div class="lesson-meta">
+            шаг 2 роадмапа (игрок) · блок 1 · 2026-08-29<br>
+            Доки проекта: <code>CLAUDE.md</code> §7 (красные линии: аллокации в тике, физика,
+            игрок не хардкодится) ·
+            <code>ARCHITECTURE.md</code> §6 (ввод), §9 (<code>CharacterConfig</code>),
+            §10 (порядок систем), §15 (сборки) ·
+            <code>GDD.md</code> §3, §4<br>
+            Опирается на урок <a href="04-ecs-entry-point.html">04 · Точка входа ECS</a> и
+            <a href="05-content-registry.html">05 · Реестр контента</a>;
+            закрывает риск Р-2 отчёта <code>docs/recons/008</code> (шаг симуляции)
+            и Р-3, Р-6 отчёта <code>docs/recons/009</code><br>
+            Версии: Unity <code>6000.4.11f1</code>, LeoECS Lite <code>d46f3b2</code>,
+            LeoECS Lite DI <code>482b14e</code>, VContainer <code>5103bfc</code>,
+            Input System <code>1.19.0</code>.
+            Всё, помеченное как проверенное, читалось в исходниках пакетов этого проекта.
+        </div>
+
+        <p class="lead">
+            Шаг 1 построил пустой каркас: мир ECS создаётся, тринадцать групп систем перечислены
+            комментариями, и ни одной системы в них нет. Этот блок кладёт в каркас первые
+            настоящие системы — и вместе с ними приходят решения, которые дальше будет дорого
+            менять: чем меряется время симуляции, где кончается устройство ввода и начинается
+            намерение, в скольких компонентах живёт движение. Главная мысль блока:
+            <strong>движение — это не одно поле. Намерение, скорость, взгляд и позиция меняются
+            по разным причинам, и слитые в одно поле они ломаются на первой же способности,
+            которая двигает персонажа не по воле игрока.</strong>
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="input-flow">1.1 Поток ввода: сервис, компонент, системы</h3>
+
+        <p>
+            <code>ARCHITECTURE.md</code> §6 задаёт цепочку жёстко: сервис ввода живёт
+            <strong>вне ECS</strong>, читает устройство и отдаёт нормализованное значение;
+            система группы <code>Input</code> кладёт из него намерение в компонент на сущности;
+            все остальные системы читают компонент и про устройство не знают ничего.
+            Сырой ввод в ECS не читается никогда.
+        </p>
+
+        <p>
+            Причин три, и они разного веса.
+        </p>
+
+        <ol>
+            <li>
+                <strong>Граница сборок.</strong> <code>Game.Simulation</code> не имеет ссылки
+                на <code>Unity.InputSystem</code> и не должна её получить. Чтение устройства —
+                работа слоя сервисов, и держит это разделение компилятор, а не намерение.
+            </li>
+            <li>
+                <strong>Один вход для нескольких источников.</strong> На шаге 3 намерение
+                двигаться начнут писать системы ИИ врагов — в тот же самый компонент.
+                Если игрок читает устройство напрямую, а враг идёт своим путём, системы
+                движения раздваиваются на две почти одинаковые ветки, и дальше расходятся.
+            </li>
+            <li>
+                <strong>Отладка.</strong> Компонент-намерение видно в отладчике мира.
+                Значение, живущее в поле сервиса, не видно нигде.
+            </li>
+        </ol>
+
+        <div class="note warn">
+            <span class="note-title">Опрос, а не подписка</span>
+            <p>
+                <code>InputAction</code> умеет и то и другое. При фиксированном шаге (1.3)
+                за один кадр симуляция тикает ноль, один или несколько раз, а событие
+                <code>performed</code> приходит один раз — в момент изменения. Значение надо
+                <strong>спрашивать в момент тика</strong>, а не запоминать в момент события,
+                иначе между тиками в поле лежит то, что осталось от прошлого кадра.
+                Плюс подписка на границе симуляции — это C#-событие, а <code>ARCHITECTURE.md</code>
+                §10 запрещает их внутри неё.
+            </p>
+        </div>
+
+        <h3 id="four-components">1.2 Намерение, скорость, взгляд, позиция</h3>
+
+        <p>
+            Соблазн — одно поле <code>MoveDirection</code>. Именно оно и ломается первым.
+            Правильное разделение:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Компонент</th><th>Что означает</th><th>Кто пишет</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>MoveIntent</code></td>
+                    <td>куда сущность <em>хочет</em> — нормализованный вектор в мировых осях</td>
+                    <td>группа <code>Input</code> (игрок), позже <code>AI</code> (враги)</td>
+                </tr>
+                <tr>
+                    <td><code>Velocity</code></td>
+                    <td>куда она <em>реально</em> движется в этом тике</td>
+                    <td>группа <code>Movement</code>, позже рывок, отбрасывание, замедления</td>
+                </tr>
+                <tr>
+                    <td><code>Facing</code></td>
+                    <td>куда смотрит</td>
+                    <td>группа <code>Movement</code>, только при ненулевой скорости</td>
+                </tr>
+                <tr>
+                    <td><code>Position</code></td>
+                    <td>где находится</td>
+                    <td>группа <code>Movement</code>, единственная система</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            <strong>Почему <code>Facing</code> отдельно от <code>Velocity</code></strong> —
+            записано прямо в <code>ARCHITECTURE.md</code> §6: игрок отпустил клавиши, скорость
+            нулевая, взгляд сохраняется. Слитые в одно поле дают разворот в дефолтное направление
+            при каждой остановке. Это видно на первой же минуте игры и читается как баг, а не
+            как решение.
+        </p>
+
+        <p>
+            <strong>Почему <code>MoveIntent</code> отдельно от <code>Velocity</code></strong> —
+            следующий же блок. Рывок, отбрасывание (шаг 4) и замедления (шаг 5) пишут скорость,
+            <strong>не трогая намерение</strong>. Если поле одно, рывок обязан запомнить ввод
+            игрока и восстановить его после себя — и обязательно забудет в одном из случаев,
+            например когда рывок прервали смертью.
+        </p>
+
+        <p>
+            <strong>Почему позиция живёт в ECS, а не в <code>Transform</code></strong> — две
+            причины, обе весомые. Первая архитектурная: симуляция не зависит от вьюхи, иначе
+            её нельзя ни протестировать, ни прогнать без сцены. Вторая измеримая: на шаге 3
+            spatial hash перебирает сотни позиций каждый тик, а каждое обращение
+            к <code>Transform.position</code> — переход в нативный код. Перебор массива структур
+            дешевле на порядок, и это ровно тот цикл, ради которого <code>CLAUDE.md</code> §7
+            запрещает аллокации.
+        </p>
+
+        <h3 id="fixed-step">1.3 Фиксированный шаг и спираль смерти</h3>
+
+        <p>
+            Фиксированный шаг разводит две частоты. Кадры рисуются как получится — сколько успеет
+            железо. Симуляция тикает <strong>всегда одинаковым</strong> шагом, например
+            <code>1/60</code> секунды. Между ними стоит накопитель:
+        </p>
+
+<pre><code><span class="c">// Псевдокод. Реальная форма — в 3.7.</span>
+накопитель <span class="p">+=</span> прошедшее время кадра
+
+<span class="k">пока</span> накопителя хватает на целый шаг<span class="p">:</span>
+    сделать шаг симуляции
+    вычесть шаг из накопителя</code></pre>
+
+        <p>
+            Что это даёт. Длительность неуязвимости, кулдаунов и дальность рывка перестают быть
+            функцией fps: при просадке до двадцати кадров персонаж проживёт те же три шестидесятых
+            секунды неуязвимости, а не втрое больше. Баланс, который начнёт считаться на шаге 7,
+            считается по числу тиков и воспроизводится.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Спираль смерти</span>
+            <p>
+                Главная ловушка приёма. Если один тик стоит дороже, чем длина шага, накопитель
+                растёт быстрее, чем расходуется. За кадр делается всё больше тиков, кадр
+                становится длиннее, накопитель растёт ещё быстрее. Игра встаёт намертво
+                и <strong>не восстанавливается сама</strong> — обратной связи, которая бы её
+                вытащила, в цикле нет.
+            </p>
+            <p>
+                Лечится всегда одинаково: жёсткий предел числа тиков за кадр. При перегрузке
+                симуляция замедляется относительно реального времени, и это правильное
+                поведение — альтернатива не «медленно», а «никак». Предел ставится
+                с первой строки, а не «потом, если понадобится»: проявляется он только под
+                нагрузкой, то есть тогда, когда отлаживать труднее всего.
+            </p>
+        </div>
+
+        <p>
+            <strong>Почему не <code>FixedUpdate</code>.</strong> Он привязан к шагу физики Unity,
+            а физика Unity в проекте не используется (<code>CLAUDE.md</code> §7): поиск врагов
+            идёт своим spatial hash, коллизии считаются вручную. Тянуть за собой чужую подсистему
+            ради одного числа незачем, а свой накопитель виден целиком в одном методе точки входа.
+        </p>
+
+        <h3 id="filter-pool">1.4 Фильтр и пул: что читает система</h3>
+
+        <p>
+            Две сущности LeoECS Lite, которые встретятся в каждой системе этого и всех следующих
+            блоков.
+        </p>
+
+        <ul>
+            <li>
+                <strong>Пул</strong> (<code>EcsPool&lt;T&gt;</code>) — плотный массив компонентов
+                одного типа. <code>Get(entity)</code> возвращает <code>ref</code> внутрь этого
+                массива, то есть ссылку на настоящие данные, а не копию.
+            </li>
+            <li>
+                <strong>Фильтр</strong> (<code>EcsFilter</code>) — кэшированный список сущностей
+                с нужным набором компонентов. Он не перебирает мир заново каждый кадр: мир сам
+                обновляет фильтры инкрементально, когда компонент добавляют или убирают.
+            </li>
+        </ul>
+
+        <p>
+            Итерация — <code>foreach (int entity in filter)</code>, без аллокаций и без боксинга.
+            Именно поэтому запрет из <code>CLAUDE.md</code> §7 на LINQ и
+            <code>new List&lt;&gt;</code> в тике не аскеза: обычный цикл здесь и есть штатный
+            способ, а не компромисс ради производительности.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title"><code>ref</code> — не украшение</span>
+            <p>
+                <code>pool.Get(entity)</code> без <code>ref</code> копирует структуру в локальную
+                переменную, и запись в неё уходит в никуда. Компилятор молчит: это законный C#.
+                Симптом — система «не работает», хотя точки останова в ней срабатывают и значения
+                выглядят правильными. Ошибка номер один у всех, кто приходит в ECS из ООП, где
+                присваивание полю объекта всегда меняло объект.
+            </p>
+        </div>
+
+        </section>
+
+        <!-- ========================================= ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="two-di">2.1 Два DI, и они не пересекаются</h3>
+
+        <p>
+            В проекте два независимых механизма доставки зависимостей, и путать их нельзя.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Что доставляется</th><th>Чем</th><th>Как объявляется</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>сервисы в системы ECS</td>
+                    <td><code>systems.Inject(...)</code> в точке входа</td>
+                    <td><code>EcsCustomInject&lt;T&gt;</code> полем системы</td>
+                </tr>
+                <tr>
+                    <td>мир, пулы, фильтры</td>
+                    <td>сам LeoECS Lite DI при <code>Init()</code></td>
+                    <td><code>EcsWorldInject</code>, <code>EcsPoolInject&lt;T&gt;</code>,
+                        <code>EcsFilterInject&lt;Inc&lt;…&gt;, Exc&lt;…&gt;&gt;</code></td>
+                </tr>
+                <tr>
+                    <td>сервисы во всё остальное</td>
+                    <td>VContainer</td>
+                    <td>конструктор или <code>[Inject]</code>-метод</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            <code>Game.Simulation</code> не ссылается на VContainer — это то, чем граница держится
+            физически (<code>ARCHITECTURE.md</code> §15). Система не может достать контейнер,
+            даже если очень захочет: типа <code>IObjectResolver</code> для неё не существует.
+            Единственный оставшийся путь передать в систему сервис — <code>systems.Inject()</code>,
+            то есть явный список в одном месте.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Порядок в точке входа</span>
+            <p>
+                <code>Inject(...)</code> строго между <code>Add(...)</code> и <code>Init()</code>.
+                Разбиралось в уроке <a href="04-ecs-entry-point.html">04</a>; при добавлении
+                сервисов в этом блоке порядок легко сломать, а симптом —
+                <code>NullReferenceException</code> внутри чужой системы на непонятной строке.
+            </p>
+        </div>
+
+        <h3 id="example-system">2.2 Форма системы — пример на постороннем домене</h3>
+
+        <p>
+            Конструкции LeoECS Lite DI встречаются впервые, поэтому вот полный рабочий код.
+            Домен — складская сортировка посылок; <strong>в проект это вставить нельзя</strong>,
+            смотреть надо на форму.
+        </p>
+
+<pre><code><span class="k">using</span> <span class="t">Leopotam.EcsLite</span><span class="p">;</span>
+<span class="k">using</span> <span class="t">Leopotam.EcsLite.Di</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="t">Warehouse.Sorting</span>
+<span class="p">{</span>
+    <span class="k">public struct</span> <span class="t">Weight</span> <span class="p">{</span> <span class="k">public float</span> Kilograms<span class="p">;</span> <span class="p">}</span>
+    <span class="k">public struct</span> <span class="t">Chute</span>  <span class="p">{</span> <span class="k">public int</span> Index<span class="p">;</span> <span class="p">}</span>
+    <span class="k">public struct</span> <span class="t">Oversized</span> <span class="p">{</span> <span class="p">}</span>          <span class="c">// тег без данных</span>
+
+    <span class="c">// Обычный C#-класс. Приезжает снаружи через systems.Inject(...).</span>
+    <span class="k">public sealed class</span> <span class="t">TariffTable</span>
+    <span class="p">{</span>
+        <span class="k">public float</span> HeavyThresholdKg <span class="p">=</span> <span class="n">20f</span><span class="p">;</span>
+        <span class="k">public int</span> OversizedChute <span class="p">=</span> <span class="n">0</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c">// Тяжёлые посылки помечает тегом и уводит на отдельный жёлоб.</span>
+    <span class="k">public sealed class</span> <span class="t">RouteOversizedSystem</span> <span class="p">:</span> <span class="t">IEcsInitSystem</span><span class="p">,</span> <span class="t">IEcsRunSystem</span>
+    <span class="p">{</span>
+        <span class="c">// Все сущности с Weight и Chute, у которых ЕЩЁ НЕТ тега Oversized.</span>
+        <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">Weight</span><span class="p">,</span> <span class="t">Chute</span><span class="p">&gt;,</span> <span class="t">Exc</span><span class="p">&lt;</span><span class="t">Oversized</span><span class="p">&gt;&gt;</span> _filter <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">Chute</span><span class="p">&gt;</span> _chutes <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+        <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">Oversized</span><span class="p">&gt;</span> _oversized <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">TariffTable</span><span class="p">&gt;</span> _tariff <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">public void</span> Init<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// Вызывается один раз при systems.Init(). Здесь ставят стартовые данные.</span>
+        <span class="p">}</span>
+
+        <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// Пулы включения лежат прямо в фильтре — второй раз инжектить не надо.</span>
+            <span class="t">EcsPool</span><span class="p">&lt;</span><span class="t">Weight</span><span class="p">&gt;</span> weights <span class="p">=</span> _filter<span class="p">.</span>Pools<span class="p">.</span>Inc1<span class="p">;</span>
+
+            <span class="k">foreach</span> <span class="p">(</span><span class="k">int</span> entity <span class="k">in</span> _filter<span class="p">.</span>Value<span class="p">)</span>
+            <span class="p">{</span>
+                <span class="c">// ref обязателен: без него это копия, и запись пропадёт.</span>
+                <span class="k">ref</span> <span class="t">Weight</span> weight <span class="p">=</span> <span class="k">ref</span> weights<span class="p">.</span>Get<span class="p">(</span>entity<span class="p">);</span>
+
+                <span class="k">if</span> <span class="p">(</span>weight<span class="p">.</span>Kilograms <span class="p">&lt;</span> _tariff<span class="p">.</span>Value<span class="p">.</span>HeavyThresholdKg<span class="p">)</span>
+                    <span class="k">continue</span><span class="p">;</span>
+
+                <span class="k">ref</span> <span class="t">Chute</span> chute <span class="p">=</span> <span class="k">ref</span> _chutes<span class="p">.</span>Value<span class="p">.</span>Get<span class="p">(</span>entity<span class="p">);</span>
+                chute<span class="p">.</span>Index <span class="p">=</span> _tariff<span class="p">.</span>Value<span class="p">.</span>OversizedChute<span class="p">;</span>
+
+                <span class="c">// Добавление компонента прямо в foreach безопасно: мир блокирует</span>
+                <span class="c">// фильтр на время итерации и применяет изменения после неё.</span>
+                _oversized<span class="p">.</span>Value<span class="p">.</span>Add<span class="p">(</span>entity<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Как это заводится снаружи — тоже целиком:
+        </p>
+
+<pre><code><span class="t">EcsWorld</span> world <span class="p">=</span> <span class="k">new</span> <span class="t">EcsWorld</span><span class="p">();</span>
+<span class="t">EcsSystems</span> systems <span class="p">=</span> <span class="k">new</span> <span class="t">EcsSystems</span><span class="p">(</span>world<span class="p">);</span>
+
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">RouteOversizedSystem</span><span class="p">());</span>
+
+systems<span class="p">.</span>Inject<span class="p">(</span><span class="k">new</span> <span class="t">TariffTable</span><span class="p">());</span>   <span class="c">// строго до Init</span>
+systems<span class="p">.</span>Init<span class="p">();</span>
+
+<span class="c">// каждый тик:</span>
+systems<span class="p">.</span>Run<span class="p">();</span></code></pre>
+
+        <p>
+            А вот то же место — как <strong>не надо</strong>:
+        </p>
+
+<pre><code><span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">foreach</span> <span class="p">(</span><span class="k">int</span> entity <span class="k">in</span> _filter<span class="p">.</span>Value<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// 1. Нет ref. Изменили копию на стеке, пул не тронут. Ни ошибки,</span>
+        <span class="c">//    ни предупреждения — просто ничего не происходит.</span>
+        <span class="t">Chute</span> chute <span class="p">=</span> _chutes<span class="p">.</span>Value<span class="p">.</span><span class="err">Get</span><span class="p">(</span>entity<span class="p">);</span>
+        chute<span class="p">.</span>Index <span class="p">=</span> <span class="n">0</span><span class="p">;</span>
+
+        <span class="c">// 2. Замыкание и новый список в тике — аллокация каждый кадр.</span>
+        <span class="k">var</span> heavy <span class="p">=</span> _filter<span class="p">.</span>Value<span class="p">.</span><span class="err">Where</span><span class="p">(</span>e <span class="p">=&gt;</span> weights<span class="p">.</span>Get<span class="p">(</span>e<span class="p">).</span>Kilograms <span class="p">&gt;</span> limit<span class="p">).</span><span class="err">ToList</span><span class="p">();</span>
+
+        <span class="c">// 3. Сервис достали из статики вместо EcsCustomInject. Компилируется,</span>
+        <span class="c">//    работает, и красная линия §7 обходится молча.</span>
+        <span class="k">float</span> threshold <span class="p">=</span> <span class="t">TariffTable</span><span class="p">.</span><span class="err">Instance</span><span class="p">.</span>HeavyThresholdKg<span class="p">;</span>
+
+        <span class="c">// 4. Компонента может не быть: Get на отсутствующем бросает исключение.</span>
+        <span class="c">//    Либо он в фильтре включения, либо проверяй Has перед Get.</span>
+        <span class="k">ref</span> <span class="t">Oversized</span> tag <span class="p">=</span> <span class="k">ref</span> _oversized<span class="p">.</span>Value<span class="p">.</span><span class="err">Get</span><span class="p">(</span>entity<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="example-input">2.3 Чтение устройства — пример на постороннем домене</h3>
+
+        <p>
+            Домен — пульт управления макетом железной дороги. Один класс на всю программу знает
+            про <code>InputAction</code>, наружу отдаёт число.
+        </p>
+
+<pre><code><span class="k">using</span> <span class="t">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="t">UnityEngine</span><span class="p">;</span>
+<span class="k">using</span> <span class="t">UnityEngine.InputSystem</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="t">Layout.Controls</span>
+<span class="p">{</span>
+    <span class="k">public sealed class</span> <span class="t">ThrottleReader</span> <span class="p">:</span> <span class="t">IDisposable</span>
+    <span class="p">{</span>
+        <span class="k">private readonly</span> <span class="t">InputAction</span> _throttle<span class="p">;</span>
+
+        <span class="k">public</span> ThrottleReader<span class="p">(</span><span class="t">InputAction</span> throttle<span class="p">)</span>
+        <span class="p">{</span>
+            _throttle <span class="p">=</span> throttle<span class="p">;</span>
+            _throttle<span class="p">.</span>Enable<span class="p">();</span>
+        <span class="p">}</span>
+
+        <span class="c">// Опрос, а не подписка: значение спрашивают тогда, когда оно нужно, —</span>
+        <span class="c">// то есть в момент тика, сколько бы их ни было за кадр.</span>
+        <span class="k">public float</span> Value <span class="p">=&gt;</span> <span class="t">Mathf</span><span class="p">.</span>Clamp<span class="p">(</span>_throttle<span class="p">.</span>ReadValue<span class="p">&lt;</span><span class="k">float</span><span class="p">&gt;(),</span> <span class="n">-1f</span><span class="p">,</span> <span class="n">1f</span><span class="p">);</span>
+
+        <span class="k">public void</span> Dispose<span class="p">()</span>
+        <span class="p">{</span>
+            _throttle<span class="p">.</span>Disable<span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Тот же класс — как <strong>не надо</strong>:
+        </p>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">ThrottleReader</span>
+<span class="p">{</span>
+    <span class="k">private float</span> _value<span class="p">;</span>
+
+    <span class="k">public</span> ThrottleReader<span class="p">(</span><span class="t">InputAction</span> throttle<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// Значение обновляется в момент события, а тиков за кадр может быть</span>
+        <span class="c">// ноль, один или три. Между ними _value — то, что осталось</span>
+        <span class="c">// от прошлого кадра, и оно тем неправильнее, чем хуже fps.</span>
+        throttle<span class="p">.</span><span class="err">performed</span> <span class="p">+=</span> ctx <span class="p">=&gt;</span> _value <span class="p">=</span> ctx<span class="p">.</span>ReadValue<span class="p">&lt;</span><span class="k">float</span><span class="p">&gt;();</span>
+        throttle<span class="p">.</span><span class="err">canceled</span>  <span class="p">+=</span> ctx <span class="p">=&gt;</span> _value <span class="p">=</span> <span class="n">0f</span><span class="p">;</span>
+
+        <span class="c">// Плюс: подписка не снимается. Плюс: Enable() не вызван вообще —</span>
+        <span class="c">// события не придут ни разу, и это выглядит как «ввод не работает».</span>
+    <span class="p">}</span>
+
+    <span class="k">public float</span> Value <span class="p">=&gt;</span> _value<span class="p">;</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="no-scene-lookup">2.4 Почему вьюху нельзя найти в сцене</h3>
+
+        <p>
+            В блоке 0 сценовый <code>LifetimeScope</code> нашёл компонент меню через
+            <code>RegisterComponentInHierarchy</code>. Тот же приём в скоупе забега
+            <strong>не сработает</strong>, и это надо знать до того, как писать спавн игрока.
+        </p>
+
+        <p>
+            Проверено по исходникам VContainer <code>5103bfc</code>:
+        </p>
+
+        <ul>
+            <li>
+                <code>LifetimeScope.CreateChild&lt;TScope&gt;</code> создаёт
+                <code>new GameObject(...)</code> и вешает его
+                <code>SetParent(transform)</code> — то есть под проектный корень, который живёт
+                в <code>DontDestroyOnLoad</code>. Скоуп забега создаётся именно так.
+            </li>
+            <li>
+                <code>RegisterComponentInHierarchy</code> берёт сцену одной строкой:
+                <code>var scene = lifetimeScope.gameObject.scene;</code>
+            </li>
+            <li>
+                <code>FindComponentProvider</code> перебирает
+                <code>scene.GetRootGameObjects()</code> и, не найдя, бросает
+                <code>VContainerException</code> с текстом
+                <code>"… is not in this scene …"</code>.
+            </li>
+        </ul>
+
+        <div class="note warn">
+            <span class="note-title">Следствие</span>
+            <p>
+                Скоуп забега ищет в <code>DontDestroyOnLoad</code>, а не в загруженной арене.
+                Болванка, положенная в сцену руками, для него невидима. Дать арене собственный
+                сценовый скоуп тоже не выход: он привяжется родителем к проектному корню
+                и окажется <strong>соседом</strong> скоупа забега, а не потомком, — то есть
+                <code>RunContext</code> и мир ECS он не увидит.
+            </p>
+        </div>
+
+        <p>
+            Правильный ответ здесь не в подборе API, а в направлении зависимости:
+            <strong>вьюху не ищут — её создают</strong>. Конфиг персонажа держит ссылку
+            на префаб, система группы <code>Spawn</code> просит фабрику его создать и кладёт
+            полученный <code>Transform</code> в компонент. Искать нечего, потому что конфиг
+            приезжает через реестр контента, а реестр живёт в проектном скоупе и никакой сцены
+            не касается.
+        </p>
+
+        <p>
+            Заодно это тот самый шов, в который на шаге 4 встанет пул вьюх: меняется реализация
+            фабрики, ни одна система не трогается.
+        </p>
+
+        </section>
+
+        <!-- ============================================== СКЕЛЕТ API ==== -->
+        <section data-kind="api">
+
+        <h2 id="api">Скелет API</h2>
+
+        <p>Сигнатуры без тел. Реализация — работа разработчика.</p>
+
+        <h3 id="api-components">3.1 <code>Game.Simulation</code>: компоненты</h3>
+
+        <p>
+            Файл <code>MovementComponents.cs</code> переписывается целиком. Лежащий там
+            <code>MoveDirection</code> уходит: имя не отвечает на вопрос «намерение это
+            или результат», а по 1.2 это два разных компонента.
+        </p>
+
+<pre><code><span class="k">namespace</span> <span class="t">Game.Simulation.Components</span>
+<span class="p">{</span>
+    <span class="k">public struct</span> <span class="t">Player</span> <span class="p">{</span> <span class="p">}</span>                          <span class="c">// тег</span>
+
+    <span class="k">public struct</span> <span class="t">Position</span>   <span class="p">{</span> <span class="k">public</span> <span class="t">Vector3</span> Value<span class="p">;</span> <span class="p">}</span>
+    <span class="k">public struct</span> <span class="t">MoveIntent</span> <span class="p">{</span> <span class="k">public</span> <span class="t">Vector3</span> Value<span class="p">;</span> <span class="p">}</span>   <span class="c">// нормализовано, мировые оси</span>
+    <span class="k">public struct</span> <span class="t">MoveSpeed</span>  <span class="p">{</span> <span class="k">public float</span>   Value<span class="p">;</span> <span class="p">}</span>   <span class="c">// базовый стат из конфига</span>
+    <span class="k">public struct</span> <span class="t">Velocity</span>   <span class="p">{</span> <span class="k">public</span> <span class="t">Vector3</span> Value<span class="p">;</span> <span class="p">}</span>
+    <span class="k">public struct</span> <span class="t">Facing</span>     <span class="p">{</span> <span class="k">public</span> <span class="t">Vector3</span> Value<span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Ссылка на вьюху — отдельным файлом, потому что меняется по другой причине:
+        </p>
+
+<pre><code><span class="k">namespace</span> <span class="t">Game.Simulation.Components</span>
+<span class="p">{</span>
+    <span class="c">// Ссылочное поле в компоненте LeoECS Lite допускает — см. подводные камни.</span>
+    <span class="k">public struct</span> <span class="t">View</span> <span class="p">{</span> <span class="k">public</span> <span class="t">Transform</span> Value<span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-core">3.2 <code>Game.Core</code>: контракты</h3>
+
+<pre><code><span class="k">namespace</span> <span class="t">Game.Core</span>
+<span class="p">{</span>
+    <span class="k">public interface</span> <span class="t">IInputService</span>
+    <span class="p">{</span>
+        <span class="c">// Сырая ось устройства: (-1..1, -1..1). Ни камеры, ни мира здесь нет.</span>
+        <span class="t">Vector2</span> MoveAxis <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c">// Шов, в который на шаге 4 встанет пул вьюх.</span>
+    <span class="k">public interface</span> <span class="t">IViewFactory</span>
+    <span class="p">{</span>
+        <span class="t">Transform</span> Create<span class="p">(</span><span class="t">GameObject</span> prefab<span class="p">,</span> <span class="t">Vector3</span> position<span class="p">);</span>
+        <span class="k">void</span> Release<span class="p">(</span><span class="t">Transform</span> view<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <div class="note">
+            <span class="note-title">Уступка, которую надо записать</span>
+            <p>
+                <code>Game.Core</code> получает <code>Vector2</code>, <code>Vector3</code>,
+                <code>Transform</code> и <code>GameObject</code>. Альтернатива — свой векторный
+                тип и непрозрачные хендлы вместо <code>Transform</code> — стоит заметно дороже,
+                чем даёт, пока вьюхи не пулятся. Решение осознанное, и потому его место —
+                отчёт сессии, а не тихое умолчание.
+            </p>
+        </div>
+
+        <h3 id="api-configs">3.3 <code>Game.Configs</code>: персонаж и арена</h3>
+
+<pre><code><span class="p">[</span><span class="a">CreateAssetMenu</span><span class="p">(</span>fileName<span class="p">:</span> <span class="s">"Character"</span><span class="p">,</span> menuName<span class="p">:</span> <span class="s">"Game/Content/Character"</span><span class="p">)]</span>
+<span class="k">public sealed class</span> <span class="t">CharacterConfig</span> <span class="p">:</span> <span class="t">ContentConfig</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private float</span> _moveSpeed<span class="p">;</span>
+    <span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="t">GameObject</span> _viewPrefab<span class="p">;</span>
+
+    <span class="k">public float</span> MoveSpeed <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="t">GameObject</span> ViewPrefab <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            <strong>Только эти два поля.</strong> <code>ARCHITECTURE.md</code> §9 обещает конфигу
+            ещё стартовое оружие, три способности, правило-модификатор и слоты предметов — их
+            в этом блоке нет, потому что нет ни одной системы, которая их прочтёт. Поля, которые
+            никто не читает, заполняются наугад и расходятся с реальностью раньше, чем
+            понадобятся.
+        </p>
+
+        <p>
+            <code>LevelConfig</code> получает одно поле — угол рыскания камеры арены:
+        </p>
+
+<pre><code><span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private float</span> _cameraYaw<span class="p">;</span>
+
+<span class="k">public float</span> CameraYaw <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span></code></pre>
+
+        <p>
+            Угол уезжает в данные, а не в код, по той же причине, что и имя сцены в блоке 4
+            шага 1: камера арены — свойство арены. Ни одна система при этом не знает слова
+            «камера» — только число.
+        </p>
+
+        <h3 id="api-services">3.4 <code>Game.Services</code>: чтение устройства</h3>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">InputService</span> <span class="p">:</span> <span class="t">IInputService</span><span class="p">,</span> <span class="t">IDisposable</span>
+<span class="p">{</span>
+    <span class="k">public</span> InputService<span class="p">();</span>            <span class="c">// создаёт обёртку actions и включает её</span>
+
+    <span class="k">public</span> <span class="t">Vector2</span> MoveAxis <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+
+    <span class="k">public void</span> Dispose<span class="p">();</span>          <span class="c">// выключает</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Нужен ассет <code>Assets/_Project/Input/GameControls.inputactions</code>:
+            карта <code>Gameplay</code>, действие <code>Move</code> типа
+            <code>Value</code>/<code>Vector2</code>, биндинги — 2D Vector composite на WASD
+            и левый стик геймпада. Галка «Generate C# Class» даёт обычный C#-класс-обёртку,
+            который удобно держать полем сервиса и не тащить в DI Unity-объект.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Новая ссылка в asmdef</span>
+            <p>
+                <code>Game.Services.asmdef</code> получает <code>Unity.InputSystem</code>.
+                Добавлять руками и записывать в отчёт поимённо: четвёртый пункт
+                <code>CLAUDE.md</code> §8 родился ровно из ссылки, добавленной по подсказке IDE,
+                и прецедентов в проекте уже два.
+            </p>
+        </div>
+
+        <h3 id="api-view">3.5 <code>Game.View</code>: фабрика вьюх</h3>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">ViewFactory</span> <span class="p">:</span> <span class="t">IViewFactory</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="t">Transform</span> Create<span class="p">(</span><span class="t">GameObject</span> prefab<span class="p">,</span> <span class="t">Vector3</span> position<span class="p">);</span>
+
+    <span class="c">// Пока Destroy. Пул — шаг 4, и меняется только это тело.</span>
+    <span class="k">public void</span> Release<span class="p">(</span><span class="t">Transform</span> view<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-systems">3.6 <code>Game.Simulation</code>: системы</h3>
+
+<pre><code><span class="c">// Группа 3 (Spawn). Один раз на старте забега.</span>
+<span class="k">public sealed class</span> <span class="t">SpawnPlayerSystem</span> <span class="p">:</span> <span class="t">IEcsInitSystem</span><span class="p">,</span> <span class="t">IEcsDestroySystem</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">EcsWorldInject</span> _world <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">Player</span><span class="p">&gt;</span> _players <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="c">// ... пулы остальных компонентов игрока</span>
+
+    <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">RunContext</span><span class="p">&gt;</span> _context <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">IContentRegistry</span><span class="p">&gt;</span> _content <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">IViewFactory</span><span class="p">&gt;</span> _views <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+    <span class="k">public void</span> Init<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">);</span>       <span class="c">// конфиг по ID → сущность + вьюха</span>
+    <span class="k">public void</span> Destroy<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">);</span>    <span class="c">// вьюху отдать фабрике явно</span>
+<span class="p">}</span>
+
+<span class="c">// Группа 1 (Input). Ось устройства → мировое намерение.</span>
+<span class="k">public sealed class</span> <span class="t">ReadMoveInputSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">Player</span><span class="p">,</span> <span class="t">MoveIntent</span><span class="p">&gt;&gt;</span> _filter <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">IInputService</span><span class="p">&gt;</span> _input <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">LevelConfig</span><span class="p">&gt;</span> _level <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+    <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c">// Группа 5 (Movement). Три системы, у каждой ровно одна причина меняться.</span>
+<span class="k">public sealed class</span> <span class="t">ApplyMoveSpeedSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>   <span class="c">// intent × speed → Velocity</span>
+<span class="k">public sealed class</span> <span class="t">FaceVelocitySystem</span>   <span class="p">:</span> <span class="t">IEcsRunSystem</span>   <span class="c">// Velocity ≠ 0 → Facing</span>
+<span class="k">public sealed class</span> <span class="t">MoveSystem</span>          <span class="p">:</span> <span class="t">IEcsRunSystem</span>   <span class="c">// Position += Velocity × dt</span>
+
+<span class="c">// Группа 12 (ViewSync).</span>
+<span class="k">public sealed class</span> <span class="t">SyncViewSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>          <span class="c">// Position, Facing → Transform</span></code></pre>
+
+        <p>
+            Проекция ввода на камеру живёт в <code>ReadMoveInputSystem</code> и выглядит так:
+            <code>Quaternion.Euler(0f, yaw, 0f) * new Vector3(axis.x, 0f, axis.y)</code>,
+            где <code>yaw</code> — число из <code>LevelConfig</code>.
+        </p>
+
+        <p>
+            <code>MoveSystem</code> берёт дельту из <code>SimulationClock</code> — никогда
+            из <code>Time.deltaTime</code>. При фиксированном шаге это разные числа, и подмена
+            даёт скорость, зависящую от fps, ровно в тот момент, когда fps проседает.
+        </p>
+
+        <h3 id="api-wiring">3.7 Точки сборки</h3>
+
+        <p>
+            <code>RunSystems.Build</code> — системы встают <strong>в свои группы</strong>,
+            а не в конец списка:
+        </p>
+
+<pre><code><span class="c">// 1.  Input</span>
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">ReadMoveInputSystem</span><span class="p">());</span>
+<span class="c">// 3.  Spawn</span>
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">SpawnPlayerSystem</span><span class="p">());</span>
+<span class="c">// 5.  Movement</span>
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">ApplyMoveSpeedSystem</span><span class="p">());</span>
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">FaceVelocitySystem</span><span class="p">());</span>
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">MoveSystem</span><span class="p">());</span>
+<span class="c">// 12. ViewSync</span>
+systems<span class="p">.</span>Add<span class="p">(</span><span class="k">new</span> <span class="t">SyncViewSystem</span><span class="p">());</span></code></pre>
+
+        <p>
+            <code>RunEntryPoint</code> — накопитель и расширенный <code>Inject</code>:
+        </p>
+
+<pre><code><span class="k">private const float</span> FixedDelta <span class="p">=</span> <span class="n">1f</span> <span class="p">/</span> <span class="n">60f</span><span class="p">;</span>
+<span class="k">private const int</span> MaxStepsPerFrame <span class="p">=</span> <span class="n">5</span><span class="p">;</span>
+
+<span class="k">private float</span> _accumulator<span class="p">;</span>
+
+<span class="k">public void</span> Tick<span class="p">();</span>   <span class="c">// цикл while с накопителем и пределом тиков</span></code></pre>
+
+        <ul>
+            <li><code>RunLauncher</code> — <code>LevelConfig</code> он уже резолвит; теперь
+                ещё и регистрирует его в скоуп забега рядом с <code>RunContext</code>.</li>
+            <li><code>RunLifetimeScope</code> — <code>ViewFactory</code> как
+                <code>IViewFactory</code>, <code>Lifetime.Scoped</code>.</li>
+            <li><code>ProjectLifetimeScope</code> — <code>InputService</code> как
+                <code>IInputService</code>, <code>Lifetime.Singleton</code>: устройство живёт
+                всё приложение, а не один забег.</li>
+        </ul>
+
+        <h3 id="api-anti">3.8 Формы, которых быть не должно</h3>
+
+<pre><code><span class="t">Position</span> p <span class="p">=</span> _positions<span class="p">.</span>Value<span class="p">.</span><span class="err">Get</span><span class="p">(</span>e<span class="p">);</span>            <span class="c">// ← нет: копия, запись пропадёт (1.4)</span>
+
+velocity<span class="p">.</span>Value <span class="p">=</span> <span class="err">intent</span><span class="p">.</span>Value <span class="p">*</span> speed<span class="p">.</span>Value<span class="p">;</span>     <span class="c">// ← нет, если intent не нормализован:</span>
+                                                <span class="c">//   диагональ будет быстрее прямой</span>
+
+position<span class="p">.</span>Value <span class="p">+=</span> velocity<span class="p">.</span>Value <span class="p">*</span> <span class="err">Time.deltaTime</span><span class="p">;</span>  <span class="c">// ← нет: при фиксированном шаге</span>
+                                                <span class="c">//   это не дельта тика (1.3)</span>
+
+facing<span class="p">.</span>Value <span class="p">=</span> <span class="err">velocity</span><span class="p">.</span>Value<span class="p">.</span>normalized<span class="p">;</span>       <span class="c">// ← нет без проверки на ноль:</span>
+                                                <span class="c">//   взгляд сбросится на остановке (1.2)</span>
+
+<span class="k">public struct</span> <span class="err">MoveDirection</span> <span class="p">{</span> <span class="k">public</span> <span class="t">Vector3</span> Value<span class="p">;</span> <span class="p">}</span> <span class="c">// ← нет: намерение это или результат?</span>
+
+<span class="k">float</span> raw <span class="p">=</span> <span class="t">Input</span><span class="p">.</span><span class="err">GetAxis</span><span class="p">(</span><span class="s">"Horizontal"</span><span class="p">);</span>          <span class="c">// ← нет: сырой ввод в системе (1.1)</span>
+
+_speeds<span class="p">.</span>Value<span class="p">.</span>Get<span class="p">(</span>e<span class="p">).</span>Value <span class="p">=</span> <span class="err">5f</span><span class="p">;</span>                 <span class="c">// ← нет: игрок не хардкодится, §7</span>
+
+builder<span class="p">.</span><span class="err">RegisterComponentInHierarchy</span><span class="p">&lt;</span><span class="t">PlayerView</span><span class="p">&gt;();</span> <span class="c">// ← нет: ищет в DontDestroyOnLoad (2.4)</span></code></pre>
+
+        </section>
+
+        <!-- ======================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-no-ref"><code>Get</code> без <code>ref</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> система «не работает», хотя точка останова
+            внутри неё срабатывает, значения в отладчике выглядят правильными и присваивание
+            выполняется. Ни ошибки, ни предупреждения. Ищется дольше всего именно потому,
+            что всё выглядит нормально: копия структуры честно меняется, просто она не та,
+            которую читают дальше.
+        </p>
+
+        <h3 id="pitfall-get-missing"><code>Get</code> на отсутствующем компоненте</h3>
+        <p>
+            <span class="symptom">Симптом:</span> исключение в тике на первой же сущности,
+            у которой компонента нет. Либо компонент стоит в фильтре включения, либо перед
+            <code>Get</code> идёт <code>Has</code>. Третьего не дано, и «оно же всегда есть» —
+            не аргумент: через два блока перестанет быть.
+        </p>
+
+        <h3 id="pitfall-normalize-zero">Нормализация нулевого вектора</h3>
+        <p>
+            <span class="symptom">Симптом:</span> либо тихо ничего — у
+            <code>Vector3.normalized</code> от нуля результат ноль, и это как раз нужно, — либо
+            исключение из <code>Quaternion.LookRotation(Vector3.zero)</code>. Сравнивать длину
+            надо с малым эпсилоном, а не с нулём: после проекции на угол камеры диагональ WASD
+            почти никогда не даёт ровный ноль, зато регулярно даёт что-то порядка
+            <code>1e-8</code>.
+        </p>
+
+        <h3 id="pitfall-diagonal">Диагональ быстрее прямой</h3>
+        <p>
+            <span class="symptom">Симптом:</span> по диагонали персонаж едет примерно в 1.41 раза
+            быстрее, чем по оси. Нажатие двух клавиш даёт вектор длины <code>√2</code>,
+            и нормализовать его надо <strong>до</strong> умножения на скорость. Классика, которая
+            всплывает на плейтесте, а не в коде, и потом объясняется как «баланс».
+        </p>
+
+        <h3 id="pitfall-facing-reset"><code>Facing</code> обновляется при нулевой скорости</h3>
+        <p>
+            <span class="symptom">Симптом:</span> персонаж разворачивается в дефолтное направление
+            каждый раз, когда игрок отпускает клавиши. Прямое нарушение
+            <code>ARCHITECTURE.md</code> §6. Условие «обновлять только при движении» — не
+            оптимизация, а требование, и на автоатаке по взгляду (шаг 5) оно станет
+            функциональным: остановился — выстрелил не туда.
+        </p>
+
+        <h3 id="pitfall-delta">Дельта взята из <code>Time.deltaTime</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> при хорошем fps всё правильно, при просадке
+            персонаж уезжает вперёд рывками. За кадр проходит три тика, и каждый считается
+            с дельтой целого кадра — скорость утраивается ровно там, где и без того тяжело.
+            Только <code>SimulationClock.Delta</code>.
+        </p>
+
+        <h3 id="pitfall-spiral">Накопитель без предела тиков</h3>
+        <p>
+            <span class="symptom">Симптом:</span> при разовом лаге — например на загрузке или
+            при компиляции в фоне — игра встаёт намертво и не восстанавливается. Отличается
+            от обычной просадки тем, что не проходит: спираль сама себя разгоняет.
+            Предел числа тиков за кадр обязателен с первой строки.
+        </p>
+
+        <h3 id="pitfall-dangling-view"><code>Transform</code> в компоненте переживает объект</h3>
+        <p>
+            <span class="symptom">Симптом:</span> на втором забеге —
+            <code>MissingReferenceException</code> из системы синхронизации вьюх.
+            <code>world.Destroy()</code> не трогает Unity-объекты; уничтоженный
+            <code>Transform</code> при сравнении с <code>null</code> даёт <code>true</code>
+            через перегруженный оператор, но <code>null</code> для C# не является. Освобождать
+            вьюхи надо явно, в <code>IEcsDestroySystem</code>, а не надеяться на разбор мира.
+        </p>
+
+        <h3 id="pitfall-inject-order">Инжект после <code>Init()</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> <code>NullReferenceException</code> внутри
+            системы на строке, где обращаются к <code>_service.Value</code>. Все
+            <code>EcsCustomInject</code> остались пустыми. Порядок в точке входа сейчас
+            правильный — легко сломать, добавляя сервисы.
+        </p>
+
+        <h3 id="pitfall-asmdef-ide">Ссылка <code>Unity.InputSystem</code> добавлена по подсказке IDE</h3>
+        <p>
+            <span class="symptom">Симптом:</span> отсутствующий — до пробного билда.
+            Опасность не в самой ссылке, она законна, а в привычке: ровно так в проект
+            дважды заезжали редакторные сборки, которые компилировались в редакторе
+            и упали бы на билде (<code>CLAUDE.md</code> §8). Каждая новая строка
+            в <code>references</code> — осознанное решение, попадающее в отчёт.
+        </p>
+
+        <h3 id="pitfall-action-disable"><code>InputAction</code> не выключен</h3>
+        <p>
+            <span class="symptom">Симптом:</span> в редакторе почти никогда никакого.
+            Проявится на шаге 8, когда забег начнут перезапускать с экрана итогов: включённые
+            действия накапливаются, и один ввод обрабатывается дважды. Дешевле завести привычку
+            сейчас — <code>Enable()</code> в конструкторе, <code>Disable()</code> в
+            <code>Dispose()</code>.
+        </p>
+
+        <h3 id="pitfall-scene-lookup">Вьюху ищут в сцене</h3>
+        <p>
+            <span class="symptom">Симптом:</span> <code>VContainerException</code> с текстом
+            <code>"… is not in this scene DontDestroyOnLoad"</code> при построении скоупа забега.
+            Механика разобрана в 2.4: скоуп забега физически не в сцене арены. Лечится не
+            подбором API, а сменой направления — вьюху создаёт симуляция из префаба конфига.
+        </p>
+
+        </section>
+
+        <!-- ============================================== ЧЕК-ЛИСТ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Форма кода</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Все <code>pool.Get(entity)</code> читаются через <code>ref</code>.</li>
+            <li class="key">В тике нет <code>new</code>, LINQ, замыканий и боксинга.</li>
+            <li class="key">Ни одна система не использует <code>Time.deltaTime</code> —
+                только <code>SimulationClock.Delta</code>.</li>
+            <li>Ни одна система не знает про камеру; проекция идёт по числу из
+                <code>LevelConfig</code>.</li>
+            <li class="key"><code>Game.Simulation</code> не ссылается ни на VContainer,
+                ни на <code>Unity.InputSystem</code>.</li>
+            <li>Вектор ввода нормализован <em>до</em> умножения на скорость.</li>
+            <li class="key"><code>Facing</code> пишется только при ненулевой скорости.</li>
+            <li><code>MoveSpeed</code> берётся из <code>CharacterConfig</code>; литералов
+                скорости в коде нет.</li>
+            <li>Системы стоят в своих группах <code>RunSystems</code>, а не в конце списка.</li>
+            <li>Вьюха освобождается явно, в <code>IEcsDestroySystem</code>.</li>
+        </ul>
+
+        <p><strong>Фиксированный шаг</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Есть предел тиков за кадр, и при его достижении накопитель
+                не растёт бесконечно.</li>
+            <li class="key"><code>systems.Inject(...)</code> вызван до
+                <code>systems.Init()</code>.</li>
+        </ul>
+
+        <p><strong>Проверяется руками — сценарии</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Запуск с <code>Bootstrap</code> → «Играть» → на арене стоит префаб
+                игрока, консоль чистая.</li>
+            <li class="key">WASD двигают по экранным осям: <code>W</code> — вверх-вглубь экрана,
+                <code>D</code> — вправо. Не по диагонали.</li>
+            <li>Диагональ не быстрее прямой.</li>
+            <li class="key">Отпустил клавиши — персонаж встал, но смотрит туда же, куда шёл.</li>
+            <li>Геймпад двигает так же, как WASD.</li>
+            <li>В <code>_characterId</code> вписан несуществующий ID →
+                <code>ContentNotFoundException</code> с этим ID, сцена не сменилась.</li>
+            <li class="key">Второй забег подряд: игрок один, вьюха от первого забега
+                на сцене не осталась, ошибок в консоли нет.</li>
+            <li>Выход из Play Mode не оставляет ошибок.</li>
+        </ul>
+
+        <p><strong>Проект</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Решения по шагу симуляции и по рысканию камеры записаны
+                в журнал <code>PROGRESS.md</code>.</li>
+            <li><code>MovementComponents.cs</code> отражён в <code>ARCHITECTURE.md</code> —
+                Р-3 отчёта <code>009</code> закрывается.</li>
+            <li>Новые ссылки в <code>Game.Services.asmdef</code> перечислены в отчёте
+                поимённо.</li>
+            <li><code>CharacterConfig</code> добавлен в <code>ContentDatabase</code>;
+                намеренно пустой ID валит реестр на старте, а не позже.</li>
+            <li>Болванка вынесена в префаб и удалена из сцены <code>Gameplay</code>;
+                судьба <code>GameplayRoot</code> решена.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему намерение, скорость и взгляд — три компонента,
+                а не одно поле (1.2).</li>
+            <li class="key">Понятно, почему позиция живёт в ECS, а не в
+                <code>Transform</code> (1.2).</li>
+            <li class="key">Понятно, что происходит без предела тиков за кадр и почему
+                это не обычная просадка (1.3).</li>
+            <li>Понятно, почему ввод опрашивается, а не приходит событием (1.1).</li>
+            <li>Понятно, почему <code>RegisterComponentInHierarchy</code> не сработал бы
+                в скоупе забега (2.4).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>

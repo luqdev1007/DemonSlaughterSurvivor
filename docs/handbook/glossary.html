@@ -469,6 +469,33 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="time-accumulator">Накопитель времени</span>
+            <span class="term-en">time accumulator</span>
+            <p class="term-body">
+                Поле, в которое складывается прошедшее время кадра и из которого вычитается
+                длина шага симуляции каждый раз, когда его хватает на целый шаг. Механизм,
+                разводящий частоту кадров и частоту тиков: кадры идут как получится, тик всегда
+                одинаковой длины. Обязательно ходит в паре с пределом числа тиков за кадр —
+                иначе см. <a href="#death-spiral">спираль смерти</a>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/07-input-movement-fixed-step.html#fixed-step">07 · Фиксированный шаг</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="move-intent">Намерение движения</span>
+            <span class="term-en">move intent</span>
+            <p class="term-body">
+                Компонент, хранящий нормализованное направление, <em>куда сущность хочет</em>,
+                отдельно от <a href="#ecs-component">компонента</a> скорости, куда она реально
+                движется. Пишется группой <code>Input</code> для игрока и группой <code>AI</code>
+                для врагов — то есть один и тот же вход для разных источников. Разделение
+                нужно потому, что рывок, отбрасывание и замедления меняют скорость, не трогая
+                волю игрока: слитые в одно поле, они обязаны запоминать и восстанавливать ввод.
+            </p>
+            <span class="term-src">Урок <a href="lessons/07-input-movement-fixed-step.html#four-components">07 · Намерение, скорость, взгляд, позиция</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="cancellation">Отмена операции</span>
             <span class="term-en">cancellation</span>
             <p class="term-body">
@@ -621,6 +648,20 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="death-spiral">Спираль смерти</span>
+            <span class="term-en">spiral of death</span>
+            <p class="term-body">
+                Состояние цикла с <a href="#time-accumulator">накопителем</a>, при котором один
+                тик симуляции стоит дороже, чем длина шага. Накопитель растёт быстрее, чем
+                расходуется, за кадр делается всё больше тиков, кадр становится длиннее,
+                накопитель растёт ещё быстрее. Игра встаёт намертво и не восстанавливается сама:
+                обратной связи, которая бы её вытащила, в цикле нет. Единственное лечение —
+                жёсткий предел числа тиков за кадр, поставленный сразу, а не после первой встречи.
+            </p>
+            <span class="term-src">Урок <a href="lessons/07-input-movement-fixed-step.html#fixed-step">07 · Фиксированный шаг и спираль смерти</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="stable-id">Стабильный идентификатор контента</span>
             <span class="term-en">stable content id</span>
             <p class="term-body">
@@ -666,6 +707,22 @@
                 читаться с одного экрана, и не раньше.
             </p>
             <span class="term-src">Урок <a href="lessons/03-vcontainer-lifetimescope.html#api-installer">03 · Установщик</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="fixed-timestep">Фиксированный шаг симуляции</span>
+            <span class="term-en">fixed timestep</span>
+            <p class="term-body">
+                Правило, по которому симуляция продвигается всегда одинаковыми интервалами
+                (в этом проекте <code>1/60</code> с) независимо от того, сколько длился кадр.
+                Даёт то, что иначе становится функцией fps: длительность неуязвимости
+                и кулдаунов, дальность рывка, воспроизводимость баланса. Цена — нужен
+                <a href="#time-accumulator">накопитель</a> с пределом тиков и, позже,
+                интерполяция во вьюхах. В этом проекте реализован своим циклом в точке входа
+                забега, а не через <code>FixedUpdate</code>: тот привязан к шагу физики Unity,
+                которая здесь не используется.
+            </p>
+            <span class="term-src">Урок <a href="lessons/07-input-movement-fixed-step.html#fixed-step">07 · Фиксированный шаг и спираль смерти</a></span>
         </div>
 
         <div class="term">

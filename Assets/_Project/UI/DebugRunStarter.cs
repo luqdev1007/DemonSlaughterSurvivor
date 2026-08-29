@@ -57,7 +57,7 @@ namespace Game.UI
             }
             catch (OperationCanceledException)
             {
-                // Панель закрыта
+                // Expected: the run started and this scene is being unloaded.
             }
             catch (ContentNotFoundException e)
             {
