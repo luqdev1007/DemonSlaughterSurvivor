@@ -6,7 +6,9 @@ namespace Game.Configs
     public sealed class LevelConfig : ContentConfig
     {
         [SerializeField] private string _sceneName;
+        [SerializeField] private float _cameraYaw;
 
+        public float CameraYaw => _cameraYaw;
         public string SceneName => _sceneName;
     }
 }
