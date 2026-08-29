@@ -150,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Game.UI.DebugRunStarter
   _playButton: {fileID: 1020110937}
   _levelId: level.gameplay
-  _characterId: Berserk
+  _characterId: character.berserk
 --- !u!4 &75176785
 Transform:
   m_ObjectHideFlags: 0

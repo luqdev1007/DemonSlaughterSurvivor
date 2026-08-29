@@ -37,7 +37,11 @@ namespace Game.Bootstrap
             await _sceneLoader.LoadAsync(level.SceneName, ct);
 
             _runScope = _projectScope.CreateChild<RunLifetimeScope>(
-                builder => builder.RegisterInstance(runContext),
+                builder =>
+                {
+                    builder.RegisterInstance(runContext);
+                    builder.RegisterInstance(level);
+                },
                 RunScopeName);
         }
 

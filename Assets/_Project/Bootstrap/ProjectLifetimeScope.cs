@@ -15,8 +15,6 @@ namespace Game.Bootstrap
 
         protected override void Configure(IContainerBuilder builder)
         {
-            // Both references live only in the root prefab, so they can be cleared silently.
-            // Fail here, loudly, instead of resolving into a null three screens later.
             if (_contentDatabase == null)
                 throw new InvalidOperationException(
                     $"{nameof(ContentDatabase)} is not assigned on the {nameof(ProjectLifetimeScope)} prefab.");
@@ -31,8 +29,8 @@ namespace Game.Bootstrap
 
             builder.Register<RunLauncher>(Lifetime.Singleton).As<IRunLauncher>();
 
-            // Built by hand, not by the container: the registry must validate the whole
-            // database while the project scope is being built, not on the first Get.
+            builder.Register<InputService>(Lifetime.Singleton).As<IInputService>();
+
             builder.RegisterInstance(new ContentRegistry(_contentDatabase.Entries)).As<IContentRegistry>();
 
             builder.RegisterInstance(_scenesConfig);

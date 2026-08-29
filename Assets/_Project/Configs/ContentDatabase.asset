@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.ContentDatabase
   _entries:
   - {fileID: 11400000, guid: b73acb659a2a5f048b05aa42eef55ac5, type: 2}
+  - {fileID: 11400000, guid: 29d13c4cfee513e429c8e2e39949af05, type: 2}

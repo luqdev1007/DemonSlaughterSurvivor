@@ -1,3 +1,4 @@
+using Game.Configs;
 using Game.Core;
 using Game.Simulation.Services;
 using Game.Simulation.Systems;
@@ -16,16 +17,30 @@ namespace Game.Bootstrap
 
         private readonly RunContext _context;
         private readonly SimulationClock _clock;
+        private readonly IInputService _inputService;
+        private readonly IContentRegistry _registry;
+        private readonly IViewFactory _viewFactory;
+        private readonly LevelConfig _levelConfig;
 
         private EcsWorld _world;
         private IEcsSystems _systems;
 
         private float _accumulator;
 
-        public RunEntryPoint(RunContext context, SimulationClock clock)
+        public RunEntryPoint(
+            RunContext context, 
+            SimulationClock clock, 
+            IInputService inputService, 
+            IContentRegistry registry, 
+            IViewFactory viewFactory,
+            LevelConfig levelConfig)
         {
             _context = context;
             _clock = clock;
+            _inputService = inputService;
+            _registry = registry;
+            _viewFactory = viewFactory;
+            _levelConfig = levelConfig;
         }
 
         public void Initialize()
@@ -34,7 +49,12 @@ namespace Game.Bootstrap
             _systems = RunSystems.Build(_world);
 
             _systems.Inject(
-                _clock
+                _context,
+                _clock,
+                _inputService,
+                _registry,
+                _viewFactory,
+                _levelConfig
                 );
 
             _systems.Init();
@@ -43,6 +63,8 @@ namespace Game.Bootstrap
         public void Tick()
         {
             _clock.Advance(Time.deltaTime);
+
+            _accumulator += Time.deltaTime;
 
             _systems.Run();
         }

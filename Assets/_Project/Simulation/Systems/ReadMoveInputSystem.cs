@@ -13,14 +13,17 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<IInputService> _input = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
 
+        private readonly EcsPoolInject<MoveIntent> _intents = default;
+
         public void Run(IEcsSystems systems)
         {
             Vector2 axis = _input.Value.MoveAxis;
+            Vector3 direction = Quaternion.Euler(0f, _level.Value.CameraYaw, 0f) * new Vector3(axis.x, 0f, axis.y).normalized;
 
             foreach (var entity in _filter.Value)
             {
-                Vector3 direction = Quaternion.Euler(0f, _level.Value.CameraYaw, 0f) * new Vector3(axis.x, 0f, axis.y);
-                ref var moveIntent = ref direction;
+                ref var intent = ref _intents.Value.Get(entity);
+                intent.Value = direction;
             }
         }
     }
