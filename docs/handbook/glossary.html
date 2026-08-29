@@ -280,6 +280,22 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="input-buffering">Буферизация ввода</span>
+            <span class="term-en">input buffering</span>
+            <p class="term-body">
+                Приём, при котором нажатие, пришедшее чуть раньше, чем механика готова его
+                исполнить, не выбрасывается, а ждёт короткое окно (в этом проекте ориентир
+                100–150 мс) и срабатывает само. Без него код остаётся технически правильным,
+                а управление ощущается глухим: игрок отрабатывает за игру то, что должна была
+                отработать игра. Буфер обязан помнить <em>когда</em> нажали, а не только
+                <em>что</em> нажали, — то есть быть
+                <a href="#state-component">компонентом-состоянием</a> с возрастом, а не
+                булевым флагом, который либо сгорает в тот же тик, либо не сгорает никогда.
+            </p>
+            <span class="term-src">Урок <a href="lessons/08-dash-and-buffered-input.html#buffering">08 · Буферизация ввода</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="dependency-injection">Внедрение зависимостей</span>
             <span class="term-en">Dependency Injection, DI</span>
             <p class="term-body">
@@ -391,6 +407,36 @@
                 <code>Event</code> живёт один кадр и удаляется группой <code>Cleanup</code>.
             </p>
             <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#api-shapes">04 · Формы компонента и системы</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="state-component">Компонент-состояние</span>
+            <span class="term-en">state component</span>
+            <p class="term-body">
+                <a href="#ecs-component">Компонент</a>, само наличие которого означает, что
+                сущность находится в некотором состоянии, а поля хранят остаток времени и то,
+                что надо помнить всё время действия. Так в ECS выражают всё длящееся дольше
+                одного тика: рывок, неуязвимость, замедление. Отдельного <code>bool</code>
+                внутри быть не должно — наличие компонента и есть флаг. Главная выгода в том,
+                что по компоненту можно отфильтровать, а по полю нельзя: система обычного
+                движения просто исключает состояние маской <code>Exc&lt;…&gt;</code> и не
+                обрастает ветвлениями на каждое новое состояние.
+            </p>
+            <span class="term-src">Урок <a href="lessons/08-dash-and-buffered-input.html#state-component">08 · Состояние во времени — это компонент</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="cooldown">Кулдаун</span>
+            <span class="term-en">cooldown</span>
+            <p class="term-body">
+                Время, в течение которого способность не может быть применена повторно.
+                В ECS выражается тем же <a href="#state-component">компонентом-состоянием</a>,
+                что и само действие: повесили при завершении, уменьшили системой, сняли по нулю.
+                Проверка «на кулдауне?» при этом не пишется вовсе — она становится
+                <code>Exc&lt;DashCooldown&gt;</code> в маске фильтра той системы, которая
+                запускает способность.
+            </p>
+            <span class="term-src">Урок <a href="lessons/08-dash-and-buffered-input.html#state-component">08 · Состояние во времени — это компонент</a></span>
         </div>
 
         <div class="term">

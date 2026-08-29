@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>08 · Рывок: состояние во времени и буферизация ввода</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>08 · Рывок: состояние во времени и буферизация ввода</h1>
+
+        <div class="lesson-meta">
+            шаг 2 роадмапа (игрок) · блок 2 · 2026-08-29<br>
+            Доки проекта: <code>ARCHITECTURE.md</code> §6 (буферизация, окно TBD),
+            §7 (способности как композиция), §10 (почему <code>Abilities</code> до
+            <code>Movement</code>) ·
+            <code>GDD.md</code> §5 (рывок), §11 (граница MVP), §12 (порядок реализации) ·
+            <code>CLAUDE.md</code> §7 (аллокации в тике, никаких <code>async</code> в системах)<br>
+            Опирается на урок <a href="07-input-movement-fixed-step.html">07 · Ввод и движение</a>;
+            закрывает риск Р-6 отчёта <code>docs/recons/010</code> (окно буферизации)<br>
+            Версии: Unity <code>6000.4.11f1</code>, LeoECS Lite <code>d46f3b2</code>,
+            LeoECS Lite DI <code>482b14e</code>, Input System <code>1.19.0</code>.
+        </div>
+
+        <p class="lead">
+            Всё, что делала симуляция до сих пор, укладывалось в один тик: прочитал ввод,
+            умножил, сдвинул. Рывок — первая механика, которая <strong>длится</strong>: она
+            начинается, живёт несколько тиков и заканчивается сама. Вместе с ней приходят три
+            вещи, которых в проекте ещё нет: состояние во времени, кулдаун и буфер ввода.
+            Главная мысль блока:
+            <strong>в ECS «длящееся» — это не корутина и не таймер в сервисе, а компонент,
+            который висит на сущности и уменьшается системой. Пока компонент есть — состояние
+            есть; исчез — состояния нет.</strong>
+            Всё остальное в уроке следует отсюда.
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="state-component">1.1 Состояние во времени — это компонент</h3>
+
+        <p>
+            Рывок длится, скажем, 0.15 секунды. За это время персонаж летит в выбранном
+            направлении с повышенной скоростью, не слушая клавиши. Как выразить «идёт рывок»?
+        </p>
+
+        <p>
+            В ООП рефлекс — корутина или <code>async</code>-метод: «поехали, подожди, останови».
+            В ECS обе формы запрещены и обе неправильны здесь по существу.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Форма</th><th>Что не так</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Корутина <code>MonoBehaviour</code></td>
+                    <td>Аллокация на каждый запуск, время идёт по <code>Time</code>, а не по
+                        <a href="07-input-movement-fixed-step.html#fixed-step">шагу симуляции</a>,
+                        и состояние живёт вне мира — при разборе забега его никто не снимет</td>
+                </tr>
+                <tr>
+                    <td><code>async</code>/<code>UniTask</code> в системе</td>
+                    <td>Прямой запрет <code>CLAUDE.md</code> §7. Система обязана быть
+                        синхронной: она вызывается N раз за кадр, и «ждать» ей нечем</td>
+                </tr>
+                <tr>
+                    <td>Поле <code>_dashTimer</code> в сервисе</td>
+                    <td>Работает ровно для одной сущности. На шаге 3 рывок появится у врагов,
+                        и сервис придётся превращать в словарь по сущности — то есть
+                        в самодельный пул, только медленный</td>
+                </tr>
+                <tr>
+                    <td><strong>Компонент <code>Dashing</code></strong></td>
+                    <td>Состояние лежит там же, где остальные данные сущности; живёт ровно
+                        столько, сколько висит компонент; исчезает вместе с миром</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Форма компонента-состояния всегда одна: <strong>остаток времени плюс то, что нужно
+            помнить на всё время действия</strong>. Для рывка это направление — его нельзя
+            перечитывать каждый тик, иначе рывком можно будет рулить, а это уже не рывок.
+        </p>
+
+        <p>
+            И одна система, которая уменьшает остаток и снимает компонент, когда тот кончился.
+            <strong>Наличие компонента — и есть флаг состояния.</strong> Отдельный
+            <code>bool IsDashing</code> рядом с ним — верный признак того, что состояние
+            размазано на два источника, которые рано или поздно разойдутся.
+        </p>
+
+        <h3 id="who-owns-velocity">1.2 Кто владеет скоростью, когда владельцев двое</h3>
+
+        <p>
+            В блоке 1 скорость писала одна система: <code>ApplyMoveSpeedSystem</code>, из
+            намерения и стата. Теперь её хочет писать и рывок. Обе — в одном тике.
+        </p>
+
+        <p>
+            <code>ARCHITECTURE.md</code> §10 ставит <code>Abilities</code> (группа 2)
+            <strong>до</strong> <code>Movement</code> (группа 5) с прямой мотивировкой: «рывок
+            должен успеть изменить скорость в том же кадре». Но порядок сам по себе конфликт не
+            решает — он его только упорядочивает: кто пишет последним, тот и прав, а последним
+            идёт <code>Movement</code>. Наивная схема даёт рывок, который перетирается обычным
+            движением в тот же тик и не виден вообще.
+        </p>
+
+        <p>
+            Три способа развести владельцев:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Способ</th><th>Оценка</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Флаг <code>bool IsDashing</code> и <code>if</code> внутри
+                        <code>ApplyMoveSpeedSystem</code></td>
+                    <td>Работает и не масштабируется: каждое новое состояние, отбирающее
+                        управление, — ещё одно поле и ещё один <code>if</code> в чужой системе</td>
+                </tr>
+                <tr>
+                    <td>Приоритеты: писать в <code>Velocity</code> с числом важности</td>
+                    <td>Оверинжиниринг для двух источников. Приоритеты понадобятся, когда
+                        источников станет пять, и заводить их надо тогда</td>
+                </tr>
+                <tr>
+                    <td><strong><code>Exc&lt;Dashing&gt;</code> в фильтре
+                        <code>ApplyMoveSpeedSystem</code></strong></td>
+                    <td>Система обычного движения просто <em>не видит</em> сущности в рывке.
+                        Ни поля, ни ветвления; правило выражено маской фильтра, а маску
+                        поддерживает мир</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Третий способ — то, ради чего в LeoECS Lite вообще есть <code>Exc&lt;&gt;</code>.
+            Он же объясняет, почему <code>Dashing</code> должен быть компонентом, а не полем:
+            <strong>по полю нельзя отфильтровать, по компоненту — можно</strong>.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Что это даёт дальше</span>
+            <p>
+                На шаге 4 придёт отбрасывание, на шаге 5 — замедления, и каждое из них
+                тоже захочет управлять скоростью. Схема «состояние = компонент, обычное
+                движение исключает его фильтром» принимает их без правок в
+                <code>ApplyMoveSpeedSystem</code>. Схема с <code>bool</code> — нет.
+            </p>
+        </div>
+
+        <h3 id="buffering">1.3 Буферизация ввода: почему нажатие обязано подождать</h3>
+
+        <p>
+            <code>ARCHITECTURE.md</code> §6 говорит: «Нажатие незадолго до конца кулдауна
+            срабатывает при его окончании. Без буфера управление ощущается глухим при технически
+            корректном коде». Второе предложение — самое важное в разделе: это не баг, который
+            найдётся в логах. Код будет правильным, тесты пройдут, а игра будет ощущаться плохо,
+            и причину назвать никто не сможет.
+        </p>
+
+        <p>
+            Механика простая. Игрок жмёт рывок за 40 мс до конца кулдауна. Наивная реализация
+            смотрит «кулдаун идёт? — значит нажатия не было» и выбрасывает его. Игрок видит, что
+            ничего не произошло, и жмёт ещё раз — то есть отрабатывает за игру то, что должна
+            была отработать игра.
+        </p>
+
+        <p>
+            Буфер запоминает нажатие на короткое окно и отдаёт его первой же системе, которая
+            сможет его исполнить. Окно — <strong>100–150 мс</strong> по ориентиру из §6; конкретное
+            число выбирается в этом блоке и записывается.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Буфер — не <code>bool</code></span>
+            <p>
+                Соблазн: <code>bool _dashPressed</code>, который выставляется на нажатии и
+                сбрасывается на исполнении. Он ломается на вопросе «а когда сбрасывать, если
+                исполнения так и не случилось». Сбросишь в конце тика — буфера нет вообще.
+                Не сбросишь — нажатие пятисекундной давности выстрелит в момент, когда игрок
+                про него забыл, и это ощущается как чужие руки на управлении.
+            </p>
+            <p>
+                Буфер обязан помнить <strong>когда</strong> нажали, а не только <em>что</em>
+                нажали. То есть компонент-запрос с возрастом, который стареет каждый тик и
+                выбрасывается по истечении окна.
+            </p>
+        </div>
+
+        <p>
+            Отсюда три системы вместо одной, каждая с одной причиной меняться: одна создаёт
+            запрос по нажатию, вторая пытается его исполнить, третья выбрасывает просроченные.
+            Третья живёт в группе <code>Cleanup</code> — она для этого и заведена.
+        </p>
+
+        <h3 id="no-framework-yet">1.4 Почему фреймворк способностей здесь <em>не</em> строится</h3>
+
+        <p>
+            <code>ARCHITECTURE.md</code> §7 описывает красивую схему: <code>AbilityDefinition</code>
+            без логики, указывающий набор компонентов-эффектов; рывок берсерка —
+            <code>Dash(Forward)</code> + <code>Invulnerable</code> + <code>PushAway</code>;
+            кульбит рейнджера — <code>Dash(Backward)</code> + <code>Invulnerable</code>.
+            Соблазн построить это сейчас огромный, и поддаваться ему нельзя.
+        </p>
+
+        <p>
+            Причины три, по убыванию весомости.
+        </p>
+
+        <ol>
+            <li>
+                <strong>Обобщать не из чего.</strong> Способность в проекте будет ровно одна.
+                Фреймворк, выведенный из одного примера, — это не обобщение, а угадывание;
+                настоящие требования принесут ульта и артефакт на шаге 6, и переписывать
+                придётся всё равно, только теперь ещё и с миграцией конфигов.
+            </li>
+            <li>
+                <strong>Половина эффектов не существует.</strong> <code>Invulnerable</code> и
+                <code>PushAway</code> — это шаг 4 (<code>GDD.md</code> §12 прямым текстом:
+                «рывок появляется на шаге 2 как движение и обрастает i-frames на шаге 4»).
+                Композиция из одного эффекта — не композиция.
+            </li>
+            <li>
+                <strong>Граница MVP.</strong> <code>CLAUDE.md</code> §6.5 требует сказать вслух,
+                когда задача выходит за MVP, а <code>GDD.md</code> §11 напоминает, что в MVP
+                игрок жмёт две кнопки, не три, и что ростер персонажей «заложен архитектурно,
+                но не реализуется».
+            </li>
+        </ol>
+
+        <p>
+            Что делается вместо: параметры рывка кладутся в <code>CharacterConfig</code>
+            обычными полями, компоненты и системы пишутся под рывок напрямую.
+            <strong>Направление при этом сразу параметр, а не константа</strong> — это
+            единственное из §7, что стоит взять авансом, потому что стоит одно поле, а
+            захардкоженное «по взгляду» ломается на кульбите рейнджера, который летит назад.
+        </p>
+
+        </section>
+
+        <!-- ========================================= ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="what-exists">2.1 Что уже готово после блока 1</h3>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Есть</th><th>Что даёт этому блоку</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Фиксированный шаг <code>1/60</code></td>
+                    <td>Длительность рывка и кулдаун считаются в секундах и воспроизводятся:
+                        <code>0.15</code> с — это всегда девять тиков, а не «как повезёт»</td>
+                </tr>
+                <tr>
+                    <td><code>SimulationClock.Delta</code></td>
+                    <td>Единственный источник времени для всех таймеров блока</td>
+                </tr>
+                <tr>
+                    <td><code>IInputService</code>, группа <code>Input</code></td>
+                    <td>Готовый шов: добавляется одно действие и одно свойство</td>
+                </tr>
+                <tr>
+                    <td><code>MoveIntent</code> отдельно от <code>Velocity</code></td>
+                    <td>Ровно то разделение, ради которого оно делалось: рывок пишет скорость,
+                        не трогая намерение игрока</td>
+                </tr>
+                <tr>
+                    <td><code>Facing</code></td>
+                    <td>Направление рывка, когда клавиши отпущены</td>
+                </tr>
+                <tr>
+                    <td>Группы <code>Abilities</code> и <code>Cleanup</code> в
+                        <code>RunSystems</code></td>
+                    <td>Пустые, но объявленные. Первые жильцы появятся в этом блоке</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3 id="direction-source">2.2 Откуда берётся направление рывка</h3>
+
+        <p>
+            Вопрос выглядит мелким и решается неверно чаще всего. Кандидатов два, и оба
+            неполные:
+        </p>
+
+        <ul>
+            <li>
+                <strong><code>MoveIntent</code></strong> — куда игрок ведёт прямо сейчас.
+                Правильно, пока клавиши нажаты. При отпущенных клавишах он нулевой, и рывок
+                уходит в никуда: персонаж «дёргается» на месте, а кулдаун сгорает.
+            </li>
+            <li>
+                <strong><code>Facing</code></strong> — куда персонаж смотрит. Никогда не
+                нулевой (в блоке 1 он инициализируется <code>Vector3.forward</code>), но
+                игнорирует то, что игрок делает руками в момент нажатия.
+            </li>
+        </ul>
+
+        <p>
+            Правильно — <strong><code>MoveIntent</code>, если он не нулевой, иначе
+            <code>Facing</code></strong>. Это одна строка, и она снимает оба сценария сразу.
+            Направление вычисляется <strong>один раз при старте</strong> и кладётся в
+            <code>Dashing</code>: пересчёт каждый тик превратил бы рывок в управляемый полёт.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Параметр, а не константа</span>
+            <p>
+                Полученное направление умножается на множитель из конфига:
+                <code>+1</code> — вперёд, <code>-1</code> — назад. Одно сериализованное поле
+                сейчас, и кульбит рейнджера на шаге 11 не потребует ни строчки в системах.
+                Это то самое «направление — параметр» из <code>ARCHITECTURE.md</code> §7,
+                взятое авансом, потому что оно ничего не стоит.
+            </p>
+        </div>
+
+        <h3 id="example-timer">2.3 Состояние с таймером — пример на постороннем домене</h3>
+
+        <p>
+            Домен — эспрессо-машина: кнопка, кулдаун между порциями, процесс, который длится.
+            Форма один в один совпадает с рывком. <strong>В проект вставить нельзя.</strong>
+        </p>
+
+<pre><code><span class="k">using</span> <span class="t">Leopotam.EcsLite</span><span class="p">;</span>
+<span class="k">using</span> <span class="t">Leopotam.EcsLite.Di</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="t">Cafe.Machines</span>
+<span class="p">{</span>
+    <span class="k">public struct</span> <span class="t">Machine</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="c">// Запрос с возрастом, а не bool: буфер обязан помнить, КОГДА нажали.</span>
+    <span class="k">public struct</span> <span class="t">BrewRequest</span> <span class="p">{</span> <span class="k">public float</span> Age<span class="p">;</span> <span class="p">}</span>
+
+    <span class="c">// Состояние: остаток времени плюс то, что надо помнить всё время процесса.</span>
+    <span class="k">public struct</span> <span class="t">Brewing</span> <span class="p">{</span> <span class="k">public float</span> Remaining<span class="p">;</span> <span class="k">public float</span> Grams<span class="p">;</span> <span class="p">}</span>
+
+    <span class="k">public struct</span> <span class="t">Recovering</span> <span class="p">{</span> <span class="k">public float</span> Remaining<span class="p">;</span> <span class="p">}</span>
+
+    <span class="k">public sealed class</span> <span class="t">MachineSpec</span>
+    <span class="p">{</span>
+        <span class="k">public float</span> BrewSeconds <span class="p">=</span> <span class="n">25f</span><span class="p">;</span>
+        <span class="k">public float</span> RecoverySeconds <span class="p">=</span> <span class="n">8f</span><span class="p">;</span>
+        <span class="k">public float</span> BufferSeconds <span class="p">=</span> <span class="n">0.12f</span><span class="p">;</span>
+        <span class="k">public float</span> DoseGrams <span class="p">=</span> <span class="n">18f</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c">// Пытается исполнить накопленный запрос. Не может — просто не трогает его,</span>
+    <span class="c">// и запрос доживёт до следующего тика. В этом весь буфер.</span>
+    <span class="k">public sealed class</span> <span class="t">StartBrewSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+    <span class="p">{</span>
+        <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">Machine</span><span class="p">,</span> <span class="t">BrewRequest</span><span class="p">&gt;,</span> <span class="t">Exc</span><span class="p">&lt;</span><span class="t">Brewing</span><span class="p">,</span> <span class="t">Recovering</span><span class="p">&gt;&gt;</span> _ready <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">BrewRequest</span><span class="p">&gt;</span> _requests <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+        <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">Brewing</span><span class="p">&gt;</span> _brewing <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">MachineSpec</span><span class="p">&gt;</span> _spec <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// Фильтр исключает Brewing и Recovering, поэтому здесь только те машины,</span>
+            <span class="c">// которые прямо сейчас МОГУТ начать. Ни одного if о состоянии.</span>
+            <span class="k">foreach</span> <span class="p">(</span><span class="k">int</span> entity <span class="k">in</span> _ready<span class="p">.</span>Value<span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">ref</span> <span class="t">Brewing</span> brewing <span class="p">=</span> <span class="k">ref</span> _brewing<span class="p">.</span>Value<span class="p">.</span>Add<span class="p">(</span>entity<span class="p">);</span>
+                brewing<span class="p">.</span>Remaining <span class="p">=</span> _spec<span class="p">.</span>Value<span class="p">.</span>BrewSeconds<span class="p">;</span>
+                brewing<span class="p">.</span>Grams <span class="p">=</span> _spec<span class="p">.</span>Value<span class="p">.</span>DoseGrams<span class="p">;</span>
+
+                <span class="c">// Запрос исполнен — снимаем. Удаление внутри foreach безопасно:</span>
+                <span class="c">// мир блокирует фильтр на время итерации.</span>
+                _requests<span class="p">.</span>Value<span class="p">.</span>Del<span class="p">(</span>entity<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c">// Уменьшает остаток и снимает состояние, когда оно кончилось.</span>
+    <span class="k">public sealed class</span> <span class="t">AdvanceBrewSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+    <span class="p">{</span>
+        <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">Brewing</span><span class="p">&gt;&gt;</span> _filter <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">Brewing</span><span class="p">&gt;</span> _brewing <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+        <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">Recovering</span><span class="p">&gt;</span> _recovering <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">MachineSpec</span><span class="p">&gt;</span> _spec <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+        <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">ProcessClock</span><span class="p">&gt;</span> _clock <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">foreach</span> <span class="p">(</span><span class="k">int</span> entity <span class="k">in</span> _filter<span class="p">.</span>Value<span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">ref</span> <span class="t">Brewing</span> brewing <span class="p">=</span> <span class="k">ref</span> _brewing<span class="p">.</span>Value<span class="p">.</span>Get<span class="p">(</span>entity<span class="p">);</span>
+
+                brewing<span class="p">.</span>Remaining <span class="p">-=</span> _clock<span class="p">.</span>Value<span class="p">.</span>Delta<span class="p">;</span>
+
+                <span class="k">if</span> <span class="p">(</span>brewing<span class="p">.</span>Remaining <span class="p">&gt;</span> <span class="n">0f</span><span class="p">)</span>
+                    <span class="k">continue</span><span class="p">;</span>
+
+                <span class="k">ref</span> <span class="t">Recovering</span> recovering <span class="p">=</span> <span class="k">ref</span> _recovering<span class="p">.</span>Value<span class="p">.</span>Add<span class="p">(</span>entity<span class="p">);</span>
+                recovering<span class="p">.</span>Remaining <span class="p">=</span> _spec<span class="p">.</span>Value<span class="p">.</span>RecoverySeconds<span class="p">;</span>
+
+                _brewing<span class="p">.</span>Value<span class="p">.</span>Del<span class="p">(</span>entity<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c">// Выбрасывает просроченные запросы. Живёт в группе очистки.</span>
+    <span class="k">public sealed class</span> <span class="t">ExpireBrewRequestSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+    <span class="p">{</span>
+        <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">BrewRequest</span><span class="p">&gt;&gt;</span> _filter <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">BrewRequest</span><span class="p">&gt;</span> _requests <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">MachineSpec</span><span class="p">&gt;</span> _spec <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+        <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">ProcessClock</span><span class="p">&gt;</span> _clock <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+        <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">foreach</span> <span class="p">(</span><span class="k">int</span> entity <span class="k">in</span> _filter<span class="p">.</span>Value<span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">ref</span> <span class="t">BrewRequest</span> request <span class="p">=</span> <span class="k">ref</span> _requests<span class="p">.</span>Value<span class="p">.</span>Get<span class="p">(</span>entity<span class="p">);</span>
+
+                request<span class="p">.</span>Age <span class="p">+=</span> _clock<span class="p">.</span>Value<span class="p">.</span>Delta<span class="p">;</span>
+
+                <span class="k">if</span> <span class="p">(</span>request<span class="p">.</span>Age <span class="p">&gt;=</span> _spec<span class="p">.</span>Value<span class="p">.</span>BufferSeconds<span class="p">)</span>
+                    _requests<span class="p">.</span>Value<span class="p">.</span>Del<span class="p">(</span>entity<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Тот же домен — как <strong>не надо</strong>:
+        </p>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">StartBrewSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+<span class="p">{</span>
+    <span class="c">// 1. Состояние полем сервиса, а не компонентом. Работает ровно</span>
+    <span class="c">//    для одной машины и превращается в словарь на второй.</span>
+    <span class="k">private float</span> <span class="err">_brewRemaining</span><span class="p">;</span>
+    <span class="k">private bool</span> <span class="err">_isBrewing</span><span class="p">;</span>
+
+    <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">foreach</span> <span class="p">(</span><span class="k">int</span> entity <span class="k">in</span> _all<span class="p">.</span>Value<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// 2. Состояние проверяется if-ом вместо Exc в фильтре.</span>
+            <span class="c">//    Каждое новое состояние — ещё одна ветка здесь же.</span>
+            <span class="k">if</span> <span class="p">(</span>_brewing<span class="p">.</span>Value<span class="p">.</span><span class="err">Has</span><span class="p">(</span>entity<span class="p">)</span> <span class="p">||</span> _recovering<span class="p">.</span>Value<span class="p">.</span><span class="err">Has</span><span class="p">(</span>entity<span class="p">))</span>
+                <span class="k">continue</span><span class="p">;</span>
+
+            <span class="c">// 3. Буфер как bool: нажатие либо сгорает в тот же тик,</span>
+            <span class="c">//    либо не сгорает никогда. Оба варианта плохие.</span>
+            <span class="k">if</span> <span class="p">(</span><span class="err">_buttonPressed</span> <span class="p">==</span> <span class="k">false</span><span class="p">)</span>
+                <span class="k">continue</span><span class="p">;</span>
+
+            <span class="err">_buttonPressed</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+
+            <span class="c">// 4. Время из Unity вместо часов симуляции: при фиксированном шаге</span>
+            <span class="c">//    это разные числа, и таймер поедет при первой же просадке.</span>
+            _brewRemaining <span class="p">=</span> <span class="err">Time.time</span> <span class="p">+</span> <span class="n">25f</span><span class="p">;</span>
+
+            <span class="c">// 5. Корутина в системе. Аллокация, чужое время, состояние вне мира.</span>
+            <span class="err">CoroutineRunner</span><span class="p">.</span>Start<span class="p">(</span>BrewRoutine<span class="p">(</span>entity<span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="input-side">2.4 Кнопка и порядок групп</h3>
+
+        <p>
+            Со стороны ввода добавляется одно действие <code>Dash</code> типа
+            <code>Button</code> в карту <code>Gameplay</code> и одно свойство в
+            <code>IInputService</code>. Важная деталь: свойство должно отдавать
+            <strong>факт нажатия в этом тике</strong>, а не «кнопка сейчас удерживается», —
+            иначе удержание даст рывок каждый тик, как только кулдаун кончится.
+        </p>
+
+        <p>
+            У <code>InputAction</code> для этого есть <code>WasPressedThisFrame()</code>.
+            «Frame» здесь означает кадр Unity, а тиков симуляции за кадр бывает несколько
+            (<a href="07-input-movement-fixed-step.html#fixed-step">урок 07, 1.3</a>) — то есть
+            на втором тике одного кадра факт нажатия уже пропадёт. Это ещё один аргумент
+            за буфер-компонент: система ввода переносит факт в мир один раз, и дальше он живёт
+            по своим правилам, а не по правилам кадра.
+        </p>
+
+        <p>
+            Порядок в <code>RunSystems</code> для этого блока:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Группа</th><th>Система</th><th>Что делает</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1 Input</td><td><code>ReadDashInputSystem</code></td>
+                    <td>Нажали — создать или обновить запрос</td></tr>
+                <tr><td>2 Abilities</td><td><code>StartDashSystem</code></td>
+                    <td>Исполнить запрос, если можно: снять запрос, повесить состояние</td></tr>
+                <tr><td>2 Abilities</td><td><code>AdvanceDashSystem</code></td>
+                    <td>Уменьшить остаток, по нулю снять состояние и завести кулдаун</td></tr>
+                <tr><td>2 Abilities</td><td><code>TickDashCooldownSystem</code></td>
+                    <td>Уменьшить кулдаун, по нулю снять</td></tr>
+                <tr><td>5 Movement</td><td><code>ApplyDashVelocitySystem</code></td>
+                    <td>Скорость для тех, кто в рывке</td></tr>
+                <tr><td>5 Movement</td><td><code>ApplyMoveSpeedSystem</code></td>
+                    <td><strong>Правится:</strong> добавляется <code>Exc&lt;Dashing&gt;</code></td></tr>
+                <tr><td>13 Cleanup</td><td><code>ExpireDashRequestSystem</code></td>
+                    <td>Состарить запросы, просроченные выбросить</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="note warn">
+            <span class="note-title">Ловушка порядка внутри группы</span>
+            <p>
+                <code>StartDashSystem</code> обязана стоять <strong>раньше</strong>
+                <code>AdvanceDashSystem</code>. Наоборот — и только что начатый рывок сразу
+                получит вычет за тот же тик, то есть будет короче на один тик. Один тик из
+                девяти — это 11% дальности, и заметить это на глаз невозможно, а в балансе
+                шага 7 оно всплывёт числом, которое никто не сможет объяснить.
+            </p>
+        </div>
+
+        </section>
+
+        <!-- ============================================== СКЕЛЕТ API ==== -->
+        <section data-kind="api">
+
+        <h2 id="api">Скелет API</h2>
+
+        <p>Сигнатуры без тел. Реализация — работа разработчика.</p>
+
+        <h3 id="api-config">3.1 <code>Game.Configs</code>: параметры рывка</h3>
+
+        <p>
+            Обычные поля в <code>CharacterConfig</code>. Не <code>AbilityConfig</code>,
+            не реестр способностей — см. 1.4.
+        </p>
+
+<pre><code><span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private float</span> _dashDistance<span class="p">;</span>
+<span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private float</span> _dashDuration<span class="p">;</span>
+<span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private float</span> _dashCooldown<span class="p">;</span>
+<span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private float</span> _dashDirectionSign<span class="p">;</span>   <span class="c">// +1 вперёд, -1 назад</span>
+<span class="p">[</span><span class="a">SerializeField</span><span class="p">]</span> <span class="k">private float</span> _inputBufferSeconds<span class="p">;</span>
+
+<span class="k">public float</span> DashDistance <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="k">public float</span> DashDuration <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="k">public float</span> DashCooldown <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="k">public float</span> DashDirectionSign <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+<span class="k">public float</span> InputBufferSeconds <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span></code></pre>
+
+        <p>
+            <strong>Дистанция и длительность, а не скорость.</strong> Скорость рывка —
+            производное: <code>DashDistance / DashDuration</code>. Дизайнер думает в терминах
+            «на сколько метров отпрыгнуть» и «за сколько», а не «с какой скоростью»; выводить
+            скорость в конфиг значит заставлять его считать в уме и ошибаться.
+        </p>
+
+        <p>
+            Ориентиры для первого прохода: дистанция 4, длительность 0.15, кулдаун 1.5,
+            знак +1, буфер <strong>0.12</strong> (окно из <code>ARCHITECTURE.md</code> §6 —
+            выбрать число и записать в доку, закрыв TBD).
+        </p>
+
+        <h3 id="api-components">3.2 <code>Game.Simulation</code>: компоненты</h3>
+
+        <p>
+            Новый файл <code>AbilityComponents.cs</code> — тема отдельная от движения.
+        </p>
+
+<pre><code><span class="k">namespace</span> <span class="t">Game.Simulation.Components</span>
+<span class="p">{</span>
+    <span class="k">public struct</span> <span class="t">DashRequest</span>  <span class="p">{</span> <span class="k">public float</span> Age<span class="p">;</span> <span class="p">}</span>
+    <span class="k">public struct</span> <span class="t">DashCooldown</span> <span class="p">{</span> <span class="k">public float</span> Remaining<span class="p">;</span> <span class="p">}</span>
+
+    <span class="k">public struct</span> <span class="t">Dashing</span>
+    <span class="p">{</span>
+        <span class="k">public float</span> Remaining<span class="p">;</span>
+        <span class="k">public</span> <span class="t">Vector3</span> Direction<span class="p">;</span>   <span class="c">// вычислено один раз на старте</span>
+        <span class="k">public float</span> Speed<span class="p">;</span>         <span class="c">// distance / duration</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Параметры персонажа нужны системам каждый тик, а лезть в реестр из тика нельзя.
+            Значит их надо положить на сущность при спавне — ещё один компонент, заполняемый
+            в <code>SpawnPlayerSystem</code> из конфига:
+        </p>
+
+<pre><code><span class="k">public struct</span> <span class="t">DashStats</span>
+<span class="p">{</span>
+    <span class="k">public float</span> Distance<span class="p">;</span>
+    <span class="k">public float</span> Duration<span class="p">;</span>
+    <span class="k">public float</span> Cooldown<span class="p">;</span>
+    <span class="k">public float</span> DirectionSign<span class="p">;</span>
+    <span class="k">public float</span> BufferSeconds<span class="p">;</span>
+<span class="p">}</span></code></pre>
+
+        <div class="note">
+            <span class="note-title">Почему статы копируются на сущность</span>
+            <p>
+                Так эти числа станут доступны пайплайну модификаторов
+                (<code>ARCHITECTURE.md</code> §5) без единой правки в системах: апгрейд
+                «кулдаун рывка −20%» на шаге 7 пересчитает компонент, а не полезет в конфиг,
+                который менять нельзя — он общий на все забеги. Конфиг — база,
+                компонент — текущее значение.
+            </p>
+        </div>
+
+        <h3 id="api-systems">3.3 <code>Game.Simulation</code>: системы</h3>
+
+<pre><code><span class="c">// Группа 1 (Input). Переносит факт нажатия в мир один раз.</span>
+<span class="k">public sealed class</span> <span class="t">ReadDashInputSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">Player</span><span class="p">,</span> <span class="t">DashStats</span><span class="p">&gt;&gt;</span> _filter <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsPoolInject</span><span class="p">&lt;</span><span class="t">DashRequest</span><span class="p">&gt;</span> _requests <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+    <span class="k">private readonly</span> <span class="t">EcsCustomInject</span><span class="p">&lt;</span><span class="t">IInputService</span><span class="p">&gt;</span> _input <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+    <span class="c">// Нажали — Add, если компонента нет; если есть — обнулить Age.</span>
+    <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c">// Группа 2 (Abilities). Фильтр решает всё: сюда попадают только те,</span>
+<span class="c">// у кого есть запрос и кто не в рывке и не на кулдауне.</span>
+<span class="k">public sealed class</span> <span class="t">StartDashSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">EcsFilterInject</span><span class="p">&lt;</span>
+        <span class="t">Inc</span><span class="p">&lt;</span><span class="t">DashRequest</span><span class="p">,</span> <span class="t">DashStats</span><span class="p">,</span> <span class="t">MoveIntent</span><span class="p">,</span> <span class="t">Facing</span><span class="p">&gt;,</span>
+        <span class="t">Exc</span><span class="p">&lt;</span><span class="t">Dashing</span><span class="p">,</span> <span class="t">DashCooldown</span><span class="p">&gt;&gt;</span> _ready <span class="p">=</span> <span class="k">default</span><span class="p">;</span>
+
+    <span class="k">public void</span> Run<span class="p">(</span><span class="t">IEcsSystems</span> systems<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c">// Группа 2. Уменьшает остаток, по нулю снимает Dashing и вешает DashCooldown.</span>
+<span class="k">public sealed class</span> <span class="t">AdvanceDashSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+
+<span class="c">// Группа 2. Уменьшает кулдаун, по нулю снимает компонент.</span>
+<span class="k">public sealed class</span> <span class="t">TickDashCooldownSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+
+<span class="c">// Группа 5 (Movement). Скорость тех, кто в рывке.</span>
+<span class="k">public sealed class</span> <span class="t">ApplyDashVelocitySystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span>
+
+<span class="c">// Группа 13 (Cleanup). Старит запросы и выбрасывает просроченные.</span>
+<span class="k">public sealed class</span> <span class="t">ExpireDashRequestSystem</span> <span class="p">:</span> <span class="t">IEcsRunSystem</span></code></pre>
+
+        <p>
+            Правка одной существующей системы — <code>ApplyMoveSpeedSystem</code>:
+        </p>
+
+<pre><code><span class="c">// было</span>
+<span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">MoveIntent</span><span class="p">,</span> <span class="t">MoveSpeed</span><span class="p">,</span> <span class="t">Velocity</span><span class="p">&gt;&gt;</span>
+
+<span class="c">// стало</span>
+<span class="t">EcsFilterInject</span><span class="p">&lt;</span><span class="t">Inc</span><span class="p">&lt;</span><span class="t">MoveIntent</span><span class="p">,</span> <span class="t">MoveSpeed</span><span class="p">,</span> <span class="t">Velocity</span><span class="p">&gt;,</span> <span class="t">Exc</span><span class="p">&lt;</span><span class="t">Dashing</span><span class="p">&gt;&gt;</span></code></pre>
+
+        <p>
+            Одна строка. Тело системы не трогается вообще — это и есть проверка того, что
+            развязка выбрана правильно.
+        </p>
+
+        <h3 id="api-anti">3.4 Формы, которых быть не должно</h3>
+
+<pre><code><span class="k">private bool</span> <span class="err">_isDashing</span><span class="p">;</span>                     <span class="c">// ← нет: состояние полем системы (1.1)</span>
+
+<span class="k">if</span> <span class="p">(</span>_dashing<span class="p">.</span>Value<span class="p">.</span><span class="err">Has</span><span class="p">(</span>entity<span class="p">))</span> <span class="k">continue</span><span class="p">;</span>       <span class="c">// ← нет: это Exc в фильтре (1.2)</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="err">_input</span><span class="p">.</span>Value<span class="p">.</span>DashHeld<span class="p">)</span> StartDash<span class="p">();</span>      <span class="c">// ← нет: удержание даст рывок</span>
+                                                <span class="c">//   каждый тик после кулдауна (2.4)</span>
+
+request<span class="p">.</span>Age <span class="p">+=</span> <span class="err">Time.deltaTime</span><span class="p">;</span>               <span class="c">// ← нет: только SimulationClock.Delta</span>
+
+dashing<span class="p">.</span>Direction <span class="p">=</span> <span class="err">intent</span><span class="p">.</span>Value<span class="p">;</span>            <span class="c">// ← нет без запасного варианта:</span>
+                                                <span class="c">//   отпустил клавиши — рывок в ноль (2.2)</span>
+
+dashing<span class="p">.</span>Direction <span class="p">=</span> <span class="err">Vector3.forward</span><span class="p">;</span>        <span class="c">// ← нет: направление — параметр,</span>
+                                                <span class="c">//   не константа (ARCHITECTURE §7)</span>
+
+<span class="k">public struct</span> <span class="t">Dashing</span> <span class="p">{</span> <span class="k">public float</span> Remaining<span class="p">;</span> <span class="k">public bool</span> <span class="err">IsActive</span><span class="p">;</span> <span class="p">}</span>
+                                                <span class="c">// ← нет: наличие компонента</span>
+                                                <span class="c">//   и ЕСТЬ флаг (1.1)</span>
+
+<span class="k">public sealed class</span> <span class="t">AbilityDefinition</span> <span class="p">:</span> <span class="err">ContentConfig</span>
+                                                <span class="c">// ← нет в этом блоке: обобщать</span>
+                                                <span class="c">//   не из чего (1.4)</span></code></pre>
+
+        </section>
+
+        <!-- ======================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-never-ends">Состояние снимается не там, где заводится</h3>
+        <p>
+            <span class="symptom">Симптом:</span> персонаж уезжает за горизонт и не
+            возвращается. Компонент <code>Dashing</code> повесили, а условие снятия либо
+            не написали, либо написали в системе, которая до него не доходит.
+            Правило простое: у каждого состояния с таймером есть ровно одна система, которая
+            его уменьшает <em>и</em> снимает. Разносить эти две обязанности нельзя.
+        </p>
+
+        <h3 id="pitfall-del-twice"><code>Del</code> компонента, которого уже нет</h3>
+        <p>
+            <span class="symptom">Симптом:</span> исключение из середины тика.
+            <code>Del</code> на отсутствующем компоненте бросает так же, как
+            <code>Get</code>. Пока систем-владельцев по одной на состояние, проблемы нет;
+            она появится, когда снимать <code>Dashing</code> захотят и по таймеру, и по смерти
+            на шаге 4. Тогда — <code>Has</code> перед <code>Del</code>, а не try/catch.
+        </p>
+
+        <h3 id="pitfall-order-in-group">Порядок внутри группы перепутан</h3>
+        <p>
+            <span class="symptom">Симптом:</span> рывок стабильно короче ожидаемого на один
+            тик, и никто не замечает. <code>AdvanceDashSystem</code>, поставленная раньше
+            <code>StartDashSystem</code>, вычитает время из рывка, начатого в том же тике.
+            Группа одна, порядок внутри неё — тоже смысл, а не деталь.
+        </p>
+
+        <h3 id="pitfall-buffer-bool">Буфер сделан булевым флагом</h3>
+        <p>
+            <span class="symptom">Симптом:</span> два разных, и оба неприятных. Сбрасываешь
+            флаг каждый тик — буфера нет, нажатия у конца кулдауна теряются, управление
+            «глухое». Не сбрасываешь — рывок срабатывает через секунду после нажатия, когда
+            игрок уже передумал. Возраст в компоненте решает оба сразу.
+        </p>
+
+        <h3 id="pitfall-frame-vs-tick"><code>WasPressedThisFrame</code> внутри тика</h3>
+        <p>
+            <span class="symptom">Симптом:</span> рывок иногда не срабатывает, чаще при
+            просадке fps. За один кадр Unity симуляция тикает до пяти раз, а факт нажатия
+            живёт один кадр: на первом тике он есть, на втором его уже нет. Система ввода
+            обязана перенести факт в мир, а решать — уже по компоненту.
+        </p>
+
+        <h3 id="pitfall-dash-into-nothing">Рывок в нулевом направлении</h3>
+        <p>
+            <span class="symptom">Симптом:</span> стоя на месте, игрок жмёт рывок — персонаж
+            дёргается, кулдаун сгорает, никто никуда не переместился. Направление взято из
+            <code>MoveIntent</code>, а он нулевой при отпущенных клавишах. Запасной вариант —
+            <code>Facing</code>, и он никогда не нулевой.
+        </p>
+
+        <h3 id="pitfall-speed-in-config">В конфиге скорость вместо дистанции</h3>
+        <p>
+            <span class="symptom">Симптом:</span> проявляется на балансе, а не в коде. Дизайнер
+            хочет «рывок на 4 метра», а в инспекторе поле «скорость», и настоящее число
+            приходится считать в уме при каждой правке длительности. Дистанция и длительность —
+            входные; скорость — производное, считается в системе.
+        </p>
+
+        <h3 id="pitfall-config-in-tick">Конфиг читается из тика</h3>
+        <p>
+            <span class="symptom">Симптом:</span> отсутствующий сегодня и дорогой на шаге 7.
+            <code>_content.Get&lt;CharacterConfig&gt;(...)</code> в <code>Run</code> — это поиск
+            по словарю каждый тик и, что хуже, обход пайплайна статов: апгрейд «кулдаун −20%»
+            станет некуда применить. Статы копируются на сущность при спавне.
+        </p>
+
+        <h3 id="pitfall-scope-creep">Рывок оброс i-frames и расталкиванием</h3>
+        <p>
+            <span class="symptom">Симптом:</span> блок не заканчивается. <code>GDD.md</code> §12
+            ставит i-frames и расталкивание на шаг 4 не по забывчивости: и то и другое требует
+            урона и коллизий, которых ещё нет, так что «сделать сразу» означает написать код
+            против несуществующих систем. Граница блока — <strong>рывок как движение</strong>.
+        </p>
+
+        <h3 id="pitfall-framework">Заодно построен фреймворк способностей</h3>
+        <p>
+            <span class="symptom">Симптом:</span> вместо трёх дней — две недели, и на шаге 6
+            всё равно переписывается. Обобщение выводится из трёх примеров, а не из одного;
+            двух других способностей в проекте нет. Подробно — 1.4.
+        </p>
+
+        </section>
+
+        <!-- ============================================== ЧЕК-ЛИСТ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Форма кода</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Состояние рывка — компонент, а не поле системы или сервиса.</li>
+            <li class="key">Внутри <code>Dashing</code> нет <code>bool</code>: наличие
+                компонента и есть флаг.</li>
+            <li class="key"><code>ApplyMoveSpeedSystem</code> получила
+                <code>Exc&lt;Dashing&gt;</code>; её тело не изменилось ни на строку.</li>
+            <li class="key">Проверки «в рывке?» и «на кулдауне?» стоят масками фильтров,
+                а не <code>if</code> с <code>Has</code>.</li>
+            <li>Все таймеры считаются по <code>SimulationClock.Delta</code>.</li>
+            <li>Направление берётся из <code>MoveIntent</code>, при нулевом — из
+                <code>Facing</code>, и умножается на знак из статов.</li>
+            <li>Направление вычисляется один раз на старте и лежит в <code>Dashing</code>.</li>
+            <li>Скорость рывка считается как <code>Distance / Duration</code>; в конфиге
+                скорости нет.</li>
+            <li>Параметры рывка копируются на сущность в <code>SpawnPlayerSystem</code>;
+                конфиг из тика не читается.</li>
+            <li><code>StartDashSystem</code> стоит раньше <code>AdvanceDashSystem</code>.</li>
+            <li>Просроченные запросы выбрасываются в группе <code>Cleanup</code>.</li>
+        </ul>
+
+        <p><strong>Проверяется руками — сценарии</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Рывок на бегу: персонаж резко уходит в сторону движения на
+                заданную дистанцию, консоль чистая.</li>
+            <li class="key">Рывок стоя: летит туда, куда смотрел, а не остаётся на месте.</li>
+            <li class="key">Удержание кнопки: рывок срабатывает <strong>один раз</strong>,
+                а не повторяется после каждого кулдауна.</li>
+            <li class="key">Нажатие за момент до конца кулдауна: рывок срабатывает сам,
+                без второго нажатия.</li>
+            <li>Нажатие за секунду до конца кулдауна: <strong>не</strong> срабатывает —
+                окно буфера короткое, и это правильно.</li>
+            <li>Во время рывка WASD не меняют траекторию.</li>
+            <li>После рывка обычное движение возвращается сразу, без залипания.</li>
+            <li>Замер дистанции совпадает с <code>DashDistance</code> из конфига.</li>
+            <li>Второй забег подряд: рывок работает, состояний от прошлого забега нет.</li>
+        </ul>
+
+        <p><strong>Проект</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Окно буферизации выбрано числом и записано в
+                <code>ARCHITECTURE.md</code> §6 вместо TBD.</li>
+            <li>Новое действие <code>Dash</code> в <code>GameControls.inputactions</code>,
+                биндинги на клавиатуру и геймпад.</li>
+            <li>Диагональ движения из блока 1 проверена руками — незакрытый пункт
+                отчёта <code>010</code>.</li>
+            <li><code>Placeholder_Player</code> убран из сцены, судьба
+                <code>GameplayRoot</code> решена.</li>
+            <li>Решения блока записаны в журнал <code>PROGRESS.md</code>.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему длящееся состояние — компонент, а не корутина
+                и не поле (1.1).</li>
+            <li class="key">Понятно, почему одного порядка групп мало, чтобы развести двух
+                владельцев скорости (1.2).</li>
+            <li class="key">Понятно, чем буфер с возрастом лучше булевого флага в обе
+                стороны (1.3).</li>
+            <li>Понятно, почему <code>WasPressedThisFrame</code> нельзя опрашивать из тика
+                (2.4).</li>
+            <li>Понятно, почему фреймворк способностей строится на шаге 6, а не здесь (1.4).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>
