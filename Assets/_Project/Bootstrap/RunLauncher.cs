@@ -28,13 +28,22 @@ namespace Game.Bootstrap
 
         public async UniTask StartAsync(RunRequest request, CancellationToken ct)
         {
+            // The caller can still back out here: nothing has happened yet.
+            ct.ThrowIfCancellationRequested();
+
             Stop();
 
             RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next());
 
+            // A broken level id fails before the scene swap, so the caller is still alive to see it.
             LevelConfig level = _content.Get<LevelConfig>(request.LevelId);
 
-            await _sceneLoader.LoadAsync(level.SceneName, ct);
+            // Point of no return. The single-mode load destroys the scene the caller lives in,
+            // which cancels the caller's token — but cancelling does not stop the load anyway,
+            // so honouring that token here would only skip the lines below and leave a loaded
+            // arena with no run inside it. The run's lifetime belongs to the project scope,
+            // not to whoever pressed the button.
+            await _sceneLoader.LoadAsync(level.SceneName, CancellationToken.None);
 
             _runScope = _projectScope.CreateChild<RunLifetimeScope>(
                 builder =>
