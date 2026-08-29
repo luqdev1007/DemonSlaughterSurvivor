@@ -59,6 +59,22 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="async-await">Асинхронный метод</span>
+            <span class="term-en">async / await</span>
+            <p class="term-body">
+                Метод, помеченный <code>async</code>, компилятор превращает в
+                <a href="#state-machine">машину состояний</a>: тело переезжает в
+                <code>MoveNext()</code>, а возвращаемый объект (<code>UniTask</code>,
+                <code>UniTaskVoid</code>) создаёт билдер. Практическое следствие, которое ломает
+                интуицию: <strong>исключение из такого метода не бросается в точке вызова</strong>
+                — оно записывается в возвращённый таск, включая исключение, брошенное до первого
+                <code>await</code>. Дойти до вызывающего оно может только через
+                <code>await</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#state-machine">06 · Машина состояний</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="autoreferenced">Автоссылка из сборки по умолчанию</span>
             <span class="term-en">autoReferenced</span>
             <p class="term-body">
@@ -67,6 +83,21 @@
                 сборок — это страховка от скриптов, случайно оказавшихся вне asmdef.
             </p>
             <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#asmdef-shape">01 · Форма файла</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="cancellation-token">Токен отмены</span>
+            <span class="term-en">CancellationToken</span>
+            <p class="term-body">
+                Значение, которое асинхронная операция проверяет, чтобы понять, что ждать её
+                результата больше некому. Отменённый токен приводит к
+                <a href="#operation-canceled">OperationCanceledException</a> на ближайшем
+                <code>await</code>. Токен передаётся <strong>вниз по цепочке вызовов</strong>:
+                каждый асинхронный метод принимает его параметром и отдаёт дальше. Ключевое,
+                что легко забыть: <strong>токен прекращает ожидание, а не работу</strong> — см.
+                <a href="#cancellation">отмена операции</a>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#lifetime">06 · Токен и жизнь объекта UI</a></span>
         </div>
 
         <div class="term">
@@ -84,6 +115,53 @@
                 Разница диагностическая, границу держат обе.
             </p>
             <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#checklist">01 · Чек-лист приёмки</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="fire-and-forget">Запустил и забыл</span>
+            <span class="term-en">fire-and-forget</span>
+            <p class="term-body">
+                Запуск асинхронной операции без ожидания её результата. В UniTask это
+                <strong>два разных приёма, а не один</strong>. Вызов без <code>await</code> и без
+                <code>Forget()</code> — операция, за результатом которой не следит никто:
+                исключение доживает до финализатора и печатается в момент сборки мусора, без
+                стека вызывающего. Вызов с <a href="#forget"><code>Forget()</code></a> — операция,
+                результат которой наблюдается ради ошибки. В UI законна только вторая форма, и
+                только когда внутри метода стоит <code>try/catch</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#three-ways">06 · Три способа не дождаться</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="forget">Явный отказ от ожидания</span>
+            <span class="term-en">UniTask.Forget()</span>
+            <p class="term-body">
+                Метод-расширение UniTask. Не «намеренно не жду», а <strong>подписка на результат
+                ради того, чтобы заметить ошибку</strong>: внутри он берёт awaiter, вызывает
+                <code>GetResult()</code>, ловит исключение и отдаёт его
+                <a href="#unobserved-task-exception">обработчику необработанных исключений</a>.
+                Разница с выброшенным таском не в наличии сообщения, а в моменте: у
+                <code>Forget()</code> — сразу и в кадре сбоя, у выброшенного — когда сработает
+                финализатор.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#three-ways">06 · Три способа не дождаться</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="destroy-token">Токен жизни объекта Unity</span>
+            <span class="term-en">GetCancellationTokenOnDestroy / destroyCancellationToken</span>
+            <p class="term-body">
+                <a href="#cancellation-token">Токен отмены</a>, срабатывающий при уничтожении
+                объекта — в том числе при выгрузке сцены. На Unity 2022.2+ для
+                <code>MonoBehaviour</code> это просто встроенное свойство
+                <code>destroyCancellationToken</code>; для <code>GameObject</code> UniTask
+                подвешивает собственный <code>AsyncDestroyTrigger</code>. Обязателен везде, где
+                код после <code>await</code> трогает <code>this</code>,
+                <code>transform</code> или ссылки на объекты сцены. Берётся <strong>до первого
+                <code>await</code></strong>: у уничтоженного объекта его уже не спросить —
+                проверено, <code>MissingReferenceException</code>.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#lifetime">06 · Токен и жизнь объекта UI</a></span>
         </div>
 
         <div class="term">
@@ -114,6 +192,22 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="operation-canceled">Исключение отмены</span>
+            <span class="term-en">OperationCanceledException</span>
+            <p class="term-body">
+                Исключение, которым асинхронный код сообщает «меня отменили». По типу оно
+                исключение, по смыслу — <strong>штатный ход, а не сбой</strong>, и обрабатывается
+                отдельным <code>catch</code>, который идёт <em>раньше</em> остальных и ничего не
+                логирует. Смешать его с ошибкой данных в общем
+                <code>catch (Exception)</code> — значит красить успешные сценарии в красное и
+                топить в них настоящие ошибки. UniTask по умолчанию не считает его
+                необработанным исключением и не печатает
+                (<code>UniTaskScheduler.PropagateOperationCanceledException = false</code>).
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#two-failures">06 · Баг данных и отмена</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="overridereferences">Ручное управление ссылками на dll</span>
             <span class="term-en">overrideReferences / precompiledReferences</span>
             <p class="term-body">
@@ -136,6 +230,36 @@
                 на MonoBehaviour в префабах.
             </p>
             <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#pitfall-rootnamespace">01 · rootNamespace пустой</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="unitask">Таск UniTask</span>
+            <span class="term-en">UniTask / UniTaskVoid</span>
+            <p class="term-body">
+                Замена <code>Task</code> для Unity: структура без аллокации кучи, продолжения
+                выполняются в <code>PlayerLoop</code> главного потока, потоки не задействуются.
+                <code>UniTask</code> — «этот результат кто-то обязан дождаться»;
+                <code>UniTaskVoid</code> — «ждать нечего, ошибки обработаны внутри». Красная линия
+                проекта (<code>CLAUDE.md</code> §7): внутри ECS-систем ни того, ни другого быть
+                не должно.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#three-ways">06 · Три способа не дождаться</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="unobserved-task-exception">Ненаблюдённое исключение таска</span>
+            <span class="term-en">UnobservedTaskException</span>
+            <p class="term-body">
+                Исключение асинхронной операции, результат которой никто не запросил. В UniTask
+                оно попадает в <code>UniTaskScheduler.PublishUnobservedTaskException</code> и по
+                умолчанию печатается как <code>Debug.LogException</code>. Путей туда два, и они
+                отличаются моментом: <a href="#forget"><code>Forget()</code></a> отдаёт исключение
+                сразу, а полностью выброшенный таск — из финализатора
+                <code>ExceptionHolder</code>, то есть в момент сборки мусора, спустя произвольное
+                время и <strong>без вызывающего в стеке</strong>. Проверено на проекте: между
+                броском и строкой в консоли прошло около четырёх секунд.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#three-ways">06 · Три способа не дождаться</a></span>
         </div>
 
         <h2 id="cyrillic">Кириллица</h2>
@@ -314,6 +438,22 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="state-machine">Машина состояний асинхронного метода</span>
+            <span class="term-en">async state machine</span>
+            <p class="term-body">
+                Структура, которую компилятор строит из тела
+                <a href="#async-await"><code>async</code>-метода</a>: поле «на каком я шаге»,
+                метод <code>MoveNext()</code> с ветками по шагам и билдер, отвечающий за
+                возвращаемый объект. Всё тело обёрнуто в <code>try/catch</code>, и при исключении
+                билдер зовёт <code>SetException</code> — кладёт ошибку в таск и возвращает
+                управление нормально. Именно поэтому <code>throw</code> в первой строке метода
+                не долетает до вызывающего: первой строки как отдельного кода не существует, она
+                уже внутри машины.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#state-machine">06 · Машина состояний</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="ecs-world">Мир ECS</span>
             <span class="term-en">EcsWorld</span>
             <p class="term-body">
@@ -329,6 +469,22 @@
         </div>
 
         <div class="term">
+            <span class="term-name" id="cancellation">Отмена операции</span>
+            <span class="term-en">cancellation</span>
+            <p class="term-body">
+                Сообщение асинхронной операции «результата больше никто не ждёт», передаваемое
+                <a href="#cancellation-token">токеном отмены</a>. Два свойства, которые надо
+                держать в голове одновременно. Первое: отмена — <strong>не ошибка</strong>, у неё
+                нет виноватого и её не чинят; в логе ей не место. Второе: отмена —
+                <strong>не откат</strong>. Она прекращает ожидание, а не работу: проверено на
+                проекте, что отменённая <code>LoadSceneAsync</code> даёт
+                <a href="#operation-canceled">OperationCanceledException</a>, а сцена всё равно
+                догружается. Всё, что нужно разобрать после отмены, разбирается явным кодом.
+            </p>
+            <span class="term-src">Урок <a href="lessons/06-unitask-ui-boundary.html#two-failures">06 · Баг данных и отмена</a></span>
+        </div>
+
+        <div class="term">
             <span class="term-name" id="missing-script">Оторванная ссылка на скрипт</span>
             <span class="term-en">Missing (Mono Script)</span>
             <p class="term-body">
@@ -339,6 +495,24 @@
                 фиксируется до того, как первый её скрипт повешен на префаб.
             </p>
             <span class="term-src">Урок <a href="lessons/01-assemblies-and-folders.html#pitfall-rename">01 · Переименовал asmdef</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="fail-fast">Падение на первой ошибке</span>
+            <span class="term-en">fail fast</span>
+            <p class="term-body">
+                Правило: обнаружив недопустимое состояние, падать немедленно и громко, а не
+                продолжать на значении по умолчанию. Смысл — сократить расстояние между
+                <em>причиной</em> и <em>симптомом</em>: тихое продолжение переносит проявление
+                ошибки на кадры и классы вперёд, где по симптому уже не найти источник.
+                В проекте применяется дважды: реестр контента валидирует базу целиком при
+                построении проектного скоупа, до первого кадра, и собирает все проблемы в одно
+                исключение вместо падения на первой; регистрация компонента сцены форсирует
+                резолв при построении контейнера. Обратная сторона правила — граница
+                <a href="#async-await">асинхронной</a> операции, где падение легко теряется:
+                там за громкость отвечает <code>await</code> с <code>try/catch</code>.
+            </p>
+            <span class="term-src">Уроки <a href="lessons/05-content-registry.html#fail-fast">05 · Падать рано</a>, <a href="lessons/06-unitask-ui-boundary.html#three-ways">06 · Три способа не дождаться</a></span>
         </div>
 
         <div class="term">
@@ -381,6 +555,23 @@
                 система остаётся классом без состояния.
             </p>
             <span class="term-src">Урок <a href="lessons/04-ecs-entry-point.html#injection">04 · Инъекция в системы</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="content-registry">Реестр контента</span>
+            <span class="term-en">content registry</span>
+            <p class="term-body">
+                Таблица «<a href="#stable-id">стабильный ID</a> → запись контента», собираемая
+                один раз при построении проектного скоупа и валидирующая всю базу целиком
+                (<a href="#fail-fast">fail fast</a>). Отдаёт <strong>данные</strong> и только по
+                идентификатору — этим и отличается от <a href="#service-locator">локатора
+                служб</a>, который отдаёт поведение по типу. Промах по ID — ошибка кода, поэтому
+                <code>Get</code> кидает <code>ContentNotFoundException</code>; отдельный
+                <code>TryGet</code> существует ради единственного законного случая промаха —
+                загрузки сейва, ссылающегося на вырезанный контент. Живёт в
+                <code>Game.Core</code>, чистым C#, без единого типа Unity.
+            </p>
+            <span class="term-src">Урок <a href="lessons/05-content-registry.html#not-locator">05 · Реестр против локатора</a></span>
         </div>
 
         <div class="term">
@@ -427,6 +618,23 @@
                 контейнер — то, что он построил и держит в свойстве <code>Container</code>.
             </p>
             <span class="term-src">Урок <a href="lessons/03-vcontainer-lifetimescope.html#what-is-scope">03 · Скоуп: контейнер плюс время жизни</a></span>
+        </div>
+
+        <div class="term">
+            <span class="term-name" id="stable-id">Стабильный идентификатор контента</span>
+            <span class="term-en">stable content id</span>
+            <p class="term-body">
+                Строка, лежащая сериализованным полем <em>внутри</em> записи контента и
+                <strong>не меняющаяся после первого релиза</strong>. «Стабильный» здесь не про
+                уникальность и не про читаемость: идентификатор уезжает наружу игры — в сейв, в
+                таблицу дропа, в мета-магазин, в конфиг DLC, — и обязан остаться понятным
+                следующей версии билда. Поэтому им не может быть ни имя ассета, ни путь, ни
+                индекс в списке, ни <code>enum</code> (сериализуется как <code>int</code>), ни
+                прямая ссылка (в JSON-сейв её не записать). Всё остальное в ассете — имя, папка,
+                порядок, иконка, баланс — меняется свободно. Поломка выглядит не как исключение,
+                а как пропавший у игрока прогресс после патча.
+            </p>
+            <span class="term-src">Урок <a href="lessons/05-content-registry.html#contract">05 · Идентификатор — контракт с прошлым</a></span>
         </div>
 
         <div class="term">

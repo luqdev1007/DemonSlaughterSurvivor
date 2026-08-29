@@ -60,6 +60,16 @@ window.HANDBOOK_LESSONS = [
         tags: ["ContentRegistry", "стабильные ID", "ScriptableObject", "сейвы", "Addressables", "fail fast"],
         summary: "Идентификатор контента как контракт с сейвом, а не удобство поиска: почему не ссылка, не enum и не имя ассета, чем реестр отличается от локатора служб, где проходит граница Core/Configs и что именно закрывается по именам сцен."
     },
+    {
+        n: 6,
+        step: 2,
+        block: 0,
+        title: "UniTask на границе UI: ошибка, отмена, повторное нажатие",
+        file: "lessons/06-unitask-ui-boundary.html",
+        date: "2026-08-28",
+        tags: ["UniTask", "async/await", "Forget", "CancellationToken", "GetCancellationTokenOnDestroy", "OperationCanceledException", "машина состояний"],
+        summary: "Почему исключение из async-метода не появляется в точке вызова и куда оно девается: три способа не дождаться таска и разница между ними, разведение бага данных и штатной отмены, защита кнопки от второго нажатия и токен, привязанный к жизни объекта UI."
+    },
     // NEW LESSONS GO HERE
 ];
 

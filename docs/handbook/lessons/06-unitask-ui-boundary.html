@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>06 · UniTask на границе UI: ошибка, отмена, повторное нажатие</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>06 · UniTask на границе UI: ошибка, отмена, повторное нажатие</h1>
+
+        <div class="lesson-meta">
+            шаг 2 роадмапа (игрок) · блок 0 · 2026-08-28<br>
+            Доки проекта: <code>CLAUDE.md</code> §7 (красные линии), §8 (техдолг) ·
+            <code>ARCHITECTURE.md</code> §2, §3, §15 ·
+            журнал решений <code>PROGRESS.md</code> от 2026-08-21 (кто запускает забег)<br>
+            Опирается на урок <a href="03-vcontainer-lifetimescope.html">03 · VContainer</a> и
+            <a href="05-content-registry.html#fail-fast">05 · Fail fast</a>;
+            закрывает риск Р-2 отчёта <code>docs/recons/008</code><br>
+            Версии: Unity <code>6000.4.11f1</code>, UniTask <code>2.5.11</code>
+            (коммит <code>e5acc10</code>), VContainer <code>5103bfc</code>.
+            Всё, помеченное как проверенное, проверялось на этом проекте запуском, вывод
+            консоли приведён дословно.
+        </div>
+
+        <p class="lead">
+            К концу шага 1 забег умеет стартовать, но запускать его некому: <code>IRunLauncher</code>
+            зовут руками из Play Mode. Этот блок ставит на сцену <code>MainMenu</code> первую
+            кнопку, которая действительно начинает игру, — и на ней вылезает вся асинхронная
+            механика разом. Главная мысль блока:
+            <strong><code>async</code>-метод не бросает исключение в точке вызова. Он кладёт его
+            в возвращённый таск, и если таск никто не ждёт, ошибка перестаёт существовать для
+            того, кто её вызвал.</strong>
+            Всё остальное в уроке — следствия.
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="state-machine">1.1 Машина состояний: куда уезжает исключение</h3>
+
+        <p>
+            Метод, помеченный <code>async</code>, компилятором не компилируется как метод.
+            Компилятор строит из его тела <strong>машину состояний</strong>: структуру с полем
+            «на каком я шаге», методом <code>MoveNext()</code> и билдером
+            (<code>AsyncUniTaskMethodBuilder</code>), который отвечает за возвращаемый объект.
+            Тело метода превращается в ветки внутри <code>MoveNext()</code>, и всё это целиком
+            обёрнуто в <code>try/catch</code>. Когда изнутри вылетает исключение, билдер вызывает
+            <code>SetException</code> — то есть <strong>записывает исключение в возвращённый
+            таск</strong> и возвращает управление вызывающему нормально, без броска.
+        </p>
+
+        <p>
+            Отсюда неинтуитивное следствие: <strong>перед первым <code>await</code> кода тоже
+            нет.</strong> Строка, стоящая до всякого ожидания, всё равно живёт внутри машины
+            состояний, а значит её исключение уезжает туда же, в таск.
+        </p>
+
+<pre><code><span class="c">// Домен: панель погоды. К проекту отношения не имеет.</span>
+<span class="k">private static async</span> <span class="t">UniTask</span><span class="p">&lt;</span><span class="k">string</span><span class="p">&gt;</span> LoadForecastAsync<span class="p">(</span><span class="k">string</span> cityId<span class="p">)</span>
+<span class="p">{</span>
+    <span class="c">// Эта проверка — ПЕРВАЯ строка метода, до всякого await.</span>
+    <span class="c">// Её исключение всё равно уедет в возвращённый UniTask, а не в место вызова.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">string</span><span class="p">.</span>IsNullOrEmpty<span class="p">(</span>cityId<span class="p">))</span>
+        <span class="k">throw new</span> <span class="t">ArgumentException</span><span class="p">(</span><span class="s">"cityId is empty"</span><span class="p">);</span>
+
+    <span class="k">using</span> <span class="p">(</span><span class="t">UnityWebRequest</span> request <span class="p">=</span> <span class="t">UnityWebRequest</span><span class="p">.</span>Get<span class="p">(</span><span class="s">"https://example.invalid/forecast/"</span> <span class="p">+</span> cityId<span class="p">))</span>
+    <span class="p">{</span>
+        <span class="k">await</span> request<span class="p">.</span>SendWebRequest<span class="p">();</span>
+        <span class="k">return</span> request<span class="p">.</span>downloadHandler<span class="p">.</span>text<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Проверено на проекте. Две одинаковые по смыслу ошибки — одна брошенная до первого
+            <code>await</code>, вторая после — вели себя одинаково: <strong>ни одна не долетела до
+            следующей строки вызывающего</strong>. Дословный вывод:
+        </p>
+
+<pre><code><span class="c">[SBX] E1a: call FailAfterAwaitAsync and DROP the returned UniTask</span>
+<span class="c">[SBX] E1a: the line after the call was reached. No exception at the call site.</span>
+<span class="c">[SBX] E1b: call FailBeforeAwaitAsync (throws BEFORE the first await) and DROP it</span>
+<span class="c">[SBX] E1b: the line after the call was reached. Still no exception at the call site.</span></code></pre>
+
+        <div class="note warn">
+            <span class="note-title">Что это значит для <code>RunLauncher.StartAsync</code></span>
+            <p>
+                Первая содержательная строка запуска забега —
+                <code>_content.Get&lt;LevelConfig&gt;(request.LevelId)</code>, и она стоит
+                <em>до</em> <code>await _sceneLoader.LoadAsync(...)</code>. Урок 05 специально
+                добивался того, чтобы промах по ID падал громко и сразу
+                (<a href="05-content-registry.html#fail-fast">05, 1.4</a>). На границе
+                <code>async</code> эта громкость теряется: <code>ContentNotFoundException</code>
+                уезжает в возвращённый <code>UniTask</code>, а вызывающий, если он не пишет
+                <code>await</code>, спокойно идёт дальше. Это риск Р-2 отчёта 008 и единственная
+                причина, по которой урок вообще существует.
+            </p>
+        </div>
+
+        <h3 id="three-ways">1.2 Три способа не дождаться, и все они разные</h3>
+
+        <p>
+            «Не дождались» — это не одно поведение, а три, и различаются они не стилем, а тем,
+            <strong>когда и увидит ли кто-нибудь ошибку</strong>. Всё в таблице проверено
+            запуском на UniTask 2.5.11.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Форма вызова</th><th>Где всплывает ошибка</th><th>Когда</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>DoAsync();</code> — таск выброшен</td>
+                    <td>в консоли, через финализатор
+                        <code>ExceptionHolder</code> либо
+                        <code>ExceptionResultSource</code></td>
+                    <td><strong>в неопределимый момент</strong>: когда сборщик мусора доберётся
+                        до объекта</td></tr>
+                <tr><td><code>DoAsync().Forget();</code></td>
+                    <td>в консоли, через
+                        <code>UniTaskScheduler.PublishUnobservedTaskException</code></td>
+                    <td>сразу, в кадре сбоя</td></tr>
+                <tr><td><code>await DoAsync();</code> в <code>try/catch</code></td>
+                    <td>в <code>catch</code> вызывающего</td>
+                    <td>сразу, в кадре сбоя</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Разница между первой и второй строкой — не косметическая. <code>Forget()</code> это
+            не «намеренно не жду»: это <strong>подписка на результат ради того, чтобы ошибку
+            заметить</strong>. Внутри он берёт awaiter и вызывает <code>GetResult()</code>, ловит
+            исключение и отдаёт его планировщику. Выброшенный таск не наблюдает никто, и
+            исключение доживает до финализатора.
+        </p>
+
+        <p>
+            Насколько «в неопределимый момент» — цифра с этого проекта. Исключение бросалось на
+            100-й миллисекунде; в консоли оно появилось примерно через <strong>четыре
+            секунды</strong>, в момент загрузки сцены, потому что загрузка сцены запускает сборку
+            мусора. Стек при этом такой:
+        </p>
+
+<pre><code><span class="err">InvalidOperationException: boom-after-await:E1a-dropped-after-await</span>
+  Sandbox.SandboxRunner.FailAfterAwaitAsync <span class="p">(</span>System.String label<span class="p">)</span>
+  UnityEngine.Debug:LogException<span class="p">(</span>Exception<span class="p">)</span>
+  Cysharp.Threading.Tasks.UniTaskScheduler:PublishUnobservedTaskException<span class="p">(</span>Exception<span class="p">)</span>
+  <span class="err">Cysharp.Threading.Tasks.ExceptionHolder:Finalize()</span></code></pre>
+
+        <p>
+            Последняя строка — приговор. В стеке <strong>нет вызывающего</strong>: нет кнопки, нет
+            метода, который начал операцию, нет кадра, в котором это случилось. Есть только
+            <code>Finalize()</code>. Отладка по такому сообщению начинается с нуля.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Почему это хуже, чем «ошибка потерялась совсем»</span>
+            <p>
+                Совсем потерянная ошибка воспроизводится: сделал то же самое — снова ничего.
+                Ошибка, привязанная к сборке мусора, воспроизводится <em>иногда</em> и всплывает
+                <em>не там</em>. Типичный результат — час, потраченный на поиск причины в загрузке
+                сцены, потому что именно там она напечаталась.
+            </p>
+        </div>
+
+        <p><strong>Так не надо — и почему.</strong></p>
+
+<pre><code><span class="c">// ← НЕТ. Ошибка загрузки прогноза уедет в финализатор.</span>
+<span class="c">//   Сломается: пользователь жмёт «обновить», ничего не происходит, консоль молчит.</span>
+<span class="c">//   Заметят: через несколько дней, по случайной строке в логе без стека вызова.</span>
+<span class="k">private void</span> OnRefreshClicked<span class="p">()</span>
+<span class="p">{</span>
+    <span class="err">RefreshPanelAsync</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c">// ← НЕТ. async void: исключение уходит в обработчик необработанных исключений</span>
+<span class="c">//   среды, мимо UniTask и мимо любого твоего catch.</span>
+<span class="c">//   Сломается: ошибка не ловится нигде в твоём коде, отменa неотличима от сбоя.</span>
+<span class="c">//   Заметят: когда попытаются написать catch и он не сработает.</span>
+<span class="k">private</span> <span class="err">async void</span> OnRefreshClicked<span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">await</span> RefreshPanelAsync<span class="p">();</span>
+<span class="p">}</span></code></pre>
+
+        <p><strong>Так надо.</strong></p>
+
+<pre><code><span class="c">// Обработчик кнопки синхронный: он только запускает.</span>
+<span class="c">// Вся асинхронность — в UniTaskVoid-методе, и Forget() здесь честный:</span>
+<span class="c">// внутри метода стоит try/catch, наружу выйти нечему.</span>
+<span class="k">private void</span> OnRefreshClicked<span class="p">()</span>
+<span class="p">{</span>
+    RefreshPanelAsync<span class="p">().</span>Forget<span class="p">();</span>
+<span class="p">}</span>
+
+<span class="k">private async</span> <span class="t">UniTaskVoid</span> RefreshPanelAsync<span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">try</span>
+    <span class="p">{</span>
+        <span class="k">string</span> json <span class="p">=</span> <span class="k">await</span> LoadForecastAsync<span class="p">(</span>_cityId<span class="p">);</span>
+        _label<span class="p">.</span>text <span class="p">=</span> json<span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">(</span><span class="t">UnityWebRequestException</span> e<span class="p">)</span>
+    <span class="p">{</span>
+        _label<span class="p">.</span>text <span class="p">=</span> <span class="s">"Прогноз недоступен"</span><span class="p">;</span>
+        <span class="t">Debug</span><span class="p">.</span>LogWarning<span class="p">(</span><span class="s">"forecast request failed: "</span> <span class="p">+</span> e<span class="p">.</span>Message<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <div class="note">
+            <span class="note-title"><code>UniTaskVoid</code>, а не <code>UniTask</code></span>
+            <p>
+                <code>UniTaskVoid</code> — тип «этот таск не предназначен для ожидания». Он не
+                создаёт промис под результат и приучает читателя: раз вернули
+                <code>UniTaskVoid</code>, значит обработка ошибок внутри. Метод, который кто-то
+                <em>обязан</em> дождаться, возвращает <code>UniTask</code> — именно так объявлен
+                <code>IRunLauncher.StartAsync</code>.
+            </p>
+        </div>
+
+        <h3 id="two-failures">1.3 Две разные беды: баг данных и отмена</h3>
+
+        <p>
+            <code>try/catch</code> вокруг запуска — это не одна ветка, а минимум две, и путать их
+            нельзя. Они отличаются <strong>тем, кто виноват и кто чинит</strong>.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th></th><th>Баг данных или кода</th><th>Отмена</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Типичный представитель</td>
+                    <td><code>ContentNotFoundException</code>: в поле <code>levelId</code>
+                        опечатка, в базе нет такого ID</td>
+                    <td><code>OperationCanceledException</code>: игрок ушёл из меню, объект
+                        уничтожен, токен отменён</td></tr>
+                <tr><td>Что произошло</td>
+                    <td>программу попросили о несуществующем</td>
+                    <td>программа сделала ровно то, о чём её попросили</td></tr>
+                <tr><td>Кто чинит</td>
+                    <td><strong>разработчик</strong>, правкой ассета или кода</td>
+                    <td><strong>никто</strong>, это штатный ход</td></tr>
+                <tr><td>Реакция в редакторе</td>
+                    <td><code>Debug.LogException</code> — красным, со стеком</td>
+                    <td>ничего; максимум <code>Debug.Log</code> на время отладки</td></tr>
+                <tr><td>Реакция в релизе</td>
+                    <td>сообщение игроку «не удалось начать» и разблокировка кнопки</td>
+                    <td>ничего: экрана, которому сообщать, уже нет</td></tr>
+                <tr><td>Чего нельзя делать</td>
+                    <td>глушить, подставлять уровень по умолчанию, звать
+                        <code>TryGet</code></td>
+                    <td>красить в ошибку и показывать игроку</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Порядок <code>catch</code>-блоков определяется правилом C#: сначала более конкретный
+            тип. <code>OperationCanceledException</code> ловится первым, иначе его съест общий
+            блок.
+        </p>
+
+<pre><code><span class="c">// Домен: отправка формы обращения в поддержку.</span>
+<span class="k">private async</span> <span class="t">UniTaskVoid</span> SubmitTicketAsync<span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">try</span>
+    <span class="p">{</span>
+        <span class="k">await</span> _tickets<span class="p">.</span>SendAsync<span class="p">(</span>_subjectField<span class="p">.</span>text<span class="p">,</span> _bodyField<span class="p">.</span>text<span class="p">,</span> _lifetime<span class="p">);</span>
+        _status<span class="p">.</span>text <span class="p">=</span> <span class="s">"Отправлено"</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">(</span><span class="t">OperationCanceledException</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// Штатный выход: форму закрыли, пока письмо уходило.</span>
+        <span class="c">// Не логируем, не показываем, ничего не трогаем — трогать уже нечего.</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">(</span><span class="t">ArgumentException</span> e<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// Баг: форма пропустила пустую тему. Чинит разработчик, поэтому громко.</span>
+        <span class="t">Debug</span><span class="p">.</span>LogException<span class="p">(</span>e<span class="p">);</span>
+        _status<span class="p">.</span>text <span class="p">=</span> <span class="s">"Не удалось отправить"</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p><strong>Так не надо.</strong></p>
+
+<pre><code><span class="c">// ← НЕТ. Один catch на всё: отмена станет ошибкой в логе, а настоящая ошибка</span>
+<span class="c">//   станет строчкой того же цвета.</span>
+<span class="c">//   Сломается: каждый выход из формы во время отправки печатает красное.</span>
+<span class="c">//   Заметят: сразу — и привыкнут, а потом пропустят реальную ошибку рядом.</span>
+<span class="k">catch</span> <span class="p">(</span><span class="t">Exception</span> e<span class="p">)</span>
+<span class="p">{</span>
+    <span class="t">Debug</span><span class="p">.</span><span class="err">LogError</span><span class="p">(</span>e<span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c">// ← НЕТ. Пустой catch на всё. Ошибка данных исчезает вместе с отменой.</span>
+<span class="c">//   Сломается: опечатка в levelId даёт кнопку, которая просто ничего не делает.</span>
+<span class="c">//   Заметят: когда кто-то скажет «кнопка не работает».</span>
+<span class="k">catch</span> <span class="p">(</span><span class="t">Exception</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c">// молча</span>
+<span class="p">}</span>
+
+<span class="c">// ← НЕТ. «Починка» промаха по ID подстановкой значения по умолчанию.</span>
+<span class="c">//   Сломается: битые данные доезжают до релиза, потому что игра их прощает.</span>
+<span class="c">//   Заметят: никогда — оно же «работает».</span>
+<span class="k">if</span> <span class="p">(</span>_content<span class="p">.</span><span class="err">TryGet</span><span class="p">&lt;</span><span class="t">LevelConfig</span><span class="p">&gt;(</span>id<span class="p">,</span> <span class="k">out</span> <span class="t">LevelConfig</span> level<span class="p">)</span> <span class="p">==</span> <span class="k">false</span><span class="p">)</span>
+    level <span class="p">=</span> _content<span class="p">.</span>All<span class="p">&lt;</span><span class="t">LevelConfig</span><span class="p">&gt;()[</span><span class="n">0</span><span class="p">];</span></code></pre>
+
+        <div class="note warn">
+            <span class="note-title">Отмена — не откат</span>
+            <p>
+                Отменённый <code>await</code> прекращает <em>ожидание</em>, а не работу.
+                Проверено на проекте: <code>SceneManager.LoadSceneAsync("Gameplay")</code>
+                с отменённым токеном дал <code>OperationCanceledException</code> — и сцена
+                <strong>всё равно загрузилась</strong>:
+            </p>
+<pre><code><span class="c">[SBX] E3: active scene before = MainMenu</span>
+<span class="c">[SBX] E3: OperationCanceledException — we stopped waiting</span>
+<span class="c">[SBX] E3: active scene 2 s later = Gameplay</span></code></pre>
+            <p>
+                Значит <code>catch (OperationCanceledException)</code> не имеет права считать, что
+                мир остался прежним. Если после отмены надо что-то разобрать — разбирать придётся
+                руками, и это отдельная ответственность владельца операции.
+            </p>
+        </div>
+
+        <h3 id="double-click">1.4 Кнопка нажата дважды</h3>
+
+        <p>
+            Загрузка сцены занимает не кадр, а сотни миллисекунд. Всё это время кнопка на экране
+            жива и кликабельна. Второе нажатие — не экзотика, а норма: игрок не увидел реакции и
+            нажал ещё раз.
+        </p>
+
+        <p>
+            <code>RunLauncher.StartAsync</code> первой строкой зовёт <code>Stop()</code> — по
+            отчёту 008 (К-1) это означает «повторный старт молча перезапускает забег». Для
+            <em>последовательного</em> второго запуска это верно. Для второго нажатия
+            <em>во время загрузки</em> — нет, и вот почему: обе копии метода успевают выполнить
+            <code>Stop()</code> <strong>до того</strong>, как первая дошла до присваивания
+            <code>_runScope</code>. Первой копии нечего останавливать, второй — тоже.
+        </p>
+
+        <p>
+            Проверено на проекте на модели той же формы (домен: открытие документа, поле «что
+            сейчас открыто», закрытие перед открытием, ожидание между ними):
+        </p>
+
+<pre><code><span class="c">[SBX] E4: OpenDocumentAsync(doc-A) entered, closing whatever is open</span>
+<span class="c">[SBX] E4:   nothing to close</span>
+<span class="c">[SBX] E4: OpenDocumentAsync(doc-B) entered, closing whatever is open</span>
+<span class="c">[SBX] E4:   nothing to close</span>
+<span class="c">[SBX] E4: opened doc-A</span>
+<span class="c">[SBX] E4: LEAK — 'doc-A' is still open and nobody will ever close it</span>
+<span class="c">[SBX] E4: opened doc-B</span>
+<span class="c">[SBX] E4: _openDocument is now 'doc-B'</span></code></pre>
+
+        <p>
+            Обе «закрывашки» отработали вхолостую, потом первая копия открыла A, вторая затёрла
+            поле значением B, и A остался открытым навсегда. Переведи на проект: первый
+            <code>RunLifetimeScope</code> создан, ссылка на него потеряна, <code>Dispose</code>
+            не будет вызван никогда. Это ровно та утечка, которую К-1 считал закрытой, — с живым
+            <code>EcsWorld</code>, тикающим параллельно второму.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Почему блокировать надо в UI, а не в лаунчере</span>
+            <p>
+                Соблазн — поставить флаг «уже стартую» внутрь <code>RunLauncher</code> и
+                игнорировать повторный вызов. Три довода против.
+            </p>
+            <p>
+                <strong>Первый: семантика лаунчера уже выбрана, и она другая.</strong> Журнал
+                решений от 2026-08-21 и К-1 отчёта 008 фиксируют «повторный старт перезапускает
+                забег» — это нужно рестарту с экрана смерти. Флаг превратит рестарт в тихий
+                отказ.
+            </p>
+            <p>
+                <strong>Второй: лаунчер не умеет отвечать «нет».</strong> Его метод возвращает
+                <code>UniTask</code>. Игнорирование вызова — это возврат уже завершённого таска,
+                то есть ложь вызывающему: «готово», хотя ничего не сделано. Чтобы не соврать,
+                пришлось бы завести код ошибки — и появился бы второй способ сообщать о проблеме
+                рядом с исключениями.
+            </p>
+            <p>
+                <strong>Третий и главный: проблема не в лаунчере, а в кнопке.</strong> Кнопка,
+                нажимаемая во время начатой ею операции, — дефект UI, и лечится он там, где
+                находится: кнопка гасится на время запуска. Заодно игрок видит, что нажатие
+                принято. Флаг в сервисе этой обратной связи не даёт вообще.
+            </p>
+        </div>
+
+        <p>
+            Правильная форма — флаг плюс <code>finally</code>. Ключевое слово здесь
+            <code>finally</code>: без него первое же исключение оставит кнопку выключенной
+            навсегда.
+        </p>
+
+<pre><code><span class="c">// Домен: скачивание файла патчноутов по кнопке.</span>
+<span class="k">private bool</span> _isDownloading<span class="p">;</span>
+
+<span class="k">private void</span> OnDownloadClicked<span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span>_isDownloading<span class="p">)</span>
+        <span class="k">return</span><span class="p">;</span>
+
+    DownloadAsync<span class="p">().</span>Forget<span class="p">();</span>
+<span class="p">}</span>
+
+<span class="k">private async</span> <span class="t">UniTaskVoid</span> DownloadAsync<span class="p">()</span>
+<span class="p">{</span>
+    _isDownloading <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+    _downloadButton<span class="p">.</span>interactable <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+
+    <span class="k">try</span>
+    <span class="p">{</span>
+        <span class="k">await</span> _patchNotes<span class="p">.</span>DownloadAsync<span class="p">(</span>_lifetime<span class="p">);</span>
+        _status<span class="p">.</span>text <span class="p">=</span> <span class="s">"Готово"</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">(</span><span class="t">OperationCanceledException</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// Панель закрыта — восстанавливать нечего, finally отработает вхолостую.</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">(</span><span class="t">UnityWebRequestException</span> e<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="t">Debug</span><span class="p">.</span>LogException<span class="p">(</span>e<span class="p">);</span>
+        _status<span class="p">.</span>text <span class="p">=</span> <span class="s">"Не удалось скачать"</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">finally</span>
+    <span class="p">{</span>
+        <span class="c">// Единственное место, где флаг и кнопка возвращаются в исходное.</span>
+        _isDownloading <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+        _downloadButton<span class="p">.</span>interactable <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p><strong>Так не надо.</strong></p>
+
+<pre><code><span class="c">// ← НЕТ. Восстановление после try, а не в finally.</span>
+<span class="c">//   Сломается: первая же ошибка оставляет кнопку серой до перезапуска игры.</span>
+<span class="c">//   Заметят: при отладке битого ID — «нажал, ничего, теперь вообще не нажимается».</span>
+<span class="k">try</span> <span class="p">{</span> <span class="k">await</span> _patchNotes<span class="p">.</span>DownloadAsync<span class="p">(</span>_lifetime<span class="p">);</span> <span class="p">}</span>
+<span class="k">catch</span> <span class="p">(</span><span class="t">Exception</span> e<span class="p">)</span> <span class="p">{</span> <span class="t">Debug</span><span class="p">.</span>LogException<span class="p">(</span>e<span class="p">);</span> <span class="p">}</span>
+<span class="err">_isDownloading = false;</span>
+
+<span class="c">// ← НЕТ. Кнопка не гасится, а прячется.</span>
+<span class="c">//   Сломается: SetActive(false) на объекте с кнопкой прекращает его собственные</span>
+<span class="c">//   корутины и двигает вёрстку соседей; вернуть объект обязан тот же код,</span>
+<span class="c">//   который скрыл, — а он может до этого не дожить.</span>
+<span class="c">//   Заметят: когда после ошибки кнопка исчезнет с экрана насовсем.</span>
+_downloadButton<span class="p">.</span>gameObject<span class="p">.</span><span class="err">SetActive</span><span class="p">(</span><span class="k">false</span><span class="p">);</span></code></pre>
+
+        <h3 id="lifetime">1.5 Токен отмены и жизнь объекта UI</h3>
+
+        <p>
+            Загрузка сцены выгружает предыдущую сцену со всеми её объектами. Таск при этом
+            <strong>не знает о смерти объекта и продолжается</strong>: он живёт в
+            <code>PlayerLoop</code>, а не в объекте. Продолжение выполнится и обратится к полям
+            уничтоженного компонента.
+        </p>
+
+        <p>Проверено на проекте, дословный вывод:</p>
+
+<pre><code><span class="c">[SBX] E2a: started, NO cancellation token</span>
+<span class="c">[SBX] E2b: started WITH GetCancellationTokenOnDestroy, CanBeCanceled=True</span>
+<span class="c">[SBX] E2: loading MainMenu — this unloads the scene the victim lives in</span>
+<span class="c">[SBX] E2b: OperationCanceledException — the task stopped when the object died</span>
+<span class="c">[SBX] E2a: CONTINUATION RAN after the scene unload</span>
+<span class="c">[SBX] E2a: this == null (Unity fake null) -&gt; True</span>
+<span class="c">[SBX] E2a: touching transform threw MissingReferenceException /</span>
+<span class="c">          The object of type 'SandboxVictim' has been destroyed</span>
+<span class="c">          but you are still trying to access it.</span></code></pre>
+
+        <p>Три факта отсюда, и все три неочевидны:</p>
+
+        <ul>
+            <li>Продолжение <strong>выполняется</strong>. Не «иногда», не «только в редакторе» —
+                всегда. Уничтожение объекта на таск не влияет никак.</li>
+            <li><code>this == null</code> даёт <code>true</code> (подменённое сравнение Unity), но
+                <code>this</code> при этом живой управляемый объект: поля читаются, методы
+                зовутся. Ловушкой это становится на первом обращении к
+                <code>transform</code>, <code>gameObject</code> или любому другому
+                <code>Component</code> — там <code>MissingReferenceException</code>.</li>
+            <li>Версия с токеном остановилась <strong>раньше</strong> версии без токена: отмена
+                пришла в момент уничтожения, а не по истечении задержки.</li>
+        </ul>
+
+        <p>
+            <code>GetCancellationTokenOnDestroy()</code> — токен, который отменяется при
+            уничтожении объекта. На Unity 2022.2+ (то есть и на нашей 6000.4) для
+            <code>MonoBehaviour</code> он просто возвращает встроенный
+            <code>destroyCancellationToken</code>; для <code>GameObject</code> и
+            не-<code>MonoBehaviour</code>-компонентов UniTask подвешивает собственный
+            <code>AsyncDestroyTrigger</code>.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Токен нельзя взять задним числом</span>
+            <p>
+                Проверено: обращение к <code>GetCancellationTokenOnDestroy()</code> уже
+                <em>после</em> уничтожения даёт <code>MissingReferenceException</code>. Токен
+                берётся <strong>до</strong> первого <code>await</code>, в живом объекте, и
+                хранится в поле или локальной переменной.
+            </p>
+        </div>
+
+        <p>
+            <strong>Когда токен обязателен.</strong> Правило простое: если после
+            <code>await</code> код трогает <code>this</code>, <code>transform</code> или поля со
+            ссылками на объекты сцены и UI — токен обязателен. Если после последнего
+            <code>await</code> ничего такого нет, можно без токена; но это свойство легко
+            потерять при следующей правке, поэтому в UI дешевле всегда передавать токен.
+        </p>
+
+<pre><code><span class="c">// Домен: панель погоды на экране настроек.</span>
+<span class="k">public sealed class</span> <span class="t">WeatherPanel</span> <span class="p">:</span> <span class="t">MonoBehaviour</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="t">TMP_Text</span> _label<span class="p">;</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="k">string</span> _cityId<span class="p">;</span>
+
+    <span class="k">private</span> <span class="t">CancellationToken</span> _lifetime<span class="p">;</span>
+
+    <span class="k">private void</span> Awake<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c">// Берём один раз, пока объект точно жив.</span>
+        _lifetime <span class="p">=</span> <span class="k">this</span><span class="p">.</span>GetCancellationTokenOnDestroy<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">private async</span> <span class="t">UniTaskVoid</span> RefreshAsync<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">try</span>
+        <span class="p">{</span>
+            <span class="k">await</span> <span class="t">UniTask</span><span class="p">.</span>Delay<span class="p">(</span><span class="n">200</span><span class="p">,</span> cancellationToken<span class="p">:</span> _lifetime<span class="p">);</span>
+
+            <span class="c">// Сюда мы не попадём, если панель уничтожили за эти 200 мс.</span>
+            _label<span class="p">.</span>text <span class="p">=</span> <span class="s">"обновляю…"</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">catch</span> <span class="p">(</span><span class="t">OperationCanceledException</span><span class="p">)</span>
+        <span class="p">{</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p><strong>Так не надо.</strong></p>
+
+<pre><code><span class="c">// ← НЕТ. Без токена. После выгрузки сцены продолжение выполнится и упадёт.</span>
+<span class="c">//   Сломается: MissingReferenceException в консоли на каждом переходе из меню.</span>
+<span class="c">//   Заметят: сразу — но «поправят» проверкой на null, а не токеном (см. ниже).</span>
+<span class="k">await</span> <span class="t">UniTask</span><span class="p">.</span>Delay<span class="p">(</span><span class="n">200</span><span class="p">);</span>
+_label<span class="p">.</span>text <span class="p">=</span> <span class="s">"обновляю…"</span><span class="p">;</span>
+
+<span class="c">// ← НЕТ. Проверка на null вместо токена.</span>
+<span class="c">//   Формально не падает, но цепочка await продолжает выполняться до конца:</span>
+<span class="c">//   держит ссылки, качает данные никому не нужной панели, — и каждую новую</span>
+<span class="c">//   строку после каждого await надо не забыть накрыть такой же проверкой.</span>
+<span class="c">//   Заметят: не заметят. Это тихий расход и мина под будущие правки.</span>
+<span class="k">await</span> <span class="t">UniTask</span><span class="p">.</span>Delay<span class="p">(</span><span class="n">200</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="k">this</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">;</span>
+
+<span class="c">// ← НЕТ. Токен берётся внутри, после await.</span>
+<span class="c">//   Сломается: MissingReferenceException прямо на этой строке, если объект уже мёртв.</span>
+<span class="c">//   Заметят: сразу, но причину — «нельзя спросить у покойника» — не сразу.</span>
+<span class="k">await</span> <span class="t">UniTask</span><span class="p">.</span>Delay<span class="p">(</span><span class="n">200</span><span class="p">);</span>
+<span class="t">CancellationToken</span> ct <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="err">GetCancellationTokenOnDestroy</span><span class="p">();</span></code></pre>
+
+        </section>
+
+        <!-- ========================================== ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="what-exists">2.1 Что уже готово, и чего не хватает ровно одного</h3>
+
+        <p>
+            Со стороны кода забег полностью собран. Не хватает единственного вызывающего.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Что</th><th>Где</th><th>Состояние</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>IRunLauncher.StartAsync(RunRequest, CancellationToken)</code></td>
+                    <td><code>Game.Core</code> / <code>Game.Bootstrap</code></td>
+                    <td>работает, зарегистрирован <code>Lifetime.Singleton</code></td></tr>
+                <tr><td><code>RunRequest(levelId, characterId, mode)</code></td>
+                    <td><code>Game.Core</code></td>
+                    <td><code>readonly struct</code>, три поля</td></tr>
+                <tr><td><code>ContentRegistry</code>, <code>LevelConfig</code></td>
+                    <td><code>Game.Core</code> / <code>Game.Configs</code></td>
+                    <td>в базе одна запись: <code>level.gameplay</code> → сцена
+                        <code>Gameplay</code></td></tr>
+                <tr><td>Сцена <code>Gameplay</code></td>
+                    <td><code>Assets/_Project/Scenes</code></td>
+                    <td>арена, свет, камера, болван; в Build Settings, включена</td></tr>
+                <tr><td>Кнопка <code>NewGameButton</code></td>
+                    <td>сцена <code>MainMenu</code></td>
+                    <td>есть, <code>interactable</code>, обработчиков ноль</td></tr>
+                <tr><td><strong>Компонент, который свяжет кнопку и лаунчер</strong></td>
+                    <td><code>Game.UI</code></td>
+                    <td><strong>его и надо написать</strong></td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="note warn">
+            <span class="note-title">Ловушка на первой минуте: <code>Game.UI</code> не видит
+                <code>Button</code></span>
+            <p>
+                Ссылки <code>Game.UI</code> сегодня — это <code>Game.Core</code>,
+                <code>Game.Configs</code>, <code>VContainer</code>, <code>UniTask</code> и
+                <code>R3.Unity</code>. Сборок <code>UnityEngine.UI</code> и
+                <code>Unity.TextMeshPro</code> среди них нет, а asmdef-ссылки автоматически не
+                добавляются. Значит <code>using UnityEngine.UI;</code> внутри
+                <code>Game.UI</code> сегодня даёт <code>CS0234</code>, и то же самое с
+                <code>TMPro</code>.
+            </p>
+            <p>
+                Чинится добавлением двух ссылок в <code>Game.UI.asmdef</code>. Это осмысленная
+                правка, а не обход: сборка экранов обязана видеть библиотеку экранов. Сделать её
+                надо <strong>осознанно и отдельной строкой в отчёте</strong>, а не по подсказке
+                IDE — см. историю с автоимпортами в <code>CLAUDE.md</code> §8.
+            </p>
+        </div>
+
+        <h3 id="who-injects">2.2 Кто проинжектит компонент в сцене</h3>
+
+        <p>
+            Проектный корень живёт префабом в <code>DontDestroyOnLoad</code> и о содержимом сцены
+            <code>MainMenu</code> не знает ничего. Просто написать <code>[Inject]</code> в
+            компоненте недостаточно: инъекцию должен кто-то выполнить.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Способ</th><th>Оценка</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Сценовый <code>LifetimeScope</code> в <code>MainMenu</code> +
+                        <code>RegisterComponentInHierarchy&lt;T&gt;()</code></td>
+                    <td><strong>берём.</strong> Ровно тот механизм, который проверен в блоке 2:
+                        сценовый скоуп сам находит проектный корень родителем и резолвит его
+                        регистрации. Регистрация форсирует инъекцию при построении контейнера —
+                        компонент получает зависимости даже если его никто не спрашивает</td></tr>
+                <tr><td><code>FindObjectOfType</code> из точки входа</td>
+                    <td>нет: красная линия <code>CLAUDE.md</code> §7</td></tr>
+                <tr><td>Статическая ссылка на контейнер, <code>Resolve</code> в
+                        <code>Awake</code></td>
+                    <td>нет: это Service Locator, отвергнут в блоке 1
+                        (<a href="02-composition-root.html">урок 02</a>)</td></tr>
+                <tr><td>Регистрация префаба меню в проектном скоупе</td>
+                    <td>нет: проектный скоуп начнёт знать про конкретные экраны, а меню перестанет
+                        быть частью своей сцены</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Два свойства <code>RegisterComponentInHierarchy&lt;T&gt;()</code>, о которых стоит
+            знать заранее, потому что оба дают неочевидные симптомы:
+        </p>
+
+        <ul>
+            <li>Он ищет компонент <strong>в сцене самого скоупа</strong>, а не во всех загруженных
+                сценах. Скоуп и компонент обязаны лежать в одной сцене.</li>
+            <li>Он <strong>форсирует резолв</strong> при построении контейнера. Компонента нет в
+                сцене — падение произойдёт на старте сцены, а не при первом обращении. Это
+                хорошо: то же «fail fast», что и у реестра контента.</li>
+        </ul>
+
+        <h3 id="where-token">2.3 Откуда берётся токен и что уедет в <code>StartAsync</code></h3>
+
+        <p>
+            Токен здесь — жизнь компонента меню, потому что сцена <code>MainMenu</code>
+            выгружается ровно в середине операции, которую этот компонент начал. Последовательность:
+        </p>
+
+<pre><code><span class="c">нажатие → StartAsync → сборка RunContext</span>
+<span class="c">                    → await LoadAsync(Gameplay)   ← ЗДЕСЬ MainMenu выгружается</span>
+<span class="c">                    → CreateChild(RunLifetimeScope)</span>
+<span class="c">                    ↩ возврат в наш try/catch     ← компонента уже нет в живых</span></code></pre>
+
+        <p>
+            То есть код после <code>await</code> в компоненте меню выполняется <strong>всегда на
+            уничтоженном объекте</strong> — не в редком случае, а в основном сценарии. Отсюда два
+            следствия:
+        </p>
+
+        <ul>
+            <li>Токен <code>destroyCancellationToken</code> обязателен: он превращает основной
+                сценарий в штатную отмену, а не в <code>MissingReferenceException</code>.</li>
+            <li>Блок <code>finally</code>, возвращающий кнопку, обязан быть готов к тому, что
+                кнопки уже нет. При отмене восстанавливать нечего, и это нормально; проверка
+                выполняется по флагу отмены, а не по <code>null</code>.</li>
+        </ul>
+
+        <div class="note">
+            <span class="note-title">Почему успешный запуск выглядит как отмена</span>
+            <p>
+                Непривычная, но правильная картина: при <em>удачном</em> старте забега компонент
+                меню получит <code>OperationCanceledException</code>, потому что его сцену
+                выгрузили. Это не ошибка — это признак того, что всё сработало. Обратная ситуация
+                (метод дошёл до конца и спокойно трогает <code>_button</code>) означала бы, что
+                сцена не сменилась.
+            </p>
+        </div>
+
+        <h3 id="temporary">2.4 Компонент временный, и это надо записать</h3>
+
+        <p>
+            По <code>GDD.md</code> §12 меню делается на шаге 9, и делается целиком: «UI,
+            написанный до понимания того, что он запускает, переписывается целиком». Значит
+            компонент этого блока — не первая версия меню, а <strong>отладочный запускатель</strong>,
+            и его имя обязано об этом говорить.
+        </p>
+
+        <p>
+            Требование блока: пункт в <code>CLAUDE.md</code> §8 с явным условием снятия —
+            «удаляется при появлении настоящего UI меню на шаге 9». Без этой строки временный
+            компонент через два месяца станет постоянным просто потому, что работает.
+        </p>
+
+        </section>
+
+        <!-- ================================================ СКЕЛЕТ API ==== -->
+        <section data-kind="api">
+
+        <h2 id="api">Скелет API</h2>
+
+        <p>Сигнатуры без тел. Реализация — работа разработчика.</p>
+
+        <h3 id="api-scope">3.1 <code>Game.UI</code>: скоуп сцены меню</h3>
+
+<pre><code><span class="c">// Лежит объектом на сцене MainMenu. Родителя не указываем:</span>
+<span class="c">// VContainer сам находит проектный корень (проверено в блоке 2).</span>
+<span class="k">public sealed class</span> <span class="t">MainMenuLifetimeScope</span> <span class="p">:</span> <span class="t">LifetimeScope</span>
+<span class="p">{</span>
+    <span class="c">// Регистрирует отладочный запускатель, лежащий в этой же сцене.</span>
+    <span class="c">// Резолв форсируется при построении контейнера — инъекция произойдёт</span>
+    <span class="c">// до первого кадра, а отсутствие компонента упадёт сразу.</span>
+    <span class="k">protected override void</span> Configure<span class="p">(</span><span class="t">IContainerBuilder</span> builder<span class="p">);</span>
+<span class="p">}</span></code></pre>
+
+        <h3 id="api-starter">3.2 <code>Game.UI</code>: отладочный запускатель</h3>
+
+<pre><code><span class="c">// Имя говорит о временности. Снимается на шаге 9 вместе с настоящим меню.</span>
+<span class="k">public sealed class</span> <span class="t">DebugRunStarter</span> <span class="p">:</span> <span class="t">MonoBehaviour</span>
+<span class="p">{</span>
+    <span class="c">// Кнопка — ссылкой из инспектора, не поиском.</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="t">Button</span> _playButton<span class="p">;</span>
+
+    <span class="c">// ID — сериализованные поля, НЕ литералы в коде (CLAUDE.md §7).</span>
+    <span class="c">// Сегодня в базе есть только level.gameplay; characterId реестром пока</span>
+    <span class="c">// не проверяется — он просто уезжает в RunContext.</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="k">string</span> _levelId<span class="p">;</span>
+    <span class="p">[</span><span class="t">SerializeField</span><span class="p">]</span> <span class="k">private</span> <span class="k">string</span> _characterId<span class="p">;</span>
+
+    <span class="k">private</span> <span class="t">IRunLauncher</span> _launcher<span class="p">;</span>
+    <span class="k">private</span> <span class="t">CancellationToken</span> _lifetime<span class="p">;</span>
+    <span class="k">private bool</span> _isStarting<span class="p">;</span>
+
+    <span class="c">// Инъекция методом: у MonoBehaviour конструктора нет.</span>
+    <span class="p">[</span><span class="t">Inject</span><span class="p">]</span>
+    <span class="k">public void</span> Construct<span class="p">(</span><span class="t">IRunLauncher</span> launcher<span class="p">);</span>
+
+    <span class="c">// Берёт токен, подписывается на кнопку.</span>
+    <span class="k">private void</span> Awake<span class="p">();</span>
+
+    <span class="c">// Отписывается: подписка переживёт объект, если её не снять.</span>
+    <span class="k">private void</span> OnDestroy<span class="p">();</span>
+
+    <span class="c">// Синхронный. Проверяет флаг и запускает StartRunAsync().Forget().</span>
+    <span class="k">private void</span> OnPlayClicked<span class="p">();</span>
+
+    <span class="c">// Здесь живут: флаг, гашение кнопки, await, три catch и finally.</span>
+    <span class="c">// UniTaskVoid, потому что ждать этот метод некому и незачем.</span>
+    <span class="k">private async</span> <span class="t">UniTaskVoid</span> StartRunAsync<span class="p">();</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Что должно оказаться внутри <code>StartRunAsync</code>, по пунктам и без кода:
+        </p>
+
+        <ol>
+            <li>поднять <code>_isStarting</code> и погасить <code>_playButton.interactable</code>;</li>
+            <li><code>try</code>: собрать <code>RunRequest</code> из сериализованных полей и
+                <code>RunMode.Story</code>, затем <code>await _launcher.StartAsync(request,
+                _lifetime)</code>;</li>
+            <li><code>catch (OperationCanceledException)</code> — тихо: это основной сценарий
+                удачного старта (2.3);</li>
+            <li><code>catch (ContentNotFoundException e)</code> — <code>Debug.LogException</code>:
+                битый <code>_levelId</code> чинит разработчик;</li>
+            <li><code>finally</code> — вернуть флаг и кнопку, если кнопка ещё жива.</li>
+        </ol>
+
+        <h3 id="api-anti">3.3 Формы, которых быть не должно</h3>
+
+<pre><code><span class="k">private</span> <span class="err">async void</span> OnPlayClicked<span class="p">()</span>            <span class="c">// ← нет: catch не поймает (1.2)</span>
+
+_launcher<span class="p">.</span><span class="err">StartAsync</span><span class="p">(</span>request<span class="p">,</span> _lifetime<span class="p">);</span>       <span class="c">// ← нет: ошибка уедет в финализатор</span>
+
+<span class="k">await</span> _launcher<span class="p">.</span>StartAsync<span class="p">(</span>request<span class="p">,</span> <span class="err">default</span><span class="p">);</span> <span class="c">// ← нет: токена нет, отмены нет (1.5)</span>
+
+<span class="k">new</span> <span class="t">RunRequest</span><span class="p">(</span><span class="err">"level.gameplay"</span><span class="p">,</span> …<span class="p">);</span>        <span class="c">// ← нет: литерал ID в коде</span>
+
+<span class="k">catch</span> <span class="p">(</span><span class="t">Exception</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>                      <span class="c">// ← нет: съедает баг данных (1.3)</span>
+
+_playButton <span class="p">=</span> <span class="err">GameObject.Find</span><span class="p">(</span><span class="s">"NewGameButton"</span><span class="p">)</span>  <span class="c">// ← нет: CLAUDE.md §7</span>
+    <span class="p">.</span>GetComponent<span class="p">&lt;</span><span class="t">Button</span><span class="p">&gt;();</span>
+
+<span class="k">public class</span> <span class="err">MainMenuView</span> <span class="p">:</span> <span class="t">MonoBehaviour</span>            <span class="c">// ← нет: имя обещает</span>
+                                                <span class="c">//   постоянный экран (2.4)</span></code></pre>
+
+        </section>
+
+        <!-- ======================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-dropped">Вызов без <code>await</code> и без <code>Forget</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> кнопка нажата, ничего не произошло, консоль
+            чистая. Через несколько секунд — а иногда через минуту, а иногда никогда —
+            в логе всплывает <code>InvalidOperationException</code> со стеком, в котором
+            последняя строка <code>ExceptionHolder:Finalize()</code> и нет ни одного твоего
+            метода. Самая дорогая ошибка блока: она разводит момент сбоя и момент сообщения
+            о нём, а без этой связи отладка превращается в гадание.
+        </p>
+
+        <h3 id="pitfall-async-void">Обработчик кнопки объявлен <code>async void</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> компилируется, подписывается, работает — пока
+            всё хорошо. При первой ошибке исключение уходит мимо UniTask и мимо любого
+            <code>catch</code> в твоём коде. <code>async void</code> в Unity допустим ровно в
+            одном месте — в обработчиках, где ты сознательно принял это поведение, — а в этом
+            проекте таких мест нет. Правильная форма: синхронный обработчик, который зовёт
+            <code>UniTaskVoid</code>-метод через <code>Forget()</code>.
+        </p>
+
+        <h3 id="pitfall-catch-all">Один <code>catch (Exception)</code> на всё</h3>
+        <p>
+            <span class="symptom">Симптом:</span> лог краснеет на каждом успешном запуске забега,
+            потому что штатная отмена печатается как ошибка. Дальше по сценарию: к красному
+            привыкают, и настоящая ошибка данных тонет между ними. Обратный вариант — пустой
+            <code>catch (Exception)</code> — даёт кнопку, которая молча ничего не делает при
+            опечатке в ID.
+        </p>
+
+        <h3 id="pitfall-finally">Кнопка возвращается не в <code>finally</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> первая же ошибка запуска оставляет кнопку серой
+            до перезапуска игры. Обнаруживается именно тогда, когда мешает больше всего: при
+            отладке битого <code>levelId</code>, то есть после каждой попытки надо перезапускать
+            Play Mode.
+        </p>
+
+        <h3 id="pitfall-token-late">Токен берётся после <code>await</code></h3>
+        <p>
+            <span class="symptom">Симптом:</span> <code>MissingReferenceException</code> на самой
+            строке <code>GetCancellationTokenOnDestroy()</code>. Проверено: у уничтоженного
+            компонента токен спросить нельзя. Токен берётся в <code>Awake</code> и хранится полем.
+        </p>
+
+        <h3 id="pitfall-wrong-owner">Токен взят у не того объекта</h3>
+        <p>
+            <span class="symptom">Симптом:</span> отмена не срабатывает никогда, и всё выглядит
+            как в примере «без токена». Причина обычно одна: токен взят у объекта, который
+            переживает сцену, — у проектного корня, у объекта в <code>DontDestroyOnLoad</code>,
+            у родителя, который не уничтожается. Токен обязан принадлежать <em>тому самому</em>
+            компоненту, чьи поля трогает код после <code>await</code>.
+        </p>
+
+        <h3 id="pitfall-no-unsubscribe">Подписка на кнопку не снимается</h3>
+        <p>
+            <span class="symptom">Симптом:</span> в этом блоке — никакого: кнопка умирает вместе
+            с компонентом. Станет симптомом на шаге 9, когда экраны начнут переиспользоваться:
+            один и тот же клик обработается дважды, потом трижды. Дешевле завести привычку
+            сейчас: подписался в <code>Awake</code> — отписался в <code>OnDestroy</code>.
+        </p>
+
+        <h3 id="pitfall-flag-in-service">Защита от двойного клика уехала в лаунчер</h3>
+        <p>
+            <span class="symptom">Симптом:</span> сначала всё хорошо, а на шаге 8 перестаёт
+            работать рестарт с экрана итогов — лаунчер «защищается» от него как от повторного
+            нажатия. Флаг живёт в UI, потому что защищаться надо от кнопки, а не от вызова
+            (1.4).
+        </p>
+
+        <h3 id="pitfall-literal-id">ID уровня — литерал в коде</h3>
+        <p>
+            <span class="symptom">Симптом:</span> компилируется, работает, и техдолг про имена
+            сцен, закрытый блоком 4 шага 1, тихо возвращается — только теперь не именем сцены, а
+            ID контента. Оба поля обязаны быть <code>[SerializeField]</code>: ID видно в
+            инспекторе, менять можно без пересборки.
+        </p>
+
+        <h3 id="pitfall-asmdef">Ссылка на <code>UnityEngine.UI</code> добавлена «чтобы собралось»</h3>
+        <p>
+            <span class="symptom">Симптом:</span> отсутствующий на первый взгляд. Опасность не в
+            самой ссылке — она законна, — а в привычке добавлять ссылки по подсказке IDE. Ровно
+            так в проект уже дважды заезжали редакторные сборки, которые компилировались в
+            редакторе и упали бы на билде (<code>CLAUDE.md</code> §8). Правило: каждая новая
+            строка в <code>references</code> — осознанное решение, попадающее в отчёт.
+        </p>
+
+        <h3 id="pitfall-cancel-rollback">«Отменил — значит откатил»</h3>
+        <p>
+            <span class="symptom">Симптом:</span> в этом блоке — сцена, которая всё-таки
+            загрузилась после отмены. Дальше по проекту хуже: отменённый запуск, успевший
+            создать дочерний скоуп, оставит его висеть. Проверено, что отмена
+            <code>ToUniTask</code> не прекращает загрузку сцены. Любая уборка после отмены —
+            явный код в <code>catch</code>, а не надежда на семантику токена.
+        </p>
+
+        </section>
+
+        <!-- ========================================= ЧЕК-ЛИСТ ПРИЁМКИ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Форма кода</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Обработчик клика синхронный; асинхронная часть вынесена в
+                <code>UniTaskVoid</code>-метод, запускаемый через <code>Forget()</code>.</li>
+            <li class="key">Вызов <code>_launcher.StartAsync(...)</code> стоит под
+                <code>await</code>, а не сам по себе.</li>
+            <li class="key">В коде нет <code>async void</code>.</li>
+            <li><code>catch (OperationCanceledException)</code> идёт <strong>раньше</strong>
+                остальных и ничего не логирует.</li>
+            <li>Ошибка данных логируется через <code>Debug.LogException</code>, а не
+                <code>LogError(e.Message)</code>: нужен стек.</li>
+            <li class="key">Возврат флага и кнопки — только в <code>finally</code>.</li>
+            <li><code>_levelId</code> и <code>_characterId</code> — <code>[SerializeField]</code>,
+                литералов ID в коде нет.</li>
+            <li>Кнопка гасится через <code>interactable</code>, а не
+                <code>SetActive(false)</code>.</li>
+            <li>Подписка на <code>onClick</code> снимается в <code>OnDestroy</code>.</li>
+        </ul>
+
+        <p><strong>Токен и время жизни</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Токен взят у <em>этого</em> компонента и до первого
+                <code>await</code>.</li>
+            <li class="key">Токен передан в <code>StartAsync</code>; <code>default</code> там
+                не встречается.</li>
+            <li><code>finally</code> не падает, когда кнопка уже уничтожена.</li>
+        </ul>
+
+        <p><strong>Проверяется руками — сценарии</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Запуск с <code>Bootstrap</code>, нажатие «Играть» → грузится
+                <code>Gameplay</code>, на арене стоит болван, консоль чистая.</li>
+            <li class="key">В <code>_levelId</code> вписан несуществующий ID → в консоли
+                <strong>сразу</strong> красное <code>ContentNotFoundException</code> с этим ID
+                в тексте, сцена не сменилась, кнопка снова нажимается.</li>
+            <li class="key">Двойное быстрое нажатие → забег стартует ровно один раз; в иерархии
+                <code>DontDestroyOnLoad</code> ровно один объект
+                <code>RunLifetimeScope</code>.</li>
+            <li><code>_levelId</code> оставлен пустым → тоже
+                <code>ContentNotFoundException</code>, а не <code>NullReference</code> где-то
+                дальше.</li>
+            <li>Успешный запуск не печатает в консоль ничего — в том числе про отмену.</li>
+            <li>Выход из Play Mode во время загрузки не оставляет ошибок в консоли.</li>
+        </ul>
+
+        <p><strong>Проект</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Пункт про временный запускатель добавлен в <code>CLAUDE.md</code> §8
+                с условием снятия «настоящее меню шага 9».</li>
+            <li>Новые ссылки в <code>Game.UI.asmdef</code> перечислены в отчёте поимённо.</li>
+            <li><code>MainMenuLifetimeScope</code> и запускатель лежат в одной сцене
+                <code>MainMenu</code>.</li>
+            <li>Сцена <code>Gameplay</code> в Build Settings и включена.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему исключение из <code>async</code>-метода не появляется
+                в точке вызова, даже если брошено до первого <code>await</code> (1.1).</li>
+            <li class="key">Понятно, чем <code>Forget()</code> отличается от «просто не дождались»
+                и почему разница — в моменте, а не в наличии сообщения (1.2).</li>
+            <li class="key">Понятно, почему отмена и ошибка данных обрабатываются по-разному и
+                кто чинит каждую (1.3).</li>
+            <li>Понятно, почему блокировка кнопки не переносится в лаунчер (1.4).</li>
+            <li>Понятно, почему при успешном старте забега компонент меню получает
+                <code>OperationCanceledException</code> (2.3).</li>
+            <li>Понятно, почему отмена не откатывает уже начатую работу (1.3).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>
