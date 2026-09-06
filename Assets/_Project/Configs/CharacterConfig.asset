@@ -13,5 +13,10 @@ MonoBehaviour:
   m_Name: CharacterConfig
   m_EditorClassIdentifier: Game.Configs::Game.Configs.CharacterConfig
   _id: character.berserk
-  _moveSpeed: 5
   _viewPrefab: {fileID: 2234588097227066470, guid: 1c42123340482604d9a01f8ca83ae27f, type: 3}
+  _moveSpeed: 5
+  _dashDistance: 10
+  _dashDuration: 0.3
+  _dashCooldown: 3
+  _dashDirectionSign: 1
+  _inputBufferSeconds: 0.15
