@@ -26,8 +26,8 @@ namespace Game.Simulation.Systems
 
                 dashing.Direction = stats.Direction switch
                 {
-                    DashDirection.Forward => facing.Value,
-                    DashDirection.Backward => -facing.Value,
+                    DashDirection.Forward => facing.Value.normalized,
+                    DashDirection.Backward => -facing.Value.normalized,
                     _ => throw new NotImplementedException()
                 };
 
