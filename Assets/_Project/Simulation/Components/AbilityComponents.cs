@@ -9,7 +9,7 @@ namespace Game.Simulation.Components
 
     public struct Dashing
     {
-        public float Remaining;
+        public int RemainingTicks;
         public Vector3 Direction;
         public float Speed;
     }

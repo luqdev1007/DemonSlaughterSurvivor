@@ -1,5 +1,4 @@
 using Game.Simulation.Components;
-using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
@@ -13,17 +12,15 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DashStats> _stats = default;
         private readonly EcsPoolInject<DashCooldown> _cooldowns = default;
 
-        private readonly EcsCustomInject<SimulationClock> _clock = default;
-
         public void Run(IEcsSystems systems)
         {
             foreach (int entity in _filter.Value)
             {
                 ref Dashing dashing = ref _dashes.Value.Get(entity);
 
-                dashing.Remaining -= _clock.Value.Delta;
+                dashing.RemainingTicks -= 1;
 
-                if (dashing.Remaining > 0f)
+                if (dashing.RemainingTicks > 0)
                     continue;
 
                 ref DashStats stats = ref _stats.Value.Get(entity);

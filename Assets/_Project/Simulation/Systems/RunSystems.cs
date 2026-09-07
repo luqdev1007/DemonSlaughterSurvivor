@@ -14,8 +14,8 @@ namespace Game.Simulation.Systems
             // 2.  Abilities
             systems.Add(new TickDashCooldownSystem());
             systems.Add(new AdvanceDashSystem());
-            systems.Add(new ExpireDashRequestSystem());
             systems.Add(new StartDashSystem());
+            systems.Add(new ExpireDashRequestSystem());
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
             // 4.  AI

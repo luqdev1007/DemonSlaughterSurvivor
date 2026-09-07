@@ -1,8 +1,10 @@
 using Game.Core;
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
+using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
@@ -14,6 +16,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DashStats> _stats = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Dashing> _dashes = default;
+
+        private readonly EcsCustomInject<SimulationClock> _clock = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -31,8 +35,11 @@ namespace Game.Simulation.Systems
                     _ => throw new NotImplementedException()
                 };
 
-                dashing.Speed = stats.Distance / stats.Duration;
-                dashing.Remaining = stats.Duration;
+                float delta = _clock.Value.Delta;
+                int ticks = Mathf.Max(1, Mathf.RoundToInt(stats.Duration / delta));
+
+                dashing.Speed = stats.Distance / (ticks * delta);
+                dashing.RemainingTicks = ticks;
 
                 _requests.Value.Del(entity);
             }

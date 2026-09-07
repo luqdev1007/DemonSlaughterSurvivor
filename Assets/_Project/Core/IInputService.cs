@@ -7,5 +7,7 @@ namespace Game.Core
         Vector2 MoveAxis { get; }
 
         bool ConsumeDashPressed();
+
+        void ResetLatches();
     }
 }

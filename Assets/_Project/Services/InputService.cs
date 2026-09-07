@@ -31,6 +31,11 @@ namespace Game.Services
             return true;
         }
 
+        public void ResetLatches()
+        {
+            _dashPressed = false;
+        }
+
         public void Dispose()
         {
             _input.Gameplay.Dash.performed -= OnDashPerformed;

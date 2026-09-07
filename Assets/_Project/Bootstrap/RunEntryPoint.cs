@@ -1,4 +1,4 @@
-using Game.Configs;
+﻿using Game.Configs;
 using Game.Core;
 using Game.Simulation.Services;
 using Game.Simulation.Systems;
@@ -48,6 +48,8 @@ namespace Game.Bootstrap
 
         public void Initialize()
         {
+            _inputService.ResetLatches();
+
             _world = new EcsWorld();
             _systems = RunSystems.Build(_world);
 
