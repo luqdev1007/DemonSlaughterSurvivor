@@ -1,26 +1,45 @@
 using Game.Core;
+using Game.Services.Input;
 using System;
 using UnityEngine;
-using Game.Services.Input;
+using UnityEngine.InputSystem;
 
 namespace Game.Services
 {
     public sealed class InputService : IInputService, IDisposable
     {
-        private GameControls _input;
-       
+        private readonly GameControls _input;
+
+        private bool _dashPressed;
 
         public InputService()
         {
             _input = new GameControls();
+            _input.Gameplay.Dash.performed += OnDashPerformed;
             _input.Enable();
         }
 
         public Vector2 MoveAxis => _input.Gameplay.Move.ReadValue<Vector2>();
 
+        public bool ConsumeDashPressed()
+        {
+            if (_dashPressed == false)
+                return false;
+
+            _dashPressed = false;
+
+            return true;
+        }
+
         public void Dispose()
         {
-            _input?.Dispose();
+            _input.Gameplay.Dash.performed -= OnDashPerformed;
+            _input.Dispose();
+        }
+
+        private void OnDashPerformed(InputAction.CallbackContext context)
+        {
+            _dashPressed = true;
         }
     }
 }

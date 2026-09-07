@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>09 · Кадр и тик: нажатие, которое теряется при высоком fps</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>09 · Кадр и тик: нажатие, которое теряется при высоком fps</h1>
+
+        <div class="lesson-meta">
+            шаг 2 роадмапа (игрок) · блок 2 · 2026-09-06<br>
+            Доки проекта: <code>ARCHITECTURE.md</code> §6 (ввод, буферизация, латч),
+            §10 (порядок групп) ·
+            <code>CLAUDE.md</code> §7 (никаких подписок R3 и <code>async</code> внутри
+            ECS-систем), §6.2 (не описывать поведение фреймворка по памяти)<br>
+            Опирается на уроки <a href="07-input-movement-fixed-step.html">07 · Ввод и движение</a>
+            и <a href="08-dash-and-buffered-input.html">08 · Рывок и буферизация</a>;
+            уточняет подводный камень «<code>WasPressedThisFrame</code> внутри тика» урока 08
+            (см. <code>HANDBOOK_ERRATA</code>)<br>
+            Отчёт: <code>docs/recons/011_step2-block2-dash.txt</code><br>
+            Версии: Unity <code>6000.4.11f1</code>, Input System <code>1.19.0</code>,
+            LeoECS Lite <code>d46f3b2</code>.
+        </div>
+
+        <p class="lead">
+            Урок 08 сказал: «за один кадр симуляция тикает до пяти раз, а факт нажатия живёт
+            один кадр — на втором тике его уже нет». Это верно и это <strong>не главный</strong>
+            случай. Замер на этом проекте показал обратную картину: при 148 fps
+            <strong>68.5% кадров не выполняют ни одного тика вообще</strong>. Нажатие,
+            случившееся в таком кадре, не теряется на втором тике — его не читает никто и
+            никогда. Из 47 подставленных нажатий чтение изнутри тика поймало 17.
+            Главная мысль урока:
+            <strong>факт нажатия обязан пережить кадр, в котором симуляция не работала, и
+            единственное место, где он может это сделать, — сервис ввода, а не система.</strong>
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="frame-vs-tick">1.1 Кадр и тик — независимые сетки</h3>
+
+        <p>
+            Фиксированный шаг (урок 07, 1.3) разводит две частоты. Кадр приходит тогда, когда
+            его отдаёт железо и драйвер: 60, 144, 300 раз в секунду, неравномерно. Тик
+            симуляции происходит ровно 60 раз в секунду, потому что накопитель отдаёт целые
+            шаги по <code>1/60</code> и остаток переносит на следующий кадр.
+        </p>
+
+        <p>
+            Отсюда следует то, что редко проговаривают вслух: <strong>отношение кадров к тикам
+            не единица ни в одну сторону.</strong> При 30 fps на кадр приходится два тика.
+            При 144 fps — либо один, либо ни одного, и «ни одного» встречается вдвое чаще.
+            Реальный замер этого проекта, 3559 кадров подряд:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Тиков в кадре</th><th>Кадров</th><th>Доля</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>0</td><td>2437</td><td>68.5%</td></tr>
+                <tr><td>1</td><td>1119</td><td>31.4%</td></tr>
+                <tr><td>5 (потолок)</td><td>3</td><td>0.1%</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Средний fps в замере — 148.5. Три кадра с потолком — это компиляция и загрузка,
+            остальное делится между «один тик» и «ни одного». Кадров с двумя и тремя тиками
+            нет вовсе: при 148 fps их и не может быть.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Интуиция здесь работает наоборот</span>
+            <p>
+                Ошибку «читаю нажатие изнутри тика» принято ждать при просадке fps — там ведь
+                «всё ломается». На деле при 30 fps она не проявляется вообще: каждый кадр даёт
+                минимум один тик, и факт нажатия всегда кто-то читает. Ломается она на мощной
+                машине игрока и на разгонном мониторе, то есть ровно там, где проверять будут
+                в последнюю очередь.
+            </p>
+        </div>
+
+        <h3 id="three-reads">1.2 Три способа прочитать кнопку, и что каждый теряет</h3>
+
+        <p>
+            Устройство ввода умеет отвечать на три разных вопроса, и их постоянно путают.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Вопрос</th><th>Живёт</th><th>Что теряется при чтении из тика</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>«Кнопка сейчас нажата?»</td>
+                    <td>пока держат</td>
+                    <td>ничего не теряется, но удержание даёт срабатывание каждый тик — рывок
+                        уходит в автоповтор, как только кулдаун кончается</td>
+                </tr>
+                <tr>
+                    <td>«Нажали в этом кадре?»</td>
+                    <td>один кадр</td>
+                    <td><strong>всё нажатие целиком</strong>, если в кадре не было тиков; и
+                        дублируется, если тиков было два</td>
+                </tr>
+                <tr>
+                    <td>«Нажимали с прошлого раза?» (латч)</td>
+                    <td>до потребления</td>
+                    <td>ничего; ценой того, что кто-то обязан потребить</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Первый вопрос отвечает на «состояние», второй — на «событие в системе координат
+            кадра», третий — на «событие в системе координат потребителя». Симуляции нужен
+            третий: она не знает, что такое кадр, и знать не должна.
+        </p>
+
+        <h3 id="latch">1.3 Латч — это не буфер</h3>
+
+        <p>
+            Латч (защёлка) — простейшая конструкция: флаг поднимается источником и гасится
+            потребителем. «Гасится потребителем» — вся суть. Флаг живёт не фиксированное время,
+            а до тех пор, пока его не забрали, поэтому он переживает любое число пустых кадров.
+        </p>
+
+        <p>
+            Буфер ввода из урока 08 — другая конструкция, и она решает другую задачу:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th></th><th>Латч в сервисе</th><th>Буфер в мире</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Через что переносит</td><td>кадр без тиков</td><td>тики, пока идёт кулдаун</td></tr>
+                <tr><td>Живёт</td><td>до потребления</td><td>заданное окно (120 мс)</td></tr>
+                <tr><td>Где лежит</td><td>поле сервиса ввода</td><td>компонент на сущности</td></tr>
+                <tr><td>Кто гасит</td><td>первый тик, который спросил</td><td>система старения или система старта</td></tr>
+                <tr><td>Что будет без него</td><td>рывок «иногда не срабатывает»</td><td>рывок «глухой» у конца кулдауна</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            Оба нужны, и один не заменяет другой. Без латча нажатие не доедет до мира. Без
+            буфера оно доедет и будет отброшено, потому что кулдаун кончится через два тика.
+            Симптомы при этом похожи — «управление не отзывается», — а причины лежат в разных
+            слоях, и это стоит держать в голове при отладке.
+        </p>
+
+        <div class="note">
+            <span class="note-title">Почему латч не может жить в мире</span>
+            <p>
+                Соблазн: «пусть система ввода добавляет компонент, это и есть латч». Не работает
+                по построению — система ввода выполняется <strong>внутри тика</strong>, а
+                проблема ровно в том, что тика не было. Латч обязан жить там, где код
+                выполняется по кадрам: в сервисе.
+            </p>
+        </div>
+
+        </section>
+
+        <!-- ============================================ ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="where-flag">2.1 Кто поднимает флаг</h3>
+
+        <p>
+            Источников два, и оба законны.
+        </p>
+
+        <p>
+            <strong>Опрос в своём <code>Update</code>.</strong> Сервис становится
+            <code>ITickable</code> проектного скоупа и раз в кадр спрашивает
+            <code>WasPressedThisFrame()</code>. Минус: появляется вопрос порядка — тикать сервис
+            обязан <em>раньше</em>, чем точка входа забега, иначе первый тик кадра прочитает
+            вчерашний флаг. VContainer выстраивает <code>ITickable</code> в порядке регистрации,
+            то есть корректность держится тем, что проектный скоуп зарегистрирован раньше
+            дочернего, — верно, но неочевидно и ломается молча.
+        </p>
+
+        <p>
+            <strong>Подписка на <code>InputAction.performed</code>.</strong> Флаг поднимается
+            в момент обработки события, то есть до любого <code>Update</code> в кадре. Вопрос
+            порядка исчезает целиком. Минус: подписка, которую обязан снять
+            <code>Dispose</code>.
+        </p>
+
+        <p>
+            В проекте выбран второй вариант. И тут надо снять частое возражение: красная линия
+            <code>CLAUDE.md</code> §7 запрещает подписки и <code>async</code>
+            <strong>внутри ECS-систем</strong>, а не в сервисах. Сервис ввода живёт снаружи
+            границы симуляции, у него есть <code>Dispose</code> и явный владелец — проектный
+            скоуп. Внутри системы такая подписка была бы нарушением: у системы нет ни
+            владельца подписки, ни момента её снятия.
+        </p>
+
+        <h3 id="consume">2.2 Семантика потребления</h3>
+
+        <p>
+            Метод называется <code>ConsumeDashPressed()</code>, а не
+            <code>DashPressed</code>-свойством, и это не косметика. Свойство читается сколько
+            угодно раз и не говорит, что чтение имеет побочный эффект; метод с глаголом
+            «потребить» говорит. Из семантики следуют три факта, которые надо принять сразу:
+        </p>
+
+        <ul>
+            <li><strong>Потребитель ровно один.</strong> Второй вызывающий получит
+                <code>false</code> и решит, что кнопку не нажимали. Это нормально, пока
+                потребитель один; когда способностей станет три, у каждой будет свой флаг,
+                а не общий.</li>
+            <li><strong>Два нажатия в одном кадре схлопываются в одно.</strong> Физически
+                нереально для человека, достижимо на автокликере. Приемлемо: альтернатива —
+                счётчик нажатий, и он порождает вопрос «а что делать с двойкой», ответа на
+                который у дизайна нет.</li>
+            <li><strong>Потреблять надо в каждом тике, а не только когда «интересно».</strong>
+                Если система ввода решит не спрашивать (например, идёт кулдаун), флаг
+                останется поднятым и выстрелит через секунду. Поэтому проверка кулдауна живёт
+                в <em>фильтре системы старта</em>, а система ввода потребляет безусловно.</li>
+        </ul>
+
+        <h3 id="example">2.3 Полный пример на постороннем домене</h3>
+
+        <p>
+            Домен — грузовой лифт склада. Логика лифта считается фиксированным шагом
+            (10 Гц: этажи, двери, таймеры), а кнопка вызова нажимается когда угодно.
+            Показана вся форма целиком: источник, латч, потребитель.
+        </p>
+
+<pre><code><span class="k">using</span> <span class="t">System</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="t">Warehouse.Lift</span>
+<span class="p">{</span>
+    <span class="c">// Контракт наружу: «вызывали ли кабину с прошлого шага логики».</span>
+    <span class="k">public interface</span> <span class="t">ICallPanel</span>
+    <span class="p">{</span>
+        <span class="k">bool</span> ConsumeCallPressed<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="c">// Живёт по кадрам: источник событий дёргает OnButtonDown когда угодно.</span>
+    <span class="k">public sealed class</span> <span class="t">CallPanel</span> <span class="p">:</span> <span class="t">ICallPanel</span><span class="p">,</span> <span class="t">IDisposable</span>
+    <span class="p">{</span>
+        <span class="k">private readonly</span> <span class="t">ButtonHardware</span> _hardware<span class="p">;</span>
+
+        <span class="k">private bool</span> _pressed<span class="p">;</span>
+
+        <span class="k">public</span> CallPanel<span class="p">(</span><span class="t">ButtonHardware</span> hardware<span class="p">)</span>
+        <span class="p">{</span>
+            _hardware <span class="p">=</span> hardware<span class="p">;</span>
+            _hardware<span class="p">.</span>Down <span class="p">+=</span> OnButtonDown<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Забрать и погасить. Идемпотентно: второй вызов подряд даёт false.</span>
+        <span class="k">public bool</span> ConsumeCallPressed<span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>_pressed <span class="p">==</span> <span class="k">false</span><span class="p">)</span>
+                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+
+            _pressed <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+
+            <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public void</span> Dispose<span class="p">()</span>
+        <span class="p">{</span>
+            _hardware<span class="p">.</span>Down <span class="p">-=</span> OnButtonDown<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Флаг ТОЛЬКО поднимается. Гасит его потребитель, и никто больше:</span>
+        <span class="c">// иначе появится второй писатель и нажатие снова начнёт теряться.</span>
+        <span class="k">private void</span> OnButtonDown<span class="p">()</span>
+        <span class="p">{</span>
+            _pressed <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c">// Живёт по шагам логики. Между двумя вызовами Step может пройти</span>
+    <span class="c">// сколько угодно кадров — в том числе ни одного шага за кадр.</span>
+    <span class="k">public sealed class</span> <span class="t">LiftController</span>
+    <span class="p">{</span>
+        <span class="k">private const float</span> StepSeconds <span class="p">=</span> <span class="n">0.1f</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">ICallPanel</span> _panel<span class="p">;</span>
+
+        <span class="k">private float</span> _accumulator<span class="p">;</span>
+        <span class="k">private bool</span> _moving<span class="p">;</span>
+
+        <span class="k">public</span> LiftController<span class="p">(</span><span class="t">ICallPanel</span> panel<span class="p">)</span>
+        <span class="p">{</span>
+            _panel <span class="p">=</span> panel<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public void</span> Advance<span class="p">(</span><span class="k">float</span> deltaSeconds<span class="p">)</span>
+        <span class="p">{</span>
+            _accumulator <span class="p">+=</span> deltaSeconds<span class="p">;</span>
+
+            <span class="k">while</span> <span class="p">(</span>_accumulator <span class="p">&gt;=</span> StepSeconds<span class="p">)</span>
+            <span class="p">{</span>
+                Step<span class="p">();</span>
+
+                _accumulator <span class="p">-=</span> StepSeconds<span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">private void</span> Step<span class="p">()</span>
+        <span class="p">{</span>
+            <span class="c">// Потребляем ВСЕГДА, даже когда кабина уже едет и вызов не нужен.</span>
+            <span class="c">// Иначе флаг доживёт до конца поездки и вызовет кабину обратно.</span>
+            <span class="k">bool</span> called <span class="p">=</span> _panel<span class="p">.</span>ConsumeCallPressed<span class="p">();</span>
+
+            <span class="k">if</span> <span class="p">(</span>_moving<span class="p">)</span>
+                <span class="k">return</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span>called<span class="p">)</span>
+                _moving <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Тот же лифт — как <strong>не надо</strong>. Четыре ошибки, каждая встречается
+            в живом коде:
+        </p>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">LiftController</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">ButtonHardware</span> _hardware<span class="p">;</span>
+
+    <span class="k">private void</span> Step<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c">// 1. Читаем «нажали в этом кадре» из шага логики. В кадрах, где</span>
+        <span class="c">//    Step не вызвался ни разу, нажатие не увидит никто. Замер на</span>
+        <span class="c">//    этом проекте: теряется 64% нажатий при 148 fps.</span>
+        <span class="k">if</span> <span class="p">(</span>_hardware<span class="p">.</span><span class="err">WasPressedThisFrame</span><span class="p">)</span>
+            _moving <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+
+        <span class="c">// 2. Или наоборот — читаем «сейчас удерживается». Нажатие не</span>
+        <span class="c">//    потеряется никогда, зато удержание кнопки вызывает кабину</span>
+        <span class="c">//    каждый шаг: 10 вызовов в секунду вместо одного.</span>
+        <span class="k">if</span> <span class="p">(</span>_hardware<span class="p">.</span><span class="err">IsPressed</span><span class="p">)</span>
+            _moving <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+
+        <span class="c">// 3. Потребляем только когда «интересно». Кабина едет 8 секунд,</span>
+        <span class="c">//    флаг всё это время висит поднятым и стреляет сразу после</span>
+        <span class="c">//    приезда. Выглядит как «лифт живёт своей жизнью».</span>
+        <span class="k">if</span> <span class="p">(</span>_moving <span class="p">==</span> <span class="k">false</span> <span class="p">&amp;&amp;</span> _panel<span class="p">.</span><span class="err">ConsumeCallPressed</span><span class="p">())</span>
+            _moving <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">public sealed class</span> <span class="t">CallPanel</span>
+<span class="p">{</span>
+    <span class="k">private bool</span> _pressed<span class="p">;</span>
+
+    <span class="c">// 4. Свойство вместо метода: побочный эффект спрятан за чтением.</span>
+    <span class="c">//    Первый же диагностический лог гасит флаг, и баг «пропадает</span>
+    <span class="c">//    при отладке» — самая дорогая разновидность.</span>
+    <span class="k">public bool</span> <span class="err">CallPressed</span>
+    <span class="p">{</span>
+        <span class="k">get</span>
+        <span class="p">{</span>
+            <span class="k">bool</span> value <span class="p">=</span> _pressed<span class="p">;</span>
+            _pressed <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+            <span class="k">return</span> value<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        </section>
+
+        <!-- ============================================ ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-zero-tick">«Иногда не срабатывает», и только на быстрой машине</h3>
+        <p>
+            <span class="symptom">Симптом:</span> у разработчика в редакторе рывок ест каждое
+            третье нажатие, на ноутбуке тестировщика с 60 Гц вертикальной синхронизацией всё
+            идеально. Причина — чтение факта нажатия изнутри тика: при 60 fps каждый кадр даёт
+            ровно один тик и терять нечего, при 148 fps две трети кадров тиков не дают.
+            Отключение вертикальной синхронизации — не «оптимизация теста», а условие
+            воспроизведения бага.
+        </p>
+
+        <h3 id="pitfall-two-writers">Флаг гасит не только потребитель</h3>
+        <p>
+            <span class="symptom">Симптом:</span> нажатия теряются реже, чем без латча, но
+            теряются. Обычно это <code>_pressed = false</code> в конце <code>Update</code>
+            сервиса «чтобы не залипало». Латч с двумя писателями — это тот же
+            <code>WasPressedThisFrame</code>, только с лишним кодом. Гасит ровно потребитель,
+            и никто больше.
+        </p>
+
+        <h3 id="pitfall-stale-latch">Флаг не потребляется, пока «не нужен»</h3>
+        <p>
+            <span class="symptom">Симптом:</span> рывок срабатывает сам, без нажатия, через
+            секунду после окончания кулдауна. Система ввода спросила флаг только при
+            выполненном условии, и давнее нажатие дождалось своего часа. Отсюда правило:
+            <strong>условия проверяет фильтр системы старта, а не система ввода.</strong>
+            Ввод потребляет безусловно и кладёт факт в мир, а мир решает по своим правилам.
+        </p>
+
+        <h3 id="pitfall-editor-buffers">Подстановка ввода из редактора «не работает»</h3>
+        <p>
+            <span class="symptom">Симптом:</span> тест подставляет нажатие через
+            <code>InputSystem.QueueStateEvent</code>, читает <code>key.isPressed</code> — там
+            <code>false</code>, игра ввода не видит, и всё это списывают на «реальная клавиатура
+            перебивает». Проверено экспериментом: у редактора и у Play Mode
+            <strong>разные буферы состояния устройств</strong>. Код, выполненный в контексте
+            редактора, пишет и читает редакторный буфер, а игра живёт в игровом. Тот же самый
+            виртуальный <code>Keyboard</code>, опрошенный из <code>MonoBehaviour.Update</code>
+            внутри Play Mode, отдаёт корректное значение. Вывод для автотестов ввода:
+            подстановка и чтение обязаны выполняться в одном контексте — оба внутри Play Mode.
+        </p>
+
+        <h3 id="pitfall-throw-kills-tail">Исключение в системе убивает все группы после неё</h3>
+        <p>
+            <span class="symptom">Симптом:</span> одна строка в консоли, и «сломалось всё» —
+            персонаж перестал ходить, вьюхи замерли, при этом часы симуляции идут и ввод
+            читается. <code>EcsSystems.Run</code> выполняет системы подряд, исключение из любой
+            прерывает цикл, и группы ниже в этом тике не выполняются вообще. VContainer ловит
+            исключение из <code>ITickable</code>, логирует и продолжает вызывать
+            <code>Tick</code> — то есть картина повторяется каждый кадр, а Unity схлопывает
+            одинаковые записи консоли в одну. Одна строка означает не «одна ошибка», а
+            «мёртвая симуляция начиная с этой группы».
+        </p>
+
+        <h3 id="pitfall-latch-instead-of-buffer">Латч выдан за буфер</h3>
+        <p>
+            <span class="symptom">Симптом:</span> нажатие у конца кулдауна по-прежнему не
+            срабатывает, хотя «буфер сделан». Латч переносит факт через кадр без тиков и
+            гаснет на первом же тике — к концу кулдауна от него ничего не остаётся. Окно в
+            120 мс живёт в мире, компонентом с возрастом (урок 08, 1.4). Две разные
+            конструкции, обе обязательны.
+        </p>
+
+        </section>
+
+        <!-- ============================================ ЧЕК-ЛИСТ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Замер, а не консоль</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Снято распределение тиков по кадрам при выключенной вертикальной
+                синхронизации; доля кадров без тиков названа числом.</li>
+            <li class="key">Подставлено N нажатий; посчитано, сколько поймало чтение изнутри
+                тика и сколько поймал латч. Второе число равно N.</li>
+            <li>Второй вызов <code>Consume…</code> подряд возвращает <code>false</code>.</li>
+            <li>Подстановка ввода и чтение результата выполнены в одном контексте —
+                внутри Play Mode.</li>
+        </ul>
+
+        <p><strong>Код</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Флаг гасит только потребитель; в сервисе нет второго места, где
+                он сбрасывается.</li>
+            <li class="key">Система ввода потребляет безусловно; условия старта живут в фильтре
+                системы старта, а не в системе ввода.</li>
+            <li>Подписка на событие снимается в <code>Dispose</code>.</li>
+            <li>Метод назван глаголом с побочным эффектом, а не свойством.</li>
+            <li>Внутри ECS-системы нет ни одной подписки — латч остался в сервисе.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему ошибка проявляется при высоком fps, а не при
+                просадке (1.1).</li>
+            <li class="key">Понятно, чем латч отличается от буфера ввода и почему нужны оба
+                (1.3).</li>
+            <li>Понятно, почему латч нельзя положить компонентом в мир (1.3).</li>
+            <li>Понятно, почему одна строка в консоли может означать мёртвую половину
+                тика (подводные камни).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>

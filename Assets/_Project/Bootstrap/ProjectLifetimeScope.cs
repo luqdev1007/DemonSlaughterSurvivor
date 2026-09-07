@@ -12,6 +12,7 @@ namespace Game.Bootstrap
     {
         [SerializeField] private ContentDatabase _contentDatabase;
         [SerializeField] private ScenesConfig _scenesConfig;
+        [SerializeField] private InputConfig _inputConfig;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -22,6 +23,10 @@ namespace Game.Bootstrap
             if (_scenesConfig == null)
                 throw new InvalidOperationException(
                     $"{nameof(ScenesConfig)} is not assigned on the {nameof(ProjectLifetimeScope)} prefab.");
+
+            if (_inputConfig == null)
+                throw new InvalidOperationException(
+                    $"{nameof(InputConfig)} is not assigned on the {nameof(ProjectLifetimeScope)} prefab.");
 
             builder.Register<SceneLoader>(Lifetime.Singleton).As<ISceneLoader>();
 
@@ -34,6 +39,8 @@ namespace Game.Bootstrap
             builder.RegisterInstance(new ContentRegistry(_contentDatabase.Entries)).As<IContentRegistry>();
 
             builder.RegisterInstance(_scenesConfig);
+
+            builder.RegisterInstance(_inputConfig);
 
             builder.RegisterEntryPoint<BootstrapEntryPoint>();
         }

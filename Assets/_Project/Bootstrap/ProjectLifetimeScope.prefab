@@ -50,3 +50,4 @@ MonoBehaviour:
   autoInjectGameObjects: []
   _contentDatabase: {fileID: 11400000, guid: d145920a83201df43b99c931517ec75b, type: 2}
   _scenesConfig: {fileID: 11400000, guid: df4ee6e99fbfeaf41aadf4181ded7907, type: 2}
+  _inputConfig: {fileID: 11400000, guid: 4d08792330a6a9a49816239fbb44ed4d, type: 2}

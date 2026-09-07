@@ -21,6 +21,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MoveIntent> _intents = default;
         private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
+        private readonly EcsPoolInject<DashStats> _dashStats = default;
         private readonly EcsPoolInject<View> _views = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -30,6 +31,7 @@ namespace Game.Simulation.Systems
         public void Init(IEcsSystems systems)
         {
             CharacterConfig character = _content.Value.Get<CharacterConfig>(_context.Value.CharacterId);
+            DashAbilityConfig dash = character.Dash;
 
             int entity = _world.Value.NewEntity();
 
@@ -43,6 +45,12 @@ namespace Game.Simulation.Systems
 
             ref MoveSpeed speed = ref _speeds.Value.Add(entity);
             speed.Value = character.MoveSpeed;
+
+            ref DashStats dashStats = ref _dashStats.Value.Add(entity);
+            dashStats.Distance = dash.Distance;
+            dashStats.Duration = dash.Duration;
+            dashStats.Cooldown = dash.Cooldown;
+            dashStats.Direction = dash.Direction;
 
             _intents.Value.Add(entity);
             _velocities.Value.Add(entity);

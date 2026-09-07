@@ -21,6 +21,7 @@ namespace Game.Bootstrap
         private readonly IContentRegistry _registry;
         private readonly IViewFactory _viewFactory;
         private readonly LevelConfig _levelConfig;
+        private readonly InputConfig _inputConfig;
 
         private EcsWorld _world;
         private IEcsSystems _systems;
@@ -33,7 +34,8 @@ namespace Game.Bootstrap
             IInputService inputService,
             IContentRegistry registry,
             IViewFactory viewFactory,
-            LevelConfig levelConfig)
+            LevelConfig levelConfig,
+            InputConfig inputConfig)
         {
             _context = context;
             _clock = clock;
@@ -41,6 +43,7 @@ namespace Game.Bootstrap
             _registry = registry;
             _viewFactory = viewFactory;
             _levelConfig = levelConfig;
+            _inputConfig = inputConfig;
         }
 
         public void Initialize()
@@ -54,7 +57,8 @@ namespace Game.Bootstrap
                 _inputService,
                 _registry,
                 _viewFactory,
-                _levelConfig
+                _levelConfig,
+                _inputConfig
                 );
 
             _systems.Init();

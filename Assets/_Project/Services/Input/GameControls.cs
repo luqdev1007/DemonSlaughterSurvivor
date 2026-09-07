@@ -172,7 +172,7 @@ namespace Game.Services.Input
                 {
                     ""name"": """",
                     ""id"": ""7e1e1490-c516-41ee-8df4-90884f8540eb"",
-                    ""path"": ""<Keyboard>/shift"",
+                    ""path"": ""<Keyboard>/space"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",

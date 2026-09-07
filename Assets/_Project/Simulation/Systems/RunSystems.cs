@@ -10,11 +10,17 @@ namespace Game.Simulation.Systems
 
             // 1.  Input
             systems.Add(new ReadMoveInputSystem());
+            systems.Add(new ReadDashInputSystem());
             // 2.  Abilities
+            systems.Add(new TickDashCooldownSystem());
+            systems.Add(new AdvanceDashSystem());
+            systems.Add(new ExpireDashRequestSystem());
+            systems.Add(new StartDashSystem());
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
             // 4.  AI
             // 5.  Movement
+            systems.Add(new ApplyDashVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new FaceVelocitySystem());
             systems.Add(new MoveSystem());
