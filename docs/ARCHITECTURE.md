@@ -248,6 +248,7 @@ Assets/
     View/             вьюхи, пулы, VFX
     UI/               экраны, HUD, презентеры
     Meta/             сейвы, мета-прокачка, инвентарь, стори-прогресс
+    Editor/           редакторные инструменты, в билд не попадают
     Art/ Audio/ Prefabs/ Scenes/
 ```
 
@@ -270,6 +271,7 @@ Game.View         → Core, Configs
 Game.UI           → Core, Configs
 Game.Meta         → Core, Configs
 Game.Bootstrap    → всё вышеперечисленное
+Game.Editor       → (нет зависимостей), includePlatforms: Editor
 ```
 
 `Game.Simulation` не зависит от `Game.View` и `Game.UI`.
@@ -277,6 +279,8 @@ Game.Bootstrap    → всё вышеперечисленное
 **`Game.Core` содержит типы `UnityEngine`** — `Vector2`, `Vector3`, `Transform`, `GameObject` ради `IInputService` и `IViewFactory`, и перечисления, общие для `Game.Configs` и `Game.Simulation` (`DashDirection`). Это осознанная уступка: свой векторный тип и непрозрачные хендлы вместо `Transform` стоят дороже, чем дают. Пересматривать здесь, если `Game.Core` понадобится вне Unity.
 
 **Вьюху создаёт симуляция, а не ищет в сцене.** `IViewFactory` объявлен в `Game.Core`, реализация — в `Game.View`, префаб приезжает из `CharacterConfig`. Связать объект, положенный в сцену руками, со скоупом забега нечем: `CreateChild` вешает скоуп забега под проектный корень в `DontDestroyOnLoad`, а `RegisterComponentInHierarchy` ищет в сцене своего скоупа. Это же и шов под пул вьюх шага 4.
+
+**`Game.Editor` — девятая сборка, только для редактора.** `includePlatforms: ["Editor"]`, ноль ссылок на проектные сборки: инструменты редактора не имеют права стать зависимостью рантайма, а рантайм не имеет права о них знать. Отдельная сборка, а не скрипт в `Assembly-CSharp-Editor`, по тому же правилу, что и остальные восемь: забытый вне asmdef скрипт должен падать, а не молча компилироваться.
 
 **`Game.View` дополнительно ссылается на `Unity.Cinemachine`.** Камера — часть слоя вьюх, и Cinemachine не имеет права протечь ни в `Game.Simulation` (там `overrideReferences`), ни в `Game.Core`: наружу торчит только `ICameraService` с `Transform` в сигнатуре.
 
