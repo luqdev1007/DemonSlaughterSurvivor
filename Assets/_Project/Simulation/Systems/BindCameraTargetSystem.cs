@@ -2,7 +2,6 @@ using Game.Core;
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
-using System;
 
 namespace Game.Simulation.Systems
 {
@@ -14,12 +13,20 @@ namespace Game.Simulation.Systems
 
         private readonly EcsCustomInject<ICameraService> _camera = default;
 
+        private bool _cameraBinded = false;
+
         public void Run(IEcsSystems systems)
         {
-            if (_filter.Value.GetEntitiesCount() == 0)
+            if (_cameraBinded)
                 return;
 
-            throw new NotImplementedException();
+            foreach (var entity in _filter.Value)
+            {
+                ref View view = ref _views.Value.Get(entity);
+
+                _camera.Value.SetFollowTarget(view.Value.Transform);
+                _cameraBinded = true;
+            }
         }
     }
 }
