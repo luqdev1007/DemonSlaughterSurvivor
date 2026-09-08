@@ -14,4 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.LevelConfig
   _id: level.gameplay
   _sceneName: Gameplay
+  _cameraRigPrefab: {fileID: 3911450467373040526, guid: fce0a7a1b1fd605479921c4e854897d3, type: 3}
   _cameraYaw: 45
+  _cameraPitch: 50
+  _cameraDistance: 16

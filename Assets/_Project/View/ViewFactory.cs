@@ -1,18 +1,31 @@
-using UnityEngine;
 using Game.Core;
+using System;
+using UnityEngine;
 
 namespace Game.View
 {
     public sealed class ViewFactory : IViewFactory
     {
-        public Transform Create(GameObject prefab, Vector3 position)
+        public IView Create(GameObject prefab, Vector3 position)
         {
-            return Object.Instantiate(prefab, position, Quaternion.identity).transform;
+            if (prefab == null)
+                throw new ArgumentNullException(nameof(prefab));
+
+            GameObject instance = UnityEngine.Object.Instantiate(prefab, position, Quaternion.identity);
+
+            if (instance.TryGetComponent(out ViewInterpolator view) == false)
+                throw new InvalidOperationException(
+                    $"Prefab '{prefab.name}' has no {nameof(ViewInterpolator)} on its root object.");
+
+            return view;
         }
 
-        public void Release(Transform view)
+        public void Release(IView view)
         {
-            Object.Destroy(view.gameObject);
+            if (view is not ViewInterpolator instance || instance == null)
+                return;
+
+            UnityEngine.Object.Destroy(instance.gameObject);
         }
     }
 }

@@ -14,6 +14,8 @@ namespace Game.Bootstrap
 
             builder.Register<ViewFactory>(Lifetime.Scoped).As<IViewFactory>();
 
+            builder.Register<CameraService>(Lifetime.Scoped).As<ICameraService>();
+
             builder.RegisterEntryPoint<RunEntryPoint>(Lifetime.Scoped);
         }
     }

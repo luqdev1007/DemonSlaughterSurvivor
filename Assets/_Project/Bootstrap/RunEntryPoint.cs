@@ -1,4 +1,4 @@
-﻿using Game.Configs;
+using Game.Configs;
 using Game.Core;
 using Game.Simulation.Services;
 using Game.Simulation.Systems;
@@ -20,6 +20,7 @@ namespace Game.Bootstrap
         private readonly IInputService _inputService;
         private readonly IContentRegistry _registry;
         private readonly IViewFactory _viewFactory;
+        private readonly ICameraService _cameraService;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
@@ -34,6 +35,7 @@ namespace Game.Bootstrap
             IInputService inputService,
             IContentRegistry registry,
             IViewFactory viewFactory,
+            ICameraService cameraService,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
@@ -42,6 +44,7 @@ namespace Game.Bootstrap
             _inputService = inputService;
             _registry = registry;
             _viewFactory = viewFactory;
+            _cameraService = cameraService;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -59,6 +62,7 @@ namespace Game.Bootstrap
                 _inputService,
                 _registry,
                 _viewFactory,
+                _cameraService,
                 _levelConfig,
                 _inputConfig
                 );

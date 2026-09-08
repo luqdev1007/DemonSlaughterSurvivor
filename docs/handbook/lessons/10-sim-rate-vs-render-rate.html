@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>10 · Симуляция тикает, экран рисует: рассинхрон двух частот</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>10 · Симуляция тикает, экран рисует: рассинхрон двух частот</h1>
+
+        <div class="lesson-meta">
+            шаг 2 роадмапа (игрок) · блок 3 · 2026-09-08<br>
+            Доки проекта: <code>ARCHITECTURE.md</code> §1 (симуляция не знает о Unity),
+            §3 (вьюхи — не сущности, камера вне ECS), §6 (угол камеры — общие данные уровня),
+            §10 (группа 12 ViewSync) ·
+            <code>CLAUDE.md</code> §6.2 (не описывать поведение фреймворка по памяти),
+            §6.7 (чистая консоль ничего не значит)<br>
+            Опирается на уроки <a href="07-input-movement-fixed-step.html">07 · Ввод, движение и фиксированный шаг</a>
+            и <a href="09-frame-vs-tick-input-latch.html">09 · Кадр и тик</a><br>
+            Отчёт: <code>docs/recons/013_step2-block3-camera.txt</code><br>
+            Версии: Unity <code>6000.4.11f1</code>, Cinemachine <code>3.1.7</code>,
+            VContainer <code>5103bfc</code>, LeoECS Lite <code>d46f3b2</code>.
+        </div>
+
+        <p class="lead">
+            Урок 09 показал, что кадр и тик — независимые сетки, и что нажатие теряется
+            в кадре без тиков. Это была история про <strong>вход</strong>. Тот же самый
+            рассинхрон бьёт и на <strong>выходе</strong>, только тише: симуляция считает
+            позицию 60 раз в секунду, экран рисует 148, и две трети кадров показывают
+            позицию, устаревшую на целый тик. Персонаж едет ступенями по 16.7 мс.
+            Главная мысль урока:
+            <strong>частота, с которой считается состояние, и частота, с которой оно
+            рисуется, не совпадают никогда, и разрыв между ними закрывается в
+            отображении — не в источнике и не в камере.</strong>
+            А закрывается он тремя разными способами, и каждый платит своим.
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="two-clocks">1.1 Две сетки времени и то, что между ними</h3>
+
+        <p>
+            Фиксированный шаг (урок 07, 1.3) даёт симуляции собственные часы. Накопитель
+            копит реальное время и отдаёт его симуляции целыми порциями по <code>Δ = 1/60</code>;
+            остаток переносится на следующий кадр. Отсюда важное следствие, которое обычно
+            проговаривают только наполовину:
+        </p>
+
+        <p>
+            <strong>в момент рендера последнее посчитанное состояние всегда в прошлом.</strong>
+            Насколько — зависит от того, сколько времени накопилось после последнего тика.
+            Обозначим это <code>a</code>; оно лежит в <code>[0, Δ)</code> и меняется каждый кадр.
+            Отрисовали кадр сразу после тика — состояние свежее, <code>a ≈ 0</code>. Отрисовали
+            перед следующим тиком — состояние отстало почти на целый тик, <code>a ≈ Δ</code>.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>fps</th><th>Кадров на тик</th><th>Что видно</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>30</td><td>0.5</td><td>каждый кадр даёт два тика; позиция всегда свежая, проблемы нет</td></tr>
+                <tr><td>60</td><td>1.0</td><td>ровно один тик на кадр; проблемы нет</td></tr>
+                <tr><td>148</td><td>2.5</td><td>68.5% кадров не дают ни одного тика; позиция повторяется по два-три кадра подряд</td></tr>
+                <tr><td>240</td><td>4.0</td><td>каждая позиция держится на экране по четыре кадра</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="note warn">
+            <span class="note-title">И снова интуиция наоборот</span>
+            <p>
+                Дрожание на экране принято ждать при просадке fps. Здесь всё зеркально: при
+                30 fps его нет вообще, при 148 оно максимально. Ступени видны тем лучше, чем
+                мощнее машина и чем быстрее монитор. Это второй раз, когда рассинхрон кадра и
+                тика ведёт себя против ожидания, — первый был в уроке 09 про вход.
+            </p>
+        </div>
+
+        <h3 id="what-you-see">1.2 Как это выглядит на экране, и почему сначала не выглядит никак</h3>
+
+        <p>
+            Пока камера неподвижна, ступени видны плохо. Объект дёргается на пару пикселей
+            относительно неподвижного фона, и на низком контрасте это принимают за особенность
+            модели или за качество монитора.
+        </p>
+
+        <p>
+            Всё меняется, когда камера начинает следовать за дрожащим объектом. Теперь
+            дрожание переезжает <strong>с объекта на фон</strong>: объект стоит в центре
+            экрана неподвижно, а весь мир вокруг него ходит туда-сюда. Мозг устроен так, что
+            движение фона замечает несравнимо лучше, и то, что было незаметной мелочью,
+            становится «игру трясёт».
+        </p>
+
+        <div class="note">
+            <span class="note-title">Отсюда порядок работ</span>
+            <p>
+                Интерполяция отображения делается <strong>до</strong> настройки следования
+                камеры, а не после. Иначе damping подбирают на дрожащем источнике: он частично
+                маскирует дрожание, значение получается завышенным, а когда источник починят,
+                камера окажется вялой. Инструмент, настроенный на компенсацию чужого бага,
+                настроен неправильно.
+            </p>
+        </div>
+
+        <h3 id="three-ways">1.3 Три способа закрыть разрыв и чем каждый платит</h3>
+
+        <p>
+            Пусть <code>P(N)</code> — последняя посчитанная позиция, <code>P(N-1)</code> —
+            предыдущая, <code>Δ</code> — длина тика, <code>a</code> — время с последнего тика.
+        </p>
+
+        <p>
+            <strong>Способ 1. Интерполяция по фазе.</strong> Рисуем
+            <code>Lerp(P(N-1), P(N), a/Δ)</code>. Экранная скорость в точности равна
+            скорости источника, картинка кусочно-линейная. Отставание от последнего
+            посчитанного состояния — <code>Δ − a</code>: от целого тика сразу после тика до
+            нуля перед следующим. Цена: отображению нужно знать <code>Δ</code> и фазу
+            <code>a</code>, то есть заглянуть в устройство накопителя.
+        </p>
+
+        <p>
+            <strong>Способ 2. Экспоненциальное сглаживание.</strong> Каждый кадр тянем
+            нарисованную позицию к <code>P(N)</code> на долю пути. Ничего знать про тики не
+            надо — это его единственное, но очень весомое достоинство. Цена двойная: во-первых,
+            догоняющий никогда не догоняет, и при постоянной скорости <code>v</code>
+            устанавливается постоянное отставание <code>v·τ</code>; во-вторых, ступени не
+            исчезают, а размазываются — это маскировка, а не решение.
+        </p>
+
+        <p>
+            <strong>Способ 3. Интерполяция с задержкой.</strong> Рисуем между
+            <code>P(N-2)</code> и <code>P(N-1)</code> — то есть целиком в прошлом, между двумя
+            уже известными точками. Отрезок всегда полностью определён, поэтому картинка
+            гладкая даже если тик опоздал. Цена — постоянное отставание больше тика.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Скрытая ловушка способа 2, и она измеряется числом</span>
+            <p>
+                Наивная запись <code>Lerp(нарисовано, цель, 0.2f)</code> применяется
+                <strong>раз в кадр</strong>. Значит постоянная времени сглаживания зависит от
+                fps: <code>τ ≈ времяКадра · (1 − f) / f</code>. При <code>f = 0.2</code> это
+                27 мс на 148 fps и 67 мс на 60 fps — в два с половиной раза разное отставание
+                на разных машинах. Настроили «на глаз» у себя — у игрока с другим монитором
+                ощущение другое, и никто не поймёт почему.
+            </p>
+            <p>
+                Лечится формой <code>1 − exp(−k·dt)</code> вместо постоянной доли. Ровно так
+                это сделано внутри Cinemachine: <code>Damper.StandardDamp</code> считает
+                <code>initial · (1 − exp(ln(0.01)·dt/dampTime))</code>, где
+                <code>dampTime</code> — время падения ошибки до одного процента. Проверено
+                чтением исходников пакета, а не по памяти (<code>CLAUDE.md</code> §6.2).
+            </p>
+        </div>
+
+        <p>
+            Универсально верного ответа здесь нет — есть три разные валюты: гладкость,
+            отзывчивость и простота. Выбор зависит от того, что игрок делает с отображаемой
+            позицией. Если по ней он только смотрит — платите отставанием. Если по ней он
+            принимает решения на кадровых интервалах (уворот, i-frames, парирование) —
+            отставание становится геймплейной ошибкой, а не косметикой.
+        </p>
+
+        </section>
+
+        <!-- ======================================== ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="where">2.1 Где живёт интерполяция и почему не в трёх соседних местах</h3>
+
+        <p>
+            <strong>Не в системе симуляции.</strong> Система работает внутри тика, и понятия
+            «доля кадра между тиками» у неё нет по определению: она не знает, что кадры вообще
+            существуют. Дать ей это знание — значит протащить рендер через границу, которую
+            <code>ARCHITECTURE.md</code> §1 держит специально.
+        </p>
+
+        <p>
+            <strong>Не в камере.</strong> Соблазн понятный: дрожание видно именно из-за камеры.
+            Но дрожит не камера — дрожит источник, за которым она следует, и камера ему не
+            владелец. Сгладив у себя, камера починит картинку только для тех объектов, на
+            которые смотрит, а все остальные останутся ступенчатыми.
+        </p>
+
+        <p>
+            <strong>Не в общем менеджере «сгладить всё».</strong> Это правильный ответ для
+            толпы в тысячу единиц, но по нулю примеров такой менеджер спроектируется
+            неправильно. Сначала — по компоненту на отображаемый объект; менеджер появится
+            вместе с пулом, когда станет известно, что именно он должен уметь.
+        </p>
+
+        <p>
+            Остаётся сам отображаемый объект. Источник отдаёт ему <strong>целевое</strong>
+            состояние с частотой источника, объект решает, что показать в конкретном кадре.
+            Граница проходит по типу данных: наружу торчит интерфейс с методом «вот цель», а не
+            ссылка на трансформ, потому что ссылку немедленно начнут писать напрямую.
+        </p>
+
+        <h3 id="order">2.2 Порядок внутри кадра — вещь измеряемая, а не подразумеваемая</h3>
+
+        <p>
+            Интерполяция ставит позицию, камера её читает. Если камера обновляется раньше,
+            она отстаёт ещё на кадр, и половина работы пропадает. Проверять это рассуждением
+            нельзя: порядок задаётся PlayerLoop, а туда пишут все подряд — движок, DI-контейнер,
+            библиотеки async. Замер на этом проекте:
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Группа PlayerLoop</th><th>Позиция</th><th>Кто работает</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="3"><code>Update</code></td><td>3</td><td><code>VContainerUpdate</code> — весь тик симуляции</td></tr>
+                <tr><td>4</td><td><code>ScriptRunBehaviourUpdate</code> — <code>Update</code> вьюх, интерполяция</td></tr>
+                <tr><td>5</td><td><code>ScriptRunDelayedDynamicFrameRate</code> — корутины</td></tr>
+                <tr><td rowspan="2"><code>PreLateUpdate</code></td><td>15</td><td><code>VContainerLateUpdate</code></td></tr>
+                <tr><td>16</td><td><code>ScriptRunBehaviourLateUpdate</code> — <code>LateUpdate</code>, здесь работает Cinemachine</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>
+            То есть в одном кадре строго: тик → интерполяция → камера. Опасение
+            «камера возьмёт позицию прошлого кадра» не подтвердилось, и подкручивать
+            <code>UpdateMethod</code> у Cinemachine не потребовалось.
+        </p>
+
+        <div class="note warn">
+            <span class="note-title">Как этот замер был сначала провален</span>
+            <p>
+                Первая версия зонда читала позицию камеры из собственного
+                <code>LateUpdate</code> и уверенно показала «камера отстаёт на кадр». Это был
+                артефакт: порядок <code>LateUpdate</code> между равноправными
+                <code>MonoBehaviour</code> не определён, и зонд успевал прочитать позицию до
+                того, как её записывал Cinemachine. С
+                <code>[DefaultExecutionOrder(10000)]</code> результат сменился на
+                противоположный.
+            </p>
+            <p>
+                Правило на будущее: <strong>измерение «кто раньше в кадре» между двумя
+                скриптами обязано начинаться с фиксации порядка исполнения</strong>, иначе
+                измеряется сам порядок, а не предмет.
+            </p>
+        </div>
+
+        <h3 id="example">2.3 Полный пример на постороннем домене</h3>
+
+        <p>
+            Домен — экран портового диспетчера. Радар делает оборот два раза в секунду и
+            отдаёт координаты судна; экран перерисовывается 60 раз в секунду. Отношение
+            частот здесь 30:1 вместо 2.5:1, поэтому всё, что в игре видно как лёгкое
+            дрожание, тут видно как прыжки через полэкрана — домен тот же, масштаб нагляднее.
+        </p>
+
+        <p>
+            Показана вся форма целиком: контракт, источник, отображение, три способа
+            закрыть разрыв.
+        </p>
+
+<pre><code><span class="k">using</span> <span class="t">System</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="t">Harbour.Radar</span>
+<span class="p">{</span>
+    <span class="c">// Контракт отображения. Источник знает только это: «вот куда цель</span>
+    <span class="c">// встала на последнем обороте». Что нарисовано прямо сейчас —</span>
+    <span class="c">// не его дело и не его данные.</span>
+    <span class="k">public interface</span> <span class="t">IContactMarker</span>
+    <span class="p">{</span>
+        <span class="k">void</span> SetTarget<span class="p">(</span><span class="k">double</span> x<span class="p">,</span> <span class="k">double</span> y<span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c">// Источник: оборот радара. Никаких кадров он не знает.</span>
+    <span class="k">public sealed class</span> <span class="t">RadarSweep</span>
+    <span class="p">{</span>
+        <span class="k">public const double</span> SweepSeconds <span class="p">=</span> <span class="n">0.5</span><span class="p">;</span>
+
+        <span class="k">private readonly</span> <span class="t">IContactMarker</span> _marker<span class="p">;</span>
+        <span class="k">private double</span> _accumulator<span class="p">;</span>
+        <span class="k">private double</span> _x<span class="p">;</span>
+        <span class="k">private double</span> _y<span class="p">;</span>
+
+        <span class="k">public</span> <span class="t">RadarSweep</span><span class="p">(</span><span class="t">IContactMarker</span> marker<span class="p">)</span>
+        <span class="p">{</span>
+            _marker <span class="p">=</span> marker<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Вызывается каждый кадр, но работает целыми оборотами.</span>
+        <span class="k">public void</span> Advance<span class="p">(</span><span class="k">double</span> realSeconds<span class="p">)</span>
+        <span class="p">{</span>
+            _accumulator <span class="p">+=</span> realSeconds<span class="p">;</span>
+
+            <span class="k">while</span> <span class="p">(</span>_accumulator <span class="p">&gt;=</span> SweepSeconds<span class="p">)</span>
+            <span class="p">{</span>
+                _accumulator <span class="p">-=</span> SweepSeconds<span class="p">;</span>
+
+                _x <span class="p">+=</span> <span class="n">6.0</span> <span class="p">*</span> SweepSeconds<span class="p">;</span>
+                _y <span class="p">+=</span> <span class="n">2.0</span> <span class="p">*</span> SweepSeconds<span class="p">;</span>
+
+                _marker<span class="p">.</span>SetTarget<span class="p">(</span>_x<span class="p">,</span> _y<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="c">// Фаза: сколько времени прошло с последнего оборота, в долях оборота.</span>
+        <span class="c">// Нужна только способу 1 — и это его настоящая цена.</span>
+        <span class="k">public double</span> Phase <span class="p">=&gt;</span> _accumulator <span class="p">/</span> SweepSeconds<span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c">// Отображение: хранит две последние цели и своё время.</span>
+    <span class="k">public sealed class</span> <span class="t">ContactMarker</span> <span class="p">:</span> <span class="t">IContactMarker</span>
+    <span class="p">{</span>
+        <span class="k">private double</span> _prevX<span class="p">,</span> _prevY<span class="p">;</span>
+        <span class="k">private double</span> _curX<span class="p">,</span> _curY<span class="p">;</span>
+        <span class="k">private double</span> _sinceSweep<span class="p">;</span>
+        <span class="k">private double</span> _drawnX<span class="p">,</span> _drawnY<span class="p">;</span>
+        <span class="k">private bool</span> _hasTarget<span class="p">;</span>
+
+        <span class="k">public void</span> SetTarget<span class="p">(</span><span class="k">double</span> x<span class="p">,</span> <span class="k">double</span> y<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>_hasTarget <span class="p">==</span> <span class="k">false</span><span class="p">)</span>
+            <span class="p">{</span>
+                _prevX <span class="p">=</span> _curX <span class="p">=</span> _drawnX <span class="p">=</span> x<span class="p">;</span>
+                _prevY <span class="p">=</span> _curY <span class="p">=</span> _drawnY <span class="p">=</span> y<span class="p">;</span>
+                _sinceSweep <span class="p">=</span> <span class="n">0</span><span class="p">;</span>
+                _hasTarget <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            _prevX <span class="p">=</span> _curX<span class="p">;</span>
+            _prevY <span class="p">=</span> _curY<span class="p">;</span>
+            _curX <span class="p">=</span> x<span class="p">;</span>
+            _curY <span class="p">=</span> y<span class="p">;</span>
+            _sinceSweep <span class="p">=</span> <span class="n">0</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Способ 1: интерполяция по фазе. Гладко, скорость честная,</span>
+        <span class="c">// но нужна фаза накопителя — то есть внутренность источника.</span>
+        <span class="k">public void</span> DrawByPhase<span class="p">(</span><span class="k">double</span> phase<span class="p">)</span>
+        <span class="p">{</span>
+            _drawnX <span class="p">=</span> _prevX <span class="p">+</span> <span class="p">(</span>_curX <span class="p">-</span> _prevX<span class="p">)</span> <span class="p">*</span> phase<span class="p">;</span>
+            _drawnY <span class="p">=</span> _prevY <span class="p">+</span> <span class="p">(</span>_curY <span class="p">-</span> _prevY<span class="p">)</span> <span class="p">*</span> phase<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Способ 2: экспоненциальное сглаживание. Про обороты знать не надо.</span>
+        <span class="c">// tau — за сколько секунд ошибка падает примерно втрое (в e раз).</span>
+        <span class="c">// Форма с Exp обязательна: иначе результат зависит от fps.</span>
+        <span class="k">public void</span> DrawSmoothed<span class="p">(</span><span class="k">double</span> frameSeconds<span class="p">,</span> <span class="k">double</span> tau<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">double</span> k <span class="p">=</span> <span class="n">1.0</span> <span class="p">-</span> <span class="t">Math</span><span class="p">.</span>Exp<span class="p">(-</span>frameSeconds <span class="p">/</span> tau<span class="p">);</span>
+
+            _drawnX <span class="p">+=</span> <span class="p">(</span>_curX <span class="p">-</span> _drawnX<span class="p">)</span> <span class="p">*</span> k<span class="p">;</span>
+            _drawnY <span class="p">+=</span> <span class="p">(</span>_curY <span class="p">-</span> _drawnY<span class="p">)</span> <span class="p">*</span> k<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Способ 3: рисуем целиком в прошлом. Здесь фаза считается</span>
+        <span class="c">// собственным временем отображения, источник не спрашивают.</span>
+        <span class="k">public void</span> DrawDelayed<span class="p">(</span><span class="k">double</span> frameSeconds<span class="p">,</span> <span class="k">double</span> sweepSeconds<span class="p">)</span>
+        <span class="p">{</span>
+            _sinceSweep <span class="p">+=</span> frameSeconds<span class="p">;</span>
+
+            <span class="k">double</span> t <span class="p">=</span> <span class="t">Math</span><span class="p">.</span>Min<span class="p">(</span><span class="n">1.0</span><span class="p">,</span> _sinceSweep <span class="p">/</span> sweepSeconds<span class="p">);</span>
+
+            _drawnX <span class="p">=</span> _prevX <span class="p">+</span> <span class="p">(</span>_curX <span class="p">-</span> _prevX<span class="p">)</span> <span class="p">*</span> t<span class="p">;</span>
+            _drawnY <span class="p">=</span> _prevY <span class="p">+</span> <span class="p">(</span>_curY <span class="p">-</span> _prevY<span class="p">)</span> <span class="p">*</span> t<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="p">(</span><span class="k">double</span> x<span class="p">,</span> <span class="k">double</span> y<span class="p">)</span> Drawn <span class="p">=&gt;</span> <span class="p">(</span>_drawnX<span class="p">,</span> _drawnY<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Обратите внимание на две вещи. Первая: <code>RadarSweep</code> нигде не упоминает
+            кадры — он знает только обороты и отдаёт цель. Вторая:
+            <code>Math.Min(1.0, ...)</code> в способе 3 — это не украшение. Если оборот
+            опоздает, отображение упрётся в конец отрезка и остановится, а не улетит
+            вперёд по экстраполяции.
+        </p>
+
+        <p>
+            Тот же радар — как <strong>не надо</strong>. Пять ошибок, каждая встречается
+            в живом коде:
+        </p>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">ContactMarker</span>
+<span class="p">{</span>
+    <span class="k">public double</span> X<span class="p">;</span>
+    <span class="k">public double</span> Y<span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">public sealed class</span> <span class="t">RadarSweep</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">ContactMarker</span> _marker<span class="p">;</span>
+    <span class="k">private double</span> _drawnX<span class="p">;</span>
+
+    <span class="k">public void</span> Advance<span class="p">(</span><span class="k">double</span> realSeconds<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// 1. Источник пишет прямо в поля отображения. Сглаживать теперь</span>
+        <span class="c">//    негде: между «посчитано» и «нарисовано» нет ни одного шва.</span>
+        <span class="c">//    Починка потребует трогать источник, то есть ломать границу.</span>
+        _marker<span class="p">.</span><span class="err">X</span> <span class="p">=</span> _x<span class="p">;</span>
+        _marker<span class="p">.</span><span class="err">Y</span> <span class="p">=</span> _y<span class="p">;</span>
+
+        <span class="c">// 2. Источник сам решил сгладить — «чтобы на экране было красиво».</span>
+        <span class="c">//    Теперь координата, по которой считаются столкновения судов,</span>
+        <span class="c">//    не равна координате судна. Расхождение будут искать в</span>
+        <span class="c">//    столкновениях, а лежит оно здесь.</span>
+        _drawnX <span class="p">+=</span> <span class="p">(</span>_x <span class="p">-</span> _drawnX<span class="p">)</span> <span class="p">*</span> <span class="n">0.2</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">public sealed class</span> <span class="t">MarkerRenderer</span>
+<span class="p">{</span>
+    <span class="k">private double</span> _drawnX<span class="p">;</span>
+    <span class="k">private double</span> _targetX<span class="p">;</span>
+
+    <span class="k">public void</span> DrawFrame<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c">// 3. Постоянная доля за кадр вместо экспоненты. На 60 fps одно</span>
+        <span class="c">//    ощущение, на 148 — другое, и оба «настроены».</span>
+        _drawnX <span class="p">+=</span> <span class="p">(</span>_targetX <span class="p">-</span> _drawnX<span class="p">)</span> <span class="p">*</span> <span class="err">0.2</span><span class="p">;</span>
+
+        <span class="c">// 4. Экстраполяция «чтобы не отставать»: продолжаем движение за</span>
+        <span class="c">//    последнюю известную точку. Пока судно идёт прямо — идеально;</span>
+        <span class="c">//    на развороте метка проскакивает мимо и возвращается рывком.</span>
+        <span class="c">//    Ошибка тем заметнее, чем резче манёвр, — то есть ровно там,</span>
+        <span class="c">//    где на неё смотрят.</span>
+        _drawnX <span class="p">=</span> <span class="err">Extrapolate</span><span class="p">(</span>_targetX<span class="p">,</span> _sinceSweep <span class="p">/</span> <span class="n">0.5</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c">// 5. Сглаживание включено и для координат, и для курса метки.</span>
+    <span class="c">//    Курс на радаре меняется ступенями по 30 градусов, между</span>
+    <span class="c">//    ступенями метка медленно доворачивается — и показывает курс,</span>
+    <span class="c">//    которым судно не идёт и не шло. Отставание позиции читается</span>
+    <span class="c">//    как «плавно», отставание направления — как «врёт».</span>
+    <span class="k">public void</span> <span class="err">SmoothHeading</span><span class="p">(</span><span class="k">double</span> heading<span class="p">)</span> <span class="p">{</span> <span class="c">/* ... */</span> <span class="p">}</span>
+<span class="p">}</span></code></pre>
+
+        <p>
+            Ошибка 2 заслуживает отдельной строки, потому что выглядит она как забота о
+            качестве. Сглаживание, уехавшее в источник, меняет саму симулируемую величину:
+            отображение становится честным, а модель — нет. Проверяется это одним вопросом:
+            <strong>если убрать весь рендер, изменится ли результат вычислений?</strong>
+            Должен не измениться.
+        </p>
+
+        </section>
+
+        <!-- ============================================ ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-60fps">«У меня всё гладко» — на 60 fps</h3>
+        <p>
+            <span class="symptom">Симптом:</span> разработчик не видит дрожания и закрывает
+            задачу; тестировщик на 165-герцевом мониторе видит его сразу.
+        </p>
+        <p>
+            При включённой вертикальной синхронизации и 60 Гц каждый кадр даёт ровно один
+            тик, и разрыва нет вообще. Проверка этой темы обязана начинаться с
+            <code>vSyncCount = 0</code> и снятого ограничения кадров, иначе меряется не то.
+            Вторая половина проверки — принудительные 30 fps: там на кадр приходится два
+            тика, и картинка не имеет права ни ускориться, ни дёрнуться.
+        </p>
+
+        <h3 id="pitfall-camera-hides">Дрожание «починили» настройкой камеры</h3>
+        <p>
+            <span class="symptom">Симптом:</span> подняли damping — трясти перестало,
+            задачу закрыли. Через месяц камера кажется вялой, её ускоряют, тряска
+            возвращается, damping снова поднимают.
+        </p>
+        <p>
+            Камера сглаживает <strong>своё</strong> движение, а не чужое. Пока источник
+            дрожит, любое значение damping — компромисс между двумя несовместимыми
+            задачами, и колебания между «трясёт» и «вязко» будут повторяться, пока не
+            починят источник. Признак, по которому это узнаётся: при полностью
+            неподвижном игроке камера тоже подрагивает.
+        </p>
+
+        <h3 id="pitfall-lag-gameplay">Отставание картинки становится геймплейной ошибкой</h3>
+        <p>
+            <span class="symptom">Симптом:</span> «враг прошёл сквозь меня и не ударил» или
+            «меня ударили с пустого места».
+        </p>
+        <p>
+            Неуязвимость, попадания и подбор считаются по координате в модели, а игрок
+            смотрит на координату с задержкой. На обычной скорости расхождение — сантиметры,
+            на скорости рывка оно кратно больше, потому что за те же миллисекунды объект
+            проходит на порядок больше. Поэтому величину отставания надо не прикидывать, а
+            <strong>измерять и называть числом</strong>, и отдельно проверять её на самых
+            быстрых состояниях, а не на ходьбе.
+        </p>
+        <p>
+            Практическое следствие: визуальный фидбэк попадания рисуется по позиции
+            <em>отображения</em>, а не по позиции в модели. Иначе искра появится там, где
+            персонажа на экране ещё нет.
+        </p>
+
+        <h3 id="pitfall-transform-leak">Интерфейс отдал наружу ссылку на трансформ</h3>
+        <p>
+            <span class="symptom">Симптом:</span> ступени вернулись у одного объекта из
+            десяти, ошибок нет, в интерполяции всё правильно.
+        </p>
+        <p>
+            Если отображение отдаёт наружу прямую ссылку на свой трансформ (а отдать её
+            приходится — камере нужна цель, фабрике нужен объект для уничтожения), то рано
+            или поздно кто-то запишет в неё напрямую, минуя метод «вот цель». Компилятор
+            этого не заметит, интерполяция продолжит считать свою позицию, а побеждать будет
+            тот, кто пишет последним. Единственная защита — знать про это и держать список
+            законных потребителей коротким.
+        </p>
+
+        <h3 id="pitfall-execution-order">Замер порядка кадра меряет сам себя</h3>
+        <p>
+            <span class="symptom">Симптом:</span> измерили «кто раньше», получили уверенный
+            ответ, приняли решение — ответ оказался противоположным.
+        </p>
+        <p>
+            Порядок между равноправными скриптами в одной фазе кадра не определён. Зонд,
+            читающий чужой результат из той же фазы, с равной вероятностью читает его до и
+            после записи. Любое такое измерение начинается с явной фиксации порядка
+            исполнения; если зафиксировать нельзя — измерять надо в другой фазе, гарантированно
+            более поздней.
+        </p>
+
+        <h3 id="pitfall-first-frame">Первый кадр: интерполировать не из чего</h3>
+        <p>
+            <span class="symptom">Симптом:</span> объект в первые доли секунды прилетает в
+            свою позицию из начала координат.
+        </p>
+        <p>
+            Пока не пришло ни одной цели, интерполировать нечего, а пока пришла ровно одна —
+            нет второй точки отрезка. Первая цель обязана ставиться напрямую, без
+            сглаживания. Это не заглушка и не частный случай, это посадка объекта в стартовую
+            точку, и её надо написать явно.
+        </p>
+
+        </section>
+
+        <!-- ================================================ ЧЕК-ЛИСТ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Замер, а не глаз</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Проверка сделана при выключенной вертикальной синхронизации и
+                снятом ограничении кадров; фактический fps назван числом.</li>
+            <li class="key">Отставание отображения от модели измерено в одном кадре и названо
+                в единицах — отдельно на обычной скорости и на максимальной.</li>
+            <li>Проверка повторена при принудительных 30 fps: скорость на экране не
+                изменилась.</li>
+            <li>Диагональное движение проверено отдельно — ступени по двум осям заметнее
+                всего.</li>
+            <li>При полностью неподвижном источнике камера стоит неподвижно.</li>
+        </ul>
+
+        <p><strong>Код</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Источник не пишет в отображение напрямую: только «вот целевое
+                состояние».</li>
+            <li class="key">Сглаживания в источнике нет. Убрать весь рендер — результат
+                вычислений не меняется.</li>
+            <li>Экспоненциальное сглаживание записано через <code>exp(−dt/τ)</code>, а не
+                постоянной долей за кадр.</li>
+            <li>Первая цель ставится напрямую, без интерполяции.</li>
+            <li>Интерполяция не выходит за конец отрезка, если очередное обновление
+                опоздало.</li>
+            <li>Список мест, которые пишут в трансформ отображения, известен и короток.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему ступени видны тем сильнее, чем выше fps (1.1).</li>
+            <li class="key">Понятно, почему интерполяция делается до настройки следования
+                камеры, а не после (1.2).</li>
+            <li class="key">Понятно, чем платит каждый из трёх способов, и в какой валюте
+                (1.3).</li>
+            <li>Понятно, почему отставание отображения — не всегда косметика
+                (подводные камни).</li>
+            <li>Понятно, почему порядок фаз кадра нельзя брать по памяти (2.2).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>

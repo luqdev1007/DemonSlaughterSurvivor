@@ -32,6 +32,7 @@ namespace Game.Simulation.Systems
             // 11. Progression
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
+            systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup
 
             return systems;

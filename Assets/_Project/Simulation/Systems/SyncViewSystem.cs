@@ -21,10 +21,10 @@ namespace Game.Simulation.Systems
                 ref var facing = ref _facings.Value.Get(entity);
                 ref var view = ref _views.Value.Get(entity);
 
-                view.Value.position = position.Value;
+                view.Value.SetPosition(position.Value);
 
                 if (facing.Value != Vector3.zero)
-                    view.Value.rotation = Quaternion.LookRotation(facing.Value); 
+                    view.Value.SetRotation(Quaternion.LookRotation(facing.Value));
             }
         }
     }
