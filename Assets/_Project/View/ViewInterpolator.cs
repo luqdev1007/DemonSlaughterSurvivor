@@ -1,11 +1,12 @@
 using Game.Core;
-using System;
 using UnityEngine;
 
 namespace Game.View
 {
     public sealed class ViewInterpolator : MonoBehaviour, IView
     {
+        private const float TickSeconds = 1f / 60f;
+
         private Vector3 _previousPosition;
         private Vector3 _currentPosition;
         private float _secondsSinceUpdate;
@@ -29,7 +30,7 @@ namespace Game.View
 
             _previousPosition = _currentPosition;
             _currentPosition = position;
-            _secondsSinceUpdate = 0f;
+            _secondsSinceUpdate -= TickSeconds;
         }
 
         public void SetRotation(Quaternion rotation)
@@ -49,7 +50,9 @@ namespace Game.View
 
         private Vector3 ResolvePosition()
         {
-            throw new NotImplementedException();
+            float phase = Mathf.Clamp01(_secondsSinceUpdate / TickSeconds);
+
+            return Vector3.Lerp(_previousPosition, _currentPosition, phase);
         }
     }
 }
