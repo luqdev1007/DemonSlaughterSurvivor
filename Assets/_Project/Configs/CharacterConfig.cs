@@ -9,6 +9,7 @@ namespace Game.Configs
 
         [Header("Movement")]
         [SerializeField] private float _moveSpeed;
+        [SerializeField] private float _turnSpeed = 720f;
 
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
@@ -16,6 +17,8 @@ namespace Game.Configs
         public GameObject ViewPrefab => _viewPrefab;
 
         public float MoveSpeed => _moveSpeed;
+
+        public float TurnSpeed => _turnSpeed;
 
         public DashAbilityConfig Dash => _dash;
     }

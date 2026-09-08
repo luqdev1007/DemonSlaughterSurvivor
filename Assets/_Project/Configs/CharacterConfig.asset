@@ -15,4 +15,5 @@ MonoBehaviour:
   _id: character.berserk
   _viewPrefab: {fileID: 2234588097227066470, guid: 1c42123340482604d9a01f8ca83ae27f, type: 3}
   _moveSpeed: 5
+  _turnSpeed: 720
   _dash: {fileID: 11400000, guid: d2efaaaa1138d70458b56e9d8f4d6515, type: 2}
