@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>11 · Ссылка на сущность: почему индекса недостаточно</title>
+    <link rel="stylesheet" href="../handbook.css">
+</head>
+<body data-page="lesson">
+
+<header class="site-header">
+    <a class="brand" href="../index.html">Справочник</a>
+    <span class="subtitle">Demon Slaughter Survivor · теория и паттерны</span>
+    <nav>
+        <a href="../index.html">Оглавление</a>
+        <a href="../glossary.html">Глоссарий</a>
+    </nav>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+    <nav class="page-toc"></nav>
+
+    <main class="content">
+
+        <h1>11 · Ссылка на сущность: почему индекса недостаточно</h1>
+
+        <div class="lesson-meta">
+            шаг 3 роадмапа (враги) · блок 1 · 2026-09-09<br>
+            Доки проекта: <code>ARCHITECTURE.md</code> §10 (группа 4 — выбор цели),
+            §3 (граница ECS) ·
+            <code>CLAUDE.md</code> §7 (никаких аллокаций в горячем цикле),
+            §6.2 (не описывать поведение фреймворка по памяти)<br>
+            Опирается на урок <a href="04-ecs-entry-point.html">04 · Точка входа ECS</a>
+            (мир, системы, пулы)<br>
+            Отчёт: <code>docs/recons/015_step3-block1-enemy-spawn-chase.txt</code><br>
+            Версии: Unity <code>6000.4.11f1</code>, LeoECS Lite <code>d46f3b2</code>.
+        </div>
+
+        <p class="lead">
+            До этого блока ни одна сущность не ссылалась на другую: игрок знал только
+            собственные компоненты. Врагу нужна <strong>цель</strong> — и вот тут
+            выясняется, что «сохранить id цели в поле» — это не сохранение ссылки, а
+            заготовка бага, который проявится не там и не тогда. Главная мысль урока:
+            <strong>в ECS идентификатор сущности — это индекс в массиве, а индексы
+            переиспользуются; поэтому ссылка обязана нести не только «куда», но и
+            «когда».</strong>
+        </p>
+
+        <!-- ================================================== ТЕОРИЯ ==== -->
+        <section data-kind="theory">
+
+        <h2 id="theory">Теория</h2>
+
+        <h3 id="index-is-not-identity">1.1 Индекс — это не личность</h3>
+
+        <p>
+            Сущность в ECS — не объект. Это номер строки в наборе параллельных массивов:
+            в строке 7 массива позиций лежит позиция сущности 7, в строке 7 массива
+            здоровья — её здоровье. Такая раскладка и даёт ECS скорость: данные лежат
+            подряд, кэш процессора читает их пачками.
+        </p>
+
+        <p>
+            Плата за это — то, что <strong>номер строки не принадлежит сущности
+            навсегда</strong>. Сущность умерла, строка 7 освободилась; создаём новую —
+            и разумный движок отдаст ей ту же строку 7, а не будет растить массив
+            бесконечно. Переиспользование индексов не оптимизация, которую можно
+            выключить: без него массив растёт на каждого убитого врага и через минуту
+            боя занимает память под сотни тысяч давно мёртвых строк.
+        </p>
+
+        <p>
+            Отсюда неприятный вывод. Если система запомнила «моя цель — сущность 7» и
+            цель умерла, то поле не становится «пустым» или «неверным». Оно становится
+            <strong>верным указанием на кого-то другого</strong> — на того, кто въехал
+            в освободившуюся строку 7. Никакой ошибки не произойдёт: массивы на месте,
+            индекс в диапазоне, данные читаются. Просто это данные не той сущности.
+        </p>
+
+        <div class="note warn">
+            <div class="note-title">Почему это худший вид бага</div>
+            <p>
+                У висячего указателя в обычном коде есть шанс упасть: обращение по
+                мёртвому адресу даёт краш, и место падения известно. У висячего
+                <em>индекса</em> такого шанса нет вовсе. Программа продолжает работать,
+                просто немного неправильно: враг едет не туда, аура висит не на том,
+                урон приходит не тому. Симптом отделён от причины смертью третьего
+                объекта, случившейся десять секунд назад.
+            </p>
+        </div>
+
+        <h3 id="generation">1.2 Поколение — вторая половина ссылки</h3>
+
+        <p>
+            Решение — стандартное для любой системы с переиспользованием слотов
+            (дескрипторы файлов, хендлы ОС, слоты в пуле объектов). Рядом с индексом
+            хранится <strong>счётчик поколения</strong>: сколько раз этот слот успел
+            смениться. При каждом освобождении слота счётчик растёт.
+        </p>
+
+        <p>
+            Ссылка тогда — это пара: <em>номер слота</em> плюс <em>поколение, которое
+            в нём было на момент, когда ссылку брали</em>. Разворачивание ссылки
+            начинается со сверки: если поколение в слоте изменилось, значит слот
+            сменил владельца, и ссылка недействительна. Ответ на вопрос «жива ли моя
+            цель» становится дешёвым (одно сравнение) и, что важнее, <strong>вообще
+            возможным</strong>.
+        </p>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+            <tr><th>Хранится</th><th>Ответ на «цель жива?»</th><th>Что происходит после смерти цели</th></tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Индекс</td>
+                <td>Невозможен в принципе</td>
+                <td>Молча указывает на нового жильца слота</td>
+            </tr>
+            <tr>
+                <td>Индекс + поколение</td>
+                <td>Одно сравнение</td>
+                <td>Разворачивание честно даёт «нет»</td>
+            </tr>
+            <tr>
+                <td>Прямая ссылка на объект</td>
+                <td>Есть, но</td>
+                <td>Объект не собирается сборщиком, потому что на него ссылаются;
+                    в ECS такой ссылки и нет — сущность не объект</td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3 id="null-trap">1.3 У индекса нет «пусто»</h3>
+
+        <p>
+            Вторая, менее очевидная беда индекса: у него нет значения «ссылки нет».
+            Ноль — валидный индекс, обычно первой созданной сущности. Поле типа
+            <code>int</code> инициализируется нулём. Значит <strong>ссылка, которую
+            забыли заполнить, указывает на первую сущность мира</strong> — и часто это
+            именно та сущность, на которую всё и должно ссылаться.
+        </p>
+
+        <p>
+            Такая ошибка не просто прячется — она активно маскируется под работающий
+            код, и вскроется тогда, когда порядок создания сущностей изменится по
+            совершенно постороннему поводу. У пары «индекс + поколение» этой ловушки
+            нет: нулевое поколение не бывает живым, поэтому пара из двух нулей —
+            естественное и однозначное «ссылки нет».
+        </p>
+
+        </section>
+
+        <!-- ========================================== ПРИВЯЗКА К СТЕКУ ==== -->
+        <section data-kind="stack">
+
+        <h2 id="stack">Привязка к стеку</h2>
+
+        <h3 id="packed">2.1 Что именно даёт LeoECS Lite</h3>
+
+        <p>
+            Всё сказанное выше в LeoECS Lite названо <code>EcsPackedEntity</code>.
+            Ниже — не пересказ по памяти, а то, что читается в исходнике запинённого
+            коммита <code>d46f3b2</code> (<code>CLAUDE.md</code> §6.2).
+        </p>
+
+<pre><code><span class="c">// src/entities.cs:13 — сама пара</span>
+<span class="k">public struct</span> <span class="t">EcsPackedEntity</span> <span class="p">{</span>
+    <span class="k">public int</span> Id<span class="p">;</span>
+    <span class="k">public int</span> Gen<span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c">// src/entities.cs:80 — упаковать: снимок id и ТЕКУЩЕГО поколения</span>
+<span class="k">public static</span> <span class="t">EcsPackedEntity</span> PackEntity<span class="p">(</span><span class="k">this</span> <span class="t">EcsWorld</span> world<span class="p">,</span> <span class="k">int</span> entity<span class="p">)</span>
+
+<span class="c">// src/entities.cs:88 — развернуть: false, если мир мёртв,</span>
+<span class="c">// id вне диапазона ИЛИ поколение не совпало</span>
+<span class="k">public static bool</span> Unpack<span class="p">(</span><span class="k">this in</span> <span class="t">EcsPackedEntity</span> packed<span class="p">,</span> <span class="t">EcsWorld</span> world<span class="p">,</span> <span class="k">out int</span> entity<span class="p">)</span>
+</code></pre>
+
+        <p>
+            И то, ради чего всё это нужно — <code>src/worlds.cs:148-208</code>.
+            <code>NewEntity()</code> сначала смотрит в список переиспользования и, если
+            там что-то есть, берёт оттуда, меняя знак поколения обратно на плюс.
+            <code>DelEntity()</code>, погасив последний компонент, пишет
+            <code>gen = -(gen + 1)</code> и кладёт id в список. Живой считается
+            сущность с положительным поколением.
+        </p>
+
+        <p>
+            То есть переиспользование индексов в этом движке — не гипотетическая
+            возможность, а работающий по умолчанию механизм, и поколение растёт ровно
+            там, где слот меняет владельца.
+        </p>
+
+        <div class="note">
+            <div class="note-title">Две мелочи, о которых честно</div>
+            <p>
+                Поколение в мире хранится как <code>short</code>, и
+                <code>DelEntity</code> при переполнении сбрасывает его в &minus;1. То есть
+                после 32767 переиспользований <em>одного и того же</em> id поколение
+                способно совпасть, и <code>Unpack</code> даст ложное «жива». Гарантия —
+                «почти наверняка», а не «всегда»; для игры это несущественно, но знать
+                стоит.
+            </p>
+            <p>
+                Есть и <code>EcsPackedEntityWithWorld</code> — та же пара плюс ссылка на
+                мир. Она удобна там, где миров несколько и неоткуда взять нужный. Цена —
+                ссылка на объект в каждом компоненте, то есть больше памяти и указатель
+                в данных, которые задумывались как plain-структуры.
+            </p>
+        </div>
+
+        <h3 id="semantics">2.2 Семантика: снимок, а не подписка</h3>
+
+        <p>
+            Упакованная ссылка — <strong>снимок</strong>. Она не знает о смерти цели и
+            ни на что не подписывается; она лишь позволяет <em>спросить</em>. Отсюда
+            два практических следствия.
+        </p>
+
+        <p>
+            Первое: спрашивать надо на каждом чтении. Разворачивание — не разовая
+            валидация при записи, а часть каждого обращения. Кто развернул один раз и
+            запомнил <code>int</code>, вернулся к исходной задаче.
+        </p>
+
+        <p>
+            Второе: «цель невалидна» — это <strong>штатная ветка логики</strong>, а не
+            ошибка. Цель умерла между тиками — совершенно нормальное событие в игре про
+            орды. Система обязана иметь осмысленный ответ на этот случай, и ответ
+            «стоять на месте» ничем не хуже ответа «искать новую» — это дизайнерский
+            выбор, а не техническая необходимость.
+        </p>
+
+        <h3 id="example">2.3 Полный пример на постороннем домене</h3>
+
+        <p>
+            Домен — <strong>театральный гардероб</strong>. Номерки нумерованы подряд и
+            <em>переиспользуются</em>: посетитель ушёл, номерок 7 вернулся в стопку и
+            выдан следующему. Официант из буфета хочет запомнить «пальто вон того
+            гостя», чтобы потом его принести.
+        </p>
+
+        <p>
+            Соответствие один в один: крючок = слот, номер крючка = <code>Id</code>,
+            «какой по счёту гость его занимает» = <code>Gen</code>. Показана вся форма
+            целиком, с телами.
+        </p>
+
+<pre><code><span class="k">using</span> <span class="t">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="t">System.Collections.Generic</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="t">Theatre.Cloakroom</span>
+<span class="p">{</span>
+    <span class="c">// Ссылка на пальто: номер крючка + какой по счёту гость его занял.</span>
+    <span class="k">public readonly struct</span> <span class="t">CoatTicket</span>
+    <span class="p">{</span>
+        <span class="k">public readonly int</span> Hook<span class="p">;</span>
+        <span class="k">public readonly int</span> Turn<span class="p">;</span>
+
+        <span class="k">public</span> CoatTicket<span class="p">(</span><span class="k">int</span> hook<span class="p">,</span> <span class="k">int</span> turn<span class="p">)</span>
+        <span class="p">{</span>
+            Hook <span class="p">=</span> hook<span class="p">;</span>
+            Turn <span class="p">=</span> turn<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">public sealed class</span> <span class="t">Cloakroom</span>
+    <span class="p">{</span>
+        <span class="k">private readonly</span> <span class="t">List</span><span class="p">&lt;</span><span class="k">string</span><span class="p">&gt;</span> _owners <span class="p">=</span> <span class="k">new</span> <span class="t">List</span><span class="p">&lt;</span><span class="k">string</span><span class="p">&gt;();</span>
+
+        <span class="c">// Turn крючка. Положительный — занят, отрицательный — свободен.</span>
+        <span class="c">// Знак несёт «занятость», модуль несёт «какой по счёту гость».</span>
+        <span class="k">private readonly</span> <span class="t">List</span><span class="p">&lt;</span><span class="k">int</span><span class="p">&gt;</span> _turns <span class="p">=</span> <span class="k">new</span> <span class="t">List</span><span class="p">&lt;</span><span class="k">int</span><span class="p">&gt;();</span>
+
+        <span class="k">private readonly</span> <span class="t">Stack</span><span class="p">&lt;</span><span class="k">int</span><span class="p">&gt;</span> _freeHooks <span class="p">=</span> <span class="k">new</span> <span class="t">Stack</span><span class="p">&lt;</span><span class="k">int</span><span class="p">&gt;();</span>
+
+        <span class="k">public</span> <span class="t">CoatTicket</span> Accept<span class="p">(</span><span class="k">string</span> owner<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">int</span> hook<span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span>_freeHooks<span class="p">.</span>Count <span class="p">&gt;</span> <span class="n">0</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="c">// Крючок переиспользуется. Turn уже увеличен при освобождении,</span>
+                <span class="c">// осталось вернуть ему знак «занят».</span>
+                hook <span class="p">=</span> _freeHooks<span class="p">.</span>Pop<span class="p">();</span>
+                _turns<span class="p">[</span>hook<span class="p">]</span> <span class="p">=</span> <span class="p">-</span>_turns<span class="p">[</span>hook<span class="p">];</span>
+                _owners<span class="p">[</span>hook<span class="p">]</span> <span class="p">=</span> owner<span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                hook <span class="p">=</span> _owners<span class="p">.</span>Count<span class="p">;</span>
+                _owners<span class="p">.</span>Add<span class="p">(</span>owner<span class="p">);</span>
+                _turns<span class="p">.</span>Add<span class="p">(</span><span class="n">1</span><span class="p">);</span>
+            <span class="p">}</span>
+
+            <span class="k">return</span> <span class="k">new</span> <span class="t">CoatTicket</span><span class="p">(</span>hook<span class="p">,</span> _turns<span class="p">[</span>hook<span class="p">]);</span>
+        <span class="p">}</span>
+
+        <span class="k">public void</span> Release<span class="p">(</span><span class="k">int</span> hook<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>_turns<span class="p">[</span>hook<span class="p">]</span> <span class="p">&lt;</span> <span class="n">0</span><span class="p">)</span>
+                <span class="k">return</span><span class="p">;</span>
+
+            <span class="c">// Гость ушёл: крючок свободен И его Turn увеличен.</span>
+            <span class="c">// Именно инкремент делает старые номерки недействительными.</span>
+            _turns<span class="p">[</span>hook<span class="p">]</span> <span class="p">=</span> <span class="p">-(</span>_turns<span class="p">[</span>hook<span class="p">]</span> <span class="p">+</span> <span class="n">1</span><span class="p">);</span>
+            _owners<span class="p">[</span>hook<span class="p">]</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+            _freeHooks<span class="p">.</span>Push<span class="p">(</span>hook<span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="c">// Единственный законный способ прочитать номерок.</span>
+        <span class="k">public bool</span> TryResolve<span class="p">(</span><span class="k">in</span> <span class="t">CoatTicket</span> ticket<span class="p">,</span> <span class="k">out string</span> owner<span class="p">)</span>
+        <span class="p">{</span>
+            owner <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span>ticket<span class="p">.</span>Hook <span class="p">&lt;</span> <span class="n">0</span> <span class="p">||</span> ticket<span class="p">.</span>Hook <span class="p">&gt;=</span> _turns<span class="p">.</span>Count<span class="p">)</span>
+                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+
+            <span class="c">// Крючок занят кем-то ДРУГИМ — номерок недействителен.</span>
+            <span class="k">if</span> <span class="p">(</span>_turns<span class="p">[</span>ticket<span class="p">.</span>Hook<span class="p">]</span> <span class="p">!=</span> ticket<span class="p">.</span>Turn<span class="p">)</span>
+                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+
+            owner <span class="p">=</span> _owners<span class="p">[</span>ticket<span class="p">.</span>Hook<span class="p">];</span>
+
+            <span class="k">return</span> owner <span class="p">!=</span> <span class="k">null</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c">// Потребитель. Обратите внимание: он хранит НОМЕРОК, а не номер,</span>
+    <span class="c">// и разворачивает его КАЖДЫЙ раз, а не один раз при запоминании.</span>
+    <span class="k">public sealed class</span> <span class="t">Waiter</span>
+    <span class="p">{</span>
+        <span class="k">private readonly</span> <span class="t">Cloakroom</span> _cloakroom<span class="p">;</span>
+
+        <span class="k">private</span> <span class="t">CoatTicket</span> _remembered<span class="p">;</span>
+
+        <span class="k">public</span> Waiter<span class="p">(</span><span class="t">Cloakroom</span> cloakroom<span class="p">)</span>
+        <span class="p">{</span>
+            _cloakroom <span class="p">=</span> cloakroom<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public void</span> Remember<span class="p">(</span><span class="k">in</span> <span class="t">CoatTicket</span> ticket<span class="p">)</span>
+        <span class="p">{</span>
+            _remembered <span class="p">=</span> ticket<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="k">string</span> DescribeErrand<span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">string</span> owner<span class="p">;</span>
+
+            <span class="c">// default(CoatTicket) даёт Hook=0, Turn=0. Turn=0 не бывает</span>
+            <span class="c">// у занятого крючка, поэтому «не заполнено» читается честно.</span>
+            <span class="k">if</span> <span class="p">(</span>_cloakroom<span class="p">.</span>TryResolve<span class="p">(</span>_remembered<span class="p">,</span> <span class="k">out</span> owner<span class="p">)</span> <span class="p">==</span> <span class="k">false</span><span class="p">)</span>
+                <span class="k">return</span> <span class="s">"гость ушёл, нести нечего"</span><span class="p">;</span>
+
+            <span class="k">return</span> <span class="s">"нести пальто: "</span> <span class="p">+</span> owner<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+        <p>
+            Форма ровно та же, что у <code>EcsPackedEntity</code>:
+            <code>Accept</code> — это <code>NewEntity</code>, <code>Release</code> —
+            <code>DelEntity</code> с инкрементом поколения, <code>TryResolve</code> —
+            <code>Unpack</code>. Разница только в том, что в движке это уже написано.
+        </p>
+
+        <h3 id="antipattern">2.4 Как не надо</h3>
+
+        <p>
+            Тот же официант, написанный «просто и понятно». Код короче, компилируется,
+            проходит ручную проверку и работает — до первого ушедшего гостя.
+        </p>
+
+<pre><code><span class="k">public sealed class</span> <span class="t">NaiveWaiter</span>
+<span class="p">{</span>
+    <span class="k">private readonly</span> <span class="t">Cloakroom</span> _cloakroom<span class="p">;</span>
+
+    <span class="c">// ОШИБКА: хранится номер крючка. Номер переживает своего владельца.</span>
+    <span class="k">private int</span> _rememberedHook<span class="p">;</span>
+
+    <span class="k">public void</span> Remember<span class="p">(</span><span class="k">int</span> hook<span class="p">)</span>
+    <span class="p">{</span>
+        _rememberedHook <span class="p">=</span> hook<span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">string</span> DescribeErrand<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c">// Спросить «а тот ли это гость» физически нечем.</span>
+        <span class="k">return</span> <span class="s">"нести пальто: "</span> <span class="p">+</span> _cloakroom<span class="p">.</span>OwnerAt<span class="p">(</span>_rememberedHook<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+        <p><strong>Что именно сломается</strong></p>
+
+        <ul>
+            <li>
+                Гость с крючка 7 ушёл, пришёл новый и получил крючок 7. Официант
+                принесёт <strong>чужое пальто</strong>. Исключения нет, лога нет,
+                значение в диапазоне.
+            </li>
+            <li>
+                <code>_rememberedHook</code> без вызова <code>Remember</code> равен нулю
+                — то есть указывает на <strong>первого гостя вечера</strong>. Пока
+                первый гость сидит в зале, забытый вызов <code>Remember</code> выглядит
+                как работающий код.
+            </li>
+            <li>
+                Отладка пойдёт не туда: симптом («принесли не то пальто») возникает у
+                официанта, а причина — в гардеробе, у постороннего гостя, ушедшего
+                несколько минут назад.
+            </li>
+        </ul>
+
+        <div class="note warn">
+            <div class="note-title">Почему это не ловится тестом «а давайте проверим»</div>
+            <p>
+                Наивная версия правильно работает во всех сценариях, где <em>никто не
+                уходит</em>. А блок, в котором ссылка на цель появляется впервые, — это
+                как раз блок без смерти: врагов ещё нечем убить. То есть неверное
+                решение проходит приёмку своего блока на сто процентов и взрывается
+                через блок, в чужом коде. Ровно поэтому тип ссылки выбирается
+                <em>по устройству движка</em>, а не по результату сегодняшнего замера.
+            </p>
+        </div>
+
+        </section>
+
+        <!-- ========================================== ПОДВОДНЫЕ КАМНИ ==== -->
+        <section data-kind="pitfalls">
+
+        <h2 id="pitfalls">Подводные камни</h2>
+
+        <h3 id="pitfall-unpack-once">Развернул один раз, дальше носит int</h3>
+
+        <p class="symptom">
+            Симптом: всё сделано «правильно», ссылка упакованная, но баг тот же.
+        </p>
+
+        <p>
+            Упаковка защищает ровно в момент разворачивания. Если система развернула
+            ссылку в начале тика, сохранила <code>int</code> в поле и пользуется им
+            дальше через несколько систем, то на участке между разворачиванием и
+            использованием гарантий снова нет. Держать между тиками надо
+            <em>упакованное</em>; <code>int</code> живёт от разворачивания до конца
+            текущего обращения, и не дольше.
+        </p>
+
+        <h3 id="pitfall-modify-during-iteration">Выбор цели меняет состав фильтра</h3>
+
+        <p class="symptom">
+            Симптом: пропущенные сущности, редко — исключение внутри обхода.
+        </p>
+
+        <p>
+            Система выбора цели идёт по фильтру. Добавление или удаление компонента у
+            сущности меняет состав фильтров, по которым в этот момент идёт обход. Выбор
+            цели обязан <strong>только писать в существующее поле</strong>; создание
+            сущностей, добавление и удаление компонентов — работа других групп
+            (<code>ARCHITECTURE.md</code> §10) или отдельного прохода.
+        </p>
+
+        <h3 id="pitfall-invalid-is-error">«Цель невалидна» трактуется как ошибка</h3>
+
+        <p class="symptom">
+            Симптом: спам в логе при нормальной игре либо, наоборот, тихое
+            игнорирование.
+        </p>
+
+        <p>
+            Смерть цели между тиками — штатное событие, а не сбой. Логировать его
+            нельзя (в игре про орды это тысячи строк в секунду), но и молча пропускать
+            нельзя: у сущности останется намерение, посчитанное по мёртвой цели.
+            Правильная форма — явная ветка с явным поведением: обнулить намерение,
+            либо искать новую цель. Выбор между ними — дизайн, но <em>ветка обязана
+            быть</em>.
+        </p>
+
+        <h3 id="pitfall-init-poison">Исключение в <code>Init</code> глушит все тики</h3>
+
+        <p class="symptom">
+            Симптом: в консоли «Cant run without initialization» каждый кадр, а
+            настоящая ошибка — одна строка выше и уже уехала из виду.
+        </p>
+
+        <p>
+            Проверено по исходнику <code>ecslite@d46f3b2</code>,
+            <code>src/systems.cs:133-149</code>: <code>EcsSystems.Init()</code>
+            выставляет внутренний флаг <em>только после того, как отработали все</em>
+            <code>IEcsInitSystem</code>, а <code>Run()</code> без этого флага сразу
+            бросает исключение. То есть падение одной системы инициализации делает
+            неработоспособной всю симуляцию, и все последующие кадры сообщают не о
+            причине, а о следствии. Смотреть надо на <strong>первую</strong> ошибку
+            забега, а не на повторяющуюся.
+        </p>
+
+        <h3 id="pitfall-generation-overflow">Расчёт на вечную уникальность поколения</h3>
+
+        <p class="symptom">
+            Симптом: не проявляется. Никогда. Почти.
+        </p>
+
+        <p>
+            Поколение — <code>short</code> и при переполнении сбрасывается. Совпадение
+            требует 32767 переиспользований одного id и практического значения для игры
+            не имеет — но формулировка «упакованная ссылка не может ошибиться»
+            неверна, и в спорном месте на неё лучше не опираться.
+        </p>
+
+        </section>
+
+        <!-- ============================================== ЧЕК-ЛИСТ ==== -->
+        <section data-kind="checklist">
+
+        <h2 id="checklist">Чек-лист приёмки</h2>
+
+        <p><strong>Код</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Ссылка на другую сущность хранится упакованной, а не
+                <code>int</code>.</li>
+            <li class="key">Разворачивание происходит на каждом чтении, а не один раз
+                при записи.</li>
+            <li>У ветки «ссылка не развернулась» есть явное поведение, и оно не
+                логирование.</li>
+            <li>Система выбора цели не создаёт сущностей и не трогает состав
+                компонентов.</li>
+            <li>В теле, работающем каждый тик, нет LINQ, <code>new</code> и замыканий
+                (<code>CLAUDE.md</code> §7).</li>
+            <li>«Ссылки нет» выражено значением по умолчанию, а не отдельным флагом.</li>
+        </ul>
+
+        <p><strong>Понимание</strong></p>
+
+        <ul class="checklist">
+            <li class="key">Понятно, почему индекс после смерти цели указывает не «в
+                никуда», а на другую живую сущность (1.1).</li>
+            <li class="key">Понятно, почему неверное решение проходит приёмку блока, в
+                котором никто не умирает (2.4).</li>
+            <li>Понятно, почему <code>default</code> у пары читается как «пусто», а у
+                <code>int</code> — как «первая сущность» (1.3).</li>
+            <li>Понятно, почему при ошибке в <code>Init</code> смотреть надо на первую
+                строку лога, а не на повторяющуюся (подводные камни).</li>
+        </ul>
+
+        </section>
+
+        <footer class="lesson-footer"></footer>
+
+    </main>
+
+</div>
+</div>
+
+<script src="../lessons.js"></script>
+<script src="../handbook.js"></script>
+</body>
+</html>
