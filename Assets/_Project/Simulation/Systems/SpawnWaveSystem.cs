@@ -159,7 +159,16 @@ namespace Game.Simulation.Systems
 
         private int ResolveSpawnCount(ref float accumulator, float ratePerSecond, float deltaSeconds, int liveCount, int liveLimit)
         {
-            throw new NotImplementedException();
+            accumulator += ratePerSecond * deltaSeconds;
+
+            int result = (int)accumulator;
+
+            accumulator -= result;
+
+            if (liveCount + result > liveLimit)
+                result = liveLimit - liveCount;
+
+            return Math.Max(0, result);
         }
 
         private bool TryAdvanceWave(ref WaveState state, IReadOnlyList<Wave> waves)
