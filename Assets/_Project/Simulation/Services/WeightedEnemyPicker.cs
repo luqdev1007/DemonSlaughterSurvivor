@@ -23,7 +23,7 @@ namespace Game.Simulation.Services
 
             float target = roll * total;
             float cursor = 0f;
-            var entry = null;
+            WeightedEnemy entry = null;
 
             for (int i = 0; i < entries.Count; i++)
             {
@@ -39,7 +39,7 @@ namespace Game.Simulation.Services
                     return entries[i].Enemy;
             }
 
-            return entry;
+            return entry.Enemy;
         }
     }
 }

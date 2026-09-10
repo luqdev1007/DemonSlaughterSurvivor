@@ -173,7 +173,15 @@ namespace Game.Simulation.Systems
 
         private bool TryAdvanceWave(ref WaveState state, IReadOnlyList<Wave> waves)
         {
-            throw new NotImplementedException();
+            if (state.Index + 1 < waves.Count)
+            {
+                state.Index++;
+                state.Elapsed = 0f;
+
+                return true;
+            }
+
+            return false;
         }
 
         private void SpawnFromWave(Wave wave, Vector3 anchor)
