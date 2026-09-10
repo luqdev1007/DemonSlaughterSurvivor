@@ -18,6 +18,5 @@ MonoBehaviour:
   _cameraYaw: 45
   _cameraPitch: 50
   _cameraDistance: 16
-  _startingEnemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
-  _startingEnemyCount: 8
-  _enemySpawnRadius: 12
+  _arenaRadius: 30
+  _waves: {fileID: 11400000, guid: 0a3de98ea0151284d83773301bded08e, type: 2}

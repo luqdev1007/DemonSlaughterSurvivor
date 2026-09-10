@@ -13,10 +13,11 @@ namespace Game.Configs
         [SerializeField] private float _cameraPitch = 50f;
         [SerializeField] private float _cameraDistance = 16f;
 
-        [Header("Enemies")]
-        [SerializeField] private EnemyConfig _startingEnemy;
-        [SerializeField] private int _startingEnemyCount;
-        [SerializeField] private float _enemySpawnRadius = 12f;
+        [Header("Arena")]
+        [SerializeField] private float _arenaRadius = 30f;
+
+        [Header("Waves")]
+        [SerializeField] private WaveTimelineConfig _waves;
 
         public string SceneName => _sceneName;
 
@@ -28,10 +29,8 @@ namespace Game.Configs
 
         public float CameraDistance => _cameraDistance;
 
-        public EnemyConfig StartingEnemy => _startingEnemy;
+        public float ArenaRadius => _arenaRadius;
 
-        public int StartingEnemyCount => _startingEnemyCount;
-
-        public float EnemySpawnRadius => _enemySpawnRadius;
+        public WaveTimelineConfig Waves => _waves;
     }
 }

@@ -18,7 +18,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ExpireDashRequestSystem());
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
-            systems.Add(new SpawnEnemiesSystem());
+            systems.Add(new SpawnWaveSystem());
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());
             systems.Add(new ChaseTargetSystem());
