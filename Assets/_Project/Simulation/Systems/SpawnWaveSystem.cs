@@ -12,23 +12,12 @@ namespace Game.Simulation.Systems
 {
     public sealed class SpawnWaveSystem : IEcsInitSystem, IEcsRunSystem
     {
-        private readonly EcsWorldInject _world = default;
-
         private readonly EcsFilterInject<Inc<WaveState>> _timelines = default;
         private readonly EcsFilterInject<Inc<Enemy>> _live = default;
         private readonly EcsFilterInject<Inc<Player, Position>> _anchors = default;
 
         private readonly EcsPoolInject<WaveState> _waveStates = default;
-
-        private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Position> _positions = default;
-        private readonly EcsPoolInject<Facing> _facings = default;
-        private readonly EcsPoolInject<MoveIntent> _intents = default;
-        private readonly EcsPoolInject<MoveSpeed> _speeds = default;
-        private readonly EcsPoolInject<TurnSpeed> _turnSpeeds = default;
-        private readonly EcsPoolInject<Velocity> _velocities = default;
-        private readonly EcsPoolInject<ChaseTarget> _chaseTargets = default;
-        private readonly EcsPoolInject<View> _views = default;
 
         private readonly EcsCustomInject<LevelConfig> _level = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -38,6 +27,7 @@ namespace Game.Simulation.Systems
         private RingSpawnPlacement _placement;
         private WeightedEnemyPicker _picker;
         private SimulationRandom _random;
+        private EnemyFactory _factory;
 
         private WaveTimelineConfig _timeline;
         private bool[] _firedGuaranteed;
@@ -48,21 +38,24 @@ namespace Game.Simulation.Systems
 
         public void Init(IEcsSystems systems)
         {
+            EcsWorld world = systems.GetWorld();
+
             _timeline = _level.Value.Waves;
 
-            Validate(_timeline);
+            WaveTimelineValidator.Validate(_timeline);
 
             _placement = new RingSpawnPlacement();
             _picker = new WeightedEnemyPicker();
             _random = new SimulationRandom(_context.Value.Seed);
+            _factory = new EnemyFactory(world, _viewFactory.Value);
 
-            _firedGuaranteed = new bool[ResolveMaxGuaranteedCount(_timeline)];
+            _firedGuaranteed = new bool[WaveTimelineValidator.ResolveMaxGuaranteedCount(_timeline)];
             _timelineFinished = false;
 
             _spawnAccumulator = 0f;
             _refillAccumulator = 0f;
 
-            int entity = _world.Value.NewEntity();
+            int entity = world.NewEntity();
 
             ref WaveState state = ref _waveStates.Value.Add(entity);
             state.Index = 0;
@@ -202,102 +195,7 @@ namespace Game.Simulation.Systems
                 _level.Value.ArenaRadius,
                 _random.NextUnit());
 
-            int entity = _world.Value.NewEntity();
-
-            _enemies.Value.Add(entity);
-
-            ref Position position = ref _positions.Value.Add(entity);
-            position.Value = spawnPosition;
-
-            ref Facing facing = ref _facings.Value.Add(entity);
-            facing.Value = Vector3.forward;
-
-            ref MoveSpeed speed = ref _speeds.Value.Add(entity);
-            speed.Value = enemy.MoveSpeed;
-
-            ref TurnSpeed turnSpeed = ref _turnSpeeds.Value.Add(entity);
-            turnSpeed.Value = enemy.TurnSpeed;
-
-            _intents.Value.Add(entity);
-            _velocities.Value.Add(entity);
-            _chaseTargets.Value.Add(entity);
-
-            ref View view = ref _views.Value.Add(entity);
-            view.Value = _viewFactory.Value.Create(enemy.ViewPrefab, spawnPosition);
-        }
-
-        private static int ResolveMaxGuaranteedCount(WaveTimelineConfig timeline)
-        {
-            if (timeline == null)
-                return 0;
-
-            IReadOnlyList<Wave> waves = timeline.Waves;
-
-            if (waves == null)
-                return 0;
-
-            int max = 0;
-
-            for (int index = 0; index < waves.Count; index++)
-            {
-                int count = waves[index].Guaranteed.Count;
-
-                if (count > max)
-                    max = count;
-            }
-
-            return max;
-        }
-
-        private static void Validate(WaveTimelineConfig timeline)
-        {
-            if (timeline == null)
-                return;
-
-            IReadOnlyList<Wave> waves = timeline.Waves;
-
-            if (waves == null)
-                return;
-
-            for (int waveIndex = 0; waveIndex < waves.Count; waveIndex++)
-            {
-                Wave wave = waves[waveIndex];
-
-                if (wave == null)
-                    throw new InvalidOperationException(
-                        $"{nameof(WaveTimelineConfig)} '{timeline.Id}' has an empty wave slot at index {waveIndex}.");
-
-                IReadOnlyList<WeightedEnemy> weighted = wave.Enemies;
-
-                for (int entryIndex = 0; entryIndex < weighted.Count; entryIndex++)
-                {
-                    WeightedEnemy entry = weighted[entryIndex];
-
-                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "weighted");
-                }
-
-                IReadOnlyList<GuaranteedSpawn> guaranteed = wave.Guaranteed;
-
-                for (int entryIndex = 0; entryIndex < guaranteed.Count; entryIndex++)
-                {
-                    GuaranteedSpawn entry = guaranteed[entryIndex];
-
-                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "guaranteed");
-                }
-            }
-        }
-
-        private static void ValidateEnemy(WaveTimelineConfig timeline, EnemyConfig enemy, int waveIndex, int entryIndex, string kind)
-        {
-            if (enemy == null)
-                throw new InvalidOperationException(
-                    $"{nameof(WaveTimelineConfig)} '{timeline.Id}' has no {nameof(EnemyConfig)} assigned " +
-                    $"in wave {waveIndex}, {kind} entry {entryIndex}.");
-
-            if (enemy.ViewPrefab == null)
-                throw new InvalidOperationException(
-                    $"{nameof(EnemyConfig)} '{enemy.Id}' has no view prefab assigned " +
-                    $"(wave {waveIndex}, {kind} entry {entryIndex}).");
+            _factory.Create(enemy, spawnPosition);
         }
     }
 }
