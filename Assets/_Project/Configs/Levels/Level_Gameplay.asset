@@ -19,4 +19,5 @@ MonoBehaviour:
   _cameraPitch: 50
   _cameraDistance: 16
   _arenaRadius: 30
+  _spatialCellSize: 1
   _waves: {fileID: 11400000, guid: 0a3de98ea0151284d83773301bded08e, type: 2}

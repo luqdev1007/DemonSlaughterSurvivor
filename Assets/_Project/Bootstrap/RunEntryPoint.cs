@@ -26,6 +26,7 @@ namespace Game.Bootstrap
 
         private EcsWorld _world;
         private IEcsSystems _systems;
+        private SpatialGrid _spatialGrid;
 
         private float _accumulator;
 
@@ -54,6 +55,9 @@ namespace Game.Bootstrap
             _inputService.ResetLatches();
 
             _world = new EcsWorld();
+
+            _spatialGrid = new SpatialGrid(_world, _levelConfig.ArenaRadius, _levelConfig.SpatialCellSize);
+
             _systems = RunSystems.Build(_world);
 
             _systems.Inject(
@@ -64,7 +68,8 @@ namespace Game.Bootstrap
                 _viewFactory,
                 _cameraService,
                 _levelConfig,
-                _inputConfig
+                _inputConfig,
+                _spatialGrid
                 );
 
             _systems.Init();
@@ -97,6 +102,8 @@ namespace Game.Bootstrap
 
             _world?.Destroy();
             _world = null;
+
+            _spatialGrid = null;
         }
     }
 }

@@ -15,6 +15,7 @@ namespace Game.Configs
 
         [Header("Arena")]
         [SerializeField] private float _arenaRadius = 30f;
+        [SerializeField] private float _spatialCellSize = 1f;
 
         [Header("Waves")]
         [SerializeField] private WaveTimelineConfig _waves;
@@ -30,6 +31,8 @@ namespace Game.Configs
         public float CameraDistance => _cameraDistance;
 
         public float ArenaRadius => _arenaRadius;
+
+        public float SpatialCellSize => _spatialCellSize;
 
         public WaveTimelineConfig Waves => _waves;
     }
