@@ -17,6 +17,7 @@ namespace Game.Bootstrap
         private readonly IContentRegistry _content;
 
         private RunLifetimeScope _runScope;
+        private bool _isStarting;
 
         public RunLauncher(ProjectLifetimeScope projectScope, ISceneLoader sceneLoader, ISeedSource seedSource, IContentRegistry content)
         {
@@ -28,23 +29,38 @@ namespace Game.Bootstrap
 
         public async UniTask StartAsync(RunRequest request, CancellationToken ct)
         {
+            if (_isStarting)
+                throw new InvalidOperationException(
+                    $"{nameof(RunLauncher)}.{nameof(StartAsync)} was called while a previous start was still in flight. " +
+                    "Starting twice would load the scene twice and build a second run scope with its own ECS world, " +
+                    "leaking the first one. Wait for the running start to finish, or call Stop first.");
+
             ct.ThrowIfCancellationRequested();
 
-            Stop();
+            _isStarting = true;
 
-            RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next());
+            try
+            {
+                Stop();
 
-            LevelConfig level = _content.Get<LevelConfig>(request.LevelId);
+                RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next());
 
-            await _sceneLoader.LoadAsync(level.SceneName, CancellationToken.None);
+                LevelConfig level = _content.Get<LevelConfig>(request.LevelId);
 
-            _runScope = _projectScope.CreateChild<RunLifetimeScope>(
-                builder =>
-                {
-                    builder.RegisterInstance(runContext);
-                    builder.RegisterInstance(level);
-                },
-                RunScopeName);
+                await _sceneLoader.LoadAsync(level.SceneName, CancellationToken.None);
+
+                _runScope = _projectScope.CreateChild<RunLifetimeScope>(
+                    builder =>
+                    {
+                        builder.RegisterInstance(runContext);
+                        builder.RegisterInstance(level);
+                    },
+                    RunScopeName);
+            }
+            finally
+            {
+                _isStarting = false;
+            }
         }
 
         public void Stop()
