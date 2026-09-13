@@ -1,3 +1,4 @@
+using Game.Configs;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
@@ -8,9 +9,9 @@ using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
-    public sealed class SeparateNeighborsSystem : IEcsRunSystem
+    public sealed class SeparateNeighborsSystem : IEcsInitSystem, IEcsRunSystem
     {
-        private const int NeighborCapacity = 64;
+        private const int NonEnemyCapacityReserve = 16;
         private const float CoincidenceEpsilonSquared = 1e-6f;
         private const float MinimumPushLength = 1e-5f;
         private const float TieBreakAngleScale = 6.2831855f / 4294967296f;
@@ -23,8 +24,16 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Separation> _separations = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
+        private readonly EcsCustomInject<LevelConfig> _level = default;
 
-        private readonly List<int> _neighbors = new List<int>(NeighborCapacity);
+        private List<int> _neighbors;
+
+        public void Init(IEcsSystems systems)
+        {
+            int capacity = WaveTimelineValidator.ResolveMaxLiveCap(_level.Value.Waves) + NonEnemyCapacityReserve;
+
+            _neighbors = new List<int>(capacity);
+        }
 
         public void Run(IEcsSystems systems)
         {

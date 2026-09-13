@@ -66,6 +66,29 @@ namespace Game.Configs
             return max;
         }
 
+        public static int ResolveMaxLiveCap(WaveTimelineConfig timeline)
+        {
+            if (timeline == null)
+                return 0;
+
+            IReadOnlyList<Wave> waves = timeline.Waves;
+
+            if (waves == null)
+                return 0;
+
+            int max = 0;
+
+            for (int index = 0; index < waves.Count; index++)
+            {
+                int cap = waves[index].LiveCap;
+
+                if (cap > max)
+                    max = cap;
+            }
+
+            return max;
+        }
+
         private static void ValidateEnemy(
             WaveTimelineConfig timeline,
             EnemyConfig enemy,
