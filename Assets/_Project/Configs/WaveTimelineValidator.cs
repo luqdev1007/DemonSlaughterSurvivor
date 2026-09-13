@@ -5,7 +5,7 @@ namespace Game.Configs
 {
     public static class WaveTimelineValidator
     {
-        public static void Validate(WaveTimelineConfig timeline)
+        public static void Validate(WaveTimelineConfig timeline, float spatialCellSize)
         {
             if (timeline == null)
                 return;
@@ -29,7 +29,7 @@ namespace Game.Configs
                 {
                     WeightedEnemy entry = weighted[entryIndex];
 
-                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "weighted");
+                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, spatialCellSize, waveIndex, entryIndex, "weighted");
                 }
 
                 IReadOnlyList<GuaranteedSpawn> guaranteed = wave.Guaranteed;
@@ -38,7 +38,7 @@ namespace Game.Configs
                 {
                     GuaranteedSpawn entry = guaranteed[entryIndex];
 
-                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "guaranteed");
+                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, spatialCellSize, waveIndex, entryIndex, "guaranteed");
                 }
             }
         }
@@ -66,7 +66,13 @@ namespace Game.Configs
             return max;
         }
 
-        private static void ValidateEnemy(WaveTimelineConfig timeline, EnemyConfig enemy, int waveIndex, int entryIndex, string kind)
+        private static void ValidateEnemy(
+            WaveTimelineConfig timeline,
+            EnemyConfig enemy,
+            float spatialCellSize,
+            int waveIndex,
+            int entryIndex,
+            string kind)
         {
             if (enemy == null)
                 throw new InvalidOperationException(
@@ -77,6 +83,30 @@ namespace Game.Configs
                 throw new InvalidOperationException(
                     $"{nameof(EnemyConfig)} '{enemy.Id}' has no view prefab assigned " +
                     $"(wave {waveIndex}, {kind} entry {entryIndex}).");
+
+            if (enemy.SeparationRadius < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' has a negative {nameof(EnemyConfig.SeparationRadius)} " +
+                    $"of {enemy.SeparationRadius} (wave {waveIndex}, {kind} entry {entryIndex}). " +
+                    "A negative radius makes the neighbour query return nothing, which disables separation without any message. " +
+                    $"Set {nameof(EnemyConfig.SeparationRadius)} to zero to disable separation on purpose.");
+
+            if (enemy.SeparationRadius > spatialCellSize)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' has {nameof(EnemyConfig.SeparationRadius)} {enemy.SeparationRadius}, " +
+                    $"which is greater than {nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} {spatialCellSize} " +
+                    $"(wave {waveIndex}, {kind} entry {entryIndex}). " +
+                    "The spatial index walks one ring of cells around the center and rejects a query radius wider than one cell. " +
+                    $"Either raise {nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} in the level config " +
+                    $"or lower {nameof(EnemyConfig.SeparationRadius)} in the enemy config.");
+
+            if (enemy.SeparationStrength < 0f || enemy.SeparationStrength >= 1f)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' has {nameof(EnemyConfig.SeparationStrength)} {enemy.SeparationStrength}, " +
+                    $"which is outside the allowed range [0, 1) (wave {waveIndex}, {kind} entry {entryIndex}). " +
+                    "At a strength of one or more the push can cancel or reverse the direction towards the target, " +
+                    "and the crowd stalls in a ring instead of reaching the player. " +
+                    $"Set {nameof(EnemyConfig.SeparationStrength)} to zero to disable separation on purpose.");
         }
     }
 }

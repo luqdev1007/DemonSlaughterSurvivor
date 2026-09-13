@@ -42,7 +42,7 @@ namespace Game.Simulation.Systems
 
             _timeline = _level.Value.Waves;
 
-            WaveTimelineValidator.Validate(_timeline);
+            WaveTimelineValidator.Validate(_timeline, _level.Value.SpatialCellSize);
 
             _placement = new RingSpawnPlacement();
             _picker = new WeightedEnemyPicker();

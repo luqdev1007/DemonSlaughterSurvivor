@@ -22,6 +22,7 @@ namespace Game.Simulation.Systems
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());
             systems.Add(new ChaseTargetSystem());
+            systems.Add(new SeparateNeighborsSystem());
             // 5.  Movement
             systems.Add(new ApplyDashVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());

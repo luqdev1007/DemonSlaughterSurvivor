@@ -19,6 +19,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<TurnSpeed> _turnSpeeds;
         private readonly EcsPool<Velocity> _velocities;
         private readonly EcsPool<ChaseTarget> _chaseTargets;
+        private readonly EcsPool<Separation> _separations;
         private readonly EcsPool<View> _views;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory)
@@ -34,6 +35,7 @@ namespace Game.Simulation.Services
             _turnSpeeds = world.GetPool<TurnSpeed>();
             _velocities = world.GetPool<Velocity>();
             _chaseTargets = world.GetPool<ChaseTarget>();
+            _separations = world.GetPool<Separation>();
             _views = world.GetPool<View>();
         }
 
@@ -54,6 +56,10 @@ namespace Game.Simulation.Services
 
             ref TurnSpeed turnSpeed = ref _turnSpeeds.Add(entity);
             turnSpeed.Value = config.TurnSpeed;
+
+            ref Separation separation = ref _separations.Add(entity);
+            separation.Radius = config.SeparationRadius;
+            separation.Strength = config.SeparationStrength;
 
             _intents.Add(entity);
             _velocities.Add(entity);

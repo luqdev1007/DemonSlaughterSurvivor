@@ -16,3 +16,5 @@ MonoBehaviour:
   _viewPrefab: {fileID: 5669514083769989969, guid: 54730cf7d1071dd4ba447ca628ca2720, type: 3}
   _moveSpeed: 2.5
   _turnSpeed: 360
+  _separationRadius: 1
+  _separationStrength: 0.5
