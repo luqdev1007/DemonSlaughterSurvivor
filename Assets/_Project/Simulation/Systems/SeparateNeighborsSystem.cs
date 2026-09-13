@@ -3,7 +3,6 @@ using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -113,7 +112,9 @@ namespace Game.Simulation.Systems
 
         private Vector3 Blend(Vector3 intent, Vector3 push, float strength)
         {
-            throw new NotImplementedException();
+            Vector3 blended = intent + push * strength;
+
+            return blended.normalized * intent.magnitude;
         }
 
         private static float ResolveTieBreakAngle(int entity, int neighbor)
