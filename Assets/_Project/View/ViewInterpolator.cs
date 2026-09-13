@@ -9,7 +9,7 @@ namespace Game.View
 
         private Vector3 _previousPosition;
         private Vector3 _currentPosition;
-        private float _secondsSinceUpdate;
+        private float _lastSyncTime;
         private bool _hasPosition;
 
         public Transform Transform => transform;
@@ -20,7 +20,7 @@ namespace Game.View
             {
                 _previousPosition = position;
                 _currentPosition = position;
-                _secondsSinceUpdate = 0f;
+                _lastSyncTime = Time.time;
                 _hasPosition = true;
 
                 transform.position = position;
@@ -30,7 +30,7 @@ namespace Game.View
 
             _previousPosition = _currentPosition;
             _currentPosition = position;
-            _secondsSinceUpdate -= TickSeconds;
+            _lastSyncTime = Time.time;
         }
 
         public void SetRotation(Quaternion rotation)
@@ -43,14 +43,12 @@ namespace Game.View
             if (_hasPosition == false)
                 return;
 
-            _secondsSinceUpdate += Time.deltaTime;
-
             transform.position = ResolvePosition();
         }
 
         private Vector3 ResolvePosition()
         {
-            float phase = Mathf.Clamp01(_secondsSinceUpdate / TickSeconds);
+            float phase = Mathf.Clamp01((Time.time - _lastSyncTime) / TickSeconds);
 
             return Vector3.Lerp(_previousPosition, _currentPosition, phase);
         }
