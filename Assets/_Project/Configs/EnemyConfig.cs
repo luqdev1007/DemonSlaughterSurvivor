@@ -11,6 +11,9 @@ namespace Game.Configs
         [SerializeField] private float _moveSpeed;
         [SerializeField] private float _turnSpeed = 360f;
 
+        [Header("Body")]
+        [SerializeField] private float _bodyRadius = 0.4f;
+
         [Header("Separation")]
         [SerializeField] private float _separationRadius = 1f;
         [SerializeField] private float _separationStrength = 0.5f;
@@ -20,6 +23,8 @@ namespace Game.Configs
         public float MoveSpeed => _moveSpeed;
 
         public float TurnSpeed => _turnSpeed;
+
+        public float BodyRadius => _bodyRadius;
 
         public float SeparationRadius => _separationRadius;
 

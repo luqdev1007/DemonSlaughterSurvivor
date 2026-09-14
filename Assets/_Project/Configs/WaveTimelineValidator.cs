@@ -70,6 +70,47 @@ namespace Game.Configs
             return max;
         }
 
+        public static float ResolveMaxBodyRadius(WaveTimelineConfig timeline)
+        {
+            if (timeline == null)
+                return 0f;
+
+            IReadOnlyList<Wave> waves = timeline.Waves;
+
+            if (waves == null)
+                return 0f;
+
+            float max = 0f;
+
+            for (int index = 0; index < waves.Count; index++)
+            {
+                Wave wave = waves[index];
+
+                if (wave == null)
+                    continue;
+
+                IReadOnlyList<WeightedEnemy> weighted = wave.Enemies;
+
+                for (int entryIndex = 0; entryIndex < weighted.Count; entryIndex++)
+                {
+                    WeightedEnemy entry = weighted[entryIndex];
+
+                    max = ResolveLargerRadius(max, entry == null ? null : entry.Enemy);
+                }
+
+                IReadOnlyList<GuaranteedSpawn> guaranteed = wave.Guaranteed;
+
+                for (int entryIndex = 0; entryIndex < guaranteed.Count; entryIndex++)
+                {
+                    GuaranteedSpawn entry = guaranteed[entryIndex];
+
+                    max = ResolveLargerRadius(max, entry == null ? null : entry.Enemy);
+                }
+            }
+
+            return max;
+        }
+
         public static int ResolveMaxLiveCap(WaveTimelineConfig timeline)
         {
             if (timeline == null)
@@ -89,6 +130,17 @@ namespace Game.Configs
                 if (cap > max)
                     max = cap;
             }
+
+            return max;
+        }
+
+        private static float ResolveLargerRadius(float max, EnemyConfig enemy)
+        {
+            if (enemy == null)
+                return max;
+
+            if (enemy.BodyRadius > max)
+                return enemy.BodyRadius;
 
             return max;
         }
@@ -185,6 +237,14 @@ namespace Game.Configs
                 throw new InvalidOperationException(
                     $"{nameof(EnemyConfig)} '{enemy.Id}' has no view prefab assigned " +
                     $"(wave {waveIndex}, {kind} entry {entryIndex}).");
+
+            if (enemy.BodyRadius < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' has a negative {nameof(EnemyConfig.BodyRadius)} " +
+                    $"of {enemy.BodyRadius} (wave {waveIndex}, {kind} entry {entryIndex}). " +
+                    "The contact distance is the sum of the two body radii, so a negative radius shrinks it below the " +
+                    "real gap and the enemy never reports an overlap: it walks through the player without any message. " +
+                    $"Set {nameof(EnemyConfig.BodyRadius)} to zero to disable the contact radius on purpose.");
 
             if (enemy.SeparationRadius < 0f)
                 throw new InvalidOperationException(

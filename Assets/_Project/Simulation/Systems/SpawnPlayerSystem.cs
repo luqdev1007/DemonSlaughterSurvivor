@@ -21,6 +21,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MoveIntent> _intents = default;
         private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<TurnSpeed> _turnSpeeds = default;
+        private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
         private readonly EcsPoolInject<View> _views = default;
@@ -49,6 +50,9 @@ namespace Game.Simulation.Systems
 
             ref TurnSpeed turnSpeed = ref _turnSpeeds.Value.Add(entity);
             turnSpeed.Value = character.TurnSpeed;
+
+            ref BodyRadius bodyRadius = ref _bodyRadii.Value.Add(entity);
+            bodyRadius.Value = character.BodyRadius;
 
             ref DashStats dashStats = ref _dashStats.Value.Add(entity);
             dashStats.Distance = dash.Distance;

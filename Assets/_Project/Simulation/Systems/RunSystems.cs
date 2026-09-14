@@ -27,6 +27,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyDashVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new FaceVelocitySystem());
+            systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());
             systems.Add(new RebuildSpatialGridSystem());
             // 6.  Weapons

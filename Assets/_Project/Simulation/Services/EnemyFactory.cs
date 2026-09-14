@@ -17,6 +17,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<MoveIntent> _intents;
         private readonly EcsPool<MoveSpeed> _speeds;
         private readonly EcsPool<TurnSpeed> _turnSpeeds;
+        private readonly EcsPool<BodyRadius> _bodyRadii;
         private readonly EcsPool<Velocity> _velocities;
         private readonly EcsPool<ChaseTarget> _chaseTargets;
         private readonly EcsPool<Separation> _separations;
@@ -33,6 +34,7 @@ namespace Game.Simulation.Services
             _intents = world.GetPool<MoveIntent>();
             _speeds = world.GetPool<MoveSpeed>();
             _turnSpeeds = world.GetPool<TurnSpeed>();
+            _bodyRadii = world.GetPool<BodyRadius>();
             _velocities = world.GetPool<Velocity>();
             _chaseTargets = world.GetPool<ChaseTarget>();
             _separations = world.GetPool<Separation>();
@@ -56,6 +58,9 @@ namespace Game.Simulation.Services
 
             ref TurnSpeed turnSpeed = ref _turnSpeeds.Add(entity);
             turnSpeed.Value = config.TurnSpeed;
+
+            ref BodyRadius bodyRadius = ref _bodyRadii.Add(entity);
+            bodyRadius.Value = config.BodyRadius;
 
             ref Separation separation = ref _separations.Add(entity);
             separation.Radius = config.SeparationRadius;

@@ -11,6 +11,9 @@ namespace Game.Configs
         [SerializeField] private float _moveSpeed;
         [SerializeField] private float _turnSpeed = 720f;
 
+        [Header("Body")]
+        [SerializeField] private float _bodyRadius = 0.4f;
+
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
 
@@ -19,6 +22,8 @@ namespace Game.Configs
         public float MoveSpeed => _moveSpeed;
 
         public float TurnSpeed => _turnSpeed;
+
+        public float BodyRadius => _bodyRadius;
 
         public DashAbilityConfig Dash => _dash;
     }
