@@ -137,7 +137,7 @@ namespace Game.Simulation.Systems
 
         private Vector3 Resolve(Vector3 enemyVelocity, Vector3 fromPlayerToEnemy, float overlap, float deltaTime)
         {
-            throw new NotImplementedException();
+            return enemyVelocity + fromPlayerToEnemy * (overlap / deltaTime);
         }
 
         private static float ResolveTieBreakAngle(int player, int enemy)
