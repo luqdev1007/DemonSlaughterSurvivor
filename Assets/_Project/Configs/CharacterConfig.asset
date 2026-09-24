@@ -17,4 +17,6 @@ MonoBehaviour:
   _moveSpeed: 5
   _turnSpeed: 720
   _bodyRadius: 0.4
+  _maxHealth: 100
+  _hitInvulnerabilitySeconds: 0.5
   _dash: {fileID: 11400000, guid: d2efaaaa1138d70458b56e9d8f4d6515, type: 2}

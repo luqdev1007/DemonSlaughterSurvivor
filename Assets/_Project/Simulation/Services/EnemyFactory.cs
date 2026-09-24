@@ -18,6 +18,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<MoveSpeed> _speeds;
         private readonly EcsPool<TurnSpeed> _turnSpeeds;
         private readonly EcsPool<BodyRadius> _bodyRadii;
+        private readonly EcsPool<ContactDamage> _contactDamages;
         private readonly EcsPool<Velocity> _velocities;
         private readonly EcsPool<ChaseTarget> _chaseTargets;
         private readonly EcsPool<Separation> _separations;
@@ -35,6 +36,7 @@ namespace Game.Simulation.Services
             _speeds = world.GetPool<MoveSpeed>();
             _turnSpeeds = world.GetPool<TurnSpeed>();
             _bodyRadii = world.GetPool<BodyRadius>();
+            _contactDamages = world.GetPool<ContactDamage>();
             _velocities = world.GetPool<Velocity>();
             _chaseTargets = world.GetPool<ChaseTarget>();
             _separations = world.GetPool<Separation>();
@@ -61,6 +63,9 @@ namespace Game.Simulation.Services
 
             ref BodyRadius bodyRadius = ref _bodyRadii.Add(entity);
             bodyRadius.Value = config.BodyRadius;
+
+            ref ContactDamage contactDamage = ref _contactDamages.Add(entity);
+            contactDamage.Value = config.ContactDamage;
 
             ref Separation separation = ref _separations.Add(entity);
             separation.Radius = config.SeparationRadius;

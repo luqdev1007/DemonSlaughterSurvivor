@@ -17,5 +17,6 @@ MonoBehaviour:
   _moveSpeed: 1
   _turnSpeed: 360
   _bodyRadius: 0.5
+  _contactDamage: 20
   _separationRadius: 1
   _separationStrength: 0.5

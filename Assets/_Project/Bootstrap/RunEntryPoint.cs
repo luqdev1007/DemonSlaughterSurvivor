@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using Game.Configs;
 using Game.Core;
 using Game.Simulation.Services;
@@ -17,6 +18,8 @@ namespace Game.Bootstrap
 
         private readonly RunContext _context;
         private readonly SimulationClock _clock;
+        private readonly RunOutcome _outcome;
+        private readonly IRunLauncher _launcher;
         private readonly IInputService _inputService;
         private readonly IContentRegistry _registry;
         private readonly IViewFactory _viewFactory;
@@ -29,10 +32,13 @@ namespace Game.Bootstrap
         private SpatialGrid _spatialGrid;
 
         private float _accumulator;
+        private bool _isFinishing;
 
         public RunEntryPoint(
             RunContext context,
             SimulationClock clock,
+            RunOutcome outcome,
+            IRunLauncher launcher,
             IInputService inputService,
             IContentRegistry registry,
             IViewFactory viewFactory,
@@ -42,6 +48,8 @@ namespace Game.Bootstrap
         {
             _context = context;
             _clock = clock;
+            _outcome = outcome;
+            _launcher = launcher;
             _inputService = inputService;
             _registry = registry;
             _viewFactory = viewFactory;
@@ -69,7 +77,8 @@ namespace Game.Bootstrap
                 _cameraService,
                 _levelConfig,
                 _inputConfig,
-                _spatialGrid
+                _spatialGrid,
+                _outcome
                 );
 
             _systems.Init();
@@ -77,6 +86,9 @@ namespace Game.Bootstrap
 
         public void Tick()
         {
+            if (_isFinishing)
+                return;
+
             _accumulator += Time.deltaTime;
 
             int steps = 0;
@@ -89,10 +101,21 @@ namespace Game.Bootstrap
 
                 _accumulator -= FixedDelta;
                 steps++;
+
+                if (_outcome.IsFinished == false)
+                    continue;
+
+                _isFinishing = true;
+                break;
             }
 
             if (steps == MaxStepsPerFrame)
                 _accumulator = 0f;
+
+            if (_isFinishing == false)
+                return;
+
+            _launcher.FinishAsync().Forget();
         }
 
         public void Dispose()

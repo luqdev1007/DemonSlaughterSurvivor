@@ -12,6 +12,8 @@ namespace Game.Bootstrap
         {
             builder.Register<SimulationClock>(Lifetime.Scoped);
 
+            builder.Register<RunOutcome>(Lifetime.Scoped);
+
             builder.Register<ViewFactory>(Lifetime.Scoped).As<IViewFactory>();
 
             builder.Register<CameraService>(Lifetime.Scoped).As<ICameraService>();

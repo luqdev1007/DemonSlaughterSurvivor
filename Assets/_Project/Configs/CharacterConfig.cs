@@ -14,6 +14,10 @@ namespace Game.Configs
         [Header("Body")]
         [SerializeField] private float _bodyRadius = 0.4f;
 
+        [Header("Combat")]
+        [SerializeField] private float _maxHealth = 100f;
+        [SerializeField] private float _hitInvulnerabilitySeconds = 0.5f;
+
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
 
@@ -24,6 +28,10 @@ namespace Game.Configs
         public float TurnSpeed => _turnSpeed;
 
         public float BodyRadius => _bodyRadius;
+
+        public float MaxHealth => _maxHealth;
+
+        public float HitInvulnerabilitySeconds => _hitInvulnerabilitySeconds;
 
         public DashAbilityConfig Dash => _dash;
     }

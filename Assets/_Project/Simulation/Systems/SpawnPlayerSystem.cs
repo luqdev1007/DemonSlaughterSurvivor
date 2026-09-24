@@ -22,6 +22,9 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<TurnSpeed> _turnSpeeds = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
+        private readonly EcsPoolInject<Health> _healths = default;
+        private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
+        private readonly EcsPoolInject<HitInvulnerability> _hitInvulnerabilities = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
         private readonly EcsPoolInject<View> _views = default;
@@ -53,6 +56,15 @@ namespace Game.Simulation.Systems
 
             ref BodyRadius bodyRadius = ref _bodyRadii.Value.Add(entity);
             bodyRadius.Value = character.BodyRadius;
+
+            ref MaxHealth maxHealth = ref _maxHealths.Value.Add(entity);
+            maxHealth.Value = character.MaxHealth;
+
+            ref Health health = ref _healths.Value.Add(entity);
+            health.Current = character.MaxHealth;
+
+            ref HitInvulnerability hitInvulnerability = ref _hitInvulnerabilities.Value.Add(entity);
+            hitInvulnerability.Seconds = character.HitInvulnerabilitySeconds;
 
             ref DashStats dashStats = ref _dashStats.Value.Add(entity);
             dashStats.Distance = dash.Distance;

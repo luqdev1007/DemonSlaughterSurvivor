@@ -15,16 +15,24 @@ namespace Game.Bootstrap
         private readonly ISceneLoader _sceneLoader;
         private readonly ISeedSource _seedSource;
         private readonly IContentRegistry _content;
+        private readonly ScenesConfig _scenes;
 
         private RunLifetimeScope _runScope;
         private bool _isStarting;
+        private bool _isFinishing;
 
-        public RunLauncher(ProjectLifetimeScope projectScope, ISceneLoader sceneLoader, ISeedSource seedSource, IContentRegistry content)
+        public RunLauncher(
+            ProjectLifetimeScope projectScope,
+            ISceneLoader sceneLoader,
+            ISeedSource seedSource,
+            IContentRegistry content,
+            ScenesConfig scenes)
         {
             _projectScope = projectScope;
             _sceneLoader = sceneLoader;
             _seedSource = seedSource;
             _content = content;
+            _scenes = scenes;
         }
 
         public async UniTask StartAsync(RunRequest request, CancellationToken ct)
@@ -60,6 +68,30 @@ namespace Game.Bootstrap
             finally
             {
                 _isStarting = false;
+            }
+        }
+
+        public async UniTask FinishAsync()
+        {
+            if (_isFinishing)
+                return;
+
+            if (_runScope == null)
+                return;
+
+            _isFinishing = true;
+
+            try
+            {
+                await UniTask.NextFrame();
+
+                Stop();
+
+                await _sceneLoader.LoadAsync(_scenes.MainMenuScene, CancellationToken.None);
+            }
+            finally
+            {
+                _isFinishing = false;
             }
         }
 

@@ -6,6 +6,7 @@ namespace Game.Core
     public interface IRunLauncher
     {
         UniTask StartAsync(RunRequest request, CancellationToken ct);
+        UniTask FinishAsync();
         void Stop();
     }
 }

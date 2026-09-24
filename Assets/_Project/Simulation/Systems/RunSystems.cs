@@ -33,13 +33,20 @@ namespace Game.Simulation.Systems
             // 6.  Weapons
             // 7.  AttackLifetime
             // 8.  Collision
+            systems.Add(new DetectContactDamageSystem());
             // 9.  Damage
+            systems.Add(new TickInvulnerabilitySystem());
+            systems.Add(new ApplyDamageSystem());
             // 10. Death
+            systems.Add(new MarkDeadSystem());
+            systems.Add(new FinishRunOnPlayerDeathSystem());
             // 11. Progression
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
             systems.Add(new BindCameraTargetSystem());
+            systems.Add(new DebugLogPlayerHealthSystem()); // TEMPORARY: block 2 acceptance, remove with the system
             // 13. Cleanup
+            systems.Add(new CleanupEventsSystem());
 
             return systems;
         }
