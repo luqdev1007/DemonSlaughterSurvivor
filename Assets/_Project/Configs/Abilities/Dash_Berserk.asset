@@ -19,4 +19,4 @@ MonoBehaviour:
   _direction: 0
   _invulnerabilitySeconds: 0.3
   _pushSpeed: 5
-  _pushSeconds: 0.25
+  _pushSeconds: 0.6

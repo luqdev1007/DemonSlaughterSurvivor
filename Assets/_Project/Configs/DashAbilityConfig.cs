@@ -16,7 +16,7 @@ namespace Game.Configs
 
         [Header("Push")]
         [SerializeField] private float _pushSpeed = 5f;
-        [SerializeField] private float _pushSeconds = 0.25f;
+        [SerializeField] private float _pushSeconds = 0.6f;
 
         public float Distance => _distance;
         public float Duration => _duration;

@@ -127,26 +127,22 @@ namespace Game.Simulation.Systems
                     continue;
 
                 Vector3 direction;
-                float distance;
 
                 if (squared <= CoincidenceEpsilonSquared)
                 {
                     float angle = ResolveTieBreakAngle(dasher, target);
 
                     direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-                    distance = 0f;
                 }
                 else
                 {
-                    distance = Mathf.Sqrt(squared);
+                    float distance = Mathf.Sqrt(squared);
 
                     direction = new Vector3(deltaX / distance, 0f, deltaZ / distance);
                 }
 
-                float falloff = 1f - distance / contact;
-
                 ref Pushed pushed = ref _pushes.Value.Add(target);
-                pushed.Velocity = direction * (pushSpeed * falloff);
+                pushed.Velocity = direction * pushSpeed;
                 pushed.RemainingTicks = ticks;
                 pushed.TotalTicks = ticks;
 
