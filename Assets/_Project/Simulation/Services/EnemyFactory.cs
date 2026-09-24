@@ -19,6 +19,8 @@ namespace Game.Simulation.Services
         private readonly EcsPool<TurnSpeed> _turnSpeeds;
         private readonly EcsPool<BodyRadius> _bodyRadii;
         private readonly EcsPool<ContactDamage> _contactDamages;
+        private readonly EcsPool<Health> _healths;
+        private readonly EcsPool<MaxHealth> _maxHealths;
         private readonly EcsPool<Velocity> _velocities;
         private readonly EcsPool<ChaseTarget> _chaseTargets;
         private readonly EcsPool<Separation> _separations;
@@ -37,6 +39,8 @@ namespace Game.Simulation.Services
             _turnSpeeds = world.GetPool<TurnSpeed>();
             _bodyRadii = world.GetPool<BodyRadius>();
             _contactDamages = world.GetPool<ContactDamage>();
+            _healths = world.GetPool<Health>();
+            _maxHealths = world.GetPool<MaxHealth>();
             _velocities = world.GetPool<Velocity>();
             _chaseTargets = world.GetPool<ChaseTarget>();
             _separations = world.GetPool<Separation>();
@@ -66,6 +70,12 @@ namespace Game.Simulation.Services
 
             ref ContactDamage contactDamage = ref _contactDamages.Add(entity);
             contactDamage.Value = config.ContactDamage;
+
+            ref MaxHealth maxHealth = ref _maxHealths.Add(entity);
+            maxHealth.Value = config.MaxHealth;
+
+            ref Health health = ref _healths.Add(entity);
+            health.Current = config.MaxHealth;
 
             ref Separation separation = ref _separations.Add(entity);
             separation.Radius = config.SeparationRadius;

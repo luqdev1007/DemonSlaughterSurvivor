@@ -29,8 +29,8 @@ namespace Game.Simulation.Systems
             systems.Add(new FaceVelocitySystem());
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());
-            systems.Add(new RebuildSpatialGridSystem());
             // 6.  Weapons
+            systems.Add(new DebugDamageSystem());
             // 7.  AttackLifetime
             // 8.  Collision
             systems.Add(new DetectContactDamageSystem());
@@ -40,12 +40,14 @@ namespace Game.Simulation.Systems
             // 10. Death
             systems.Add(new MarkDeadSystem());
             systems.Add(new FinishRunOnPlayerDeathSystem());
+            systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup
             systems.Add(new CleanupEventsSystem());
+            systems.Add(new RebuildSpatialGridSystem());
 
             return systems;
         }

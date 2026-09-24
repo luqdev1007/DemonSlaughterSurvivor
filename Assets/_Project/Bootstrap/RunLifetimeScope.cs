@@ -1,4 +1,5 @@
 using Game.Core;
+using Game.Services;
 using Game.Simulation.Services;
 using Game.View;
 using VContainer;
@@ -13,6 +14,8 @@ namespace Game.Bootstrap
             builder.Register<SimulationClock>(Lifetime.Scoped);
 
             builder.Register<RunOutcome>(Lifetime.Scoped);
+
+            builder.Register<DebugDamageInput>(Lifetime.Scoped).As<IDebugDamageInput>();
 
             builder.Register<ViewFactory>(Lifetime.Scoped).As<IViewFactory>();
 

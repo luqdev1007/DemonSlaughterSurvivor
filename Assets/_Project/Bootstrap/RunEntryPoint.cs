@@ -21,6 +21,7 @@ namespace Game.Bootstrap
         private readonly RunOutcome _outcome;
         private readonly IRunLauncher _launcher;
         private readonly IInputService _inputService;
+        private readonly IDebugDamageInput _debugDamageInput;
         private readonly IContentRegistry _registry;
         private readonly IViewFactory _viewFactory;
         private readonly ICameraService _cameraService;
@@ -40,6 +41,7 @@ namespace Game.Bootstrap
             RunOutcome outcome,
             IRunLauncher launcher,
             IInputService inputService,
+            IDebugDamageInput debugDamageInput,
             IContentRegistry registry,
             IViewFactory viewFactory,
             ICameraService cameraService,
@@ -51,6 +53,7 @@ namespace Game.Bootstrap
             _outcome = outcome;
             _launcher = launcher;
             _inputService = inputService;
+            _debugDamageInput = debugDamageInput;
             _registry = registry;
             _viewFactory = viewFactory;
             _cameraService = cameraService;
@@ -78,7 +81,8 @@ namespace Game.Bootstrap
                 _levelConfig,
                 _inputConfig,
                 _spatialGrid,
-                _outcome
+                _outcome,
+                _debugDamageInput
                 );
 
             _systems.Init();
