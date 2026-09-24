@@ -89,20 +89,7 @@ namespace Game.Simulation.Systems
             if (hitInvulnerability.Seconds <= 0f)
                 return;
 
-            int ticks = Mathf.Max(1, Mathf.RoundToInt(hitInvulnerability.Seconds / delta));
-
-            if (_invulnerables.Value.Has(entity) == false)
-            {
-                ref Invulnerable added = ref _invulnerables.Value.Add(entity);
-                added.RemainingTicks = ticks;
-
-                return;
-            }
-
-            ref Invulnerable existing = ref _invulnerables.Value.Get(entity);
-
-            if (ticks > existing.RemainingTicks)
-                existing.RemainingTicks = ticks;
+            Invulnerability.Grant(_invulnerables.Value, entity, Mathf.Max(1, Mathf.RoundToInt(hitInvulnerability.Seconds / delta)));
         }
     }
 }

@@ -1,6 +1,7 @@
 using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
@@ -16,6 +17,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DashStats> _stats = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Dashing> _dashes = default;
+        private readonly EcsPoolInject<Invulnerable> _invulnerables = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
@@ -40,6 +42,8 @@ namespace Game.Simulation.Systems
 
                 dashing.Speed = stats.Distance / (ticks * delta);
                 dashing.RemainingTicks = ticks;
+
+                Invulnerability.Grant(_invulnerables.Value, entity, Mathf.Max(1, Mathf.RoundToInt(stats.InvulnerabilitySeconds / delta)));
 
                 _requests.Value.Del(entity);
             }

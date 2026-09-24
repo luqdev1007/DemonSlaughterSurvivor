@@ -24,6 +24,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<HitInvulnerability> _hitInvulnerabilities = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
+        private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
         private readonly EcsPoolInject<View> _views = default;
 
@@ -42,6 +43,9 @@ namespace Game.Simulation.Systems
 
             ref Position position = ref _positions.Value.Add(entity);
             position.Value = StartPosition;
+
+            ref PreviousPosition previousPosition = ref _previousPositions.Value.Add(entity);
+            previousPosition.Value = StartPosition;
 
             ref Facing facing = ref _facings.Value.Add(entity);
             facing.Value = Vector3.forward;
@@ -69,6 +73,9 @@ namespace Game.Simulation.Systems
             dashStats.Duration = dash.Duration;
             dashStats.Cooldown = dash.Cooldown;
             dashStats.Direction = dash.Direction;
+            dashStats.InvulnerabilitySeconds = dash.InvulnerabilitySeconds;
+            dashStats.PushSpeed = dash.PushSpeed;
+            dashStats.PushSeconds = dash.PushSeconds;
 
             _intents.Value.Add(entity);
             _velocities.Value.Add(entity);

@@ -20,5 +20,8 @@ namespace Game.Simulation.Components
         public float Duration;
         public float Cooldown;
         public DashDirection Direction;
+        public float InvulnerabilitySeconds;
+        public float PushSpeed;
+        public float PushSeconds;
     }
 }

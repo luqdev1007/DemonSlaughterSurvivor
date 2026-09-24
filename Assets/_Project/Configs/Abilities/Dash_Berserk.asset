@@ -17,3 +17,6 @@ MonoBehaviour:
   _duration: 0.12
   _cooldown: 1.2
   _direction: 0
+  _invulnerabilitySeconds: 0.3
+  _pushSpeed: 5
+  _pushSeconds: 0.25

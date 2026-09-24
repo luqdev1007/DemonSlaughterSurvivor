@@ -24,15 +24,18 @@ namespace Game.Simulation.Systems
             systems.Add(new ChaseTargetSystem());
             systems.Add(new SeparateNeighborsSystem());
             // 5.  Movement
+            systems.Add(new StorePreviousPositionSystem());
             systems.Add(new ApplyDashVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new FaceVelocitySystem());
+            systems.Add(new ApplyPushSystem());
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());
             // 6.  Weapons
             systems.Add(new DebugDamageSystem());
             // 7.  AttackLifetime
             // 8.  Collision
+            systems.Add(new SweepDashPushSystem());
             systems.Add(new DetectContactDamageSystem());
             // 9.  Damage
             systems.Add(new TickInvulnerabilitySystem());

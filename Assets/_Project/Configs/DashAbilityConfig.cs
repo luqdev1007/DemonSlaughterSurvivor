@@ -11,9 +11,22 @@ namespace Game.Configs
         [SerializeField] private float _cooldown;
         [SerializeField] private DashDirection _direction;
 
+        [Header("Invulnerability")]
+        [SerializeField] private float _invulnerabilitySeconds = 0.3f;
+
+        [Header("Push")]
+        [SerializeField] private float _pushSpeed = 5f;
+        [SerializeField] private float _pushSeconds = 0.25f;
+
         public float Distance => _distance;
         public float Duration => _duration;
         public float Cooldown => _cooldown;
         public DashDirection Direction => _direction;
+
+        public float InvulnerabilitySeconds => _invulnerabilitySeconds;
+
+        public float PushSpeed => _pushSpeed;
+
+        public float PushSeconds => _pushSeconds;
     }
 }
