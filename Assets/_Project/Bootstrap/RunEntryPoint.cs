@@ -124,6 +124,8 @@ namespace Game.Bootstrap
 
         public void Dispose()
         {
+            _cameraService.SetFollowTarget(null);
+
             _systems?.Destroy();
             _systems = null;
 

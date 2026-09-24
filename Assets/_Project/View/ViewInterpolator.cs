@@ -33,6 +33,14 @@ namespace Game.View
             _lastSyncTime = Time.time;
         }
 
+        public void ResetInterpolation()
+        {
+            _previousPosition = Vector3.zero;
+            _currentPosition = Vector3.zero;
+            _lastSyncTime = 0f;
+            _hasPosition = false;
+        }
+
         public void SetRotation(Quaternion rotation)
         {
             transform.rotation = rotation;

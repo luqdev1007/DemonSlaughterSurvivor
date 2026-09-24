@@ -7,13 +7,11 @@ using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
-    public sealed class SpawnPlayerSystem : IEcsInitSystem, IEcsDestroySystem
+    public sealed class SpawnPlayerSystem : IEcsInitSystem
     {
         private static readonly Vector3 StartPosition = Vector3.zero;
 
         private readonly EcsWorldInject _world = default;
-
-        private readonly EcsFilterInject<Inc<View>> _viewed = default;
 
         private readonly EcsPoolInject<Player> _players = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -77,21 +75,6 @@ namespace Game.Simulation.Systems
 
             ref View view = ref _views.Value.Add(entity);
             view.Value = _viewFactory.Value.Create(character.ViewPrefab, StartPosition);
-        }
-
-        public void Destroy(IEcsSystems systems)
-        {
-            foreach (int entity in _viewed.Value)
-            {
-                ref View view = ref _views.Value.Get(entity);
-
-                if (view.Value == null)
-                    continue;
-
-                _viewFactory.Value.Release(view.Value);
-
-                view.Value = null;
-            }
         }
     }
 }
