@@ -44,7 +44,6 @@ namespace Game.Simulation.Systems
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
             systems.Add(new BindCameraTargetSystem());
-            systems.Add(new DebugLogPlayerHealthSystem()); // TEMPORARY: block 2 acceptance, remove with the system
             // 13. Cleanup
             systems.Add(new CleanupEventsSystem());
 
