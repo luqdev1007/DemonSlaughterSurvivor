@@ -15,15 +15,22 @@ namespace Game.View
             public GameObject Prefab;
         }
 
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
         private readonly Dictionary<GameObject, Stack<Entry>> _free = new Dictionary<GameObject, Stack<Entry>>();
         private readonly Dictionary<int, Entry> _known = new Dictionary<int, Entry>();
         private readonly HashSet<int> _issued = new HashSet<int>();
         private readonly HashSet<int> _retiring = new HashSet<int>();
         private readonly List<Entry> _all = new List<Entry>();
+        private readonly Dictionary<Material, Material> _dissolveCopies = new Dictionary<Material, Material>();
 
         private readonly float _hitFlashSeconds;
         private readonly float _blinkSeconds;
+        private readonly float _dissolveSeconds;
+        private readonly Material _dissolveTemplate;
         private readonly Action<ViewInterpolator> _onRetired;
+        private readonly Func<Material, Material> _dissolveMaterialFor;
 
         private bool _disposed;
 
@@ -40,9 +47,21 @@ namespace Game.View
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative hit flash ({feedback.HitFlashSeconds}) " +
                     $"or blink period ({feedback.InvulnerabilityBlinkSeconds}). Use 0 to switch the effect off.");
 
+            if (feedback.DissolveSeconds < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative dissolve duration ({feedback.DissolveSeconds}).");
+
+            if (feedback.DissolveMaterial == null)
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' has no dissolve material assigned. " +
+                    "Views without a Death animation dissolve with a copy of it.");
+
             _hitFlashSeconds = feedback.HitFlashSeconds;
             _blinkSeconds = feedback.InvulnerabilityBlinkSeconds;
+            _dissolveSeconds = feedback.DissolveSeconds;
+            _dissolveTemplate = feedback.DissolveMaterial;
             _onRetired = CompleteRetire;
+            _dissolveMaterialFor = DissolveMaterialFor;
         }
 
         public IView Create(GameObject prefab, Vector3 position)
@@ -122,6 +141,14 @@ namespace Game.View
             _issued.Clear();
             _retiring.Clear();
             _free.Clear();
+
+            foreach (Material copy in _dissolveCopies.Values)
+            {
+                if (copy != null)
+                    UnityEngine.Object.Destroy(copy);
+            }
+
+            _dissolveCopies.Clear();
         }
 
         private void CompleteRetire(ViewInterpolator view)
@@ -198,12 +225,38 @@ namespace Game.View
                 Prefab = prefab
             };
 
-            view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _onRetired);
+            view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired);
 
             _known.Add(view.GetInstanceID(), entry);
             _all.Add(entry);
 
             return entry;
+        }
+
+        private Material DissolveMaterialFor(Material source)
+        {
+            if (source == null)
+                return null;
+
+            if (_dissolveCopies.TryGetValue(source, out Material copy))
+                return copy;
+
+            copy = new Material(_dissolveTemplate)
+            {
+                name = source.name + " (Dissolve)",
+                mainTexture = source.mainTexture,
+                mainTextureScale = source.mainTextureScale,
+                mainTextureOffset = source.mainTextureOffset
+            };
+
+            if (source.HasProperty(BaseColorId))
+                copy.SetColor(BaseColorId, source.GetColor(BaseColorId));
+            else if (source.HasProperty(ColorId))
+                copy.SetColor(BaseColorId, source.GetColor(ColorId));
+
+            _dissolveCopies.Add(source, copy);
+
+            return copy;
         }
 
         private Stack<Entry> Free(GameObject prefab)

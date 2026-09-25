@@ -33,6 +33,11 @@ namespace Game.Simulation.Systems
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative enemy death duration " +
                     $"({feedback.EnemyDeathSeconds}). Use 0 to return the view to the pool on the tick of death.");
 
+            if (feedback.DissolveSeconds > feedback.EnemyDeathSeconds)
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' dissolves for {feedback.DissolveSeconds} s, longer than an enemy " +
+                    $"view lives after death ({feedback.EnemyDeathSeconds} s). The pool would take the view back mid-dissolve.");
+
             _deathSeconds = feedback.EnemyDeathSeconds;
         }
 

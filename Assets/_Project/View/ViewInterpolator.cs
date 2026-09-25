@@ -7,12 +7,11 @@ namespace Game.View
     public sealed class ViewInterpolator : MonoBehaviour, IView
     {
         private const float TickSeconds = 1f / 60f;
-        private const float FallSeconds = 0.4f;
-        private const float FallDegrees = 90f;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int DissolveAmountId = Shader.PropertyToID("_DissolveAmount");
         private static readonly int DeathTriggerId = Animator.StringToHash("Death");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
@@ -23,14 +22,15 @@ namespace Game.View
         private float _lastSyncTime;
         private bool _hasPosition;
 
-        private Quaternion _rotation = Quaternion.identity;
-
         private Renderer[] _renderers;
+        private Material[][] _originalMaterials;
+        private Material[][] _dissolveMaterials;
         private Animator _animator;
-        private MaterialPropertyBlock _flashBlock;
+        private MaterialPropertyBlock _block;
         private bool _hasDeathTrigger;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
+        private float _dissolveSeconds;
         private Action<ViewInterpolator> _onRetired;
 
         private bool _isFlashing;
@@ -39,26 +39,49 @@ namespace Game.View
         private bool _isBlinking;
         private bool _renderersVisible = true;
 
-        private bool _isFalling;
-        private float _fallStartTime;
+        private bool _isDissolving;
+        private float _dissolveStartTime;
+        private float _dissolveAmount;
 
         private bool _isRetiring;
         private float _retireTime;
 
         public Transform Transform => transform;
 
-        internal void Configure(Animator animator, float hitFlashSeconds, float blinkSeconds, Action<ViewInterpolator> onRetired)
+        internal void Configure(
+            Animator animator,
+            float hitFlashSeconds,
+            float blinkSeconds,
+            float dissolveSeconds,
+            Func<Material, Material> dissolveMaterialFor,
+            Action<ViewInterpolator> onRetired)
         {
             _animator = animator;
             _renderers = GetComponentsInChildren<Renderer>(true);
-            _flashBlock = new MaterialPropertyBlock();
-            _flashBlock.SetColor(BaseColorId, FlashColor);
-            _flashBlock.SetColor(ColorId, FlashColor);
-            _flashBlock.SetColor(EmissionColorId, FlashEmission);
+            _block = new MaterialPropertyBlock();
             _hasDeathTrigger = HasTrigger(animator, DeathTriggerId);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
+            _dissolveSeconds = dissolveSeconds;
             _onRetired = onRetired;
+
+            if (_hasDeathTrigger)
+                return;
+
+            _originalMaterials = new Material[_renderers.Length][];
+            _dissolveMaterials = new Material[_renderers.Length][];
+
+            for (int index = 0; index < _renderers.Length; index++)
+            {
+                Material[] originals = _renderers[index].sharedMaterials;
+                Material[] dissolves = new Material[originals.Length];
+
+                for (int slot = 0; slot < originals.Length; slot++)
+                    dissolves[slot] = dissolveMaterialFor(originals[slot]);
+
+                _originalMaterials[index] = originals;
+                _dissolveMaterials[index] = dissolves;
+            }
         }
 
         public void SetPosition(Vector3 position)
@@ -90,20 +113,18 @@ namespace Game.View
 
         public void SetRotation(Quaternion rotation)
         {
-            _rotation = rotation;
-
-            transform.rotation = ResolveRotation();
+            transform.rotation = rotation;
         }
 
         public void PlayHit()
         {
-            if (_hitFlashSeconds <= 0f)
+            if (_hitFlashSeconds <= 0f || _isDissolving)
                 return;
 
             _isFlashing = true;
             _flashEndTime = Time.time + _hitFlashSeconds;
 
-            ApplyFlash(true);
+            ApplyBlock();
         }
 
         public void SetInvulnerable(bool value)
@@ -126,11 +147,16 @@ namespace Game.View
                 return;
             }
 
-            if (_isFalling)
+            if (_isDissolving)
                 return;
 
-            _isFalling = true;
-            _fallStartTime = Time.time;
+            _isFlashing = false;
+            _isDissolving = true;
+            _dissolveStartTime = Time.time;
+            _dissolveAmount = 0f;
+
+            SwapMaterials(_dissolveMaterials);
+            ApplyBlock();
         }
 
         internal void BeginRetire(float seconds)
@@ -143,15 +169,16 @@ namespace Game.View
 
         internal void ResetFeedback()
         {
-            if (_isFlashing)
-                ApplyFlash(false);
+            if (_isDissolving)
+                SwapMaterials(_originalMaterials);
 
             _isFlashing = false;
+            _isDissolving = false;
+            _dissolveAmount = 0f;
             _isBlinking = false;
-            _isFalling = false;
             _isRetiring = false;
-            _rotation = Quaternion.identity;
 
+            ApplyBlock();
             SetRenderersVisible(true);
         }
 
@@ -162,14 +189,18 @@ namespace Game.View
             if (_hasPosition)
                 transform.position = ResolvePosition();
 
-            if (_isFalling)
-                transform.rotation = ResolveRotation();
-
             if (_isFlashing && time >= _flashEndTime)
             {
                 _isFlashing = false;
 
-                ApplyFlash(false);
+                ApplyBlock();
+            }
+
+            if (_isDissolving && _dissolveAmount < 1f)
+            {
+                _dissolveAmount = _dissolveSeconds > 0f ? Mathf.Clamp01((time - _dissolveStartTime) / _dissolveSeconds) : 1f;
+
+                ApplyBlock();
             }
 
             if (_isBlinking && _blinkSeconds > 0f)
@@ -190,19 +221,39 @@ namespace Game.View
             return Vector3.Lerp(_previousPosition, _currentPosition, phase);
         }
 
-        private Quaternion ResolveRotation()
-        {
-            if (_isFalling == false)
-                return _rotation;
-
-            float progress = Mathf.Clamp01((Time.time - _fallStartTime) / FallSeconds);
-
-            return _rotation * Quaternion.Euler(-FallDegrees * progress * progress, 0f, 0f);
-        }
-
-        private void ApplyFlash(bool on)
+        private void ApplyBlock()
         {
             if (_renderers == null)
+                return;
+
+            _block.Clear();
+
+            if (_isFlashing)
+            {
+                _block.SetColor(BaseColorId, FlashColor);
+                _block.SetColor(ColorId, FlashColor);
+                _block.SetColor(EmissionColorId, FlashEmission);
+            }
+
+            if (_isDissolving)
+                _block.SetFloat(DissolveAmountId, _dissolveAmount);
+
+            MaterialPropertyBlock block = _isFlashing || _isDissolving ? _block : null;
+
+            for (int index = 0; index < _renderers.Length; index++)
+            {
+                Renderer target = _renderers[index];
+
+                if (target == null)
+                    continue;
+
+                target.SetPropertyBlock(block);
+            }
+        }
+
+        private void SwapMaterials(Material[][] materials)
+        {
+            if (materials == null)
                 return;
 
             for (int index = 0; index < _renderers.Length; index++)
@@ -212,7 +263,7 @@ namespace Game.View
                 if (target == null)
                     continue;
 
-                target.SetPropertyBlock(on ? _flashBlock : null);
+                target.sharedMaterials = materials[index];
             }
         }
 

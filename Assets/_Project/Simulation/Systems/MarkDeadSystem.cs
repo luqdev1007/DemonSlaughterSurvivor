@@ -38,6 +38,11 @@ namespace Game.Simulation.Systems
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative player death delay " +
                     $"({feedback.PlayerDeathDelaySeconds}). Use 0 to leave the run on the tick of death.");
 
+            if (feedback.DissolveSeconds > feedback.PlayerDeathDelaySeconds)
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' dissolves for {feedback.DissolveSeconds} s, longer than the " +
+                    $"player death delay ({feedback.PlayerDeathDelaySeconds} s). The run would end with the hero half dissolved.");
+
             _finishDelaySeconds = feedback.PlayerDeathDelaySeconds;
         }
 
