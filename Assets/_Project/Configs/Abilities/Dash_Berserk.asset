@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.DashAbilityConfig
   _id: ability.dash.berserk
   _distance: 10
-  _duration: 0.12
-  _cooldown: 1.2
+  _duration: 0.25
+  _cooldown: 1
   _direction: 0
-  _invulnerabilitySeconds: 0.3
+  _invulnerabilitySeconds: 0.25
   _pushSpeed: 5
   _pushSeconds: 0.6
