@@ -14,6 +14,8 @@ namespace Game.Core
 
         void SetInvulnerable(bool value);
 
+        void SetDashing(bool value);
+
         void PlayDeath();
 
         void Dissolve();

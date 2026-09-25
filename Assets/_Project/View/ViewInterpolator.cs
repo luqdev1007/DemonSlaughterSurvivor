@@ -13,6 +13,7 @@ namespace Game.View
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int DissolveAmountId = Shader.PropertyToID("_DissolveAmount");
         private static readonly int DeathTriggerId = Animator.StringToHash("Death");
+        private static readonly int IsDashingId = Animator.StringToHash("IsDashing");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -28,6 +29,8 @@ namespace Game.View
         private Animator _animator;
         private MaterialPropertyBlock _block;
         private bool _hasDeathTrigger;
+        private bool _hasDashingParameter;
+        private bool _isDashing;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
         private float _dissolveSeconds;
@@ -67,7 +70,8 @@ namespace Game.View
             _animator = animator;
             _renderers = GetComponentsInChildren<Renderer>(true);
             _block = new MaterialPropertyBlock();
-            _hasDeathTrigger = HasTrigger(animator, DeathTriggerId);
+            _hasDeathTrigger = HasParameter(animator, DeathTriggerId, AnimatorControllerParameterType.Trigger);
+            _hasDashingParameter = HasParameter(animator, IsDashingId, AnimatorControllerParameterType.Bool);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -129,6 +133,16 @@ namespace Game.View
                 SetRenderersVisible(true);
         }
 
+        public void SetDashing(bool value)
+        {
+            if (_hasDashingParameter == false || _isDashing == value)
+                return;
+
+            _isDashing = value;
+
+            _animator.SetBool(IsDashingId, value);
+        }
+
         public void PlayDeath()
         {
             if (_hasDeathTrigger == false)
@@ -181,6 +195,7 @@ namespace Game.View
             _isDissolving = false;
             _dissolveAmount = 0f;
             _isBlinking = false;
+            _isDashing = false;
             _isRetiring = false;
             _isKnockedBack = false;
             _isAirborne = false;
@@ -350,7 +365,7 @@ namespace Game.View
             }
         }
 
-        private static bool HasTrigger(Animator animator, int id)
+        private static bool HasParameter(Animator animator, int id, AnimatorControllerParameterType type)
         {
             if (animator == null || animator.runtimeAnimatorController == null)
                 return false;
@@ -359,7 +374,7 @@ namespace Game.View
 
             for (int index = 0; index < parameters.Length; index++)
             {
-                if (parameters[index].nameHash == id && parameters[index].type == AnimatorControllerParameterType.Trigger)
+                if (parameters[index].nameHash == id && parameters[index].type == type)
                     return true;
             }
 
