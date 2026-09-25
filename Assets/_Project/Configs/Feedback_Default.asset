@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.FeedbackConfig
   _id: feedback.default
   _hitFlashSeconds: 0
-  _invulnerabilityBlinkSeconds: 0.1
+  _invulnerabilityBlinkSeconds: 0
   _enemyDeathSeconds: 2
   _playerDeathDelaySeconds: 1.5
   _dissolveSeconds: 0.8
