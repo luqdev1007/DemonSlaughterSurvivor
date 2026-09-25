@@ -13,9 +13,15 @@ MonoBehaviour:
   m_Name: Feedback_Default
   m_EditorClassIdentifier: Game.Configs::Game.Configs.FeedbackConfig
   _id: feedback.default
-  _hitFlashSeconds: 0.1
+  _hitFlashSeconds: 0
   _invulnerabilityBlinkSeconds: 0.1
-  _enemyDeathSeconds: 1
+  _enemyDeathSeconds: 2
   _playerDeathDelaySeconds: 1.5
   _dissolveSeconds: 0.8
   _dissolveMaterial: {fileID: 2100000, guid: 16098906d1c754641bb152973c5e7853, type: 2}
+  _knockbackSpeed: 6
+  _knockbackUpSpeed: 3
+  _knockbackSpeedJitter: 0.3
+  _knockbackAngleJitterDegrees: 20
+  _knockbackGravity: 20
+  _knockbackFriction: 12

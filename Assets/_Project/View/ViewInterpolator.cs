@@ -31,6 +31,7 @@ namespace Game.View
         private float _hitFlashSeconds;
         private float _blinkSeconds;
         private float _dissolveSeconds;
+        private Func<Material, Material> _dissolveMaterialFor;
         private Action<ViewInterpolator> _onRetired;
 
         private bool _isFlashing;
@@ -45,6 +46,13 @@ namespace Game.View
 
         private bool _isRetiring;
         private float _retireTime;
+
+        private bool _isKnockedBack;
+        private bool _isAirborne;
+        private Vector3 _knockbackVelocity;
+        private Vector3 _knockbackOffset;
+        private float _knockbackGravity;
+        private float _knockbackFriction;
 
         public Transform Transform => transform;
 
@@ -63,25 +71,8 @@ namespace Game.View
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
+            _dissolveMaterialFor = dissolveMaterialFor;
             _onRetired = onRetired;
-
-            if (_hasDeathTrigger)
-                return;
-
-            _originalMaterials = new Material[_renderers.Length][];
-            _dissolveMaterials = new Material[_renderers.Length][];
-
-            for (int index = 0; index < _renderers.Length; index++)
-            {
-                Material[] originals = _renderers[index].sharedMaterials;
-                Material[] dissolves = new Material[originals.Length];
-
-                for (int slot = 0; slot < originals.Length; slot++)
-                    dissolves[slot] = dissolveMaterialFor(originals[slot]);
-
-                _originalMaterials[index] = originals;
-                _dissolveMaterials[index] = dissolves;
-            }
         }
 
         public void SetPosition(Vector3 position)
@@ -140,15 +131,19 @@ namespace Game.View
 
         public void PlayDeath()
         {
-            if (_hasDeathTrigger)
-            {
-                _animator.SetTrigger(DeathTriggerId);
-
+            if (_hasDeathTrigger == false)
                 return;
-            }
 
-            if (_isDissolving)
+            _animator.SetTrigger(DeathTriggerId);
+        }
+
+        public void Dissolve()
+        {
+            if (_isDissolving || _dissolveMaterialFor == null)
                 return;
+
+            if (_dissolveMaterials == null)
+                BuildDissolveMaterials();
 
             _isFlashing = false;
             _isDissolving = true;
@@ -159,12 +154,22 @@ namespace Game.View
             ApplyBlock();
         }
 
-        internal void BeginRetire(float seconds)
+        internal void BeginRetire(float seconds, Vector3 knockbackVelocity, float gravity, float friction)
         {
             _isRetiring = true;
             _retireTime = Time.time + seconds;
 
             PlayDeath();
+
+            if (knockbackVelocity == Vector3.zero)
+                return;
+
+            _isKnockedBack = true;
+            _isAirborne = knockbackVelocity.y > 0f;
+            _knockbackVelocity = knockbackVelocity;
+            _knockbackOffset = Vector3.zero;
+            _knockbackGravity = gravity;
+            _knockbackFriction = friction;
         }
 
         internal void ResetFeedback()
@@ -177,6 +182,10 @@ namespace Game.View
             _dissolveAmount = 0f;
             _isBlinking = false;
             _isRetiring = false;
+            _isKnockedBack = false;
+            _isAirborne = false;
+            _knockbackVelocity = Vector3.zero;
+            _knockbackOffset = Vector3.zero;
 
             ApplyBlock();
             SetRenderersVisible(true);
@@ -186,8 +195,11 @@ namespace Game.View
         {
             float time = Time.time;
 
+            if (_isKnockedBack)
+                AdvanceKnockback(Time.deltaTime);
+
             if (_hasPosition)
-                transform.position = ResolvePosition();
+                transform.position = ResolvePosition() + _knockbackOffset;
 
             if (_isFlashing && time >= _flashEndTime)
             {
@@ -214,11 +226,61 @@ namespace Game.View
             }
         }
 
+        private void AdvanceKnockback(float deltaTime)
+        {
+            if (_isAirborne)
+            {
+                _knockbackVelocity.y -= _knockbackGravity * deltaTime;
+                _knockbackOffset += _knockbackVelocity * deltaTime;
+
+                if (_knockbackOffset.y > 0f || _knockbackVelocity.y > 0f)
+                    return;
+
+                _knockbackOffset.y = 0f;
+                _knockbackVelocity.y = 0f;
+                _isAirborne = false;
+
+                return;
+            }
+
+            float speed = _knockbackVelocity.magnitude;
+            float slowdown = _knockbackFriction * deltaTime;
+
+            if (speed <= slowdown)
+            {
+                _knockbackVelocity = Vector3.zero;
+                _isKnockedBack = false;
+
+                return;
+            }
+
+            _knockbackVelocity *= (speed - slowdown) / speed;
+            _knockbackOffset += _knockbackVelocity * deltaTime;
+        }
+
         private Vector3 ResolvePosition()
         {
             float phase = Mathf.Clamp01((Time.time - _lastSyncTime) / TickSeconds);
 
             return Vector3.Lerp(_previousPosition, _currentPosition, phase);
+        }
+
+        private void BuildDissolveMaterials()
+        {
+            _originalMaterials = new Material[_renderers.Length][];
+            _dissolveMaterials = new Material[_renderers.Length][];
+
+            for (int index = 0; index < _renderers.Length; index++)
+            {
+                Material[] originals = _renderers[index].sharedMaterials;
+                Material[] dissolves = new Material[originals.Length];
+
+                for (int slot = 0; slot < originals.Length; slot++)
+                    dissolves[slot] = _dissolveMaterialFor(originals[slot]);
+
+                _originalMaterials[index] = originals;
+                _dissolveMaterials[index] = dissolves;
+            }
         }
 
         private void ApplyBlock()

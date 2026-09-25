@@ -31,6 +31,14 @@ namespace Game.View
         private readonly Material _dissolveTemplate;
         private readonly Action<ViewInterpolator> _onRetired;
         private readonly Func<Material, Material> _dissolveMaterialFor;
+        private readonly System.Random _random = new System.Random();
+
+        private readonly float _knockbackSpeed;
+        private readonly float _knockbackUpSpeed;
+        private readonly float _knockbackSpeedJitter;
+        private readonly float _knockbackAngleJitterDegrees;
+        private readonly float _knockbackGravity;
+        private readonly float _knockbackFriction;
 
         private bool _disposed;
 
@@ -54,7 +62,18 @@ namespace Game.View
             if (feedback.DissolveMaterial == null)
                 throw new InvalidOperationException(
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has no dissolve material assigned. " +
-                    "Views without a Death animation dissolve with a copy of it.");
+                    "The hero dissolves with a copy of it on death.");
+
+            if (feedback.KnockbackSpeed < 0f || feedback.KnockbackUpSpeed < 0f || feedback.KnockbackSpeedJitter < 0f ||
+                feedback.KnockbackSpeedJitter >= 1f || feedback.KnockbackAngleJitterDegrees < 0f || feedback.KnockbackFriction < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' has an invalid death knockback: speeds, angle jitter and friction " +
+                    "must not be negative, and speed jitter must be in [0, 1). Set both speeds to zero to switch the knockback off.");
+
+            if (feedback.KnockbackUpSpeed > 0f && feedback.KnockbackGravity <= 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' throws corpses up at {feedback.KnockbackUpSpeed} m/s " +
+                    $"with a gravity of {feedback.KnockbackGravity}. Without a positive gravity they never land.");
 
             _hitFlashSeconds = feedback.HitFlashSeconds;
             _blinkSeconds = feedback.InvulnerabilityBlinkSeconds;
@@ -62,6 +81,12 @@ namespace Game.View
             _dissolveTemplate = feedback.DissolveMaterial;
             _onRetired = CompleteRetire;
             _dissolveMaterialFor = DissolveMaterialFor;
+            _knockbackSpeed = feedback.KnockbackSpeed;
+            _knockbackUpSpeed = feedback.KnockbackUpSpeed;
+            _knockbackSpeedJitter = feedback.KnockbackSpeedJitter;
+            _knockbackAngleJitterDegrees = feedback.KnockbackAngleJitterDegrees;
+            _knockbackGravity = feedback.KnockbackGravity;
+            _knockbackFriction = feedback.KnockbackFriction;
         }
 
         public IView Create(GameObject prefab, Vector3 position)
@@ -100,7 +125,7 @@ namespace Game.View
             Return(entry);
         }
 
-        public void Retire(IView view, float seconds)
+        public void Retire(IView view, float seconds, Vector3 knockbackDirection)
         {
             if (_disposed)
                 return;
@@ -116,7 +141,7 @@ namespace Game.View
 
             _retiring.Add(entry.View.GetInstanceID());
 
-            entry.View.BeginRetire(seconds);
+            entry.View.BeginRetire(seconds, ResolveKnockbackVelocity(knockbackDirection), _knockbackGravity, _knockbackFriction);
         }
 
         public void Dispose()
@@ -231,6 +256,26 @@ namespace Game.View
             _all.Add(entry);
 
             return entry;
+        }
+
+        private Vector3 ResolveKnockbackVelocity(Vector3 direction)
+        {
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude < 1e-8f)
+                return Vector3.zero;
+
+            float angle = Spread(_knockbackAngleJitterDegrees);
+            float scale = 1f + Spread(_knockbackSpeedJitter);
+
+            Vector3 horizontal = Quaternion.AngleAxis(angle, Vector3.up) * direction.normalized * (_knockbackSpeed * scale);
+
+            return new Vector3(horizontal.x, _knockbackUpSpeed * scale, horizontal.z);
+        }
+
+        private float Spread(float amplitude)
+        {
+            return ((float)_random.NextDouble() * 2f - 1f) * amplitude;
         }
 
         private Material DissolveMaterialFor(Material source)

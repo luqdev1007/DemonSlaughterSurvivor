@@ -8,6 +8,6 @@ namespace Game.Core
 
         void Release(IView view);
 
-        void Retire(IView view, float seconds);
+        void Retire(IView view, float seconds, Vector3 knockbackDirection);
     }
 }

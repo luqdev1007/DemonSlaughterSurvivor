@@ -238,6 +238,13 @@ namespace Game.Configs
                     $"{nameof(EnemyConfig)} '{enemy.Id}' has no view prefab assigned " +
                     $"(wave {waveIndex}, {kind} entry {entryIndex}).");
 
+            if (enemy.MaxHealth <= 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' has {nameof(EnemyConfig.MaxHealth)} {enemy.MaxHealth}, " +
+                    $"which is not above zero (wave {waveIndex}, {kind} entry {entryIndex}). " +
+                    "Such an enemy is born dead: it is marked dead on its first tick without any blow, " +
+                    "so it dies without a killing blow and without a knockback, and never reaches the player.");
+
             if (enemy.BodyRadius < 0f)
                 throw new InvalidOperationException(
                     $"{nameof(EnemyConfig)} '{enemy.Id}' has a negative {nameof(EnemyConfig.BodyRadius)} " +

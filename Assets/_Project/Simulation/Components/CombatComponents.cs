@@ -24,8 +24,11 @@ namespace Game.Simulation.Components
     {
         public EcsPackedEntity Target;
         public EcsPackedEntity Source;
+        public Vector3 SourcePosition;
         public float Amount;
     }
+
+    public struct KillingBlow { public Vector3 SourcePosition; }
 
     public struct DamageApplied { }
 

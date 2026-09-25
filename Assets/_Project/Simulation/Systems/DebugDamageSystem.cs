@@ -46,6 +46,7 @@ namespace Game.Simulation.Systems
                     ref DamageEvent damageEvent = ref _damageEvents.Value.Add(entity);
                     damageEvent.Target = world.PackEntity(target);
                     damageEvent.Source = world.PackEntity(source);
+                    damageEvent.SourcePosition = sourcePosition.Value;
                     damageEvent.Amount = Damage;
                 }
 

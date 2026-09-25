@@ -21,6 +21,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Invulnerable> _invulnerables = default;
         private readonly EcsPoolInject<HitInvulnerability> _hitInvulnerabilities = default;
         private readonly EcsPoolInject<DamageApplied> _applied = default;
+        private readonly EcsPoolInject<KillingBlow> _killingBlows = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -74,9 +75,17 @@ namespace Game.Simulation.Systems
                 ref DamageEvent damageEvent = ref _damageEvents.Value.Get(pair.Value);
                 ref Health health = ref _healths.Value.Get(pair.Key);
 
+                bool wasAlive = health.Current > 0f;
+
                 health.Current -= damageEvent.Amount;
 
                 _applied.Value.Add(pair.Value);
+
+                if (wasAlive && health.Current <= 0f && _killingBlows.Value.Has(pair.Key) == false)
+                {
+                    ref KillingBlow killingBlow = ref _killingBlows.Value.Add(pair.Key);
+                    killingBlow.SourcePosition = damageEvent.SourcePosition;
+                }
 
                 GrantInvulnerability(pair.Key, delta);
             }

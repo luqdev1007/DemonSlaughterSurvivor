@@ -6,7 +6,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class PlayDeathFeedbackSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<DiedEvent, View>> _filter = default;
+        private readonly EcsFilterInject<Inc<Player, DiedEvent, View>> _filter = default;
 
         private readonly EcsPoolInject<View> _views = default;
 
@@ -19,7 +19,7 @@ namespace Game.Simulation.Systems
                 if (view.Value == null)
                     continue;
 
-                view.Value.PlayDeath();
+                view.Value.Dissolve();
             }
         }
     }

@@ -4,16 +4,22 @@ using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
+using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
     public sealed class ReapDeadEnemiesSystem : IEcsInitSystem, IEcsRunSystem
     {
+        private const float MinDirectionSqr = 1e-8f;
+
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Enemy, Dead>> _filter = default;
 
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<Position> _positions = default;
+        private readonly EcsPoolInject<Facing> _facings = default;
+        private readonly EcsPoolInject<KillingBlow> _killingBlows = default;
 
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -33,11 +39,6 @@ namespace Game.Simulation.Systems
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative enemy death duration " +
                     $"({feedback.EnemyDeathSeconds}). Use 0 to return the view to the pool on the tick of death.");
 
-            if (feedback.DissolveSeconds > feedback.EnemyDeathSeconds)
-                throw new InvalidOperationException(
-                    $"{nameof(FeedbackConfig)} '{feedback.Id}' dissolves for {feedback.DissolveSeconds} s, longer than an enemy " +
-                    $"view lives after death ({feedback.EnemyDeathSeconds} s). The pool would take the view back mid-dissolve.");
-
             _deathSeconds = feedback.EnemyDeathSeconds;
         }
 
@@ -51,13 +52,38 @@ namespace Game.Simulation.Systems
                 {
                     ref View view = ref _views.Value.Get(entity);
 
-                    _viewFactory.Value.Retire(view.Value, _deathSeconds);
+                    _viewFactory.Value.Retire(view.Value, _deathSeconds, ResolveKnockbackDirection(entity));
 
                     view.Value = null;
                 }
 
                 world.DelEntity(entity);
             }
+        }
+
+        private Vector3 ResolveKnockbackDirection(int entity)
+        {
+            if (_killingBlows.Value.Has(entity) == false || _positions.Value.Has(entity) == false)
+                return Vector3.zero;
+
+            ref KillingBlow killingBlow = ref _killingBlows.Value.Get(entity);
+            ref Position position = ref _positions.Value.Get(entity);
+
+            Vector3 away = position.Value - killingBlow.SourcePosition;
+            away.y = 0f;
+
+            if (away.sqrMagnitude > MinDirectionSqr)
+                return away.normalized;
+
+            if (_facings.Value.Has(entity) == false)
+                return Vector3.zero;
+
+            ref Facing facing = ref _facings.Value.Get(entity);
+
+            Vector3 backwards = -facing.Value;
+            backwards.y = 0f;
+
+            return backwards.sqrMagnitude > MinDirectionSqr ? backwards.normalized : Vector3.zero;
         }
     }
 }
