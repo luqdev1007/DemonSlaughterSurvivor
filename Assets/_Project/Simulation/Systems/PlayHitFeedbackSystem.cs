@@ -12,6 +12,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<Player> _players = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -22,6 +23,9 @@ namespace Game.Simulation.Systems
                 ref DamageEvent damageEvent = ref _damageEvents.Value.Get(entity);
 
                 if (damageEvent.Target.Unpack(world, out int target) == false)
+                    continue;
+
+                if (_players.Value.Has(target))
                     continue;
 
                 if (_views.Value.Has(target) == false)
