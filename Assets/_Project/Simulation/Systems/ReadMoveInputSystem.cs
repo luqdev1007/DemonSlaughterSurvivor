@@ -9,7 +9,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class ReadMoveInputSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<Player, MoveIntent>> _filter = default;
+        private readonly EcsFilterInject<Inc<Player, MoveIntent>, Exc<Dead>> _filter = default;
         private readonly EcsCustomInject<IInputService> _input = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
 

@@ -26,4 +26,10 @@ namespace Game.Simulation.Components
         public EcsPackedEntity Source;
         public float Amount;
     }
+
+    public struct DamageApplied { }
+
+    public struct DiedEvent { }
+
+    public struct PendingFinish { public int RemainingTicks; }
 }

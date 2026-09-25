@@ -25,6 +25,7 @@ namespace Game.Bootstrap
         private readonly IContentRegistry _registry;
         private readonly IViewFactory _viewFactory;
         private readonly ICameraService _cameraService;
+        private readonly IPlayerVitalsSink _vitalsSink;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
@@ -45,6 +46,7 @@ namespace Game.Bootstrap
             IContentRegistry registry,
             IViewFactory viewFactory,
             ICameraService cameraService,
+            IPlayerVitalsSink vitalsSink,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
@@ -57,6 +59,7 @@ namespace Game.Bootstrap
             _registry = registry;
             _viewFactory = viewFactory;
             _cameraService = cameraService;
+            _vitalsSink = vitalsSink;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -82,7 +85,8 @@ namespace Game.Bootstrap
                 _inputConfig,
                 _spatialGrid,
                 _outcome,
-                _debugDamageInput
+                _debugDamageInput,
+                _vitalsSink
                 );
 
             _systems.Init();

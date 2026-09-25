@@ -42,11 +42,16 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyDamageSystem());
             // 10. Death
             systems.Add(new MarkDeadSystem());
+            systems.Add(new TickPendingFinishSystem());
             systems.Add(new FinishRunOnPlayerDeathSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
+            systems.Add(new PlayHitFeedbackSystem());
+            systems.Add(new PlayDeathFeedbackSystem());
+            systems.Add(new SyncInvulnerabilityViewSystem());
+            systems.Add(new PublishPlayerVitalsSystem());
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup
             systems.Add(new CleanupEventsSystem());

@@ -9,5 +9,11 @@ namespace Game.Core
         void SetPosition(Vector3 position);
 
         void SetRotation(Quaternion rotation);
+
+        void PlayHit();
+
+        void SetInvulnerable(bool value);
+
+        void PlayDeath();
     }
 }

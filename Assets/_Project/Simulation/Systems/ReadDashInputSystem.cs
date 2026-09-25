@@ -7,7 +7,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class ReadDashInputSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<Player>> _filter = default;
+        private readonly EcsFilterInject<Inc<Player>, Exc<Dead>> _filter = default;
 
         private readonly EcsPoolInject<DashRequest> _requests = default;
 

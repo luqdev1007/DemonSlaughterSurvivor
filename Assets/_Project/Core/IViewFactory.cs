@@ -7,5 +7,7 @@ namespace Game.Core
         IView Create(GameObject prefab, Vector3 position);
 
         void Release(IView view);
+
+        void Retire(IView view, float seconds);
     }
 }

@@ -9,6 +9,9 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<DamageEvent>> _damageEvents = default;
+        private readonly EcsFilterInject<Inc<DiedEvent>> _diedEvents = default;
+
+        private readonly EcsPoolInject<DiedEvent> _diedEventPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -16,6 +19,9 @@ namespace Game.Simulation.Systems
 
             foreach (int entity in _damageEvents.Value)
                 world.DelEntity(entity);
+
+            foreach (int entity in _diedEvents.Value)
+                _diedEventPool.Value.Del(entity);
         }
     }
 }

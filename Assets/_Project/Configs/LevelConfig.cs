@@ -20,6 +20,10 @@ namespace Game.Configs
         [Header("Waves")]
         [SerializeField] private WaveTimelineConfig _waves;
 
+        [Header("Feedback")]
+        [SerializeField] private FeedbackConfig _feedback;
+        [SerializeField] private GameObject _hudPrefab;
+
         public string SceneName => _sceneName;
 
         public GameObject CameraRigPrefab => _cameraRigPrefab;
@@ -35,5 +39,9 @@ namespace Game.Configs
         public float SpatialCellSize => _spatialCellSize;
 
         public WaveTimelineConfig Waves => _waves;
+
+        public FeedbackConfig Feedback => _feedback;
+
+        public GameObject HudPrefab => _hudPrefab;
     }
 }
