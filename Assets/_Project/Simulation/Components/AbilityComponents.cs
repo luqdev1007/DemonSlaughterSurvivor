@@ -21,6 +21,7 @@ namespace Game.Simulation.Components
         public float Distance;
         public float Duration;
         public float Cooldown;
+        public float CooldownBase;
         public DashDirection Direction;
         public float AccelerationPower;
         public float InvulnerabilitySeconds;

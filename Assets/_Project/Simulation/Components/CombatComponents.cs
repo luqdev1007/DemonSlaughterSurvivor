@@ -5,11 +5,11 @@ namespace Game.Simulation.Components
 {
     public struct Health { public float Current; }
 
-    public struct MaxHealth { public float Value; }
+    public struct MaxHealth { public float Value; public float Base; }
 
     public struct HitInvulnerability { public float Seconds; }
 
-    public struct ContactDamage { public float Value; }
+    public struct ContactDamage { public float Value; public float Base; }
 
     public struct Invulnerable { public int RemainingTicks; }
 
