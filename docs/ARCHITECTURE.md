@@ -278,6 +278,8 @@ Assets/
     UI/               экраны, HUD, презентеры
     Meta/             сейвы, мета-прокачка, инвентарь, стори-прогресс
     Editor/           редакторные инструменты, в билд не попадают
+    Tests/
+      Simulation/     EditMode-тесты `Game.Simulation`, в билд не попадают
     Art/ Audio/ Prefabs/ Scenes/
 ```
 
@@ -301,6 +303,9 @@ Game.UI           → Core, Configs
 Game.Meta         → Core, Configs
 Game.Bootstrap    → всё вышеперечисленное
 Game.Editor       → (нет зависимостей), includePlatforms: Editor
+Game.Simulation.Tests → Simulation, Core, Configs, Leopotam.EcsLite,
+                    UnityEngine/UnityEditor.TestRunner, nunit.framework.dll;
+                    includePlatforms: Editor
 ```
 
 `Game.Simulation` не зависит от `Game.View` и `Game.UI`.
@@ -320,6 +325,8 @@ Game.Editor       → (нет зависимостей), includePlatforms: Edito
 **`Game.Simulation` компилируется с `overrideReferences: true` и пустым `precompiledReferences`.** Список ссылок asmdef не управляет precompiled-библиотеками: dll вне asmdef (пакеты NuGet в `Assets/Packages`) автоматически видны всем сборкам проекта. Без этого флага `using R3;` внутри ECS-системы компилируется, и запрет из `CLAUDE.md` §7 держится дисциплиной, а не компилятором.
 
 **Объекты на сцене инжектятся сценовым `LifetimeScope`.** Проектный корень живёт префабом в `DontDestroyOnLoad` и объекты загружаемых сцен не видит. Сцена, которой нужны сервисы, кладёт собственный `LifetimeScope`: родителя ему не указывают — VContainer сам находит корневой скоуп, — а её `MonoBehaviour` регистрируются `RegisterComponentInHierarchy<T>()`, который ищет только в сцене своего скоупа и форсирует резолв при построении контейнера. Значит инъекция происходит до первого кадра, а отсутствующий компонент падает сразу, а не `null`-ом по первому обращению.
+
+**`Game.Simulation.Tests` — десятая сборка, EditMode-тесты симуляции** (2026-09-26, шаг 5 блок 1). Лежит в `Tests/Simulation/`, а не внутри `Simulation/`: вложенный asmdef забрал бы соседние папки из-под `Game.Simulation` незаметно. `includePlatforms: ["Editor"]` и `defineConstraints: ["UNITY_INCLUDE_TESTS"]` — форма шаблона Test Framework 1.6.0 (его же образцы в `Samples~`). NUnit приходит как precompiled `nunit.framework.dll` из `com.unity.ext.nunit` 2.0.3 с `isExplicitlyReferenced: 0`, то есть без флага он виден всем сборкам без `overrideReferences`; тестовая сборка ставит `overrideReferences: true` и называет его явно. **Граница `Game.Simulation` от этого не меняется:** проверено компиляцией, `using R3;` и `using NUnit.Framework;` внутри неё оба дают `CS0246`. В player-билд сборка не попадает — проверено пробным билдом: в `Managed` семь `Game.*` и ни одной тестовой dll.
 
 `autoReferenced: false` у всех сборок проекта: `Assembly-CSharp` в проекте не используется, и забытый вне asmdef скрипт должен падать с ошибкой, а не молча компилироваться.
 

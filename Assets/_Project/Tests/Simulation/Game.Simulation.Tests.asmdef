@@ -1,0 +1,27 @@
+{
+    "name": "Game.Simulation.Tests",
+    "rootNamespace": "Game.Simulation.Tests",
+    "references": [
+        "GUID:eb2b95fbfb1f43343bf6a4eaa6b5245e",
+        "GUID:d8736e7cd172166448a7dce4a1836224",
+        "GUID:fe2eb48c0d24d974687db78c2941b844",
+        "GUID:e59bf9fc7d5a44b18a819a92edd46163",
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
