@@ -18,6 +18,8 @@ namespace Game.Bootstrap
 
             builder.Register<DebugDamageInput>(Lifetime.Scoped).As<IDebugDamageInput>();
 
+            builder.Register<DebugStatInput>(Lifetime.Scoped).As<IDebugStatInput>();
+
             builder.Register<ViewPool>(Lifetime.Scoped).As<IViewFactory>();
 
             builder.Register<CameraService>(Lifetime.Scoped).As<ICameraService>();

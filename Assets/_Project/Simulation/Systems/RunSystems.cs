@@ -34,6 +34,7 @@ namespace Game.Simulation.Systems
             systems.Add(new MoveSystem());
             // 6.  Weapons
             systems.Add(new DebugDamageSystem());
+            systems.Add(new DebugStatModifierSystem());
             // 7.  AttackLifetime
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
