@@ -45,7 +45,9 @@ namespace Game.Simulation.Systems
                 dashing.TotalTicks = ticks;
                 dashing.AccelerationPower = stats.AccelerationPower;
 
-                Invulnerability.Grant(_invulnerables.Value, entity, Mathf.Max(1, Mathf.RoundToInt(stats.InvulnerabilitySeconds / delta)));
+                int protectedTicks = Mathf.Max(1, Mathf.RoundToInt(stats.InvulnerabilitySeconds / delta));
+
+                Invulnerability.Grant(_invulnerables.Value, entity, protectedTicks + Invulnerability.TicksSpentBeforeDamage);
 
                 _requests.Value.Del(entity);
             }

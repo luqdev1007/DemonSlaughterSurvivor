@@ -131,6 +131,8 @@ BaseStat (CharacterConfig)
 
 **Неуязвимость — один механизм.** I-frames от рывка и i-frames после получения урона — один компонент, не два параллельных. С 2026-09-24 выдающих двое (`StartDashSystem` и `ApplyDamageSystem`), поэтому правило слияния — **по максимуму** — живёт в одном месте (`Services/Invulnerability`), а не копируется: сумма дала бы бессмертие на цепочке рывков, перезапись позволила бы короткому источнику срезать длинный.
 
+**Источник, выдающий `Invulnerable` до группы 9, прибавляет один тик к желаемой длительности защиты** (`Invulnerability.TicksSpentBeforeDamage`, с 2026-09-26). `TickInvulnerabilitySystem` списывает тик в группе 9 **до** `ApplyDamageSystem`, поэтому выданное в группе 2 уже в этом же тике теряет единицу, и N выданных тиков защищают N − 1. Источники, выдающие неуязвимость в самой группе 9 после тикера (удар в `ApplyDamageSystem`), это не касается: их первый списанный тик — следующий. Сегодня правило применяет `StartDashSystem`. На него же обязаны опереться ульта берсерка (шаг 6) и артефакт. Регрессионный тест — `DashInvulnerabilityTests`.
+
 **Композиция эффектов сегодня хардкод, а не данные.** Рывок берсерка — это `Dash(Forward)` + `Invulnerable` + `PushAway`, и все три эффекта уже существуют компонентами и системами, но связывает их код `StartDashSystem`, а не `AbilityDefinition`. Это граница шага 6: **что исполняет — системы, и они не изменятся; что композирует — переедет из кода в данные.**
 
 **Ресурсы ульты** — общий компонент `UltimateCharge` и разные системы-накопители на персонажа:
@@ -303,7 +305,7 @@ Game.UI           → Core, Configs
 Game.Meta         → Core, Configs
 Game.Bootstrap    → всё вышеперечисленное
 Game.Editor       → (нет зависимостей), includePlatforms: Editor
-Game.Simulation.Tests → Simulation, Core, Configs, Leopotam.EcsLite,
+Game.Simulation.Tests → Simulation, Core, Configs, Leopotam.EcsLite(.Di),
                     UnityEngine/UnityEditor.TestRunner, nunit.framework.dll;
                     includePlatforms: Editor
 ```
