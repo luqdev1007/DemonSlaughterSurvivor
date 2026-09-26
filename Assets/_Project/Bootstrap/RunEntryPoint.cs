@@ -32,6 +32,7 @@ namespace Game.Bootstrap
         private EcsWorld _world;
         private IEcsSystems _systems;
         private SpatialGrid _spatialGrid;
+        private StatModifiers _statModifiers;
 
         private float _accumulator;
         private bool _isFinishing;
@@ -72,6 +73,8 @@ namespace Game.Bootstrap
 
             _spatialGrid = new SpatialGrid(_world, _levelConfig.ArenaRadius, _levelConfig.SpatialCellSize);
 
+            _statModifiers = new StatModifiers(_world);
+
             _systems = RunSystems.Build(_world);
 
             _systems.Inject(
@@ -84,6 +87,7 @@ namespace Game.Bootstrap
                 _levelConfig,
                 _inputConfig,
                 _spatialGrid,
+                _statModifiers,
                 _outcome,
                 _debugDamageInput,
                 _vitalsSink
@@ -137,6 +141,7 @@ namespace Game.Bootstrap
             _world = null;
 
             _spatialGrid = null;
+            _statModifiers = null;
         }
     }
 }

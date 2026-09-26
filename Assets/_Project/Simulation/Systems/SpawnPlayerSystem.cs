@@ -1,9 +1,11 @@
 using Game.Configs;
 using Game.Core;
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Simulation.Systems
@@ -32,6 +34,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
+        private readonly EcsCustomInject<StatModifiers> _statModifiers = default;
 
         public void Init(IEcsSystems systems)
         {
@@ -57,6 +60,7 @@ namespace Game.Simulation.Systems
             facing.Value = Vector3.forward;
 
             ref MoveSpeed speed = ref _speeds.Value.Add(entity);
+            speed.Base = character.MoveSpeed;
             speed.Value = character.MoveSpeed;
 
             ref TurnSpeed turnSpeed = ref _turnSpeeds.Value.Add(entity);
@@ -66,6 +70,7 @@ namespace Game.Simulation.Systems
             bodyRadius.Value = character.BodyRadius;
 
             ref MaxHealth maxHealth = ref _maxHealths.Value.Add(entity);
+            maxHealth.Base = character.MaxHealth;
             maxHealth.Value = character.MaxHealth;
 
             ref Health health = ref _healths.Value.Add(entity);
@@ -77,6 +82,7 @@ namespace Game.Simulation.Systems
             ref DashStats dashStats = ref _dashStats.Value.Add(entity);
             dashStats.Distance = dash.Distance;
             dashStats.Duration = dash.Duration;
+            dashStats.CooldownBase = dash.Cooldown;
             dashStats.Cooldown = dash.Cooldown;
             dashStats.Direction = dash.Direction;
             dashStats.AccelerationPower = dash.AccelerationPower;
@@ -89,6 +95,19 @@ namespace Game.Simulation.Systems
 
             ref View view = ref _views.Value.Add(entity);
             view.Value = _viewFactory.Value.Create(character.ViewPrefab, StartPosition);
+
+            StatModifiers statModifiers = _statModifiers.Value;
+
+            IReadOnlyList<StatModifierSpec> startModifiers = _context.Value.StartModifiers;
+
+            for (int index = 0; index < startModifiers.Count; index++)
+            {
+                StatModifierSpec spec = startModifiers[index];
+
+                statModifiers.Add(entity, spec.Stat, spec.Op, spec.Value, spec.SourceId);
+            }
+
+            statModifiers.MarkDirty(entity);
         }
     }
 }

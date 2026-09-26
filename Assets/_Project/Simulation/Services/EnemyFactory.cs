@@ -10,6 +10,7 @@ namespace Game.Simulation.Services
     {
         private readonly EcsWorld _world;
         private readonly IViewFactory _viewFactory;
+        private readonly StatModifiers _statModifiers;
 
         private readonly EcsPool<Enemy> _enemies;
         private readonly EcsPool<Position> _positions;
@@ -26,10 +27,11 @@ namespace Game.Simulation.Services
         private readonly EcsPool<Separation> _separations;
         private readonly EcsPool<View> _views;
 
-        public EnemyFactory(EcsWorld world, IViewFactory viewFactory)
+        public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
             _world = world;
             _viewFactory = viewFactory;
+            _statModifiers = statModifiers;
 
             _enemies = world.GetPool<Enemy>();
             _positions = world.GetPool<Position>();
@@ -60,6 +62,7 @@ namespace Game.Simulation.Services
             facing.Value = Vector3.forward;
 
             ref MoveSpeed speed = ref _speeds.Add(entity);
+            speed.Base = config.MoveSpeed;
             speed.Value = config.MoveSpeed;
 
             ref TurnSpeed turnSpeed = ref _turnSpeeds.Add(entity);
@@ -69,9 +72,11 @@ namespace Game.Simulation.Services
             bodyRadius.Value = config.BodyRadius;
 
             ref ContactDamage contactDamage = ref _contactDamages.Add(entity);
+            contactDamage.Base = config.ContactDamage;
             contactDamage.Value = config.ContactDamage;
 
             ref MaxHealth maxHealth = ref _maxHealths.Add(entity);
+            maxHealth.Base = config.MaxHealth;
             maxHealth.Value = config.MaxHealth;
 
             ref Health health = ref _healths.Add(entity);
@@ -87,6 +92,8 @@ namespace Game.Simulation.Services
 
             ref View view = ref _views.Add(entity);
             view.Value = _viewFactory.Create(config.ViewPrefab, position);
+
+            _statModifiers.MarkDirty(entity);
 
             return entity;
         }

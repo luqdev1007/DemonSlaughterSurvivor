@@ -19,6 +19,7 @@ namespace Game.Simulation.Systems
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
             systems.Add(new SpawnWaveSystem());
+            systems.Add(new RecomputeStatsSystem());
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());
             systems.Add(new ChaseTargetSystem());
@@ -57,6 +58,7 @@ namespace Game.Simulation.Systems
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup
             systems.Add(new CleanupEventsSystem());
+            systems.Add(new SweepOrphanModifiersSystem());
             systems.Add(new RebuildSpatialGridSystem());
 
             return systems;

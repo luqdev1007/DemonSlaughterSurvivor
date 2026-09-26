@@ -51,7 +51,7 @@ namespace Game.Bootstrap
             {
                 Stop();
 
-                RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next());
+                RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next(), Array.Empty<StatModifierSpec>());
 
                 LevelConfig level = _content.Get<LevelConfig>(request.LevelId);
 

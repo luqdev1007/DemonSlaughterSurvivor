@@ -23,6 +23,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
+        private readonly EcsCustomInject<StatModifiers> _statModifiers = default;
 
         private RingSpawnPlacement _placement;
         private WeightedEnemyPicker _picker;
@@ -47,7 +48,7 @@ namespace Game.Simulation.Systems
             _placement = new RingSpawnPlacement();
             _picker = new WeightedEnemyPicker();
             _random = new SimulationRandom(_context.Value.Seed);
-            _factory = new EnemyFactory(world, _viewFactory.Value);
+            _factory = new EnemyFactory(world, _viewFactory.Value, _statModifiers.Value);
 
             _firedGuaranteed = new bool[WaveTimelineValidator.ResolveMaxGuaranteedCount(_timeline)];
             _timelineFinished = false;
