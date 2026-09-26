@@ -52,6 +52,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());
             systems.Add(new SyncDashViewSystem());
+            systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup

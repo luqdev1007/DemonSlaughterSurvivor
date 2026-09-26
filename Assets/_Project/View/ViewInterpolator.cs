@@ -14,6 +14,7 @@ namespace Game.View
         private static readonly int DissolveAmountId = Shader.PropertyToID("_DissolveAmount");
         private static readonly int DeathTriggerId = Animator.StringToHash("Death");
         private static readonly int IsDashingId = Animator.StringToHash("IsDashing");
+        private static readonly int IsRunningId = Animator.StringToHash("IsRunning");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -31,6 +32,8 @@ namespace Game.View
         private bool _hasDeathTrigger;
         private bool _hasDashingParameter;
         private bool _isDashing;
+        private bool _hasRunningParameter;
+        private bool _isRunning;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
         private float _dissolveSeconds;
@@ -72,6 +75,7 @@ namespace Game.View
             _block = new MaterialPropertyBlock();
             _hasDeathTrigger = HasParameter(animator, DeathTriggerId, AnimatorControllerParameterType.Trigger);
             _hasDashingParameter = HasParameter(animator, IsDashingId, AnimatorControllerParameterType.Bool);
+            _hasRunningParameter = HasParameter(animator, IsRunningId, AnimatorControllerParameterType.Bool);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -143,6 +147,16 @@ namespace Game.View
             _animator.SetBool(IsDashingId, value);
         }
 
+        public void SetRunning(bool value)
+        {
+            if (_hasRunningParameter == false || _isRunning == value)
+                return;
+
+            _isRunning = value;
+
+            _animator.SetBool(IsRunningId, value);
+        }
+
         public void PlayDeath()
         {
             if (_hasDeathTrigger == false)
@@ -196,6 +210,7 @@ namespace Game.View
             _dissolveAmount = 0f;
             _isBlinking = false;
             _isDashing = false;
+            _isRunning = false;
             _isRetiring = false;
             _isKnockedBack = false;
             _isAirborne = false;

@@ -16,6 +16,8 @@ namespace Game.Core
 
         void SetDashing(bool value);
 
+        void SetRunning(bool value);
+
         void PlayDeath();
 
         void Dissolve();
