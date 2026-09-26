@@ -5,6 +5,7 @@ using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
+using System.Globalization;
 using System.Text;
 
 namespace Game.Simulation.Systems
@@ -264,15 +265,20 @@ namespace Game.Simulation.Systems
                 if (modifier.Stat != StatId.MoveSpeed)
                     continue;
 
-                sources.Append($" '{modifier.SourceId}' {modifier.Op} {modifier.Value};");
+                sources.Append(FormattableString.Invariant($" '{modifier.SourceId}' {modifier.Op} {modifier.Value};"));
             }
 
-            string position = _positions.Value.Has(target) ? _positions.Value.Get(target).Value.ToString() : "<no position>";
+            string position = _positions.Value.Has(target) ? _positions.Value.Get(target).Value.ToString("F2", CultureInfo.InvariantCulture) : "<no position>";
+
+            string speedText = speed.Value.ToString(CultureInfo.InvariantCulture);
+            string baseText = speed.Base.ToString(CultureInfo.InvariantCulture);
+            string maxText = _maxEnemyMoveSpeed.ToString(CultureInfo.InvariantCulture);
+            string timeline = _level.Value.Waves == null ? "<none>" : _level.Value.Waves.Id;
 
             throw new InvalidOperationException(
-                $"Enemy entity {target} at {position} has a final {nameof(StatId.MoveSpeed)} of {speed.Value} " +
-                $"(base {speed.Base}), above the fastest enemy speed {_maxEnemyMoveSpeed} in {nameof(WaveTimelineConfig)} " +
-                $"'{(_level.Value.Waves == null ? "<none>" : _level.Value.Waves.Id)}'. Modifiers:{sources} " +
+                $"Enemy entity {target} at {position} has a final {nameof(StatId.MoveSpeed)} of {speedText} " +
+                $"(base {baseText}), above the fastest enemy speed {maxText} in {nameof(WaveTimelineConfig)} " +
+                $"'{timeline}'. Modifiers:{sources} " +
                 $"{nameof(DetectContactDamageSystem)} derives its spatial query slack from that fastest speed once at start, " +
                 "so a faster enemy can leave its cell unseen and deal no contact damage without any message. " +
                 "Either keep enemy speed modifiers at or below the timeline maximum, " +
