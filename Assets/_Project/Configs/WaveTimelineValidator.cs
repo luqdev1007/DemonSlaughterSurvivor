@@ -5,7 +5,7 @@ namespace Game.Configs
 {
     public static class WaveTimelineValidator
     {
-        public static void Validate(WaveTimelineConfig timeline, float spatialCellSize)
+        public static void Validate(WaveTimelineConfig timeline)
         {
             if (timeline == null)
                 return;
@@ -31,7 +31,7 @@ namespace Game.Configs
                 {
                     WeightedEnemy entry = weighted[entryIndex];
 
-                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, spatialCellSize, waveIndex, entryIndex, "weighted");
+                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "weighted");
                     ValidateWeight(timeline, entry, waveIndex, entryIndex);
                 }
 
@@ -41,7 +41,7 @@ namespace Game.Configs
                 {
                     GuaranteedSpawn entry = guaranteed[entryIndex];
 
-                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, spatialCellSize, waveIndex, entryIndex, "guaranteed");
+                    ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "guaranteed");
                     ValidateGuaranteed(timeline, entry, waveIndex, entryIndex);
                 }
             }
@@ -111,6 +111,47 @@ namespace Game.Configs
             return max;
         }
 
+        public static float ResolveMaxMoveSpeed(WaveTimelineConfig timeline)
+        {
+            if (timeline == null)
+                return 0f;
+
+            IReadOnlyList<Wave> waves = timeline.Waves;
+
+            if (waves == null)
+                return 0f;
+
+            float max = 0f;
+
+            for (int index = 0; index < waves.Count; index++)
+            {
+                Wave wave = waves[index];
+
+                if (wave == null)
+                    continue;
+
+                IReadOnlyList<WeightedEnemy> weighted = wave.Enemies;
+
+                for (int entryIndex = 0; entryIndex < weighted.Count; entryIndex++)
+                {
+                    WeightedEnemy entry = weighted[entryIndex];
+
+                    max = ResolveFasterSpeed(max, entry == null ? null : entry.Enemy);
+                }
+
+                IReadOnlyList<GuaranteedSpawn> guaranteed = wave.Guaranteed;
+
+                for (int entryIndex = 0; entryIndex < guaranteed.Count; entryIndex++)
+                {
+                    GuaranteedSpawn entry = guaranteed[entryIndex];
+
+                    max = ResolveFasterSpeed(max, entry == null ? null : entry.Enemy);
+                }
+            }
+
+            return max;
+        }
+
         public static int ResolveMaxLiveCap(WaveTimelineConfig timeline)
         {
             if (timeline == null)
@@ -141,6 +182,17 @@ namespace Game.Configs
 
             if (enemy.BodyRadius > max)
                 return enemy.BodyRadius;
+
+            return max;
+        }
+
+        private static float ResolveFasterSpeed(float max, EnemyConfig enemy)
+        {
+            if (enemy == null)
+                return max;
+
+            if (enemy.MoveSpeed > max)
+                return enemy.MoveSpeed;
 
             return max;
         }
@@ -223,7 +275,6 @@ namespace Game.Configs
         private static void ValidateEnemy(
             WaveTimelineConfig timeline,
             EnemyConfig enemy,
-            float spatialCellSize,
             int waveIndex,
             int entryIndex,
             string kind)
@@ -259,15 +310,6 @@ namespace Game.Configs
                     $"of {enemy.SeparationRadius} (wave {waveIndex}, {kind} entry {entryIndex}). " +
                     "A negative radius makes the neighbour query return nothing, which disables separation without any message. " +
                     $"Set {nameof(EnemyConfig.SeparationRadius)} to zero to disable separation on purpose.");
-
-            if (enemy.SeparationRadius > spatialCellSize)
-                throw new InvalidOperationException(
-                    $"{nameof(EnemyConfig)} '{enemy.Id}' has {nameof(EnemyConfig.SeparationRadius)} {enemy.SeparationRadius}, " +
-                    $"which is greater than {nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} {spatialCellSize} " +
-                    $"(wave {waveIndex}, {kind} entry {entryIndex}). " +
-                    "The spatial index walks one ring of cells around the center and rejects a query radius wider than one cell. " +
-                    $"Either raise {nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} in the level config " +
-                    $"or lower {nameof(EnemyConfig.SeparationRadius)} in the enemy config.");
 
             if (enemy.SeparationStrength < 0f || enemy.SeparationStrength >= 1f)
                 throw new InvalidOperationException(

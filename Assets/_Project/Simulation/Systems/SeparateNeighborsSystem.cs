@@ -14,6 +14,7 @@ namespace Game.Simulation.Systems
         private const float CoincidenceEpsilonSquared = 1e-6f;
         private const float MinimumPushLength = 1e-5f;
         private const float TieBreakAngleScale = 6.2831855f / 4294967296f;
+        private const float CandidateSlack = 0f;
 
         private readonly EcsFilterInject<Inc<Enemy, Position, MoveIntent, Separation>> _filter = default;
 
@@ -50,7 +51,7 @@ namespace Game.Simulation.Systems
 
                 ref Position position = ref _positions.Value.Get(entity);
 
-                grid.Query(position.Value, separation.Radius, _neighbors);
+                grid.Query(position.Value, separation.Radius, CandidateSlack, _neighbors);
 
                 float pushX = 0f;
                 float pushZ = 0f;

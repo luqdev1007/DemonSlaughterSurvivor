@@ -84,30 +84,37 @@ namespace Game.Simulation.Services
             _count++;
         }
 
-        public void Query(Vector3 center, float radius, List<int> result)
+        public void Query(Vector3 center, float radius, float candidateSlack, List<int> result)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
 
-            if (radius > _cellSize)
-                throw new InvalidOperationException(
-                    $"Spatial grid query radius {radius} is greater than cell size {_cellSize}. " +
-                    "The query walks one ring of cells around the center, which covers radius <= cellSize only; " +
-                    "a wider radius would silently drop entities. " +
-                    "Widen the walk to ceil(radius / cellSize) rings or raise the cell size in LevelConfig.");
+            if (float.IsNaN(radius) || radius < 0f)
+                throw new ArgumentOutOfRangeException(
+                    nameof(radius),
+                    radius,
+                    "Spatial grid query radius must be a non-negative number. " +
+                    "A negative or NaN radius matches nothing, so the caller would silently see an empty neighbourhood.");
+
+            if (float.IsNaN(candidateSlack) || candidateSlack < 0f)
+                throw new ArgumentOutOfRangeException(
+                    nameof(candidateSlack),
+                    candidateSlack,
+                    "Spatial grid candidate slack must be a non-negative number. " +
+                    "It is the largest distance a candidate may have moved since the last rebuild; " +
+                    "pass zero when no position was written after the rebuild.");
 
             result.Clear();
 
-            if (radius < 0f)
-                return;
+            int rings = ResolveRings(radius + candidateSlack);
 
             int centerColumn = ResolveCell(center.x, _minX, _columns);
             int centerRow = ResolveCell(center.z, _minZ, _rows);
 
-            int minColumn = Math.Max(centerColumn - 1, 0);
-            int maxColumn = Math.Min(centerColumn + 1, _columns - 1);
-            int minRow = Math.Max(centerRow - 1, 0);
-            int maxRow = Math.Min(centerRow + 1, _rows - 1);
+            int minColumn = Math.Max(centerColumn - rings, 0);
+            int maxColumn = Math.Min(centerColumn + rings, _columns - 1);
+            int minRow = Math.Max(centerRow - rings, 0);
+            int maxRow = Math.Min(centerRow + rings, _rows - 1);
 
             float squaredRadius = radius * radius;
 
@@ -135,6 +142,21 @@ namespace Game.Simulation.Services
                     }
                 }
             }
+        }
+
+        private int ResolveRings(float reach)
+        {
+            int widest = Math.Max(_columns, _rows);
+
+            double rings = Math.Ceiling(reach / (double)_cellSize);
+
+            if (rings < 1d)
+                return 1;
+
+            if (rings > widest)
+                return widest;
+
+            return (int)rings;
         }
 
         private int ResolveCell(float value, float origin, int count)

@@ -23,6 +23,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
+        private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -30,6 +31,9 @@ namespace Game.Simulation.Systems
         private List<int> _contacts;
 
         private float _queryRadius;
+        private float _maxOverlapCorrection;
+        private float _maxEnemyMoveSpeed;
+        private float _pushSpeed;
 
         public void Init(IEcsSystems systems)
         {
@@ -41,20 +45,9 @@ namespace Game.Simulation.Systems
 
             _queryRadius = character.BodyRadius + widestEnemy;
 
-            float cellSize = _level.Value.SpatialCellSize;
-
-            if (_queryRadius > cellSize)
-                throw new InvalidOperationException(
-                    $"The contact damage query radius is {_queryRadius} " +
-                    $"({nameof(CharacterConfig)} '{character.Id}' {nameof(CharacterConfig.BodyRadius)} {character.BodyRadius} " +
-                    $"plus the widest {nameof(EnemyConfig.BodyRadius)} {widestEnemy} in {nameof(WaveTimelineConfig)} " +
-                    $"'{(waves == null ? "<none>" : waves.Id)}'), which is greater than " +
-                    $"{nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} {cellSize}. " +
-                    "The spatial index walks one ring of cells around the center and rejects a query radius wider than one cell, " +
-                    "so an enemy standing against the player would deal no damage at all. " +
-                    $"Either raise {nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} in the level config, " +
-                    "or widen the walk in SpatialGrid.Query to ceil(radius / cellSize) rings, " +
-                    $"or lower the {nameof(CharacterConfig.BodyRadius)} of the character or of the enemies in the timeline.");
+            _maxOverlapCorrection = character.BodyRadius + widestEnemy;
+            _maxEnemyMoveSpeed = WaveTimelineValidator.ResolveMaxMoveSpeed(waves);
+            _pushSpeed = character.Dash == null ? 0f : character.Dash.PushSpeed;
 
             _contacts = new List<int>(WaveTimelineValidator.ResolveMaxLiveCap(waves) + NonEnemyCapacityReserve);
         }
@@ -65,12 +58,14 @@ namespace Game.Simulation.Systems
 
             EcsWorld world = _world.Value;
 
+            float candidateSlack = ResolveCandidateSlack();
+
             foreach (int target in _targets.Value)
             {
                 ref Position targetPosition = ref _positions.Value.Get(target);
                 ref BodyRadius targetRadius = ref _bodyRadii.Value.Get(target);
 
-                grid.Query(targetPosition.Value, _queryRadius, _contacts);
+                grid.Query(targetPosition.Value, _queryRadius, candidateSlack, _contacts);
 
                 for (int index = 0; index < _contacts.Count; index++)
                 {
@@ -110,6 +105,16 @@ namespace Game.Simulation.Systems
                     damageEvent.Amount = damage.Value;
                 }
             }
+        }
+
+        private float ResolveCandidateSlack()
+        {
+            float delta = _clock.Value.Delta;
+
+            float walkedAndCorrected = _maxEnemyMoveSpeed * delta + _maxOverlapCorrection;
+            float pushed = _pushSpeed * delta;
+
+            return Math.Max(walkedAndCorrected, pushed);
         }
     }
 }

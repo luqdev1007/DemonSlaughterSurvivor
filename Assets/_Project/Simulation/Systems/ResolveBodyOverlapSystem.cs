@@ -15,6 +15,7 @@ namespace Game.Simulation.Systems
         private const int NonEnemyCapacityReserve = 16;
         private const float CoincidenceEpsilonSquared = 1e-6f;
         private const float TieBreakAngleScale = 6.2831855f / 4294967296f;
+        private const float CandidateSlack = 0f;
 
         private readonly EcsFilterInject<Inc<Player, Position, BodyRadius>> _players = default;
 
@@ -52,20 +53,6 @@ namespace Game.Simulation.Systems
 
             _queryRadius = character.BodyRadius + widestEnemy;
 
-            float cellSize = _level.Value.SpatialCellSize;
-
-            if (_queryRadius > cellSize)
-                throw new InvalidOperationException(
-                    $"The player to enemy contact query radius is {_queryRadius} " +
-                    $"({nameof(CharacterConfig)} '{character.Id}' {nameof(CharacterConfig.BodyRadius)} {character.BodyRadius} " +
-                    $"plus the widest {nameof(EnemyConfig.BodyRadius)} {widestEnemy} in {nameof(WaveTimelineConfig)} " +
-                    $"'{(waves == null ? "<none>" : waves.Id)}'), which is greater than " +
-                    $"{nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} {cellSize}. " +
-                    "The spatial index walks one ring of cells around the center and rejects a query radius wider than one cell. " +
-                    $"Either raise {nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} in the level config, " +
-                    "or widen the walk in SpatialGrid.Query to ceil(radius / cellSize) rings, " +
-                    $"or lower the {nameof(CharacterConfig.BodyRadius)} of the character or of the enemies in the timeline.");
-
             _contacts = new List<int>(WaveTimelineValidator.ResolveMaxLiveCap(waves) + NonEnemyCapacityReserve);
         }
 
@@ -80,7 +67,7 @@ namespace Game.Simulation.Systems
                 ref Position playerPosition = ref _positions.Value.Get(player);
                 ref BodyRadius playerRadius = ref _bodyRadii.Value.Get(player);
 
-                grid.Query(playerPosition.Value, _queryRadius, _contacts);
+                grid.Query(playerPosition.Value, _queryRadius, CandidateSlack, _contacts);
 
                 for (int index = 0; index < _contacts.Count; index++)
                 {

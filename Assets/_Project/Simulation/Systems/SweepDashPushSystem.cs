@@ -51,22 +51,6 @@ namespace Game.Simulation.Systems
 
             WaveTimelineConfig waves = _level.Value.Waves;
 
-            float queryRadius = character.BodyRadius + WaveTimelineValidator.ResolveMaxBodyRadius(waves);
-            float cellSize = _level.Value.SpatialCellSize;
-            float pushedStep = dash.PushSpeed / 60f;
-
-            if (queryRadius + pushedStep > cellSize)
-                throw new InvalidOperationException(
-                    $"{nameof(DashAbilityConfig)} '{dash.Id}' {nameof(DashAbilityConfig.PushSpeed)} {dash.PushSpeed} moves a pushed enemy " +
-                    $"{pushedStep} per tick, and the contact damage query radius is {queryRadius}; together they exceed " +
-                    $"{nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)} {cellSize}. " +
-                    "The spatial index describes the world at the end of the previous tick, so a candidate that moves further than " +
-                    "cellSize minus the query radius can leave the cell it is indexed in and be missed silently: " +
-                    $"{nameof(DetectContactDamageSystem)} would stop seeing an enemy right after it was pushed. " +
-                    $"Either lower {nameof(DashAbilityConfig.PushSpeed)}, " +
-                    $"or raise {nameof(LevelConfig)}.{nameof(LevelConfig.SpatialCellSize)}, " +
-                    "or give SpatialGrid a segment query so the index stops being read one tick late.");
-
             _pushedThisDash = new HashSet<int>(WaveTimelineValidator.ResolveMaxLiveCap(waves) + CapacityReserve);
             _wasDashing = false;
         }
