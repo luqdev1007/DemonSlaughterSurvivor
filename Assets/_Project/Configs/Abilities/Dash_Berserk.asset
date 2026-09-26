@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dash_Berserk
   m_EditorClassIdentifier: Game.Configs::Game.Configs.DashAbilityConfig
   _id: ability.dash.berserk
-  _distance: 10
+  _distance: 6
   _duration: 0.25
   _cooldown: 1
   _direction: 0
