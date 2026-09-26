@@ -3,6 +3,7 @@ using Game.Core;
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using System;
 using UnityEngine;
 
 namespace Game.Simulation.Systems
@@ -36,6 +37,11 @@ namespace Game.Simulation.Systems
         {
             CharacterConfig character = _content.Value.Get<CharacterConfig>(_context.Value.CharacterId);
             DashAbilityConfig dash = character.Dash;
+
+            if (dash.AccelerationPower < 1f)
+                throw new InvalidOperationException(
+                    $"{nameof(DashAbilityConfig)} '{dash.Id}' has {nameof(DashAbilityConfig.AccelerationPower)} {dash.AccelerationPower}. " +
+                    "The dash must not slow down towards its end: use 1 for a constant speed and more for a stronger run-up.");
 
             int entity = _world.Value.NewEntity();
 
@@ -73,6 +79,7 @@ namespace Game.Simulation.Systems
             dashStats.Duration = dash.Duration;
             dashStats.Cooldown = dash.Cooldown;
             dashStats.Direction = dash.Direction;
+            dashStats.AccelerationPower = dash.AccelerationPower;
             dashStats.InvulnerabilitySeconds = dash.InvulnerabilitySeconds;
             dashStats.PushSpeed = dash.PushSpeed;
             dashStats.PushSeconds = dash.PushSeconds;

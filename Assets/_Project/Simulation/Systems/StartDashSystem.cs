@@ -42,6 +42,8 @@ namespace Game.Simulation.Systems
 
                 dashing.Speed = stats.Distance / (ticks * delta);
                 dashing.RemainingTicks = ticks;
+                dashing.TotalTicks = ticks;
+                dashing.AccelerationPower = stats.AccelerationPower;
 
                 Invulnerability.Grant(_invulnerables.Value, entity, Mathf.Max(1, Mathf.RoundToInt(stats.InvulnerabilitySeconds / delta)));
 

@@ -10,6 +10,7 @@ namespace Game.Configs
         [SerializeField] private float _duration;
         [SerializeField] private float _cooldown;
         [SerializeField] private DashDirection _direction;
+        [SerializeField] private float _accelerationPower = 3f;
 
         [Header("Invulnerability")]
         [SerializeField] private float _invulnerabilitySeconds = 0.3f;
@@ -22,6 +23,7 @@ namespace Game.Configs
         public float Duration => _duration;
         public float Cooldown => _cooldown;
         public DashDirection Direction => _direction;
+        public float AccelerationPower => _accelerationPower;
 
         public float InvulnerabilitySeconds => _invulnerabilitySeconds;
 
