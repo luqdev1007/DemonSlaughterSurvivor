@@ -1,3 +1,5 @@
+using Game.Core;
+
 namespace Game.Simulation.Services
 {
     public sealed class SimulationRandom
@@ -9,16 +11,39 @@ namespace Game.Simulation.Services
 
         public SimulationRandom(int seed)
         {
-            _state = seed == 0 ? SeedFallback : unchecked((uint)seed);
+            _state = SeedState(seed);
         }
 
         public float NextUnit()
         {
-            _state ^= _state << 13;
-            _state ^= _state >> 17;
-            _state ^= _state << 5;
+            return NextUnit(ref _state);
+        }
 
-            return (_state >> 8) * UnitScale;
+        public static uint SeedState(int seed)
+        {
+            return seed == 0 ? SeedFallback : unchecked((uint)seed);
+        }
+
+        public static uint StreamState(int runSeed, string streamId)
+        {
+            uint state = unchecked((uint)runSeed) ^ StableHash.Fnv1a32(streamId);
+
+            state ^= state >> 16;
+            state = unchecked(state * 0x7FEB352Du);
+            state ^= state >> 15;
+            state = unchecked(state * 0x846CA68Bu);
+            state ^= state >> 16;
+
+            return state == 0 ? SeedFallback : state;
+        }
+
+        public static float NextUnit(ref uint state)
+        {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+
+            return (state >> 8) * UnitScale;
         }
     }
 }
