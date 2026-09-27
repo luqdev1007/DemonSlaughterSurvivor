@@ -28,6 +28,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<ContactDamage> _contactDamages = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
+        private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
+        private readonly EcsPoolInject<WeaponCooldown> _weaponCooldowns = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -197,6 +199,18 @@ namespace Game.Simulation.Systems
                 ref DashStats dash = ref _dashStats.Value.Get(target);
                 dash.Cooldown = StatFormula.Evaluate(dash.CooldownBase, Total(StatId.DashCooldown));
             }
+
+            if (_weaponDamages.Value.Has(target))
+            {
+                ref WeaponDamage weaponDamage = ref _weaponDamages.Value.Get(target);
+                weaponDamage.Value = StatFormula.Evaluate(weaponDamage.Base, Total(StatId.WeaponDamage));
+            }
+
+            if (_weaponCooldowns.Value.Has(target))
+            {
+                ref WeaponCooldown weaponCooldown = ref _weaponCooldowns.Value.Get(target);
+                weaponCooldown.Value = StatFormula.Evaluate(weaponCooldown.Base, Total(StatId.WeaponCooldown));
+            }
         }
 
         private void ApplyMaxHealth(int target)
@@ -239,6 +253,10 @@ namespace Game.Simulation.Systems
                     return _contactDamages.Value.Has(target);
                 case StatId.DashCooldown:
                     return _dashStats.Value.Has(target);
+                case StatId.WeaponDamage:
+                    return _weaponDamages.Value.Has(target);
+                case StatId.WeaponCooldown:
+                    return _weaponCooldowns.Value.Has(target);
                 default:
                     return false;
             }

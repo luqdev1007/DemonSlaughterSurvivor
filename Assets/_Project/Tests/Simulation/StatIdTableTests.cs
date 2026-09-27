@@ -16,6 +16,8 @@ namespace Game.Simulation.Tests
                 { "MaxHealth", 2 },
                 { "ContactDamage", 3 },
                 { "DashCooldown", 4 },
+                { "WeaponDamage", 5 },
+                { "WeaponCooldown", 6 },
             });
         }
 

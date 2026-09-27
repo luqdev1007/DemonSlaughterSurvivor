@@ -10,8 +10,10 @@ namespace Game.Simulation.Systems
 
         private readonly EcsFilterInject<Inc<DamageEvent>> _damageEvents = default;
         private readonly EcsFilterInject<Inc<DiedEvent>> _diedEvents = default;
+        private readonly EcsFilterInject<Inc<SwingStarted>> _swingStarts = default;
 
         private readonly EcsPoolInject<DiedEvent> _diedEventPool = default;
+        private readonly EcsPoolInject<SwingStarted> _swingStartPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -22,6 +24,9 @@ namespace Game.Simulation.Systems
 
             foreach (int entity in _diedEvents.Value)
                 _diedEventPool.Value.Del(entity);
+
+            foreach (int entity in _swingStarts.Value)
+                _swingStartPool.Value.Del(entity);
         }
     }
 }

@@ -5,6 +5,8 @@ namespace Game.Core
         MoveSpeed = 1,
         MaxHealth = 2,
         ContactDamage = 3,
-        DashCooldown = 4
+        DashCooldown = 4,
+        WeaponDamage = 5,
+        WeaponCooldown = 6
     }
 }

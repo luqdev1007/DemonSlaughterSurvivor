@@ -18,6 +18,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ExpireDashRequestSystem());
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
+            systems.Add(new EquipStartingWeaponSystem());
             systems.Add(new SpawnWaveSystem());
             systems.Add(new RecomputeStatsSystem());
             // 4.  AI
@@ -35,7 +36,11 @@ namespace Game.Simulation.Systems
             // 6.  Weapons
             systems.Add(new DebugDamageSystem());
             systems.Add(new DebugStatModifierSystem());
+            systems.Add(new TickWeaponCooldownSystem());
+            systems.Add(new InterruptSwingSystem());
+            systems.Add(new StartSwingSystem());
             // 7.  AttackLifetime
+            systems.Add(new AdvanceSwingSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
             systems.Add(new DetectContactDamageSystem());
@@ -60,6 +65,7 @@ namespace Game.Simulation.Systems
             // 13. Cleanup
             systems.Add(new CleanupEventsSystem());
             systems.Add(new SweepOrphanModifiersSystem());
+            systems.Add(new SweepOrphanOwnedSystem());
             systems.Add(new RebuildSpatialGridSystem());
 
             return systems;

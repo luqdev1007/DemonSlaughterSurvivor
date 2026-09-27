@@ -37,7 +37,7 @@ namespace Game.Simulation.Tests
             _systems.Add(new SweepOrphanModifiersSystem());
             LevelConfig level = CreateLevel(FastestEnemySpeed);
 
-            _systems.Inject(level, new EnemyMotionBounds(WaveTimelineValidator.ResolveMaxMoveSpeed(level.Waves), 0.9f, 5f));
+            _systems.Inject(level, new EnemyMotionBounds(WaveTimelineValidator.ResolveMaxMoveSpeed(level.Waves), 0.9f, 5f, 0.5f));
             _systems.Init();
         }
 
