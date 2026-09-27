@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.WeaponConfig
   _id: weapon.berserk_sword
   _damage: 20
-  _cooldownSeconds: 1
+  _cooldownSeconds: 0.25
   _variants:
   - _animatorTrigger: AttackLeftSlash
     _playbackSpeed: 1
