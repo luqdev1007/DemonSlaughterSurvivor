@@ -18,6 +18,8 @@ namespace Game.Core
 
         void SetRunning(bool value);
 
+        void PlayAttack(string trigger, float speed);
+
         void PlayDeath();
 
         void Dissolve();

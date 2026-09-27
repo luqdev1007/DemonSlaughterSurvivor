@@ -3,6 +3,7 @@ using Game.Configs.Editor;
 using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -62,6 +63,46 @@ namespace Game.Simulation.Tests
                 }
 
                 Assert.IsTrue(weapon.TriggerCoverage.IsBaked && weapon.TriggerCoverage.CoveredCount > 0, $"{weapon.Id}: trigger coverage is empty; the weapon would never swing.");
+            }
+        }
+
+        [Test]
+        public void AttackLayerPlaysEveryBakedSwingAtTheSimulationSpeed()
+        {
+            foreach (WeaponConfig weapon in Weapons())
+            {
+                Animator animator = weapon.BakeRig.GetComponentInChildren<Animator>(true);
+                AnimatorController controller = animator.runtimeAnimatorController as AnimatorController;
+
+                Assert.IsNotNull(controller, $"{weapon.Id}: the bake rig has no AnimatorController.");
+                Assert.IsFalse(animator.applyRootMotion, $"{weapon.Id}: root motion is on; the simulation owns movement.");
+
+                AnimatorControllerLayer attack = null;
+
+                foreach (AnimatorControllerLayer layer in controller.layers)
+                {
+                    if (layer.name == "Attack")
+                        attack = layer;
+                }
+
+                Assert.IsNotNull(attack, $"{controller.name} has no Attack layer.");
+
+                for (int index = 0; index < weapon.VariantCount; index++)
+                {
+                    SwingVariant variant = weapon.Variant(index);
+                    AnimatorState state = null;
+
+                    foreach (ChildAnimatorState child in attack.stateMachine.states)
+                    {
+                        if (child.state.name == variant.AnimatorTrigger)
+                            state = child.state;
+                    }
+
+                    Assert.IsNotNull(state, $"Attack layer has no state '{variant.AnimatorTrigger}'.");
+                    Assert.AreSame(variant.Bake.Clip, state.motion, $"'{variant.AnimatorTrigger}' plays another clip than the bake.");
+                    Assert.AreEqual(1f, state.speed, $"'{variant.AnimatorTrigger}' has its own speed; the playback speed lives in the weapon config.");
+                    Assert.IsTrue(state.speedParameterActive && state.speedParameter == "AttackSpeed", $"'{variant.AnimatorTrigger}' does not follow the AttackSpeed parameter.");
+                }
             }
         }
 

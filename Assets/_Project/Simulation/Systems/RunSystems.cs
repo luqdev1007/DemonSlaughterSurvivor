@@ -56,6 +56,7 @@ namespace Game.Simulation.Systems
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
             systems.Add(new PlayHitFeedbackSystem());
+            systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());
             systems.Add(new SyncDashViewSystem());

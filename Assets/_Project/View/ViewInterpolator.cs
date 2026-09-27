@@ -15,6 +15,7 @@ namespace Game.View
         private static readonly int DeathTriggerId = Animator.StringToHash("Death");
         private static readonly int IsDashingId = Animator.StringToHash("IsDashing");
         private static readonly int IsRunningId = Animator.StringToHash("IsRunning");
+        private static readonly int AttackSpeedId = Animator.StringToHash("AttackSpeed");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -34,6 +35,7 @@ namespace Game.View
         private bool _isDashing;
         private bool _hasRunningParameter;
         private bool _isRunning;
+        private bool _hasAttackSpeedParameter;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
         private float _dissolveSeconds;
@@ -76,6 +78,7 @@ namespace Game.View
             _hasDeathTrigger = HasParameter(animator, DeathTriggerId, AnimatorControllerParameterType.Trigger);
             _hasDashingParameter = HasParameter(animator, IsDashingId, AnimatorControllerParameterType.Bool);
             _hasRunningParameter = HasParameter(animator, IsRunningId, AnimatorControllerParameterType.Bool);
+            _hasAttackSpeedParameter = HasParameter(animator, AttackSpeedId, AnimatorControllerParameterType.Float);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -155,6 +158,15 @@ namespace Game.View
             _isRunning = value;
 
             _animator.SetBool(IsRunningId, value);
+        }
+
+        public void PlayAttack(string trigger, float speed)
+        {
+            if (_hasAttackSpeedParameter == false)
+                return;
+
+            _animator.SetFloat(AttackSpeedId, speed);
+            _animator.SetTrigger(Animator.StringToHash(trigger));
         }
 
         public void PlayDeath()
