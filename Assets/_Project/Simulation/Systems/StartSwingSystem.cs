@@ -27,6 +27,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<MoveIntent> _intents = default;
+        private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Dashing> _dashing = default;
 
@@ -67,7 +69,7 @@ namespace Game.Simulation.Systems
                 WeaponConfig config = _weaponPool.Value.Get(weapon).Config;
                 SwingPose pose = new SwingPose(_positions.Value.Get(owner).Value, _facings.Value.Get(owner).Value);
 
-                if (HasTarget(config.TriggerCoverage, pose) == false)
+                if (HasTarget(config, pose) == false)
                     continue;
 
                 ref SwingRandom random = ref _randoms.Value.Get(weapon);
@@ -80,9 +82,12 @@ namespace Game.Simulation.Systems
             }
         }
 
-        private bool HasTarget(SwingCoverage coverage, in SwingPose pose)
+        private bool HasTarget(WeaponConfig config, in SwingPose pose)
         {
-            float radius = coverage.MaxDistance + SwingCoverage.DistanceStep * 0.5f;
+            SwingCoverage coverage = config.TriggerCoverage;
+            float lead = ResolveShortestWindup(config);
+
+            float radius = coverage.MaxDistance + SwingCoverage.DistanceStep * 0.5f + _motionBounds.Value.MaxEnemyMoveSpeed * lead;
 
             _grid.Value.Query(pose.Position, radius, _motionBounds.Value.CandidateSlack(_clock.Value.Delta), _candidates);
 
@@ -93,16 +98,45 @@ namespace Game.Simulation.Systems
                 if (_enemies.Value.Has(candidate) == false)
                     continue;
 
-                Vector3 local = pose.ToLocal(_positions.Value.Get(candidate).Value);
+                Vector3 position = _positions.Value.Get(candidate).Value;
 
-                float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
-                float distance = Mathf.Sqrt(local.x * local.x + local.z * local.z);
+                if (Covers(coverage, pose, position))
+                    return true;
 
-                if (coverage.Covers(angle, distance))
+                if (_intents.Value.Has(candidate) == false || _speeds.Value.Has(candidate) == false)
+                    continue;
+
+                Vector3 walk = _intents.Value.Get(candidate).Value * _speeds.Value.Get(candidate).Value;
+
+                if (Covers(coverage, pose, position + walk * lead))
                     return true;
             }
 
             return false;
+        }
+
+        private static bool Covers(SwingCoverage coverage, in SwingPose pose, Vector3 position)
+        {
+            Vector3 local = pose.ToLocal(position);
+
+            float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
+            float distance = Mathf.Sqrt(local.x * local.x + local.z * local.z);
+
+            return coverage.Covers(angle, distance);
+        }
+
+        private static float ResolveShortestWindup(WeaponConfig config)
+        {
+            float shortest = float.MaxValue;
+
+            for (int index = 0; index < config.VariantCount; index++)
+            {
+                SwingVariant variant = config.Variant(index);
+
+                shortest = Mathf.Min(shortest, variant.WindowStart / variant.PlaybackSpeed);
+            }
+
+            return shortest;
         }
 
         private static int PickVariant(WeaponConfig config, ref uint state)

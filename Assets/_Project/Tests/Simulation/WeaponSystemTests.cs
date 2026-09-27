@@ -105,6 +105,27 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void ApproachingEnemyStartsTheSwingBeforeItEntersTheSector()
+        {
+            Build(Front(), 90f, 5f);
+            int enemy = SpawnEnemy(new Vector3(0f, 0f, 2.7f), 1.8f);
+
+            Run(3);
+
+            Assert.AreEqual(0, _swingsStarted, "A standing enemy just outside the trigger sector must not start a swing.");
+
+            _world.GetPool<MoveIntent>().Add(enemy).Value = Vector3.back;
+
+            ref MoveSpeed speed = ref _world.GetPool<MoveSpeed>().Add(enemy);
+            speed.Base = 5f;
+            speed.Value = 5f;
+
+            Run(1);
+
+            Assert.AreEqual(1, _swingsStarted, "An enemy walking in must start the swing one windup ahead.");
+        }
+
+        [Test]
         public void DashInterruptsTheSwing()
         {
             Build(Front(), 90f, 5f);
