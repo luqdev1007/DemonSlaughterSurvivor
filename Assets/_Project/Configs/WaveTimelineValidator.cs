@@ -304,6 +304,13 @@ namespace Game.Configs
                     "real gap and the enemy never reports an overlap: it walks through the player without any message. " +
                     $"Set {nameof(EnemyConfig.BodyRadius)} to zero to disable the contact radius on purpose.");
 
+            if (enemy.BodyHeight <= 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' has {nameof(EnemyConfig.BodyHeight)} {enemy.BodyHeight}, " +
+                    $"which is not above zero (wave {waveIndex}, {kind} entry {entryIndex}). " +
+                    "A swing only hits a body below its height, so such an enemy can never be hit by a blade " +
+                    "and nothing would report it.");
+
             if (enemy.SeparationRadius < 0f)
                 throw new InvalidOperationException(
                     $"{nameof(EnemyConfig)} '{enemy.Id}' has a negative {nameof(EnemyConfig.SeparationRadius)} " +

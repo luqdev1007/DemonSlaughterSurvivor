@@ -13,6 +13,7 @@ namespace Game.Configs
 
         [Header("Body")]
         [SerializeField] private float _bodyRadius = 0.4f;
+        [SerializeField] private float _bodyHeight = 1.8f;
 
         [Header("Combat")]
         [SerializeField] private float _maxHealth = 20f;
@@ -29,6 +30,8 @@ namespace Game.Configs
         public float TurnSpeed => _turnSpeed;
 
         public float BodyRadius => _bodyRadius;
+
+        public float BodyHeight => _bodyHeight;
 
         public float MaxHealth => _maxHealth;
 

@@ -19,6 +19,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<MoveSpeed> _speeds;
         private readonly EcsPool<TurnSpeed> _turnSpeeds;
         private readonly EcsPool<BodyRadius> _bodyRadii;
+        private readonly EcsPool<BodyHeight> _bodyHeights;
         private readonly EcsPool<ContactDamage> _contactDamages;
         private readonly EcsPool<Health> _healths;
         private readonly EcsPool<MaxHealth> _maxHealths;
@@ -40,6 +41,7 @@ namespace Game.Simulation.Services
             _speeds = world.GetPool<MoveSpeed>();
             _turnSpeeds = world.GetPool<TurnSpeed>();
             _bodyRadii = world.GetPool<BodyRadius>();
+            _bodyHeights = world.GetPool<BodyHeight>();
             _contactDamages = world.GetPool<ContactDamage>();
             _healths = world.GetPool<Health>();
             _maxHealths = world.GetPool<MaxHealth>();
@@ -70,6 +72,9 @@ namespace Game.Simulation.Services
 
             ref BodyRadius bodyRadius = ref _bodyRadii.Add(entity);
             bodyRadius.Value = config.BodyRadius;
+
+            ref BodyHeight bodyHeight = ref _bodyHeights.Add(entity);
+            bodyHeight.Value = config.BodyHeight;
 
             ref ContactDamage contactDamage = ref _contactDamages.Add(entity);
             contactDamage.Base = config.ContactDamage;
