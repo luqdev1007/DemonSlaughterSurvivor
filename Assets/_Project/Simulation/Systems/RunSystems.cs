@@ -34,7 +34,6 @@ namespace Game.Simulation.Systems
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());
             // 6.  Weapons
-            systems.Add(new DebugDamageSystem());
             systems.Add(new DebugStatModifierSystem());
             systems.Add(new TickWeaponCooldownSystem());
             systems.Add(new InterruptSwingSystem());
