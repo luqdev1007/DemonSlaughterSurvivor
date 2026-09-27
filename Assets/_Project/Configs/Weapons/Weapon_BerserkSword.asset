@@ -17,7 +17,7 @@ MonoBehaviour:
   _cooldownSeconds: 0.25
   _variants:
   - _animatorTrigger: AttackLeftSlash
-    _playbackSpeed: 1
+    _playbackSpeed: 1.5
     _windowStart: 0.4
     _windowEnd: 0.48333332
     _halfAngleDegrees: 90
