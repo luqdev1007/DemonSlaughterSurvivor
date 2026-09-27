@@ -20,6 +20,7 @@ namespace Game.Configs
 
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
+        [SerializeField] private WeaponConfig _startingWeapon;
 
         public GameObject ViewPrefab => _viewPrefab;
 
@@ -34,5 +35,7 @@ namespace Game.Configs
         public float HitInvulnerabilitySeconds => _hitInvulnerabilitySeconds;
 
         public DashAbilityConfig Dash => _dash;
+
+        public WeaponConfig StartingWeapon => _startingWeapon;
     }
 }

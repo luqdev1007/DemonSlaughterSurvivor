@@ -20,3 +20,4 @@ MonoBehaviour:
   _maxHealth: 100
   _hitInvulnerabilitySeconds: 0.5
   _dash: {fileID: 11400000, guid: d2efaaaa1138d70458b56e9d8f4d6515, type: 2}
+  _startingWeapon: {fileID: 11400000, guid: 38d7d496e9513a04db5690e72178dff4, type: 2}
