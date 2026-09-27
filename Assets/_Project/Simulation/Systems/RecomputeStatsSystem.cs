@@ -33,6 +33,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
 
         private readonly EcsCustomInject<LevelConfig> _level = default;
+        private readonly EcsCustomInject<EnemyMotionBounds> _motionBounds = default;
 
         private GatheredModifier[] _gathered;
         private int _gatheredCount;
@@ -41,7 +42,7 @@ namespace Game.Simulation.Systems
 
         public void Init(IEcsSystems systems)
         {
-            _maxEnemyMoveSpeed = WaveTimelineValidator.ResolveMaxMoveSpeed(_level.Value.Waves);
+            _maxEnemyMoveSpeed = _motionBounds.Value.MaxEnemyMoveSpeed;
 
             _gathered = new GatheredModifier[InitialModifierCapacity];
         }

@@ -34,6 +34,7 @@ namespace Game.Bootstrap
         private IEcsSystems _systems;
         private SpatialGrid _spatialGrid;
         private StatModifiers _statModifiers;
+        private EnemyMotionBounds _motionBounds;
 
         private float _accumulator;
         private bool _isFinishing;
@@ -78,6 +79,10 @@ namespace Game.Bootstrap
 
             _statModifiers = new StatModifiers(_world);
 
+            CharacterConfig character = _registry.Get<CharacterConfig>(_context.CharacterId);
+
+            _motionBounds = EnemyMotionBounds.From(character, _levelConfig.Waves);
+
             _systems = RunSystems.Build(_world);
 
             _systems.Inject(
@@ -91,6 +96,7 @@ namespace Game.Bootstrap
                 _inputConfig,
                 _spatialGrid,
                 _statModifiers,
+                _motionBounds,
                 _outcome,
                 _debugDamageInput,
                 _debugStatInput,
@@ -146,6 +152,7 @@ namespace Game.Bootstrap
 
             _spatialGrid = null;
             _statModifiers = null;
+            _motionBounds = null;
         }
     }
 }

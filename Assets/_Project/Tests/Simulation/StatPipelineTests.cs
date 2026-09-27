@@ -35,7 +35,9 @@ namespace Game.Simulation.Tests
             _systems = new EcsSystems(_world);
             _systems.Add(new RecomputeStatsSystem());
             _systems.Add(new SweepOrphanModifiersSystem());
-            _systems.Inject(CreateLevel(FastestEnemySpeed));
+            LevelConfig level = CreateLevel(FastestEnemySpeed);
+
+            _systems.Inject(level, new EnemyMotionBounds(WaveTimelineValidator.ResolveMaxMoveSpeed(level.Waves), 0.9f, 5f));
             _systems.Init();
         }
 

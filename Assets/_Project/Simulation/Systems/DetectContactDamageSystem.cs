@@ -4,7 +4,6 @@ using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
-using System;
 using System.Collections.Generic;
 
 namespace Game.Simulation.Systems
@@ -24,6 +23,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
+        private readonly EcsCustomInject<EnemyMotionBounds> _motionBounds = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -31,9 +31,6 @@ namespace Game.Simulation.Systems
         private List<int> _contacts;
 
         private float _queryRadius;
-        private float _maxOverlapCorrection;
-        private float _maxEnemyMoveSpeed;
-        private float _pushSpeed;
 
         public void Init(IEcsSystems systems)
         {
@@ -45,10 +42,6 @@ namespace Game.Simulation.Systems
 
             _queryRadius = character.BodyRadius + widestEnemy;
 
-            _maxOverlapCorrection = character.BodyRadius + widestEnemy;
-            _maxEnemyMoveSpeed = WaveTimelineValidator.ResolveMaxMoveSpeed(waves);
-            _pushSpeed = character.Dash == null ? 0f : character.Dash.PushSpeed;
-
             _contacts = new List<int>(WaveTimelineValidator.ResolveMaxLiveCap(waves) + NonEnemyCapacityReserve);
         }
 
@@ -58,7 +51,7 @@ namespace Game.Simulation.Systems
 
             EcsWorld world = _world.Value;
 
-            float candidateSlack = ResolveCandidateSlack();
+            float candidateSlack = _motionBounds.Value.CandidateSlack(_clock.Value.Delta);
 
             foreach (int target in _targets.Value)
             {
@@ -105,16 +98,6 @@ namespace Game.Simulation.Systems
                     damageEvent.Amount = damage.Value;
                 }
             }
-        }
-
-        private float ResolveCandidateSlack()
-        {
-            float delta = _clock.Value.Delta;
-
-            float walkedAndCorrected = _maxEnemyMoveSpeed * delta + _maxOverlapCorrection;
-            float pushed = _pushSpeed * delta;
-
-            return Math.Max(walkedAndCorrected, pushed);
         }
     }
 }
