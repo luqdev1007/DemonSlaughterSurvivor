@@ -30,6 +30,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyDashVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new FaceVelocitySystem());
+            systems.Add(new FaceNearestEnemySystem());
             systems.Add(new ApplyPushSystem());
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());

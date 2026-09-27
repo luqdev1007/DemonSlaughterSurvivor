@@ -34,6 +34,26 @@ namespace Game.Configs
             }
         }
 
+        public float MaxCoveredDistance
+        {
+            get
+            {
+                if (IsBaked == false)
+                    return 0f;
+
+                for (int distance = DistanceBins - 1; distance >= 0; distance--)
+                {
+                    for (int angle = 0; angle < AngleBins; angle++)
+                    {
+                        if (_cells[angle * DistanceBins + distance])
+                            return MinDistance + (distance + 0.5f) * DistanceStep;
+                    }
+                }
+
+                return 0f;
+            }
+        }
+
         public static float CellAngle(int angleBin)
         {
             return -180f + angleBin * AngleStep;
