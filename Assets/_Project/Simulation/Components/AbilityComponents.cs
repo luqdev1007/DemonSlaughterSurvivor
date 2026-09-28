@@ -16,6 +16,10 @@ namespace Game.Simulation.Components
         public float AccelerationPower;
     }
 
+    public struct UltimateCharge { public float Value; public float Max; }
+
+    public struct RageState { public int TicksSinceCombat; }
+
     public struct DashStats
     {
         public float Distance;

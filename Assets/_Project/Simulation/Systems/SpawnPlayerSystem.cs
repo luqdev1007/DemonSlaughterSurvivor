@@ -29,6 +29,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
+        private readonly EcsPoolInject<UltimateCharge> _charges = default;
+        private readonly EcsPoolInject<RageState> _rageStates = default;
         private readonly EcsPoolInject<View> _views = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -45,6 +47,10 @@ namespace Game.Simulation.Systems
                 throw new InvalidOperationException(
                     $"{nameof(DashAbilityConfig)} '{dash.Id}' has {nameof(DashAbilityConfig.AccelerationPower)} {dash.AccelerationPower}. " +
                     "The dash must not slow down towards its end: use 1 for a constant speed and more for a stronger run-up.");
+
+            RageConfig rage = character.Rage;
+
+            ValidateRage(character, rage);
 
             int entity = _world.Value.NewEntity();
 
@@ -90,6 +96,12 @@ namespace Game.Simulation.Systems
             dashStats.PushSpeed = dash.PushSpeed;
             dashStats.PushSeconds = dash.PushSeconds;
 
+            ref UltimateCharge charge = ref _charges.Value.Add(entity);
+            charge.Value = 0f;
+            charge.Max = rage.Max;
+
+            _rageStates.Value.Add(entity);
+
             _intents.Value.Add(entity);
             _velocities.Value.Add(entity);
 
@@ -108,6 +120,28 @@ namespace Game.Simulation.Systems
             }
 
             statModifiers.MarkDirty(entity);
+        }
+
+        private static void ValidateRage(CharacterConfig character, RageConfig rage)
+        {
+            if (rage == null)
+                throw new InvalidOperationException(
+                    $"{nameof(CharacterConfig)} '{character.Id}' has no {nameof(RageConfig)} assigned. " +
+                    "The ultimate charge needs a resource to fill.");
+
+            if (rage.Max <= 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(RageConfig)} '{rage.Id}' has {nameof(RageConfig.Max)} {rage.Max}. The ultimate could never charge.");
+
+            if (rage.DealtPerHit < 0f || rage.ReceivedScale < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(RageConfig)} '{rage.Id}' has a negative gain: {nameof(RageConfig.DealtPerHit)} {rage.DealtPerHit}, " +
+                    $"{nameof(RageConfig.ReceivedScale)} {rage.ReceivedScale}. Fighting must never drain rage.");
+
+            if (rage.DecayDelaySeconds < 0f || rage.DecayPerSecond < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(RageConfig)} '{rage.Id}' has a negative decay: {nameof(RageConfig.DecayDelaySeconds)} {rage.DecayDelaySeconds}, " +
+                    $"{nameof(RageConfig.DecayPerSecond)} {rage.DecayPerSecond}. A negative decay would fill rage out of combat.");
         }
     }
 }

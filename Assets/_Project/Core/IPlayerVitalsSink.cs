@@ -2,6 +2,6 @@ namespace Game.Core
 {
     public interface IPlayerVitalsSink
     {
-        void Publish(float health, float maxHealth);
+        void Publish(float health, float maxHealth, float ultimateCharge);
     }
 }

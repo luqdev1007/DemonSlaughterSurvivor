@@ -53,6 +53,8 @@ namespace Game.Simulation.Systems
             systems.Add(new FinishRunOnPlayerDeathSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
+            systems.Add(new AccumulateRageSystem());
+            systems.Add(new DecayRageSystem());
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
             systems.Add(new PlayHitFeedbackSystem());

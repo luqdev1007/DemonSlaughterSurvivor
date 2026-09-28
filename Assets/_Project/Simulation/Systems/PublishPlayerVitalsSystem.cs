@@ -12,6 +12,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
+        private readonly EcsPoolInject<UltimateCharge> _charges = default;
 
         private readonly EcsCustomInject<IPlayerVitalsSink> _sink = default;
 
@@ -22,8 +23,21 @@ namespace Game.Simulation.Systems
                 ref Health health = ref _healths.Value.Get(entity);
                 ref MaxHealth maxHealth = ref _maxHealths.Value.Get(entity);
 
-                _sink.Value.Publish(Mathf.Max(0f, health.Current), maxHealth.Value);
+                _sink.Value.Publish(Mathf.Max(0f, health.Current), maxHealth.Value, ResolveChargeFraction(entity));
             }
+        }
+
+        private float ResolveChargeFraction(int entity)
+        {
+            if (_charges.Value.Has(entity) == false)
+                return 0f;
+
+            ref UltimateCharge charge = ref _charges.Value.Get(entity);
+
+            if (charge.Max <= 0f)
+                return 0f;
+
+            return Mathf.Clamp01(charge.Value / charge.Max);
         }
     }
 }
