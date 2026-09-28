@@ -11,7 +11,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class DecayRageSystem : IEcsInitSystem, IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<Player, UltimateCharge, RageState>, Exc<Dead>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Player, UltimateCharge, RageState>, Exc<Dead, BerserkMode>> _heroes = default;
 
         private readonly EcsPoolInject<UltimateCharge> _charges = default;
         private readonly EcsPoolInject<RageState> _states = default;

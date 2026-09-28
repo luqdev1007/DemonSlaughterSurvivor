@@ -21,7 +21,6 @@ namespace Game.Bootstrap
         private readonly RunOutcome _outcome;
         private readonly IRunLauncher _launcher;
         private readonly IInputService _inputService;
-        private readonly IDebugStatInput _debugStatInput;
         private readonly IContentRegistry _registry;
         private readonly IViewFactory _viewFactory;
         private readonly ICameraService _cameraService;
@@ -44,7 +43,6 @@ namespace Game.Bootstrap
             RunOutcome outcome,
             IRunLauncher launcher,
             IInputService inputService,
-            IDebugStatInput debugStatInput,
             IContentRegistry registry,
             IViewFactory viewFactory,
             ICameraService cameraService,
@@ -57,7 +55,6 @@ namespace Game.Bootstrap
             _outcome = outcome;
             _launcher = launcher;
             _inputService = inputService;
-            _debugStatInput = debugStatInput;
             _registry = registry;
             _viewFactory = viewFactory;
             _cameraService = cameraService;
@@ -95,7 +92,6 @@ namespace Game.Bootstrap
                 _statModifiers,
                 _motionBounds,
                 _outcome,
-                _debugStatInput,
                 _vitalsSink
                 );
 

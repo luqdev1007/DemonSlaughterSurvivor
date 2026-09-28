@@ -12,6 +12,8 @@ namespace Game.Simulation.Systems
 {
     public sealed class SpawnPlayerSystem : IEcsInitSystem
     {
+        private const float BaseDamageTaken = 1f;
+
         private static readonly Vector3 StartPosition = Vector3.zero;
 
         private readonly EcsWorldInject _world = default;
@@ -26,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<HitInvulnerability> _hitInvulnerabilities = default;
+        private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
@@ -84,6 +87,10 @@ namespace Game.Simulation.Systems
 
             ref HitInvulnerability hitInvulnerability = ref _hitInvulnerabilities.Value.Add(entity);
             hitInvulnerability.Seconds = character.HitInvulnerabilitySeconds;
+
+            ref DamageTaken damageTaken = ref _damageTakens.Value.Add(entity);
+            damageTaken.Base = BaseDamageTaken;
+            damageTaken.Value = BaseDamageTaken;
 
             ref DashStats dashStats = ref _dashStats.Value.Add(entity);
             dashStats.Distance = dash.Distance;

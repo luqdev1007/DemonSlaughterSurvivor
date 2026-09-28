@@ -11,11 +11,15 @@ namespace Game.Simulation.Systems
             // 1.  Input
             systems.Add(new ReadMoveInputSystem());
             systems.Add(new ReadDashInputSystem());
+            systems.Add(new ReadUltimateInputSystem());
             // 2.  Abilities
             systems.Add(new TickDashCooldownSystem());
             systems.Add(new AdvanceDashSystem());
             systems.Add(new StartDashSystem());
             systems.Add(new ExpireDashRequestSystem());
+            systems.Add(new TickBerserkModeSystem());
+            systems.Add(new StartBerserkSystem());
+            systems.Add(new ExpireUltimateRequestSystem());
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
             systems.Add(new EquipStartingWeaponSystem());
@@ -35,7 +39,6 @@ namespace Game.Simulation.Systems
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());
             // 6.  Weapons
-            systems.Add(new DebugStatModifierSystem());
             systems.Add(new TickWeaponCooldownSystem());
             systems.Add(new InterruptSwingSystem());
             systems.Add(new StartSwingSystem());

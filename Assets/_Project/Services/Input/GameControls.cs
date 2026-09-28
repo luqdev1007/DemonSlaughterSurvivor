@@ -111,6 +111,15 @@ namespace Game.Services.Input
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Ultimate"",
+                    ""type"": ""Button"",
+                    ""id"": ""5c1f4a8e-2d7b-4e93-9a61-0b8f3c2e7d45"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -179,6 +188,17 @@ namespace Game.Services.Input
                     ""action"": ""Dash"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a3e9d0b2-6f41-4c7e-8b25-7d1c9e4f0a63"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Ultimate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -189,6 +209,7 @@ namespace Game.Services.Input
             m_Gameplay = asset.FindActionMap("Gameplay", throwIfNotFound: true);
             m_Gameplay_Move = m_Gameplay.FindAction("Move", throwIfNotFound: true);
             m_Gameplay_Dash = m_Gameplay.FindAction("Dash", throwIfNotFound: true);
+            m_Gameplay_Ultimate = m_Gameplay.FindAction("Ultimate", throwIfNotFound: true);
         }
 
         ~@GameControls()
@@ -271,6 +292,7 @@ namespace Game.Services.Input
         private List<IGameplayActions> m_GameplayActionsCallbackInterfaces = new List<IGameplayActions>();
         private readonly InputAction m_Gameplay_Move;
         private readonly InputAction m_Gameplay_Dash;
+        private readonly InputAction m_Gameplay_Ultimate;
         /// <summary>
         /// Provides access to input actions defined in input action map "Gameplay".
         /// </summary>
@@ -290,6 +312,10 @@ namespace Game.Services.Input
             /// Provides access to the underlying input action "Gameplay/Dash".
             /// </summary>
             public InputAction @Dash => m_Wrapper.m_Gameplay_Dash;
+            /// <summary>
+            /// Provides access to the underlying input action "Gameplay/Ultimate".
+            /// </summary>
+            public InputAction @Ultimate => m_Wrapper.m_Gameplay_Ultimate;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -322,6 +348,9 @@ namespace Game.Services.Input
                 @Dash.started += instance.OnDash;
                 @Dash.performed += instance.OnDash;
                 @Dash.canceled += instance.OnDash;
+                @Ultimate.started += instance.OnUltimate;
+                @Ultimate.performed += instance.OnUltimate;
+                @Ultimate.canceled += instance.OnUltimate;
             }
 
             /// <summary>
@@ -339,6 +368,9 @@ namespace Game.Services.Input
                 @Dash.started -= instance.OnDash;
                 @Dash.performed -= instance.OnDash;
                 @Dash.canceled -= instance.OnDash;
+                @Ultimate.started -= instance.OnUltimate;
+                @Ultimate.performed -= instance.OnUltimate;
+                @Ultimate.canceled -= instance.OnUltimate;
             }
 
             /// <summary>
@@ -393,6 +425,13 @@ namespace Game.Services.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnDash(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Ultimate" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnUltimate(InputAction.CallbackContext context);
         }
     }
 }

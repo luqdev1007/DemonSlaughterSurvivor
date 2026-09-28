@@ -11,11 +11,13 @@ namespace Game.Services
         private readonly GameControls _input;
 
         private bool _dashPressed;
+        private bool _ultimatePressed;
 
         public InputService()
         {
             _input = new GameControls();
             _input.Gameplay.Dash.performed += OnDashPerformed;
+            _input.Gameplay.Ultimate.performed += OnUltimatePerformed;
             _input.Enable();
         }
 
@@ -31,20 +33,37 @@ namespace Game.Services
             return true;
         }
 
+        public bool ConsumeUltimatePressed()
+        {
+            if (_ultimatePressed == false)
+                return false;
+
+            _ultimatePressed = false;
+
+            return true;
+        }
+
         public void ResetLatches()
         {
             _dashPressed = false;
+            _ultimatePressed = false;
         }
 
         public void Dispose()
         {
             _input.Gameplay.Dash.performed -= OnDashPerformed;
+            _input.Gameplay.Ultimate.performed -= OnUltimatePerformed;
             _input.Dispose();
         }
 
         private void OnDashPerformed(InputAction.CallbackContext context)
         {
             _dashPressed = true;
+        }
+
+        private void OnUltimatePerformed(InputAction.CallbackContext context)
+        {
+            _ultimatePressed = true;
         }
     }
 }

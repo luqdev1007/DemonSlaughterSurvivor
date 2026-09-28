@@ -9,6 +9,8 @@ namespace Game.Simulation.Components
 
     public struct HitInvulnerability { public float Seconds; }
 
+    public struct DamageTaken { public float Value; public float Base; }
+
     public struct ContactDamage { public float Value; public float Base; }
 
     public struct Invulnerable { public int RemainingTicks; }
@@ -30,7 +32,7 @@ namespace Game.Simulation.Components
 
     public struct KillingBlow { public Vector3 SourcePosition; }
 
-    public struct DamageApplied { }
+    public struct DamageApplied { public float Amount; }
 
     public struct DiedEvent { }
 

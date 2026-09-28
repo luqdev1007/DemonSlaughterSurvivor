@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<Invulnerable> _invulnerables = default;
         private readonly EcsPoolInject<HitInvulnerability> _hitInvulnerabilities = default;
+        private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<DamageApplied> _applied = default;
         private readonly EcsPoolInject<KillingBlow> _killingBlows = default;
 
@@ -77,9 +78,15 @@ namespace Game.Simulation.Systems
 
                 bool wasAlive = health.Current > 0f;
 
-                health.Current -= damageEvent.Amount;
+                float amount = damageEvent.Amount;
 
-                _applied.Value.Add(pair.Value);
+                if (_damageTakens.Value.Has(pair.Key))
+                    amount *= _damageTakens.Value.Get(pair.Key).Value;
+
+                health.Current -= amount;
+
+                ref DamageApplied applied = ref _applied.Value.Add(pair.Value);
+                applied.Amount = amount;
 
                 if (wasAlive && health.Current <= 0f && _killingBlows.Value.Has(pair.Key) == false)
                 {

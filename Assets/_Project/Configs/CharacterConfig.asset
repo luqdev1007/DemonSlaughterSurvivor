@@ -22,3 +22,4 @@ MonoBehaviour:
   _dash: {fileID: 11400000, guid: d2efaaaa1138d70458b56e9d8f4d6515, type: 2}
   _startingWeapon: {fileID: 11400000, guid: 38d7d496e9513a04db5690e72178dff4, type: 2}
   _rage: {fileID: 11400000, guid: 2be6ad5f09a3b5b43a9cdcbc7c0dee96, type: 2}
+  _ultimate: {fileID: 11400000, guid: b5cae2f18b2f00d40aa20e37cc39d304, type: 2}

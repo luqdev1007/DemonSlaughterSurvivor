@@ -32,12 +32,13 @@ namespace Game.UI
 
             if (_instance.TryGetComponent(out _view) == false || _view.IsWired == false)
                 throw new InvalidOperationException(
-                    $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text and ultimate charge fill assigned.");
+                    $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill and vignette assigned.");
 
             _subscription = Disposable.Combine(
                 _vitals.Health.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.MaxHealth.Subscribe(this, (_, presenter) => presenter.Refresh()),
-                _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()));
+                _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
+                _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()));
         }
 
         public void Dispose()
@@ -63,6 +64,7 @@ namespace Game.UI
 
             _view.ShowHealth(_vitals.Health.CurrentValue, maxHealth);
             _view.ShowUltimateCharge(_vitals.UltimateCharge.CurrentValue);
+            _view.ShowBerserk(_vitals.UltimateActive.CurrentValue);
         }
     }
 }

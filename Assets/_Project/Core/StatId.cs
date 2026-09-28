@@ -8,6 +8,7 @@ namespace Game.Core
         DashCooldown = 4,
         WeaponDamage = 5,
         WeaponCooldown = 6,
-        AttackSpeed = 7
+        AttackSpeed = 7,
+        DamageTaken = 8
     }
 }

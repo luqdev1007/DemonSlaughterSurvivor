@@ -9,6 +9,7 @@ namespace Game.UI
         private readonly ReactiveProperty<float> _health = new ReactiveProperty<float>();
         private readonly ReactiveProperty<float> _maxHealth = new ReactiveProperty<float>();
         private readonly ReactiveProperty<float> _ultimateCharge = new ReactiveProperty<float>();
+        private readonly ReactiveProperty<bool> _ultimateActive = new ReactiveProperty<bool>();
 
         public ReadOnlyReactiveProperty<float> Health => _health;
 
@@ -16,11 +17,14 @@ namespace Game.UI
 
         public ReadOnlyReactiveProperty<float> UltimateCharge => _ultimateCharge;
 
-        public void Publish(float health, float maxHealth, float ultimateCharge)
+        public ReadOnlyReactiveProperty<bool> UltimateActive => _ultimateActive;
+
+        public void Publish(float health, float maxHealth, float ultimateCharge, bool ultimateActive)
         {
             _maxHealth.Value = maxHealth;
             _health.Value = health;
             _ultimateCharge.Value = ultimateCharge;
+            _ultimateActive.Value = ultimateActive;
         }
 
         public void Dispose()
@@ -28,6 +32,7 @@ namespace Game.UI
             _health.Dispose();
             _maxHealth.Dispose();
             _ultimateCharge.Dispose();
+            _ultimateActive.Dispose();
         }
     }
 }

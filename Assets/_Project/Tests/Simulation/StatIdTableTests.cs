@@ -19,6 +19,7 @@ namespace Game.Simulation.Tests
                 { "WeaponDamage", 5 },
                 { "WeaponCooldown", 6 },
                 { "AttackSpeed", 7 },
+                { "DamageTaken", 8 },
             });
         }
 

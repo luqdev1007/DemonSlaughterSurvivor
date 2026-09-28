@@ -20,6 +20,10 @@ namespace Game.Simulation.Components
 
     public struct RageState { public int TicksSinceCombat; }
 
+    public struct UltimateRequest { public float Age; }
+
+    public struct BerserkMode { public int RemainingTicks; public int TotalTicks; }
+
     public struct DashStats
     {
         public float Distance;

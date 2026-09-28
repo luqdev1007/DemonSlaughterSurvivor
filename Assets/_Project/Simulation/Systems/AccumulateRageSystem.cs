@@ -12,9 +12,10 @@ namespace Game.Simulation.Systems
     {
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Player, UltimateCharge, RageState, MaxHealth>, Exc<Dead>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Player, UltimateCharge, RageState, MaxHealth>, Exc<Dead, BerserkMode>> _heroes = default;
         private readonly EcsFilterInject<Inc<DamageEvent, DamageApplied>> _applied = default;
 
+        private readonly EcsPoolInject<DamageApplied> _appliedPool = default;
         private readonly EcsPoolInject<UltimateCharge> _charges = default;
         private readonly EcsPoolInject<RageState> _states = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
@@ -66,7 +67,7 @@ namespace Game.Simulation.Systems
                     if (damageEvent.Target.Unpack(world, out int target) && target == hero)
                     {
                         if (maxHealth.Value > 0f)
-                            gain += damageEvent.Amount / maxHealth.Value * _receivedScale;
+                            gain += _appliedPool.Value.Get(entity).Amount / maxHealth.Value * _receivedScale;
 
                         inCombat = true;
                     }

@@ -22,6 +22,7 @@ namespace Game.Configs
         [SerializeField] private DashAbilityConfig _dash;
         [SerializeField] private WeaponConfig _startingWeapon;
         [SerializeField] private RageConfig _rage;
+        [SerializeField] private BerserkAbilityConfig _ultimate;
 
         public GameObject ViewPrefab => _viewPrefab;
 
@@ -40,5 +41,7 @@ namespace Game.Configs
         public WeaponConfig StartingWeapon => _startingWeapon;
 
         public RageConfig Rage => _rage;
+
+        public BerserkAbilityConfig Ultimate => _ultimate;
     }
 }

@@ -1,5 +1,4 @@
 using Game.Core;
-using Game.Services;
 using Game.Simulation.Services;
 using Game.UI;
 using Game.View;
@@ -15,8 +14,6 @@ namespace Game.Bootstrap
             builder.Register<SimulationClock>(Lifetime.Scoped);
 
             builder.Register<RunOutcome>(Lifetime.Scoped);
-
-            builder.Register<DebugStatInput>(Lifetime.Scoped).As<IDebugStatInput>();
 
             builder.Register<ViewPool>(Lifetime.Scoped).As<IViewFactory>();
 
