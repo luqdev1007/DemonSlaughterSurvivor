@@ -7,6 +7,7 @@ namespace Game.Core
         ContactDamage = 3,
         DashCooldown = 4,
         WeaponDamage = 5,
-        WeaponCooldown = 6
+        WeaponCooldown = 6,
+        AttackSpeed = 7
     }
 }

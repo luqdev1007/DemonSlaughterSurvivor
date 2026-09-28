@@ -10,6 +10,8 @@ namespace Game.Simulation.Components
 
     public struct WeaponCooldown { public float Value; public float Base; }
 
+    public struct AttackSpeed { public float Value; public float Base; }
+
     public struct WeaponReady { public float Remaining; }
 
     public struct SwingRandom { public uint State; }
@@ -26,6 +28,8 @@ namespace Game.Simulation.Components
         public EcsPackedEntity Owner;
         public int Variant;
         public float ClipTime;
+        public float PlaybackSpeed;
+        public int RemainingTicks;
         public Vector3 PreviousHand;
         public Vector3 PreviousTip;
         public EcsPackedEntity[] Hits;
@@ -40,6 +44,8 @@ namespace Game.Simulation.Components
             c.Owner = default;
             c.Variant = 0;
             c.ClipTime = 0f;
+            c.PlaybackSpeed = 0f;
+            c.RemainingTicks = 0;
             c.PreviousHand = default;
             c.PreviousTip = default;
             c.HitCount = 0;

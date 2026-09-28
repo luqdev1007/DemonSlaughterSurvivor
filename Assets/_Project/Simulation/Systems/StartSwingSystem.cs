@@ -14,11 +14,12 @@ namespace Game.Simulation.Systems
 
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Weapon, WeaponReady, WeaponCooldown, SwingRandom, OwnerLink>, Exc<Swinging>> _weapons = default;
+        private readonly EcsFilterInject<Inc<Weapon, WeaponReady, WeaponCooldown, AttackSpeed, SwingRandom, OwnerLink>, Exc<Swinging>> _weapons = default;
 
         private readonly EcsPoolInject<Weapon> _weaponPool = default;
         private readonly EcsPoolInject<WeaponReady> _readies = default;
         private readonly EcsPoolInject<WeaponCooldown> _cooldowns = default;
+        private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
         private readonly EcsPoolInject<SwingRandom> _randoms = default;
         private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
         private readonly EcsPoolInject<Swinging> _swinging = default;
@@ -68,24 +69,25 @@ namespace Game.Simulation.Systems
 
                 WeaponConfig config = _weaponPool.Value.Get(weapon).Config;
                 SwingPose pose = new SwingPose(_positions.Value.Get(owner).Value, _facings.Value.Get(owner).Value);
+                float attackSpeed = _attackSpeeds.Value.Get(weapon).Value;
 
-                if (HasTarget(config, pose) == false)
+                if (HasTarget(config, attackSpeed, pose) == false)
                     continue;
 
                 ref SwingRandom random = ref _randoms.Value.Get(weapon);
 
                 int variant = PickVariant(config, ref random.State);
 
-                StartSwing(world, weapon, owner, config, variant, pose);
+                StartSwing(world, weapon, owner, config, variant, attackSpeed, pose);
 
-                ready.Remaining = _cooldowns.Value.Get(weapon).Value;
+                ready.Remaining = _cooldowns.Value.Get(weapon).Value / attackSpeed;
             }
         }
 
-        private bool HasTarget(WeaponConfig config, in SwingPose pose)
+        private bool HasTarget(WeaponConfig config, float attackSpeed, in SwingPose pose)
         {
             SwingCoverage coverage = config.TriggerCoverage;
-            float lead = ResolveShortestWindup(config);
+            float lead = ResolveShortestWindup(config, attackSpeed);
 
             float radius = coverage.MaxDistance + SwingCoverage.DistanceStep * 0.5f + _motionBounds.Value.MaxEnemyMoveSpeed * lead;
 
@@ -125,7 +127,7 @@ namespace Game.Simulation.Systems
             return coverage.Covers(angle, distance);
         }
 
-        private static float ResolveShortestWindup(WeaponConfig config)
+        private static float ResolveShortestWindup(WeaponConfig config, float attackSpeed)
         {
             float shortest = float.MaxValue;
 
@@ -133,7 +135,7 @@ namespace Game.Simulation.Systems
             {
                 SwingVariant variant = config.Variant(index);
 
-                shortest = Mathf.Min(shortest, variant.WindowStart / variant.PlaybackSpeed);
+                shortest = Mathf.Min(shortest, variant.WindowStart / (variant.PlaybackSpeed * attackSpeed));
             }
 
             return shortest;
@@ -151,8 +153,15 @@ namespace Game.Simulation.Systems
             return variant;
         }
 
-        private void StartSwing(EcsWorld world, int weapon, int owner, WeaponConfig config, int variant, in SwingPose pose)
+        private void StartSwing(EcsWorld world, int weapon, int owner, WeaponConfig config, int variant, float attackSpeed, in SwingPose pose)
         {
+            SwingVariant chosen = config.Variant(variant);
+            SwingBake bake = chosen.Bake;
+
+            float delta = _clock.Value.Delta;
+            float requestedSpeed = chosen.PlaybackSpeed * attackSpeed;
+            int ticks = Mathf.Max(1, Mathf.RoundToInt(bake.ClipLength / requestedSpeed / delta));
+
             int entity = world.NewEntity();
 
             ref Swing swing = ref _swings.Value.Add(entity);
@@ -160,8 +169,10 @@ namespace Game.Simulation.Systems
             swing.Owner = world.PackEntity(owner);
             swing.Variant = variant;
             swing.ClipTime = 0f;
+            swing.PlaybackSpeed = bake.ClipLength / (ticks * delta);
+            swing.RemainingTicks = ticks;
 
-            config.Variant(variant).Bake.SampleAt(0f, out Vector3 hand, out Vector3 tip);
+            bake.SampleAt(0f, out Vector3 hand, out Vector3 tip);
 
             swing.PreviousHand = pose.ToWorld(hand);
             swing.PreviousTip = pose.ToWorld(tip);

@@ -30,6 +30,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DashStats> _dashStats = default;
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
         private readonly EcsPoolInject<WeaponCooldown> _weaponCooldowns = default;
+        private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -211,6 +212,43 @@ namespace Game.Simulation.Systems
                 ref WeaponCooldown weaponCooldown = ref _weaponCooldowns.Value.Get(target);
                 weaponCooldown.Value = StatFormula.Evaluate(weaponCooldown.Base, Total(StatId.WeaponCooldown));
             }
+
+            if (_attackSpeeds.Value.Has(target))
+                ApplyAttackSpeed(target);
+        }
+
+        private void ApplyAttackSpeed(int target)
+        {
+            ref AttackSpeed attackSpeed = ref _attackSpeeds.Value.Get(target);
+            attackSpeed.Value = StatFormula.Evaluate(attackSpeed.Base, Total(StatId.AttackSpeed));
+
+            if (attackSpeed.Value > 0f)
+                return;
+
+            string valueText = attackSpeed.Value.ToString(CultureInfo.InvariantCulture);
+            string baseText = attackSpeed.Base.ToString(CultureInfo.InvariantCulture);
+
+            throw new InvalidOperationException(
+                $"Entity {target} has a final {nameof(StatId.AttackSpeed)} of {valueText} (base {baseText}). Modifiers:{DescribeModifiers(StatId.AttackSpeed)} " +
+                "Attack speed divides the swing duration and the cooldown, so it must stay above zero: " +
+                "a More of -1 or below, or a negative Flat, stops or reverses every swing.");
+        }
+
+        private string DescribeModifiers(StatId stat)
+        {
+            StringBuilder sources = new StringBuilder();
+
+            for (int index = 0; index < _gatheredCount; index++)
+            {
+                ref GatheredModifier modifier = ref _gathered[index];
+
+                if (modifier.Stat != stat)
+                    continue;
+
+                sources.Append(FormattableString.Invariant($" '{modifier.SourceId}' {modifier.Op} {modifier.Value};"));
+            }
+
+            return sources.ToString();
         }
 
         private void ApplyMaxHealth(int target)
@@ -257,6 +295,8 @@ namespace Game.Simulation.Systems
                     return _weaponDamages.Value.Has(target);
                 case StatId.WeaponCooldown:
                     return _weaponCooldowns.Value.Has(target);
+                case StatId.AttackSpeed:
+                    return _attackSpeeds.Value.Has(target);
                 default:
                     return false;
             }
@@ -275,17 +315,7 @@ namespace Game.Simulation.Systems
             if (speed.Value <= _maxEnemyMoveSpeed)
                 return;
 
-            StringBuilder sources = new StringBuilder();
-
-            for (int index = 0; index < _gatheredCount; index++)
-            {
-                ref GatheredModifier modifier = ref _gathered[index];
-
-                if (modifier.Stat != StatId.MoveSpeed)
-                    continue;
-
-                sources.Append(FormattableString.Invariant($" '{modifier.SourceId}' {modifier.Op} {modifier.Value};"));
-            }
+            string sources = DescribeModifiers(StatId.MoveSpeed);
 
             string position = _positions.Value.Has(target) ? _positions.Value.Get(target).Value.ToString("F2", CultureInfo.InvariantCulture) : "<no position>";
 

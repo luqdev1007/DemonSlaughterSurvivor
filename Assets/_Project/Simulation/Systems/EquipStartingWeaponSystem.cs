@@ -10,6 +10,8 @@ namespace Game.Simulation.Systems
 {
     public sealed class EquipStartingWeaponSystem : IEcsInitSystem
     {
+        private const float BaseAttackSpeed = 1f;
+
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Player>> _players = default;
@@ -17,6 +19,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Weapon> _weapons = default;
         private readonly EcsPoolInject<WeaponDamage> _damages = default;
         private readonly EcsPoolInject<WeaponCooldown> _cooldowns = default;
+        private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
         private readonly EcsPoolInject<WeaponReady> _readies = default;
         private readonly EcsPoolInject<SwingRandom> _randoms = default;
         private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
@@ -51,6 +54,10 @@ namespace Game.Simulation.Systems
                 ref WeaponCooldown cooldown = ref _cooldowns.Value.Add(weapon);
                 cooldown.Base = config.CooldownSeconds;
                 cooldown.Value = config.CooldownSeconds;
+
+                ref AttackSpeed attackSpeed = ref _attackSpeeds.Value.Add(weapon);
+                attackSpeed.Base = BaseAttackSpeed;
+                attackSpeed.Value = BaseAttackSpeed;
 
                 ref WeaponReady ready = ref _readies.Value.Add(weapon);
                 ready.Remaining = 0f;

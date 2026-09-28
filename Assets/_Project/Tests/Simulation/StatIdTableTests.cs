@@ -18,6 +18,7 @@ namespace Game.Simulation.Tests
                 { "DashCooldown", 4 },
                 { "WeaponDamage", 5 },
                 { "WeaponCooldown", 6 },
+                { "AttackSpeed", 7 },
             });
         }
 

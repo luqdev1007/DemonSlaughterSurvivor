@@ -69,7 +69,8 @@ namespace Game.Simulation.Systems
                 SwingPose pose = new SwingPose(ownerPosition, _facings.Value.Get(owner).Value);
 
                 float from = swing.ClipTime;
-                float to = Math.Min(from + delta * variant.PlaybackSpeed, bake.ClipLength);
+                bool lastTick = swing.RemainingTicks <= 1;
+                float to = lastTick ? bake.ClipLength : Math.Min(from + delta * swing.PlaybackSpeed, bake.ClipLength);
 
                 int count = SwingSweep.BuildSegments(bake, from, to, variant.WindowStart, variant.WindowEnd, swing.PreviousHand, swing.PreviousTip, pose, _hands, _tips);
 
@@ -81,8 +82,9 @@ namespace Game.Simulation.Systems
                 swing.PreviousHand = pose.ToWorld(hand);
                 swing.PreviousTip = pose.ToWorld(tip);
                 swing.ClipTime = to;
+                swing.RemainingTicks--;
 
-                if (to < bake.ClipLength)
+                if (lastTick == false)
                     continue;
 
                 if (_swinging.Value.Has(weapon))

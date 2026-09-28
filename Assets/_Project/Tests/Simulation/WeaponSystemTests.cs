@@ -197,7 +197,212 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(30f, DamageTo(enemy), 1e-4f);
         }
 
+        [TestCase(1f, 30)]
+        [TestCase(1.5f, 20)]
+        [TestCase(2f, 15)]
+        [TestCase(1.3f, 23)]
+        public void SwingLastsTheRoundedTicksOfItsAttackSpeed(float attackSpeed, int expectedTicks)
+        {
+            Build(Front(), 90f, 5f);
+            int enemy = SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            SetAttackSpeed(attackSpeed);
+
+            Assert.AreEqual(expectedTicks, MeasureNextSwing(out float playbackSpeed, out float firstClipTime));
+            Assert.AreEqual(ClipLength / (expectedTicks * Tick), playbackSpeed, 1e-5f);
+            Assert.AreEqual(playbackSpeed * Tick, firstClipTime, 1e-6f, "the clip must advance by the snapshot speed, not the config speed");
+            Assert.AreEqual(1, CountEvents(enemy), "a faster swing must still sweep its whole hit window");
+        }
+
+        [Test]
+        public void ModifierAddedMidSwingKeepsTheSnapshotAndTheNextSwingTakesIt()
+        {
+            Build(Front(), 90f, 0.1f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            EcsFilter swings = _world.Filter<Swing>().End();
+            EcsPool<Swing> swingPool = _world.GetPool<Swing>();
+
+            for (int guard = 0; guard < 10 && swings.GetEntitiesCount() == 0; guard++)
+                Run(1);
+
+            Assert.AreEqual(1, swings.GetEntitiesCount());
+
+            float snapshot = SingleSwing(swings, swingPool).PlaybackSpeed;
+            int ticks = 1;
+
+            _modifiers.Add(_hero, StatId.AttackSpeed, StatOp.More, 1f, "test.attack_speed");
+
+            while (swings.GetEntitiesCount() > 0)
+            {
+                Assert.AreEqual(snapshot, SingleSwing(swings, swingPool).PlaybackSpeed, "the snapshot must not follow a modifier added mid-swing");
+
+                Run(1);
+                ticks++;
+
+                Assert.Less(ticks, 100);
+            }
+
+            Assert.AreEqual(30, ticks);
+            Assert.AreEqual(2f, _world.GetPool<AttackSpeed>().Get(_weapon).Value, 1e-6f);
+
+            Assert.AreEqual(15, MeasureNextSwing(out float next, out _));
+            Assert.AreEqual(2f, next, 1e-5f);
+        }
+
+        [Test]
+        public void CooldownIsDividedByAttackSpeed()
+        {
+            Build(Front(), 90f, 1f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            SetAttackSpeed(2f);
+
+            List<int> startTicks = new List<int>();
+
+            for (int tick = 0; tick < 200; tick++)
+            {
+                int before = _swingsStarted;
+
+                Run(1);
+
+                if (_swingsStarted > before)
+                    startTicks.Add(tick);
+            }
+
+            Assert.Greater(startTicks.Count, 3);
+
+            for (int index = 1; index < startTicks.Count; index++)
+            {
+                int interval = startTicks[index] - startTicks[index - 1];
+
+                Assert.GreaterOrEqual(interval, 30);
+                Assert.LessOrEqual(interval, 31, "a 1 s cooldown at attack speed 2 must last half a second, not a whole one");
+            }
+        }
+
+        [TestCase(-1f)]
+        [TestCase(-2f)]
+        public void NonPositiveAttackSpeedFailsLoudly(float more)
+        {
+            Build(Front(), 90f, 5f);
+
+            _modifiers.Add(_hero, StatId.AttackSpeed, StatOp.More, more, "test.broken_attack_speed");
+
+            System.InvalidOperationException exception = Assert.Throws<System.InvalidOperationException>(() => Run(1));
+
+            StringAssert.Contains("AttackSpeed", exception.Message);
+            StringAssert.Contains("test.broken_attack_speed", exception.Message);
+        }
+
+        [Test]
+        public void SwingTraceRepeatsForTheSameSeedWithAttackSpeedChanges()
+        {
+            List<int> first = SpeedTrace();
+            List<int> second = SpeedTrace();
+
+            Assert.Greater(first.Count, 0);
+            CollectionAssert.AreEqual(first, second);
+        }
+
+        private List<int> SpeedTrace()
+        {
+            Build(Front(), 90f, 0.1f, 2);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            EcsFilter swings = _world.Filter<Swing>().End();
+            EcsPool<Swing> swingPool = _world.GetPool<Swing>();
+            List<int> trace = new List<int>();
+
+            for (int tick = 0; tick < 600; tick++)
+            {
+                if (tick == 100)
+                    _modifiers.Add(_hero, StatId.AttackSpeed, StatOp.More, 0.5f, "test.attack_speed");
+
+                if (tick == 250)
+                    _modifiers.Add(_hero, StatId.AttackSpeed, StatOp.More, 1.2f, "test.attack_speed");
+
+                if (tick == 400)
+                    _modifiers.RemoveBySource(_hero, "test.attack_speed");
+
+                Run(1);
+
+                foreach (int entity in swings)
+                {
+                    ref Swing swing = ref swingPool.Get(entity);
+
+                    trace.Add(swing.Variant);
+                    trace.Add(swing.RemainingTicks);
+                    trace.Add(System.BitConverter.SingleToInt32Bits(swing.PlaybackSpeed));
+                    trace.Add(System.BitConverter.SingleToInt32Bits(swing.ClipTime));
+                }
+            }
+
+            TearDown();
+
+            return trace;
+        }
+
+        private void SetAttackSpeed(float attackSpeed)
+        {
+            if (attackSpeed == 1f)
+                return;
+
+            _modifiers.Add(_hero, StatId.AttackSpeed, StatOp.More, attackSpeed - 1f, "test.attack_speed");
+        }
+
+        private int MeasureNextSwing(out float playbackSpeed, out float firstClipTime)
+        {
+            EcsFilter swings = _world.Filter<Swing>().End();
+            EcsPool<Swing> swingPool = _world.GetPool<Swing>();
+
+            playbackSpeed = 0f;
+            firstClipTime = 0f;
+
+            int ticks = 0;
+            bool started = false;
+
+            for (int guard = 0; guard < 400; guard++)
+            {
+                int before = _swingsStarted;
+
+                Run(1);
+
+                if (started == false && _swingsStarted > before)
+                {
+                    started = true;
+
+                    Swing swing = SingleSwing(swings, swingPool);
+                    playbackSpeed = swing.PlaybackSpeed;
+                    firstClipTime = swing.ClipTime;
+                }
+
+                if (started == false)
+                    continue;
+
+                ticks++;
+
+                if (swings.GetEntitiesCount() == 0)
+                    return ticks;
+            }
+
+            Assert.Fail("no swing finished within the guard");
+
+            return -1;
+        }
+
+        private static Swing SingleSwing(EcsFilter swings, EcsPool<Swing> swingPool)
+        {
+            foreach (int entity in swings)
+                return swingPool.Get(entity);
+
+            Assert.Fail("expected a live swing");
+
+            return default;
+        }
+
         private int _swingsStarted;
+        private int _weapon;
         private WeaponConfig _config;
         private readonly List<int> _startedVariants = new List<int>();
 
@@ -253,6 +458,12 @@ namespace Game.Simulation.Tests
             ref WeaponCooldown weaponCooldown = ref _world.GetPool<WeaponCooldown>().Add(weapon);
             weaponCooldown.Base = cooldown;
             weaponCooldown.Value = cooldown;
+
+            ref AttackSpeed attackSpeed = ref _world.GetPool<AttackSpeed>().Add(weapon);
+            attackSpeed.Base = 1f;
+            attackSpeed.Value = 1f;
+
+            _weapon = weapon;
 
             _world.GetPool<WeaponReady>().Add(weapon);
             _world.GetPool<SwingRandom>().Add(weapon).State = SimulationRandom.StreamState(Seed, weaponId);

@@ -10,6 +10,7 @@ namespace Game.Simulation.Systems
     {
         private const string SourceId = "debug";
         private const float MoveSpeedIncrease = 0.5f;
+        private const float AttackSpeedMore = 0.5f;
 
         private readonly EcsFilterInject<Inc<Player, MoveSpeed>, Exc<Dead>> _players = default;
 
@@ -29,6 +30,7 @@ namespace Game.Simulation.Systems
                     continue;
 
                 statModifiers.Add(player, StatId.MoveSpeed, StatOp.Increased, MoveSpeedIncrease, SourceId);
+                statModifiers.Add(player, StatId.AttackSpeed, StatOp.More, AttackSpeedMore, SourceId);
             }
         }
     }

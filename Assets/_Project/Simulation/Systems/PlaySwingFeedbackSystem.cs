@@ -36,7 +36,7 @@ namespace Game.Simulation.Systems
 
                 SwingVariant variant = _weapons.Value.Get(weapon).Config.Variant(swing.Variant);
 
-                view.Value.PlayAttack(variant.AnimatorTrigger, variant.PlaybackSpeed);
+                view.Value.PlayAttack(variant.AnimatorTrigger, swing.PlaybackSpeed);
             }
         }
     }
