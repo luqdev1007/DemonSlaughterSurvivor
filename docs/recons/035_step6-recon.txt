@@ -1,0 +1,460 @@
+035 · Разведка перед шагом 6 (способности, ульта берсерка, ярость)
+Дата: 2026-09-28. Коммит на входе: c377c47; документы задачи 0 — b8cb241.
+Код не менялся. План не пишется. Формат: вопрос → ответ → адрес.
+Номер 034 оставлен под отчёт блока 4 шага 5, если он найдётся (в docs/recons его нет).
+
+Как получены факты: чтение кода и ассетов (YAML), исходник URP из Library/PackageCache,
+один вызов редактора через MCP (длины клипов). Замеров в play mode не было — всё, что
+помечено «по коду» или «по ассету», в игре не проверялось.
+
+Рабочее дерево: Assets/_Project/Prefabs/Heroes/Berserk.prefab изменён вне этой сессии
+(в HEAD есть ProtezPivot/Protez из c377c47, в рабочей копии их нет). Не тронут,
+в коммит b8cb241 не вошёл.
+
+==========================================================================
+0. Задача 0 — сделано (коммит b8cb241, только документы)
+==========================================================================
+- GDD.md §12: шаг 5 [x] 2026-09-27; типы жизненного цикла атак сняты с шага,
+  перенесены на «шаг 7 или позже, к первому потребителю», с причиной (протез
+  упразднён, Вихрь — мгновенный контрудар). Дизайн §8 ARCHITECTURE не отменён.
+- PROGRESS.md: блоки 3 и 4 — приёмка пройдена (подтверждена 2026-09-28), шаг 5
+  закрыт; блок 4 дописан абзацем по коммитам 36968c4, 133fe06, 18312b4, 1ee348c
+  (Spin убран, FaceNearestEnemySystem, кулдаун 0.25, LeftSlash ×1.5, TurnSpeed
+  1000, периоды 36/26 тиков — выведены из кода, не замерены); пункт про взгляд
+  при Backward — «когда появится второй персонаж»; роадмап ✅; запись в журнал.
+- ARCHITECTURE.md §8, §10: автоповорот и два варианта; период = max(кулдаун,
+  длина клипа ÷ скорость).
+- CLAUDE.md §8: кулдаун меча 1.0 → 0.25 с.
+
+==========================================================================
+1. ApplyDamageSystem
+==========================================================================
+В: Как выбирается сильнейшее событие за тик?
+О: Первый проход по всем DamageEvent: пропуск Amount <= 0, цели без Health,
+   цели с Invulnerable; на цель остаётся событие с наибольшим Amount, при
+   равенстве — первое встреченное (строгое «>»). Второй проход применяет.
+   Сравнивается сырой Amount события — никакой стат цели в выборе не участвует.
+   → Simulation/Systems/ApplyDamageSystem.cs:44-69 (Invulnerable :57, сравнение :64)
+
+В: Где известен фактически применённый урон?
+О: Во втором проходе: health.Current -= damageEvent.Amount, и на СУЩНОСТЬ
+   СОБЫТИЯ вешается тег DamageApplied. «Применённый» = Amount выбранного события
+   целиком: оверкилл не вычитается (Health уходит в минус), HP до удара нигде
+   не сохраняется.
+   → ApplyDamageSystem.cs:73-91 (запись :80, DamageApplied :82, KillingBlow :84-88)
+   → Simulation/Components/CombatComponents.cs:23-33
+
+В: Можно ли отдать его наружу без правки читателей?
+О: Да, путь уже существует. Выбранные события помечены DamageApplied и живут до
+   CleanupEventsSystem в группе 13 (удаляет сущности событий целиком). Готовый
+   прецедент читателя — PlayHitFeedbackSystem с фильтром Inc<DamageEvent,
+   DamageApplied>. Новый читатель в группах 10–12 видит ровно применённые события
+   без правки ApplyDamageSystem. Ограничение: только Amount события; для урона
+   «до обрезки по HP» нужна правка ApplyDamageSystem.
+   → PlayHitFeedbackSystem.cs:11; CleanupEventsSystem.cs:22-23
+
+В: Кто пишет Health?
+О: Четыре места:
+   - ApplyDamageSystem (урон) → ApplyDamageSystem.cs:80
+   - RecomputeStatsSystem (MaxHealth растёт дельтой, падает обрезкой; не у Dead)
+     → RecomputeStatsSystem.cs:216-242
+   - SpawnPlayerSystem (рождение героя) → SpawnPlayerSystem.cs:76-77
+   - EnemyFactory (рождение врага) → Simulation/Services/EnemyFactory.cs:87
+   Больше писателей нет (grep по Assets/_Project/**/*.cs).
+
+В: Порядок групп вокруг?
+О: 7 AdvanceSwingSystem (урон оружия) → 8 SweepDashPushSystem, DetectContactDamage
+   (урон по герою) → 9 TickInvulnerabilitySystem, ApplyDamageSystem → 10 MarkDead,
+   TickPendingFinish, FinishRunOnPlayerDeath, ReapDeadEnemies → 11 Progression
+   (пусто; по ARCHITECTURE §10 «заряд ульты» живёт здесь) → 12 ViewSync
+   (PlayHitFeedback, PublishPlayerVitals…) → 13 CleanupEvents …
+   → Simulation/Systems/RunSystems.cs:42-70
+   Следствие: ReapDeadEnemiesSystem (группа 10) удаляет сущность врага до группы 11,
+   поэтому Source события контактного урона от врага, умершего в этом тике, в группе
+   11 уже не распакуется.
+
+==========================================================================
+2. Source у DamageEvent и два потока для ярости
+==========================================================================
+В: Всегда ли Source — герой для урона оружия?
+О: Да. AdvanceSwingSystem кладёт Source = владелец взмаха (swing.Owner), не оружие
+   (решение (г) журнала 2026-09-27). Единственный рождатель урона оружия.
+   → AdvanceSwingSystem.cs:143-149
+
+В: Что лежит для контактного урона по герою?
+О: Source = сущность врага, Target = игрок, SourcePosition = позиция врага.
+   Детектор ищет только цели с тегом Player — урон «враг → враг» и «герой → враг
+   контактом» не рождается.
+   → DetectContactDamageSystem.cs:17 (фильтр целей), :92-98
+
+В: Рождателей DamageEvent всего?
+О: Два: AdvanceSwingSystem и DetectContactDamageSystem. Отладочный K удалён (bed7532).
+
+В: Как получить «нанесено героем» и «получено героем»?
+О: По коду — одним читателем Inc<DamageEvent, DamageApplied> в группе 10–12:
+   - нанесено: Source распаковывается в сущность с тегом Player;
+   - получено: Target распаковывается в сущность с тегом Player.
+   Оба потока — только применённые события (после i-frames и выбора сильнейшего).
+   Урон по неуязвимому герою в «получено» не попадёт (события без DamageApplied).
+   Урон по врагам всегда применяется: у врагов нет HitInvulnerability и Invulnerable
+   (грепом: выдают только StartDashSystem и ApplyDamageSystem через HitInvulnerability,
+   которая есть только у героя — SpawnPlayerSystem.cs:79-80).
+
+==========================================================================
+3. Скорость атаки
+==========================================================================
+В: Откуда берётся скорость проигрывания?
+О: Поле варианта WeaponConfig.SwingVariant._playbackSpeed (данные, не стат).
+   Сейчас: LeftSlash 1.5, RightSlash 1.
+   → Configs/WeaponConfig.cs:107, :117; Configs/Weapons/Weapon_BerserkSword.asset:20, :29
+
+В: Кто её читает?
+О: Четыре места, каждое читает из конфига на каждом обращении, снимка нет:
+   - AdvanceSwingSystem: to = min(from + delta × PlaybackSpeed, ClipLength) каждый тик
+     → AdvanceSwingSystem.cs:65-72
+   - StartSwingSystem.ResolveShortestWindup: упреждение = min(WindowStart / PlaybackSpeed)
+     → StartSwingSystem.cs:128-140 (используется в :88-90 для радиуса и :111)
+   - PlaySwingFeedbackSystem → IView.PlayAttack(trigger, PlaybackSpeed)
+     → PlaySwingFeedbackSystem.cs:37-39
+   - SwingBaker при запекании покрытия (шаг сэмпла = speed/60 по времени клипа)
+     → Configs/Editor/SwingBaker.cs:147, :285, :300
+
+В: Как считается период и длительность в тиках?
+О: Длительность взмаха не переводится в тики заранее: время клипа копится float
+   (to = from + delta × speed), взмах удаляется в тике, где to >= ClipLength, то есть
+   живёт ceil(ClipLength / (speed × delta)) тиков. Кулдаун: WeaponReady.Remaining =
+   WeaponCooldown.Value на старте, тикает в группе 6; StartSwingSystem исключает
+   Swinging. Период = max(кулдаун, длина взмаха в тиках). Сегодня кулдаун 0.25 с
+   короче обоих клипов → период задаёт клип: LeftSlash 36 тиков, RightSlash 26
+   (по коду, не замерено).
+   → AdvanceSwingSystem.cs:71-91; StartSwingSystem.cs:17 (Exc<Swinging>), :53-56, :81;
+     TickWeaponCooldownSystem.cs:20-31
+   Замечание: ARCHITECTURE §7 требует «длительность способности в тиках, округление на
+   старте» — взмах этому правилу не следует (float-накопление). Для ульты правило
+   действует.
+
+В: Как аниматор получает скорость?
+О: IView.PlayAttack → ViewInterpolator: SetFloat("AttackSpeed", speed), затем
+   SetTrigger(trigger). Состояния AttackLeftSlash/RightSlash/Spin в слое Attack
+   имеют speed = 1 и speedParameter = AttackSpeed. Вход из Any State — длительность
+   перехода 0, выход — exit time 1.0, фиксированные 0.1 с в Empty.
+   → View/ViewInterpolator.cs:163-170
+   → Art/Animations/Berserk/Berserk.controller: состояния :246/:262, :863/:879,
+     :125/:141; входы :908 (LeftSlash), :424 (RightSlash); выходы :772, :170
+   Параметр AttackSpeed по умолчанию 1 (:528-530).
+
+В: Что менять, чтобы скорость стала статом героя со снимком на старте взмаха?
+О: Факты, без выбора варианта:
+   - StatId: новый член с номером 7 (StatId.cs:10) + строка в StatIdTableTests.cs:13-21.
+   - Компонент со значением (Value/Base, как у WeaponCooldown — WeaponComponents.cs:11)
+     и ветки в RecomputeStatsSystem.Apply (:180-214) и Carries (:244-263).
+   - Наследование: если компонент будет на оружии, модификаторы героя дойдут до него
+     сами — Gather берёт модификатор владельца, когда цель несёт этот стат
+     (RecomputeStatsSystem.cs:94-108, Carries), а грязный владелец делает грязным
+     подчинённого (:56-67). Если на герое — оружию придётся читать владельца.
+   - Снимок: в Swing полей скорости нет (WeaponComponents.cs:21-47) — нужно поле,
+     заполняемое в StartSwingSystem.StartSwing (:154-171) и читаемое в
+     AdvanceSwingSystem.cs:72 и PlaySwingFeedbackSystem.cs:39 вместо variant.PlaybackSpeed.
+   - Упреждение StartSwingSystem.ResolveShortestWindup (:136) тоже делит на скорость.
+   - Итог пайплайна в секундах/множителях; перевод — у потребителя (журнал 2026-09-26 (ж)).
+
+В: Где граница риска для совпадения клинка 0.0000 м?
+О: Совпадение держится на трёх условиях, все проверяются тестом SwingBakeFreshnessTests
+   (SwingBakeFreshnessTests.cs:70-104): состояние в слое Attack, его speed = 1, его
+   скорость — параметр AttackSpeed. Плюс вход без перехода (длительность 0).
+   - Безопасно: менять значение AttackSpeed на старте взмаха — аниматор и симуляция
+     получают одно число (PlayAttack вызывается один раз на взмах, наложения взмахов нет).
+   - Риск 1: скорость, прочитанная в разные моменты в симуляции и во вьюхе. Сегодня
+     симуляция читает её каждый тик (AdvanceSwingSystem.cs:72), вьюха — один раз.
+     Пока значение — константа конфига, разницы нет; как только оно станет статом,
+     меняющимся посреди взмаха (ярость), без снимка симуляция и аниматор разойдутся.
+   - Риск 2: покрытие и сектор срабатывания запечены при скорости конфига
+     (SwingBaker.cs:147, :300). Сама проверка попадания (SwingSweep по подшагам
+     запекания) от скорости не зависит, а сетка покрытия — дискретизация по тикам
+     при данной скорости; при другой скорости покрытие становится приближением.
+     Величина расхождения не замерялась.
+   - Риск 3: известное отставание аниматора на 1 тик (CLAUDE.md §8) от скорости
+     не зависит, но в клип-времени это speed/60 — при ускорении растёт.
+
+==========================================================================
+4. Пайплайн статов
+==========================================================================
+В: Таблица StatId сейчас?
+О: MoveSpeed 1, MaxHealth 2, ContactDamage 3, DashCooldown 4, WeaponDamage 5,
+   WeaponCooldown 6. StatOp: Flat 1, Increased 2, More 3.
+   → Core/StatId.cs:3-11; Tests/Simulation/StatIdTableTests.cs:13-32
+   Добавление = новый номер в конце enum + строка в замороженной таблице теста;
+   тест падает на любом новом члене без строки (:39-43).
+
+В: Что нужно для «скорости атаки» и «получаемого урона»?
+О: Скорость атаки — см. п. 3. Получаемый урон: ни компонента, ни стата нет;
+   ApplyDamageSystem статов не читает (ApplyDamageSystem.cs:15-27 — пулы без
+   статов). Любой множитель получаемого урона — правка ApplyDamageSystem; место
+   умножения относительно выбора сильнейшего (:64 сравнивает сырой Amount) —
+   развилка.
+
+В: Как читать наследование от владельца для оружия?
+О: Оружие — сущность с OwnerLink → герой (EquipStartingWeaponSystem.cs:61-62,
+   MarkDirty :64). Модификатор, повешенный на героя, попадает в итог оружия, если
+   оружие несёт компонент этого стата (Carries, RecomputeStatsSystem.cs:101-102,
+   244-263). Грязный герой → грязное оружие в том же пересчёте (:56-67). Пример из
+   тестов: «ability.rage.berserk» More +0.3 к MoveSpeed героя (StatPipelineTests.cs:177).
+
+В: Что держит отладочная клавиша M — полный список?
+О: - Simulation/Systems/DebugStatModifierSystem.cs (целиком; SourceId "debug", +0.5
+     Increased MoveSpeed, переключатель через RemoveBySource)
+   - Simulation/Systems/RunSystems.cs:38 (регистрация, группа 6)
+   - Core/IDebugStatInput.cs (интерфейс)
+   - Services/DebugStatInput.cs (свой InputAction "<Keyboard>/m", :15)
+   - Bootstrap/RunLifetimeScope.cs:19 (регистрация Scoped)
+   - Bootstrap/RunEntryPoint.cs:24, :47, :60, :98 (поле, параметр, присваивание, Inject)
+   - плюс .meta трёх .cs-файлов
+   - документы: CLAUDE.md §8 пункт «Модификатор MoveSpeed вешается клавишей M»,
+     PROGRESS.md «Ближайшие шаги» пункт «Снять отладочную клавишу M».
+
+В: Что от неё зависит, включая тесты?
+О: Ни один тест не ссылается (grep DebugStat / "debug" по Tests — 0). Других
+   потребителей IDebugStatInput нет. Условие снятия в CLAUDE.md §8 — первый настоящий
+   источник модификаторов (ярость).
+
+==========================================================================
+5. Ввод
+==========================================================================
+В: Что умеет IInputService?
+О: MoveAxis, ConsumeDashPressed, ResetLatches. Одна кнопка.
+   → Core/IInputService.cs:5-12
+
+В: Как устроен латч?
+О: bool-флаг поднимается по performed действия Dash, гасится в ConsumeDashPressed,
+   сбрасывается ResetLatches на старте забега. Сервис — Singleton проектного скоупа.
+   → Services/InputService.cs:13, :18, :24-37, :45-48; RunEntryPoint.cs:71;
+     Bootstrap/ProjectLifetimeScope.cs:37
+
+В: Буфер?
+О: DashRequest { Age } на игроке; ExpireDashRequestSystem снимает по
+   InputConfig.BufferSeconds (одно окно на всё, 0.12). Повторное нажатие при живом
+   запросе Age не обнуляет (ReadDashInputSystem.cs:23-24).
+   → ReadDashInputSystem.cs:18-29; ExpireDashRequestSystem.cs:20-30; InputConfig.cs:8
+
+В: Input Actions asset?
+О: Одна карта Gameplay, два действия: Move (Value) и Dash (Button). Привязки только
+   клавиатурные: WASD (2D Vector) и Space. Схем управления нет (controlSchemes: []).
+   Геймпадных привязок НЕТ (см. п. 11). C#-класс GameControls.cs сгенерирован из ассета.
+   → Services/Input/GameControls.inputactions:10, :19-20, :41-91, :98;
+     Services/Input/GameControls.cs
+
+В: Что нужно для второй кнопки способности?
+О: По существующему пути: действие в .inputactions (клавиатура + геймпад) и
+   перегенерация GameControls.cs; второй латч и Consume…Pressed в IInputService /
+   InputService (+ сброс в ResetLatches); система чтения в группе 1 и запрос с Age,
+   если нужен буфер. Геймпада нет и для рывка — его придётся добавить обоим.
+   Отдельный InputAction вне ассета — прецедент только у отладочной M
+   (DebugStatInput.cs:15).
+
+==========================================================================
+6. Рывок: хардкод против данных
+==========================================================================
+В: Что данные?
+О: DashAbilityConfig: distance, duration, cooldown, direction, accelerationPower,
+   invulnerabilitySeconds, pushSpeed, pushSeconds. Ассет: 8 / 0.33 / 1 / Forward /
+   3 / 0.33 / 5 / 0.6. Кулдаун — стат (DashCooldown, пайплайн).
+   → Configs/DashAbilityConfig.cs:9-32; Configs/Abilities/Dash_Berserk.asset:15-23;
+     RecomputeStatsSystem.cs:197-201
+   Все числа копируются в DashStats на спавне героя.
+   → SpawnPlayerSystem.cs:82-91; AbilityComponents.cs:19-30
+
+В: Что хардкод?
+О: - Слот: у персонажа ровно одно поле рывка типизированного класса
+     (CharacterConfig._dash : DashAbilityConfig) → CharacterConfig.cs:22, :37.
+     Связь «кнопка → рывок» — код ReadDashInputSystem (ConsumeDashPressed → DashRequest).
+   - Условие активации: фильтр StartDashSystem Inc<DashRequest, DashStats, Facing>,
+     Exc<Dashing, DashCooldown> → StartDashSystem.cs:14. Смерть: ввод Exc<Dead>
+     (ReadDashInputSystem.cs:10), MarkDeadSystem снимает DashRequest (MarkDeadSystem.cs:20, :66-).
+   - Эффект «движение»: StartDashSystem.cs:28-46 (Dashing) → ApplyDashVelocitySystem,
+     AdvanceDashSystem (кулдаун вешается В КОНЦЕ рывка, AdvanceDashSystem.cs:26-31).
+   - Эффект «неуязвимость»: всегда, внутри StartDashSystem.cs:48-50 (+1 тик по правилу
+     Invulnerability.TicksSpentBeforeDamage).
+   - Эффект «толчок»: всегда для любого Player с Dashing — фильтр
+     SweepDashPushSystem.cs:19; числа — из DashStats; валидация — из CharacterConfig.Dash
+     (:39-50).
+   - Побочные потребители Dashing: InterruptSwingSystem.cs:28, StartSwingSystem.cs:63,
+     FaceNearestEnemySystem.cs:17, SyncDashViewSystem.
+   - Направление: switch Forward/Backward, иначе NotImplementedException
+     → StartDashSystem.cs:33-38.
+
+В: ID ability.dash.berserk и ContentRegistry?
+О: ID есть, ассет лежит в ContentDatabase (реестр проверяет уникальность и пустые ID —
+   ContentRegistry.cs:21-57). Но по ID рывок никто не ищет: SpawnPlayerSystem и
+   SweepDashPushSystem берут его прямой ссылкой character.Dash
+   (SpawnPlayerSystem.cs:41-42, SweepDashPushSystem.cs:39-40). То же у оружия
+   (CharacterConfig._startingWeapon, EquipStartingWeaponSystem.cs:30-31).
+   → Configs/ContentDatabase.asset:15-22; Bootstrap/ProjectLifetimeScope.cs:39
+
+В: Что минимально выносится в AbilityDefinition без правки исполняющих систем?
+О: Факт по коду: без правки систем выносятся только слот (какая кнопка) и условие
+   (сегодня Exc<Dashing, DashCooldown> — тоже код, но не исполняющий). Эффекты
+   «неуязвимость» и «толчок» сегодня нельзя включить/выключить данными, не тронув
+   исполняющие системы: первый зашит в StartDashSystem.cs:48-50, второй срабатывает
+   от самого факта Dashing у Player (SweepDashPushSystem.cs:19). Эффект «движение»
+   уже данные (DashStats). Как именно резать — развилка плана, здесь не решается.
+   ARCHITECTURE §7 (строка про «что исполняет — системы, и они не изменятся»)
+   с этим фактом расходится частично: см. п. 11.
+
+==========================================================================
+7. HUD
+==========================================================================
+В: Где живёт HUD здоровья и какой UI-стек?
+О: uGUI + TextMeshPro. Префаб Prefabs/UI/Hud.prefab: Canvas Screen Space Overlay
+   (m_RenderMode 0, :263), CanvasScaler 1920×1080 (:293), HudView на корне (:311),
+   HealthBar с Image Fill (:15, :59) и TMP-текстом Value (:90, :134). Префаб берётся
+   из LevelConfig._hudPrefab (LevelConfig.cs:25, :45) — техдолг CLAUDE.md §8
+   «Префаб HUD лежит в LevelConfig».
+
+В: Как HUD читает симуляцию, границы слоёв?
+О: Simulation → Core → UI, только вниз:
+   PublishPlayerVitalsSystem (группа 12, каждый тик) → IPlayerVitalsSink.Publish(health,
+   maxHealth) (Game.Core, один метод) → PlayerVitals (Game.UI, два ReactiveProperty R3,
+   гасят повторы) → HudPresenter (подписка, Refresh) → HudView.ShowHealth.
+   Регистрации — RunLifetimeScope.cs:25, :27; инъекция в мир — RunEntryPoint.cs:99.
+   → PublishPlayerVitalsSystem.cs:11-26; Core/IPlayerVitalsSink.cs:3-6;
+     UI/PlayerVitals.cs:7-27; UI/HudPresenter.cs:24-64; UI/HudView.cs:9-20
+
+В: Есть ли место под полосу ярости и таймер ульты?
+О: Готовых полей нет: IPlayerVitalsSink знает только HP, HudView — две ссылки
+   (_healthFill, _healthText), IsWired проверяет только их. Канвас один, свободного
+   места в иерархии нет — только элемент HealthBar. Добавление = расширение
+   интерфейса (или второй sink), PlayerVitals, HudPresenter, HudView и префаба.
+
+==========================================================================
+8. Постпроцессинг
+==========================================================================
+В: Есть ли Volume / URP-пост?
+О: Активный пайплайн — PC_RPAsset (GraphicsSettings.asset:40; QualitySettings текущий
+   уровень 1 = PC, :7, :104). У него профиль по умолчанию SampleSceneProfile
+   (PC_RPAsset.asset:95) с Bloom, Vignette (intensity 0.2), Tonemapping, MotionBlur
+   (выкл). Но камера забега пост не рендерит: CameraRig.prefab:280
+   m_RenderPostProcessing: 0. По исходнику URP postProcessEnabled берётся из
+   renderPostProcessing камеры (Library/PackageCache/com.unity.render-pipelines.
+   universal@d3aed158d698/Runtime/UniversalRenderPipeline.cs:1569). То есть сегодня
+   в забеге постпроцессинга нет вообще. Volume-компонента в сцене Gameplay нет
+   (есть только в Tests.unity:640-644). В PC_Renderer — фича SSAO (PC_Renderer.asset:71).
+
+В: Можно ли кровавую виньетку?
+О: Технически есть оба пути, выбор — развилка:
+   - стандартный Vignette URP: требует включить пост на камере рига (CameraRig.prefab:280)
+     — это включит и Bloom/Tonemapping профиля по умолчанию, то есть поменяет картинку
+     целиком, не только виньетку; цвет у Vignette — параметр (color), в профиле чёрный;
+   - отдельный оверлей: Image на канвасе HUD (уже Screen Space Overlay), пост не нужен.
+   Цена первого пути для кадра не замерялась.
+
+==========================================================================
+9. VFX и клипы
+==========================================================================
+В: Какие клипы есть в Berserk.controller?
+О: Base Layer: Idle, Run (0.75), DashRun (1.75), AttackFlip (скорость 3.5, триггер
+   AttackFlip, клип 1.45 с), AttackJump (скорость 2, триггер AttackJump, клип 0.787 с).
+   UpperBody: Empty, Charge. Attack: Empty, AttackLeftSlash, AttackRightSlash,
+   AttackSpin (после блока 4 не запускается никем).
+   Параметры-триггеры AttackSpin, AttackFlip, AttackJump есть, но ни один .cs их не
+   выставляет (grep — 0).
+   → Berserk.controller:3-29 (AttackJump), :298-314 (AttackFlip), :826-855 (Base Layer),
+     :55-89 (Attack), :486-530 (параметры)
+
+В: Новые FBX (коммиты 4822256, 302d843)?
+О: В контроллер не подключены. Длины (MCP): Gunplay 2.6 с, Dying 4.333 с,
+   Standing Taunt Battlecry 2.833 с; все Generic (animationType 2), без root-кривых.
+   Battlecry — очевидный кандидат на активацию ульты (это наблюдение, не решение).
+   → Art/Animations/Berserk/Berserk@*.fbx(.meta:101)
+
+В: VFX-ассеты?
+О: Нет ни одного: ParticleSystem в Assets — 0 (поиск класса 198), VFX Graph не
+   установлен (Packages/manifest.json — только модуль particlesystem), Shader Graph
+   запрещён (CLAUDE.md §8, дизолв). Единственный свой шейдер — Art/Shaders/Dissolve.shader.
+
+В: Точки крепления?
+О: Выделенных сокетов нет. Меч Dragonslayer — ребёнок кости mixamorig:RightHand
+   (Berserk.prefab:785-805 → :2495-2521), на нём неиспользуемый триггер
+   CapsuleCollider (:2522-2544; кодом не читается — физика запрещена §7).
+   В HEAD есть ProtezPivot (неактивный) + Protez из c377c47; в рабочей копии удалены
+   (незакоммичено, см. шапку). AnimationEventSink на View — пустые приёмники
+   EnableHitbox/DisableHitbox/OnAttackFinished (View/AnimationEventSink.cs:7-17).
+
+==========================================================================
+10. Прыжок (AttackJump)
+==========================================================================
+В: Клип, длительность, root motion?
+О: AttackJump.anim — generic-клип (не humanoid), 0.787 с, 75 fps, без цикла. Root
+   motion нет: m_HasGenericRootTransform 0, hasRootCurves False, applyRootMotion у
+   героя выключен (тест SwingBakeFreshnessTests.cs:78). Перемещение запечено в
+   позицию Hips: по XZ прыжок на месте (Hips.z = 0 на всех ключах, x в пределах
+   ±0.1 м), по высоте Hips 0.95 → пик 1.97 м на 0.213 с клипа → присед до 0.42 м
+   около 0.44–0.49 с → 0.98 м в конце. В контроллере скорость 2, то есть на экране
+   ≈0.39 с, пик ≈0.11 с. События: EnableHitbox 0.213, DisableHitbox 0.56,
+   OnAttackFinished 0.787. Выход — exit time 0.682 → Idle за 0.1 с.
+   → AttackJump.anim:10346 (fps), :10998 (длина), :9492-9814 (Hips), :81695-81718;
+     Berserk.controller:11, :192-212 (выход)
+   Числа высоты — чтение кривых, не замер позы в рантайме.
+
+В: Обрабатывает ли его Bake Weapon Swings?
+О: Инструмент запекает только варианты из WeaponConfig, ища состояние по имени во
+   всех слоях (SwingBaker.cs:32-37, :44-81, :123-126) — найти AttackJump он сможет.
+   Но тест свежести требует, чтобы каждый вариант был в слое Attack, со speed 1 и
+   параметром AttackSpeed (SwingBakeFreshnessTests.cs:70-104); AttackJump лежит в
+   Base Layer со скоростью 2 без параметра — как вариант меча он тест не пройдёт.
+   Кроме того, Any State базового слоя по IsDashing уводит в DashRun
+   (Berserk.controller:650-673) — рывок оборвёт картинку прыжка.
+
+В: Как поведёт себя сектор срабатывания при варианте с другой геометрией?
+О: Сектор = ПЕРЕСЕЧЕНИЕ покрытий всех вариантов (SwingBaker.cs:118-121, :151-155,
+   :173-175). Вариант с другой формой покрытия может только сузить сектор; если
+   пересечение станет пустым, забег не стартует — EquipStartingWeaponSystem.cs:80-83
+   бросает «would never swing». Запасной А3′ (объединение) описан в CLAUDE.md §8,
+   не реализован.
+
+В: Как выбирается вариант?
+О: Равновероятно из всего пула, без весов и условий: roll ∈ [0,1) из собственного
+   потока оружия × VariantCount. Цель на вариант не влияет — HasTarget проверяет
+   только общий сектор.
+   → StartSwingSystem.cs:72-79, :142-152; поток — EquipStartingWeaponSystem.cs:58-59
+
+В: Нужен ли прыжку отдельный триггер?
+О: Факт по коду: в пуле вариантов прыжок станет случайным автоударом с вероятностью
+   1/(N+1), и способа запустить его по кнопке или по ульте у пула нет. Если прыжок —
+   часть ульты/способности, путь через пул меча не даёт ни «по решению игрока», ни
+   гарантии выбора. Решение — за планом.
+
+==========================================================================
+11. Расхождения доков и кода (шаги 5–6)
+==========================================================================
+Исправлено в b8cb241: статус блоков 3–4 и шага 5, блок 4 в PROGRESS/ARCHITECTURE,
+кулдаун меча в CLAUDE.md §8, пункт про Backward.
+
+Не исправлено (флаг, правка — отдельным решением):
+Р1. Геймпада нет. PROGRESS «Текущий этап», шаг 2 блок 1: «ходит на WASD и геймпаде»;
+    ARCHITECTURE §6 и CLAUDE §4 обещают геймпад. В GameControls.inputactions привязок
+    геймпада нет ни одной (:41-91), схем нет (:98). Когда пропали — не выяснял.
+Р2. ARCHITECTURE §6: «InputService → нормализованный InputState (компонент на игроке)».
+    Компонента InputState нет (grep — 0); ReadMoveInputSystem пишет MoveIntent,
+    рывок — DashRequest.
+Р3. ARCHITECTURE §7, строка «что исполняет — системы, и они не изменятся; что
+    композирует — переедет в данные». По коду неуязвимость зашита внутри
+    StartDashSystem (:48-50), а толчок срабатывает от Dashing у любого Player
+    (SweepDashPushSystem.cs:19) — вынести их в данные без правки этих двух систем
+    нельзя (п. 6).
+Р4. ARCHITECTURE §7 и GDD §3/§5: UltimateCharge, AbilityDefinition — в коде нет
+    ни одного типа (ожидаемо, шаг 6). Дизайн ульты берсерка (Вихрь-контрудар, прыжок,
+    кровавая виньетка, таймер ульты) не записан ни в GDD, ни в LORE — о нём известно
+    только из формулировки задачи. Протез упразднён — в доках его не было, в префабе
+    был (c377c47).
+Р5. ARCHITECTURE §7 «длительность способности в тиках, округление на старте» — взмах
+    меча этому не следует (float-накопление времени клипа, AdvanceSwingSystem.cs:72).
+    Для оружия осознанно или нет — не записано.
+Р6. GDD §4, таблица полей оружия (targeting, lifetime, pierce, knockback) —
+    в WeaponConfig этих полей нет (WeaponConfig.cs:145-161). Согласуется с переносом
+    типов жизненного цикла, но таблица читается как описание конфига.
+Р7. PROGRESS, журнал 2026-09-27: «окна LeftSlash тики 24–29, Spin 11–24» — история
+    до 18312b4 и удаления Spin; текущие окна записаны в абзац блока 4. Журнал
+    не правился (история).
+Р8. Мелочь в коде: StartDashSystem.cs:3-4 — using Game.Simulation.Services дважды
+    (предупреждение CS0105). Не трогал — вне скоупа.
+Р9. Отчёт блока 4 шага 5 в docs/recons отсутствует; номер 034 свободен под него.
