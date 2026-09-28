@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.RageConfig
   _id: resource.rage.berserk
   _max: 100
-  _dealtPerHit: 0.2
+  _dealtPerHit: 2
   _receivedScale: 100
-  _decayDelaySeconds: 3
+  _decayDelaySeconds: 4
   _decayPerSecond: 4
