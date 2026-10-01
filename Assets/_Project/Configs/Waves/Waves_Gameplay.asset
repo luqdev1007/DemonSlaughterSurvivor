@@ -22,7 +22,9 @@ MonoBehaviour:
     _refillRatePerSecond: 0
     _enemies:
     - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
-      _weight: 1
+      _weight: 0.5
+    - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
+      _weight: 0.5
     _guaranteed: []
   - _durationSeconds: 60
     _spawnRatePerSecond: 2
