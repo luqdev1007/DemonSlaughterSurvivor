@@ -27,6 +27,7 @@ namespace Game.Bootstrap
         private readonly IPlayerVitalsSink _vitalsSink;
         private readonly IUpgradeChoiceSink _choiceSink;
         private readonly IUpgradeChoiceInput _choiceInput;
+        private readonly IDebugLevelUpInput _debugLevelUpInput;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
@@ -55,6 +56,7 @@ namespace Game.Bootstrap
             IPlayerVitalsSink vitalsSink,
             IUpgradeChoiceSink choiceSink,
             IUpgradeChoiceInput choiceInput,
+            IDebugLevelUpInput debugLevelUpInput,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
@@ -69,6 +71,7 @@ namespace Game.Bootstrap
             _vitalsSink = vitalsSink;
             _choiceSink = choiceSink;
             _choiceInput = choiceInput;
+            _debugLevelUpInput = debugLevelUpInput;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -117,7 +120,8 @@ namespace Game.Bootstrap
                 _vitalsSink,
                 _choiceGate,
                 _choiceSink,
-                _choiceInput
+                _choiceInput,
+                _debugLevelUpInput
                 );
         }
 

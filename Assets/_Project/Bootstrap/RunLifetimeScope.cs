@@ -26,6 +26,8 @@ namespace Game.Bootstrap
 
             builder.Register<UpgradeChoiceInput>(Lifetime.Scoped).As<IUpgradeChoiceInput>().As<IUpgradeChoiceSubmit>();
 
+            builder.Register<DebugLevelUpInput>(Lifetime.Scoped).As<IDebugLevelUpInput>();
+
             builder.RegisterEntryPoint<HudPresenter>(Lifetime.Scoped);
 
             builder.RegisterEntryPoint<RunEntryPoint>(Lifetime.Scoped);

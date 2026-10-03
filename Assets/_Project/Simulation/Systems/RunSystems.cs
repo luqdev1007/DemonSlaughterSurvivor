@@ -58,6 +58,7 @@ namespace Game.Simulation.Systems
             // 11. Progression
             systems.Add(new AccumulateRageSystem());
             systems.Add(new DecayRageSystem());
+            systems.Add(new DebugLevelUpSystem());
             systems.Add(new OfferUpgradesSystem());
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
