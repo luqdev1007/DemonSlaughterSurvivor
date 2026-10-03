@@ -216,8 +216,8 @@ BaseStat (CharacterConfig)
 7.  AttackLifetime — снаряды, ауры, установленные объекты
 8.  Collision      — пересечения через spatial hash
 9.  Damage         — неуязвимость, применение урона
-10. Death          — смерти, дроп, опыт, валюта, удаление погибших
-11. Progression    — уровни, выбор апгрейда, заряд ульты
+10. Death          — смерти, дроп, валюта, удаление погибших
+11. Progression    — опыт, уровни, выбор апгрейда, заряд ульты
 12. ViewSync       — перенос состояния во вьюхи
 13. Cleanup        — удаление one-frame компонентов, уборка осиротевших модификаторов, перестроение spatial hash
 ```
@@ -230,7 +230,9 @@ BaseStat (CharacterConfig)
 
 **Группа 3 заканчивается `RecomputeStatsSystem`** (§5): после рождения, чтобы рождённый в этом тике шёл дальше с итоговыми статами, и до всех читателей статов (группы 5–12). Источники из групп 6–11 попадают в итог со следующего тика. **В группе 13 `SweepOrphanModifiersSystem` стоит после `CleanupEventsSystem` и перед `RebuildSpatialGridSystem`.** **Оружие** (с 2026-09-27): в группе 3 `EquipStartingWeaponSystem` (только `Init`) рождает оружие героя; в группе 6 — `TickWeaponCooldownSystem` → `InterruptSwingSystem` → `StartSwingSystem`; в группе 7 — `AdvanceSwingSystem` (после движения группы 5, до урона группы 9); в группе 12 — `PlaySwingFeedbackSystem`; в группе 13 `SweepOrphanOwnedSystem` убирает подчинённых без владельца.
 
-Внутри `Death` порядок: `MarkDeadSystem` (вешает `Dead` и одноразовый `DiedEvent`; игроку ещё обнуляет `MoveIntent`, снимает `DashRequest` и вешает `PendingFinish`) → `TickPendingFinishSystem` → `FinishRunOnPlayerDeathSystem` (зовёт `RunOutcome.Finish`, когда `RemainingTicks <= 0`) → `ReapDeadEnemiesSystem`. Та же идиома «тикер перед потребителем», что у `Invulnerable`, `Pushed`, `DashCooldown`. Мёртвый игрок стоит, потому что системы ввода исключают `Dead`, а обнулённое намерение больше никто не пишет; `FaceVelocity`, рывок и контактная коррекция `Exc<Dead>` не получали сознательно — труп остаётся препятствием.
+Внутри `Death` порядок: `MarkDeadSystem` (вешает `Dead` и одноразовый `DiedEvent`; игроку ещё обнуляет `MoveIntent`, снимает `DashRequest` и вешает `PendingFinish`) → `TickPendingFinishSystem` → `FinishRunOnPlayerDeathSystem` (зовёт `RunOutcome.Finish`, когда `RemainingTicks <= 0`) → `ReapDeadEnemiesSystem`. Та же идиома «тикер перед потребителем», что у `Invulnerable`, `Pushed`, `DashCooldown`. С шага 7 сразу после `MarkDeadSystem` стоит `DropGemsSystem`: враг с `GemDrop` в тик смерти рождает сферу в своей позиции, до того как `ReapDeadEnemiesSystem` его удалит.
+
+**Сферы опыта** (с 2026-10-03, шаг 7 блок 2) проходят пять групп: 10 — рождение (`DropGemsSystem`); 8 — старт полёта по стату `PickupRadius` героя (`StartGemFlightSystem`, `Exc<GemFlight>`: начатый полёт не перезапускается); 5 — `ApplyGemFlightSystem` после `ApplyPushSystem`, единственный владелец скорости сферы: позиция тика `lerp(старт, герой, (t/T)^k)` через `Velocity` и `MoveSystem`, герой — его позиция на конец прошлого тика; 11 — `CollectGemsSystem` начисляет опыт в тик окончания полёта, `AdvanceLevelSystem` переносит остаток и поднимает `LevelUpEvent.Count` перед `OfferUpgradesSystem`; 12 — `SyncGemViewSystem` (без `Facing`) и `PublishExperienceSystem`. В индекс сферы не попадают (`RebuildSpatialGridSystem` — `Exc<Gem>`). Мёртвый игрок стоит, потому что системы ввода исключают `Dead`, а обнулённое намерение больше никто не пишет; `FaceVelocity`, рывок и контактная коррекция `Exc<Dead>` не получали сознательно — труп остаётся препятствием.
 
 **Одноразовые события** — компоненты, создаваемые в кадре и удаляемые в `Cleanup`. Никаких C#-событий и `Action` внутри симуляции.
 
