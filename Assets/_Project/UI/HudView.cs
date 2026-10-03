@@ -11,6 +11,7 @@ namespace Game.UI
         [SerializeField] private Image _healthFill;
         [SerializeField] private TMP_Text _healthText;
         [SerializeField] private Image _ultimateChargeFill;
+        [SerializeField] private UpgradeChoiceView _upgradeChoice;
 
         [Header("Berserk vignette")]
         [SerializeField] private Image _vignette;
@@ -24,7 +25,10 @@ namespace Game.UI
         private float _vignetteAlpha;
         private float _vignetteTarget;
 
-        public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null;
+        public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
+            && _upgradeChoice != null && _upgradeChoice.IsWired;
+
+        public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
 
         public float VignetteAlpha => _vignetteAlpha;
 

@@ -1,4 +1,5 @@
 using Game.Core;
+using Game.Services;
 using Game.Simulation.Services;
 using Game.UI;
 using Game.View;
@@ -20,6 +21,10 @@ namespace Game.Bootstrap
             builder.Register<CameraService>(Lifetime.Scoped).As<ICameraService>();
 
             builder.Register<PlayerVitals>(Lifetime.Scoped).AsSelf().As<IPlayerVitalsSink>();
+
+            builder.Register<UpgradeChoice>(Lifetime.Scoped).AsSelf().As<IUpgradeChoiceSink>();
+
+            builder.Register<UpgradeChoiceInput>(Lifetime.Scoped).As<IUpgradeChoiceInput>().As<IUpgradeChoiceSubmit>();
 
             builder.RegisterEntryPoint<HudPresenter>(Lifetime.Scoped);
 

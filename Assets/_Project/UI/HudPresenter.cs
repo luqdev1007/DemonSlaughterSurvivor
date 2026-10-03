@@ -1,4 +1,5 @@
 using Game.Configs;
+using Game.Core;
 using R3;
 using System;
 using UnityEngine;
@@ -10,15 +11,21 @@ namespace Game.UI
     {
         private readonly LevelConfig _level;
         private readonly PlayerVitals _vitals;
+        private readonly UpgradeChoice _choice;
+        private readonly IUpgradeChoiceSubmit _submit;
+        private readonly IContentRegistry _content;
 
         private GameObject _instance;
         private HudView _view;
         private IDisposable _subscription;
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content)
         {
             _level = level;
             _vitals = vitals;
+            _choice = choice;
+            _submit = submit;
+            _content = content;
         }
 
         public void Initialize()
@@ -32,19 +39,27 @@ namespace Game.UI
 
             if (_instance.TryGetComponent(out _view) == false || _view.IsWired == false)
                 throw new InvalidOperationException(
-                    $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill and vignette assigned.");
+                    $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette " +
+                    $"and an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} buttons, titles and descriptions assigned.");
+
+            _view.UpgradeChoice.Bind(_submit.Submit);
+            RefreshChoice();
 
             _subscription = Disposable.Combine(
                 _vitals.Health.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.MaxHealth.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
-                _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()));
+                _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()),
+                _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()));
         }
 
         public void Dispose()
         {
             _subscription?.Dispose();
             _subscription = null;
+
+            if (_view != null)
+                _view.UpgradeChoice.Unbind();
 
             if (_instance != null)
                 UnityEngine.Object.Destroy(_instance);
@@ -65,6 +80,28 @@ namespace Game.UI
             _view.ShowHealth(_vitals.Health.CurrentValue, maxHealth);
             _view.ShowUltimateCharge(_vitals.UltimateCharge.CurrentValue);
             _view.ShowBerserk(_vitals.UltimateActive.CurrentValue);
+        }
+
+        private void RefreshChoice()
+        {
+            UpgradeChoiceView view = _view.UpgradeChoice;
+
+            view.SetOpen(_choice.IsOpen);
+
+            for (int slot = 0; slot < UpgradeChoiceView.SlotCount; slot++)
+            {
+                if (slot >= _choice.Count)
+                {
+                    view.HideSlot(slot);
+
+                    continue;
+                }
+
+                UpgradeOffer offer = _choice.Offer(slot);
+                PerkConfig perk = _content.Get<PerkConfig>(offer.PerkId);
+
+                view.ShowSlot(slot, $"[{slot + 1}] {perk.DisplayName}", $"{perk.Description}\n{offer.NextLevel} / {perk.MaxLevel}");
+            }
         }
     }
 }

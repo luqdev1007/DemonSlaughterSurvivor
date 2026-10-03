@@ -25,17 +25,23 @@ namespace Game.Bootstrap
         private readonly IViewFactory _viewFactory;
         private readonly ICameraService _cameraService;
         private readonly IPlayerVitalsSink _vitalsSink;
+        private readonly IUpgradeChoiceSink _choiceSink;
+        private readonly IUpgradeChoiceInput _choiceInput;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
         private EcsWorld _world;
         private IEcsSystems _systems;
+        private IEcsSystems _choiceSystems;
+        private UpgradeChoiceGate _choiceGate;
         private SpatialGrid _spatialGrid;
         private StatModifiers _statModifiers;
         private EnemyMotionBounds _motionBounds;
 
         private float _accumulator;
         private bool _isFinishing;
+        private bool _isPaused;
+        private float _timeScaleBeforePause;
 
         public RunEntryPoint(
             RunContext context,
@@ -47,6 +53,8 @@ namespace Game.Bootstrap
             IViewFactory viewFactory,
             ICameraService cameraService,
             IPlayerVitalsSink vitalsSink,
+            IUpgradeChoiceSink choiceSink,
+            IUpgradeChoiceInput choiceInput,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
@@ -59,6 +67,8 @@ namespace Game.Bootstrap
             _viewFactory = viewFactory;
             _cameraService = cameraService;
             _vitalsSink = vitalsSink;
+            _choiceSink = choiceSink;
+            _choiceInput = choiceInput;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -77,9 +87,21 @@ namespace Game.Bootstrap
 
             _motionBounds = EnemyMotionBounds.From(character, _levelConfig.Waves);
 
-            _systems = RunSystems.Build(_world);
+            _choiceGate = new UpgradeChoiceGate();
 
-            _systems.Inject(
+            _systems = RunSystems.Build(_world);
+            _choiceSystems = RunSystems.BuildChoice(_world);
+
+            Inject(_systems);
+            Inject(_choiceSystems);
+
+            _systems.Init();
+            _choiceSystems.Init();
+        }
+
+        private void Inject(IEcsSystems systems)
+        {
+            systems.Inject(
                 _context,
                 _clock,
                 _inputService,
@@ -92,16 +114,27 @@ namespace Game.Bootstrap
                 _statModifiers,
                 _motionBounds,
                 _outcome,
-                _vitalsSink
+                _vitalsSink,
+                _choiceGate,
+                _choiceSink,
+                _choiceInput
                 );
-
-            _systems.Init();
         }
 
         public void Tick()
         {
             if (_isFinishing)
                 return;
+
+            if (_isPaused)
+            {
+                _choiceSystems.Run();
+
+                if (_choiceGate.IsAwaiting)
+                    return;
+
+                Resume();
+            }
 
             _accumulator += Time.deltaTime;
 
@@ -116,10 +149,16 @@ namespace Game.Bootstrap
                 _accumulator -= FixedDelta;
                 steps++;
 
-                if (_outcome.IsFinished == false)
+                if (_outcome.IsFinished)
+                {
+                    _isFinishing = true;
+                    break;
+                }
+
+                if (_choiceGate.IsAwaiting == false)
                     continue;
 
-                _isFinishing = true;
+                Pause();
                 break;
             }
 
@@ -134,7 +173,13 @@ namespace Game.Bootstrap
 
         public void Dispose()
         {
+            if (_isPaused)
+                Resume();
+
             _cameraService.SetFollowTarget(null);
+
+            _choiceSystems?.Destroy();
+            _choiceSystems = null;
 
             _systems?.Destroy();
             _systems = null;
@@ -145,6 +190,26 @@ namespace Game.Bootstrap
             _spatialGrid = null;
             _statModifiers = null;
             _motionBounds = null;
+            _choiceGate = null;
+        }
+
+        private void Pause()
+        {
+            _isPaused = true;
+            _accumulator = 0f;
+
+            _timeScaleBeforePause = Time.timeScale;
+            Time.timeScale = 0f;
+        }
+
+        private void Resume()
+        {
+            _isPaused = false;
+            _accumulator = 0f;
+
+            Time.timeScale = _timeScaleBeforePause;
+
+            _inputService.ResetLatches();
         }
     }
 }

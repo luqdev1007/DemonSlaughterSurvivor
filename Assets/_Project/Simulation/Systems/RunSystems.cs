@@ -58,6 +58,7 @@ namespace Game.Simulation.Systems
             // 11. Progression
             systems.Add(new AccumulateRageSystem());
             systems.Add(new DecayRageSystem());
+            systems.Add(new OfferUpgradesSystem());
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
             systems.Add(new PlayHitFeedbackSystem());
@@ -74,6 +75,16 @@ namespace Game.Simulation.Systems
             systems.Add(new SweepOrphanModifiersSystem());
             systems.Add(new SweepOrphanOwnedSystem());
             systems.Add(new RebuildSpatialGridSystem());
+
+            return systems;
+        }
+
+        public static IEcsSystems BuildChoice(EcsWorld world)
+        {
+            EcsSystems systems = new EcsSystems(world);
+
+            // Runs instead of the 13 groups while the upgrade choice holds the world.
+            systems.Add(new ApplyUpgradeChoiceSystem());
 
             return systems;
         }
