@@ -994,6 +994,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5004772800127033354}
+  - {fileID: 8828410773114422843}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6406449896726833975
@@ -1008,6 +1009,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27bd928a97da63b44bc1e08395dad2d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.View::Game.View.ViewInterpolator
+  _berserkFx: {fileID: 1066350606233101641}
 --- !u!1 &2459505138293471858
 GameObject:
   m_ObjectHideFlags: 0
@@ -3493,6 +3495,60 @@ Transform:
   - {fileID: 6727093383092591655}
   m_Father: {fileID: 3443121770359063998}
   m_LocalEulerAnglesHint: {x: 3.6906226, y: -1.3599902, z: 0.6869355}
+--- !u!1 &8239408623717214181
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8828410773114422843}
+  - component: {fileID: 1066350606233101641}
+  m_Layer: 0
+  m_Name: BerserkLightning
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8828410773114422843
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8239408623717214181}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7000941709097960948}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1066350606233101641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8239408623717214181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26bdc96f4c0d03147875144a6ed0b62d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.BerserkLightningFx
+  _material: {fileID: 2100000, guid: fa4b02283b3326b4f9f55a66526f1b0b, type: 2}
+  _arcCount: 7
+  _pointsPerArc: 8
+  _radii: {x: 0.75, y: 0.9, z: 0.75}
+  _jitter: 0.15
+  _minRefreshSeconds: 0.05
+  _maxRefreshSeconds: 0.08
+  _width: 0.04
+  _color: {r: 1, g: 0.06, b: 0.02, a: 1}
+  _fadeSeconds: 0.15
 --- !u!1 &8368275980192675628
 GameObject:
   m_ObjectHideFlags: 0

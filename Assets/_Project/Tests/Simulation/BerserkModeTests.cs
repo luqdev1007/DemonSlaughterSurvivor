@@ -29,6 +29,7 @@ namespace Game.Simulation.Tests
         private SimulationClock _clock;
         private StatModifiers _modifiers;
         private FakeInput _input;
+        private FakeView _view;
         private int _hero;
         private int _weapon;
         private int _enemy;
@@ -236,6 +237,52 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void ViewReceivesModePresenceEveryTick()
+        {
+            Build();
+
+            Step(5);
+            SetCharge(100f);
+            Press();
+
+            int total = 5 + ModeTicks + 10;
+
+            for (int tick = 5; tick < total; tick++)
+            {
+                Step();
+
+                Assert.AreEqual(tick + 1, _view.Berserk.Count, $"tick {tick}: the view must be told the state every tick");
+                Assert.AreEqual(InMode(), _view.Berserk[tick], $"tick {tick}: the view state must equal BerserkMode presence");
+            }
+
+            Assert.AreEqual(ModeTicks, CountTrue(_view.Berserk), "the view must see the mode for exactly its duration");
+        }
+
+        [Test]
+        public void HeroDeathDoesNotCutTheModeForTheView()
+        {
+            Build();
+            StartMode();
+
+            Step(60);
+            _world.GetPool<Dead>().Add(_hero);
+
+            int ticksAfterDeath = 0;
+
+            while (InMode())
+            {
+                Step();
+                ticksAfterDeath++;
+
+                Assert.AreEqual(InMode(), _view.Berserk[_view.Berserk.Count - 1]);
+            }
+
+            Assert.AreEqual(ModeTicks - 60, ticksAfterDeath, "the mode must run to its end on a dead hero");
+            Assert.AreEqual(ModeTicks, CountTrue(_view.Berserk), "the view must see the mode until its end, death included");
+            Assert.IsFalse(_view.Berserk[_view.Berserk.Count - 1], "the view must be told when the mode ends");
+        }
+
+        [Test]
         public void SameSeedGivesTheSameTrace()
         {
             byte[] first = RecordSeededRun(987654321);
@@ -329,6 +376,7 @@ namespace Game.Simulation.Tests
             _systems.Add(new ApplyDamageSystem());
             _systems.Add(new AccumulateRageSystem());
             _systems.Add(new DecayRageSystem());
+            _systems.Add(new SyncBerserkViewSystem());
             _systems.Inject(context, registry, level, _clock, _modifiers, _input, inputConfig, new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f));
             _systems.Init();
 
@@ -352,6 +400,9 @@ namespace Game.Simulation.Tests
             _world.GetPool<HitInvulnerability>().Add(_hero).Seconds = 0f;
             _world.GetPool<UltimateCharge>().Add(_hero).Max = 100f;
             _world.GetPool<RageState>().Add(_hero);
+
+            _view = new FakeView();
+            _world.GetPool<View>().Add(_hero).Value = _view;
 
             _weapon = _world.NewEntity();
 
@@ -512,6 +563,19 @@ namespace Game.Simulation.Tests
             field.SetValue(target, value);
         }
 
+        private static int CountTrue(List<bool> values)
+        {
+            int count = 0;
+
+            for (int index = 0; index < values.Count; index++)
+            {
+                if (values[index])
+                    count++;
+            }
+
+            return count;
+        }
+
         private sealed class FakeInput : IInputService
         {
             public bool UltimatePressed;
@@ -536,6 +600,54 @@ namespace Game.Simulation.Tests
             public void ResetLatches()
             {
                 UltimatePressed = false;
+            }
+        }
+
+        private sealed class FakeView : IView
+        {
+            public readonly List<bool> Berserk = new List<bool>();
+
+            public Transform Transform => null;
+
+            public void SetPosition(Vector3 position)
+            {
+            }
+
+            public void SetRotation(Quaternion rotation)
+            {
+            }
+
+            public void PlayHit()
+            {
+            }
+
+            public void SetInvulnerable(bool value)
+            {
+            }
+
+            public void SetBerserk(bool value)
+            {
+                Berserk.Add(value);
+            }
+
+            public void SetDashing(bool value)
+            {
+            }
+
+            public void SetRunning(bool value)
+            {
+            }
+
+            public void PlayAttack(string trigger, float speed)
+            {
+            }
+
+            public void PlayDeath()
+            {
+            }
+
+            public void Dissolve()
+            {
             }
         }
     }

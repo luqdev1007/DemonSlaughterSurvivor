@@ -20,6 +20,8 @@ namespace Game.View
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
 
+        [SerializeField] private BerserkLightningFx _berserkFx;
+
         private Vector3 _previousPosition;
         private Vector3 _currentPosition;
         private float _lastSyncTime;
@@ -55,6 +57,8 @@ namespace Game.View
         private bool _isRetiring;
         private float _retireTime;
 
+        private bool _isBerserkSuppressed;
+
         private bool _isKnockedBack;
         private bool _isAirborne;
         private Vector3 _knockbackVelocity;
@@ -73,7 +77,7 @@ namespace Game.View
             Action<ViewInterpolator> onRetired)
         {
             _animator = animator;
-            _renderers = GetComponentsInChildren<Renderer>(true);
+            _renderers = CollectOwnRenderers();
             _block = new MaterialPropertyBlock();
             _hasDeathTrigger = HasParameter(animator, DeathTriggerId, AnimatorControllerParameterType.Trigger);
             _hasDashingParameter = HasParameter(animator, IsDashingId, AnimatorControllerParameterType.Bool);
@@ -140,6 +144,14 @@ namespace Game.View
                 SetRenderersVisible(true);
         }
 
+        public void SetBerserk(bool value)
+        {
+            if (_berserkFx == null)
+                return;
+
+            _berserkFx.SetShowing(value && _isBerserkSuppressed == false);
+        }
+
         public void SetDashing(bool value)
         {
             if (_hasDashingParameter == false || _isDashing == value)
@@ -179,6 +191,11 @@ namespace Game.View
 
         public void Dissolve()
         {
+            _isBerserkSuppressed = true;
+
+            if (_berserkFx != null)
+                _berserkFx.SetShowing(false);
+
             if (_isDissolving || _dissolveMaterialFor == null)
                 return;
 
@@ -228,6 +245,10 @@ namespace Game.View
             _isAirborne = false;
             _knockbackVelocity = Vector3.zero;
             _knockbackOffset = Vector3.zero;
+            _isBerserkSuppressed = false;
+
+            if (_berserkFx != null)
+                _berserkFx.ResetImmediate();
 
             ApplyBlock();
             SetRenderersVisible(true);
@@ -305,6 +326,37 @@ namespace Game.View
             float phase = Mathf.Clamp01((Time.time - _lastSyncTime) / TickSeconds);
 
             return Vector3.Lerp(_previousPosition, _currentPosition, phase);
+        }
+
+        private Renderer[] CollectOwnRenderers()
+        {
+            Renderer[] all = GetComponentsInChildren<Renderer>(true);
+
+            if (_berserkFx == null)
+                return all;
+
+            Transform excluded = _berserkFx.transform;
+            int count = 0;
+
+            for (int index = 0; index < all.Length; index++)
+            {
+                if (all[index].transform.IsChildOf(excluded) == false)
+                    count++;
+            }
+
+            Renderer[] own = new Renderer[count];
+            int next = 0;
+
+            for (int index = 0; index < all.Length; index++)
+            {
+                if (all[index].transform.IsChildOf(excluded))
+                    continue;
+
+                own[next] = all[index];
+                next++;
+            }
+
+            return own;
         }
 
         private void BuildDissolveMaterials()

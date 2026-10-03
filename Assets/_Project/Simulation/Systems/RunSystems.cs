@@ -64,6 +64,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());
+            systems.Add(new SyncBerserkViewSystem());
             systems.Add(new SyncDashViewSystem());
             systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());

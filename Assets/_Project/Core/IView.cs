@@ -14,6 +14,8 @@ namespace Game.Core
 
         void SetInvulnerable(bool value);
 
+        void SetBerserk(bool value);
+
         void SetDashing(bool value);
 
         void SetRunning(bool value);
