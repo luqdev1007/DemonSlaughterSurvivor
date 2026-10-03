@@ -1,3 +1,4 @@
+using DG.Tweening;
 using Game.Configs;
 using Game.Core;
 using R3;
@@ -14,18 +15,22 @@ namespace Game.UI
         private readonly UpgradeChoice _choice;
         private readonly IUpgradeChoiceSubmit _submit;
         private readonly IContentRegistry _content;
+        private readonly PlayerExperience _experience;
 
         private GameObject _instance;
         private HudView _view;
         private IDisposable _subscription;
+        private Tween _experienceTween;
+        private int _shownLevel;
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience)
         {
             _level = level;
             _vitals = vitals;
             _choice = choice;
             _submit = submit;
             _content = content;
+            _experience = experience;
         }
 
         public void Initialize()
@@ -39,8 +44,9 @@ namespace Game.UI
 
             if (_instance.TryGetComponent(out _view) == false || _view.IsWired == false)
                 throw new InvalidOperationException(
-                    $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette " +
-                    $"and an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} buttons, titles and descriptions assigned.");
+                    $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
+                    $"an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} buttons, titles and descriptions, " +
+                    "and the experience fill and level text assigned.");
 
             _view.UpgradeChoice.Bind(_submit.Submit);
             RefreshChoice();
@@ -50,13 +56,16 @@ namespace Game.UI
                 _vitals.MaxHealth.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()),
-                _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()));
+                _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()),
+                _experience.Changed.Subscribe(this, (_, presenter) => presenter.RefreshExperience()));
         }
 
         public void Dispose()
         {
             _subscription?.Dispose();
             _subscription = null;
+
+            KillExperienceTween();
 
             if (_view != null)
                 _view.UpgradeChoice.Unbind();
@@ -80,6 +89,61 @@ namespace Game.UI
             _view.ShowHealth(_vitals.Health.CurrentValue, maxHealth);
             _view.ShowUltimateCharge(_vitals.UltimateCharge.CurrentValue);
             _view.ShowBerserk(_vitals.UltimateActive.CurrentValue);
+        }
+
+        private void RefreshExperience()
+        {
+            int level = _experience.Level;
+            float target = _experience.Fraction;
+
+            KillExperienceTween();
+
+            if (_shownLevel == 0)
+            {
+                _view.SetExperienceFill(target);
+                _view.ShowLevel(level);
+                _shownLevel = level;
+
+                return;
+            }
+
+            float seconds = _view.ExperienceFillSeconds;
+
+            if (level > _shownLevel)
+            {
+                Sequence sequence = DOTween.Sequence();
+                sequence.Append(FillTo(1f, seconds));
+                sequence.AppendCallback(() => WrapLevel(level));
+                sequence.Append(FillTo(target, seconds));
+                sequence.SetUpdate(true);
+
+                _experienceTween = sequence;
+            }
+            else
+            {
+                _experienceTween = FillTo(target, seconds).SetUpdate(true);
+            }
+
+            _shownLevel = level;
+        }
+
+        private Tween FillTo(float target, float seconds)
+        {
+            return DOTween.To(() => _view.ExperienceFill, _view.SetExperienceFill, target, seconds);
+        }
+
+        private void WrapLevel(int level)
+        {
+            _view.SetExperienceFill(0f);
+            _view.ShowLevel(level);
+        }
+
+        private void KillExperienceTween()
+        {
+            if (_experienceTween != null && _experienceTween.IsActive())
+                _experienceTween.Kill();
+
+            _experienceTween = null;
         }
 
         private void RefreshChoice()

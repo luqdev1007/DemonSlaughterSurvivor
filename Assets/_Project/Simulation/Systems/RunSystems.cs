@@ -76,6 +76,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncDashViewSystem());
             systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
+            systems.Add(new PublishExperienceSystem());
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup
             systems.Add(new CleanupEventsSystem());

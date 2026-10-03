@@ -13,6 +13,11 @@ namespace Game.UI
         [SerializeField] private Image _ultimateChargeFill;
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
 
+        [Header("Experience")]
+        [SerializeField] private RectTransform _experienceFill;
+        [SerializeField] private TMP_Text _levelText;
+        [SerializeField] private float _experienceFillSeconds = 0.25f;
+
         [Header("Berserk vignette")]
         [SerializeField] private Image _vignette;
         [SerializeField] private Color _vignetteColor = new Color(0.55f, 0f, 0f, 0.85f);
@@ -26,9 +31,14 @@ namespace Game.UI
         private float _vignetteTarget;
 
         public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
-            && _upgradeChoice != null && _upgradeChoice.IsWired;
+            && _upgradeChoice != null && _upgradeChoice.IsWired
+            && _experienceFill != null && _levelText != null;
 
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
+
+        public float ExperienceFill => _experienceFill.anchorMax.x;
+
+        public float ExperienceFillSeconds => _experienceFillSeconds;
 
         public float VignetteAlpha => _vignetteAlpha;
 
@@ -43,6 +53,18 @@ namespace Game.UI
         public void ShowUltimateCharge(float fraction)
         {
             _ultimateChargeFill.fillAmount = Mathf.Clamp01(fraction);
+        }
+
+        public void SetExperienceFill(float fraction)
+        {
+            Vector2 anchorMax = _experienceFill.anchorMax;
+            anchorMax.x = Mathf.Clamp01(fraction);
+            _experienceFill.anchorMax = anchorMax;
+        }
+
+        public void ShowLevel(int level)
+        {
+            _levelText.SetText("{0}", level);
         }
 
         public void ShowBerserk(bool active)

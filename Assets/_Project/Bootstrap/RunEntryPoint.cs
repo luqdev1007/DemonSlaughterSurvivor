@@ -28,6 +28,7 @@ namespace Game.Bootstrap
         private readonly IUpgradeChoiceSink _choiceSink;
         private readonly IUpgradeChoiceInput _choiceInput;
         private readonly IDebugLevelUpInput _debugLevelUpInput;
+        private readonly IExperienceSink _experienceSink;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
@@ -57,6 +58,7 @@ namespace Game.Bootstrap
             IUpgradeChoiceSink choiceSink,
             IUpgradeChoiceInput choiceInput,
             IDebugLevelUpInput debugLevelUpInput,
+            IExperienceSink experienceSink,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
@@ -72,6 +74,7 @@ namespace Game.Bootstrap
             _choiceSink = choiceSink;
             _choiceInput = choiceInput;
             _debugLevelUpInput = debugLevelUpInput;
+            _experienceSink = experienceSink;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -121,7 +124,8 @@ namespace Game.Bootstrap
                 _choiceGate,
                 _choiceSink,
                 _choiceInput,
-                _debugLevelUpInput
+                _debugLevelUpInput,
+                _experienceSink
                 );
         }
 

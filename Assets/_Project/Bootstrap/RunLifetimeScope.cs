@@ -24,6 +24,8 @@ namespace Game.Bootstrap
 
             builder.Register<UpgradeChoice>(Lifetime.Scoped).AsSelf().As<IUpgradeChoiceSink>();
 
+            builder.Register<PlayerExperience>(Lifetime.Scoped).AsSelf().As<IExperienceSink>();
+
             builder.Register<UpgradeChoiceInput>(Lifetime.Scoped).As<IUpgradeChoiceInput>().As<IUpgradeChoiceSubmit>();
 
             builder.Register<DebugLevelUpInput>(Lifetime.Scoped).As<IDebugLevelUpInput>();
