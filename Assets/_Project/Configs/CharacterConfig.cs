@@ -18,6 +18,9 @@ namespace Game.Configs
         [SerializeField] private float _maxHealth = 100f;
         [SerializeField] private float _hitInvulnerabilitySeconds = 0.5f;
 
+        [Header("Experience")]
+        [SerializeField] private float _pickupRadius = 1.5f;
+
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
         [SerializeField] private WeaponConfig _startingWeapon;
@@ -35,6 +38,8 @@ namespace Game.Configs
         public float MaxHealth => _maxHealth;
 
         public float HitInvulnerabilitySeconds => _hitInvulnerabilitySeconds;
+
+        public float PickupRadius => _pickupRadius;
 
         public DashAbilityConfig Dash => _dash;
 

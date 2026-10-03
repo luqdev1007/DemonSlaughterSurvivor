@@ -32,6 +32,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponCooldown> _weaponCooldowns = default;
         private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
         private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
+        private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -233,6 +234,12 @@ namespace Game.Simulation.Systems
                     "Damage taken multiplies every hit on the entity, so it must stay above zero: " +
                     "zero makes it immortal without any i-frames, a negative value heals it with every hit.");
             }
+
+            if (_pickupRadii.Value.Has(target))
+            {
+                ref PickupRadius pickupRadius = ref _pickupRadii.Value.Get(target);
+                pickupRadius.Value = StatFormula.Evaluate(pickupRadius.Base, Total(StatId.PickupRadius));
+            }
         }
 
         private void GuardPositive(int target, StatId stat, float value, float baseValue, string reason)
@@ -312,6 +319,8 @@ namespace Game.Simulation.Systems
                     return _attackSpeeds.Value.Has(target);
                 case StatId.DamageTaken:
                     return _damageTakens.Value.Has(target);
+                case StatId.PickupRadius:
+                    return _pickupRadii.Value.Has(target);
                 default:
                     return false;
             }

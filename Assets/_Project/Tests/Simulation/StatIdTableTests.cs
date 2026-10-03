@@ -20,6 +20,7 @@ namespace Game.Simulation.Tests
                 { "WeaponCooldown", 6 },
                 { "AttackSpeed", 7 },
                 { "DamageTaken", 8 },
+                { "PickupRadius", 9 },
             });
         }
 

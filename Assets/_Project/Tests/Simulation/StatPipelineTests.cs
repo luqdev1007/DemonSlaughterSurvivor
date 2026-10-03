@@ -72,6 +72,27 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void PickupRadiusFollowsItsModifiers()
+        {
+            int hero = CreateHero(5f, 100f);
+
+            ref PickupRadius radius = ref _world.GetPool<PickupRadius>().Add(hero);
+            radius.Base = 1.5f;
+            radius.Value = 1.5f;
+
+            _modifiers.Add(hero, StatId.PickupRadius, StatOp.Flat, 1f, "meta.magnet");
+            _modifiers.Add(hero, StatId.PickupRadius, StatOp.Increased, 0.2f, "perk.magnet");
+            _systems.Run();
+
+            Assert.AreEqual(3f, _world.GetPool<PickupRadius>().Get(hero).Value, Tolerance, "(1.5 + 1) x 1.2");
+
+            _modifiers.RemoveBySource(hero, "meta.magnet");
+            _systems.Run();
+
+            Assert.AreEqual(1.8f, _world.GetPool<PickupRadius>().Get(hero).Value, Tolerance);
+        }
+
+        [Test]
         public void ResultDoesNotDependOnInsertionOrderBitForBit()
         {
             float[] firstOrder = { 0.13f, 0.76f, 0.69f, 0.24f };
