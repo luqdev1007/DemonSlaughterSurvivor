@@ -1,0 +1,210 @@
+041 · Шаг 7, блок 1: каркас выбора апгрейдов и пять числовых перков
+Дата: 2026-10-03. Коммит на входе: a32fa31. Код готов 2026-10-03, ЖДЁТ РУЧНОЙ ПРИЁМКИ (§7).
+
+==========================================================================
+1. Что сделано, коммиты
+==========================================================================
+Часть 0 (docs):
+  f67c018  сверка с кодом по отчёту 040 (CLAUDE §8 П1 172.4°, GDD §12 тест
+           свежести, ARCHITECTURE §8 регистрация в индексе, PROGRESS два прогона)
+  d2b4177  журнал: решения шага 7, вторая запись
+  (0.1 — отчёт 040 — уже был закоммичен разработчиком, a32fa31)
+Код:
+  9b6120b  PerkConfig + PerkConfigValidator + 5 ассетов + ContentDatabase
+  48752b3  интерфейсы Core, компоненты, PerkPool, UpgradeChoiceGate,
+           OfferUpgradesSystem, ApplyUpgradeChoiceSystem, очистка LevelUpEvent,
+           12 тестов UpgradeChoiceTests
+  57c4765  второй набор систем и пауза в RunEntryPoint, UpgradeChoiceInput,
+           UpgradeChoice (R3), UpgradeChoiceView, HudView/HudPresenter,
+           префаб Hud: панель, GraphicRaycaster, EventSystem
+  dc44f9f  отладочная клавиша L + пункт долга CLAUDE §8
+  69a3fe0  docs: PROGRESS (статус, эталон, журнал), ARCHITECTURE §10, §11
+
+Файлы.
+  Новые: Configs/PerkConfig.cs, Configs/PerkConfigValidator.cs,
+    Configs/Perks/Perk_{SwordDamage,AttackSpeed,MoveSpeed,MaxHealth,DashCooldown}.asset,
+    Core/{IUpgradeChoiceInput,IUpgradeChoiceSubmit,IUpgradeChoiceSink,UpgradeOffer,
+    IDebugLevelUpInput}.cs, Simulation/Components/UpgradeComponents.cs,
+    Simulation/Services/{PerkPool,TakenPerkLookup,UpgradeChoiceGate}.cs,
+    Simulation/Systems/{OfferUpgradesSystem,ApplyUpgradeChoiceSystem,DebugLevelUpSystem}.cs,
+    Services/{UpgradeChoiceInput,DebugLevelUpInput}.cs,
+    UI/{UpgradeChoice,UpgradeChoiceView}.cs, Tests/Simulation/UpgradeChoiceTests.cs
+  Изменённые: Configs/ContentDatabase.asset, Simulation/Systems/{RunSystems,
+    CleanupEventsSystem}.cs, Bootstrap/{RunEntryPoint,RunLifetimeScope}.cs,
+    UI/{HudView,HudPresenter}.cs, Prefabs/UI/Hud.prefab, CLAUDE.md, docs/*.md
+
+==========================================================================
+2. Карта блока
+==========================================================================
+L (клавиша)
+ → Services/DebugLevelUpInput (латч, InputAction кодом, Scoped)
+ → группа 11: DebugLevelUpSystem → LevelUpEvent { Count } на живом герое
+ → группа 11: OfferUpgradesSystem
+     LevelUpEvent → PendingLevelUps.Count (Exc<Dead>)
+     нет PendingChoice и Count > 0 → PerkPool (Simulation/Services/PerkPool.cs):
+       все PerkConfig из IContentRegistry.All, отсортированы по Id ordinal;
+       кандидаты — уровень < MaxLevel (TakenPerkLookup); до 3 без повторов,
+       поток UpgradeRandom (StreamState(seed, "stream.upgrade-offers"), лениво)
+     пусто → Count = 0, без паузы
+     иначе → PendingChoice {First, Second, Third, Count}, UpgradeChoiceGate.Await(),
+       IUpgradeChoiceInput.Clear(), IUpgradeChoiceSink.Show(...)
+ → группа 13: CleanupEventsSystem снимает LevelUpEvent
+ → Bootstrap/RunEntryPoint.Tick: после Run, если ворота закрыты — Pause():
+     break из цикла, накопитель 0, запомнить Time.timeScale, поставить 0
+ → UI/UpgradeChoice (sink, R3 Subject) → UI/HudPresenter.RefreshChoice →
+     UI/UpgradeChoiceView (панель в Prefabs/UI/Hud.prefab): карточки
+     «[N] DisplayName», «Description / уровень из максимума»
+Выбор: клавиши 1–3 / numpad 1–3 (Services/UpgradeChoiceInput, InputAction кодом)
+       или клик по карточке (Button.onClick → IUpgradeChoiceSubmit.Submit)
+ → RunEntryPoint.Tick на паузе: _choiceSystems.Run() (RunSystems.BuildChoice)
+ → ApplyUpgradeChoiceSystem: латч → индекс < Count, иначе игнор;
+     TakenPerk {Owner, PerkId, Level} найти/создать, Level+1;
+     StatModifiers.RemoveBySource(hero, perkId) + Add уровня целиком (source = perkId);
+     снять PendingChoice, PendingLevelUps.Count--, sink.Hide(), gate.Release()
+ → RunEntryPoint.Resume(): timeScale = запомненное, накопитель 0,
+     IInputService.ResetLatches()
+ → следующий тик, группа 3: RecomputeStatsSystem — MoveSpeed/MaxHealth/DashStats
+     героя; WeaponDamage/AttackSpeed оружия через OwnerLink.
+
+==========================================================================
+3. Развилки
+==========================================================================
+Решены разработчиком: 1 — второй набор систем (А); 2 — timeScale 0 с возвратом
+прежнего значения (б); 3 — ResetLatches при снятии паузы; 4 — категории нет;
+5 — панель в Hud, EventSystem в префабе Hud с ассетом действий меню.
+Однозначные решения агента (журнал 2026-10-03, блок 1):
+  - значение уровня в ассете — итог уровня;
+  - валидатор отклоняет повтор Stat в уровне (Op не в ключе, StatModifiers.cs:72-91),
+    Increased/More ≤ -1, пустые уровни, нечисловые значения;
+  - TakenPerk без OwnerLink;
+  - сортировка пула по Id ordinal;
+  - поток розыгрыша лениво, при первом розыгрыше (эталон без L не сдвигается);
+  - латч выбора гасится при показе; несколько уровней — PendingLevelUps, окно
+    за окном через тик; пустой пул — без паузы;
+  - окно без твинов (DOTween в коде проекта не используется).
+
+==========================================================================
+4. Проверки до кода (развилка 2, CLAUDE §6.2)
+==========================================================================
+- Time.time при timeScale 0 стоит: 17.34174 за 588 кадров и 5.4 с реального
+  времени (песочница в меню). То же время фазы ViewInterpolator (Time.time).
+- Аниматоры (Normal, все префабы m_UpdateMode 0) при нуле стоят: normalizedTime
+  трёх аниматоров не изменился за 565 кадров (песочница в забеге).
+- Update и GUI при нуле: Manual «In-game time and real time» — «Update may be
+  called just as often… display a GUI with normal interaction when the game is
+  paused». EventSystem.Update — MonoBehaviour.Update (ugui EventSystem.cs:472),
+  клик модуль считает по unscaledGameTime (InputSystemUIInputModule.cs:647,722),
+  ColorTint кнопки — ignoreTimeScale true (Selectable.cs:1091).
+- Настоящий клик мышью песочницей НЕ воспроизведён: редактор без фокуса, Input
+  System отбрасывает события указателя (editorInputBehaviorInPlayMode =
+  PointersAndKeyboardsRespectGameViewFocus); при подмене настроек копией клик не
+  прошёл и при timeScale 1, то есть метод песочницы негоден, а не нуль.
+  Поэтому клик и клавиши 1–3 — в ручной приёмке. Песочница удалена, настройки
+  ввода возвращены (исходный объект id -932).
+
+==========================================================================
+5. Тесты
+==========================================================================
+EditMode 130/130 (118 прежних + 12 UpgradeChoiceTests): повторное взятие поднимает
+уровень; порядок взятия не меняет итог бит в бит (и WeaponDamage доходит до оружия);
+перк на максимуме не предлагается; пустой пул без паузы; детерминизм на сиде;
+число предложений 1/2/3 по размеру пула; уровень в тик смерти не открывает выбор и
+не закрывает ворота; индекс вне предложений игнорируется; нажатие до показа
+сбрасывается; MaxHealth лечит дельту уровня (60/100 → 80/120 → 100/140);
+два уровня за тик — два окна подряд; валидатор ловит повтор стата.
+Мутация: убран Exc<Dead> → падает ровно LevelUpOnTheDeathTickOpensNoChoice.
+
+==========================================================================
+6. Замеры в play mode (сид 987654321 — временная правка SeedSource.Next,
+   md5 файла 039917af53c2826450047dabcf3ac17e до и после)
+==========================================================================
+6.1. Эталон. Зонд 039 восстановлен по описанию: забег из меню через IRunLauncher
+  при Time.timeScale = 0, зонд ведёт тики сам (SimulationClock.Advance(1/60) +
+  Run каждой IEcsRunSystem из GetAllSystems по порядку), HP героя восстанавливается
+  после тика, урон по герою считается сразу после ApplyDamageSystem (Inc<DamageEvent,
+  DamageApplied>, Target.Id — игрок). Снимки на 300/900/1794/2700/5340.
+  ФОРМАТ (записан, чтобы следующий зонд был тем же): UTF-8, '\n', без BOM;
+    строка тика: tick,clk,live,dmg,hits,modeTicks,heroX,heroZ
+    затем враги (Enemy без Dead), отсортированные по x, z, MoveSpeed: x,z,MoveSpeed
+    float/double — ToString("R", InvariantCulture); live — живые враги.
+  С 2438d51b/32a9a75f НЕ совпал (2188 Б против 2378): формат 039 описан только
+  словами. Сравнение — «до/после» одним зондом:
+    стоя:      до 7fa35ea5af76aaded36c03a14e9a76ce, после — то же, 2188 Б
+               (урон по герою 1380, 100 попаданий, clk на 5340 = 89.00453 как в 031)
+    стоя + Q:  до 7fd13d25684539593c29b5ad9bc5861a, после — то же, 2169 Б
+               (4 включения, 1920 тиков режима — как в 039)
+  Без нажатия L блок симуляцию не меняет.
+6.2. Перки в игровых единицах (зонд, тики вручную; выбор — Button.onClick карточки,
+  то есть путь клика до Submit; все 25 уровней взяты в первые 28 тиков):
+    скорость бега (MoveIntent (1,0,0), тики 31–60):  5.0000 → 7.5000 м/с
+    рывок подряд (латч каждый тик): интервал стартов 81 тик (1.35 с) → 50 тиков
+      (0.833 с); DashStats.Cooldown 1 → 0.5 с (20 тиков рывка + кулдаун)
+    удар меча по врагу: 20 (18 попаданий) → 40 (15–16 попаданий)
+    длительность взмаха (Swing.RemainingTicks при старте), отдельные забеги:
+      без перков  LeftSlash 35 тиков (0.583 с), RightSlash 25 (0.417 с)
+      AttackSpeed 1.5  LeftSlash 23 (0.383 с), RightSlash 17 (0.283 с);
+      старты подряд чаще всего ровно через длину взмаха (23 ×19, 17 ×10)
+    здоровье: 60/100 → 80/120 → 100/140 → 120/160 → 140/180 → 160/200
+    окно: уровни 1–15 — 3 карточки, с 16 — 2, с 21 — 1, на 26-м и 27-м окно не
+      открылось, ворота открыты, панель скрыта (пул исчерпан, 5 перков × 5).
+6.3. Пауза на живом цикле RunEntryPoint.Tick (без зонда тиков):
+    timeScale 0.5 → L → через 1 тик (clk 5.6167 → 5.6334) _isPaused, ts 0,
+      запомнено 0.5, накопитель 0, панель с 3 карточками; часы стоят;
+    латчи рывка и ульты взведены на паузе → клик по 2-й карточке → ts 0.5,
+      латчи false, рывка и режима нет, perk.move-speed@1, MoveSpeed 5.5;
+    после снятия за 11.5 с реального времени часы +4.9 с при 5.75 с
+      масштабированных — пачки тиков нет;
+    ts 0.8 → L → пауза → RunLauncher.Stop() (разбор скоупа) → ts 0.8.
+6.4. Консоль после всех прогонов: 0 ошибок.
+
+==========================================================================
+7. Сценарий ручной приёмки (play mode, обычный запуск с Bootstrap)
+==========================================================================
+1. Забег. Нажать L. Игра встаёт: враги и герой замирают (анимации тоже),
+   затемнение, «Новый уровень», 3 карточки «[1] …», «[2] …», «[3] …».
+2. Нажать 1 (или 2/3, или кликнуть мышью карточку). Окно закрывается, игра
+   идёт с того же места, без рывка вперёд.
+3. Скорость бега: взять «Лёгкий шаг» 5 раз — 5 → 5.5 → … → 7.5 м/с
+   (визуально заметно быстрее; на 5-м уровне перк больше не предлагается).
+4. Скорость атаки: «Быстрая рука» ×5 — взмахи заметно чаще: LeftSlash
+   0.58 → 0.38 с, RightSlash 0.42 → 0.28 с.
+5. Урон меча: «Тяжёлый клинок» ×5 — удар 20 → 40: рыцарь (40 HP) с одного удара
+   вместо двух, тролль (60 HP) с двух вместо трёх.
+6. Здоровье: получить урон, взять «Закалку» — шар HP +20 к максимуму и +20 к
+   текущему (например 60/100 → 80/120).
+7. Рывок: «Второе дыхание» ×5 — между рывками подряд 1.35 с → 0.83 с.
+8. Пробел и Q, нажатые при открытом окне, после выбора НЕ срабатывают.
+9. Окно с 2 и 1 карточками: продолжать брать перки; после 15 взятий карточек 2,
+   после 20 — 1; после 25 L не открывает окно.
+10. L на мёртвом герое — окна нет.
+Проверить отдельно руками (зондом не воспроизводимо): настоящий клик мышью и
+клавиши 1/2/3 и numpad.
+
+==========================================================================
+8. Незакрыто, риски
+==========================================================================
+- Повышение уровня — только L (долг CLAUDE §8, снимается блоком 2). Латч L
+  на паузе не сбрасывается: L в окне = следующий уровень сразу после выбора.
+- Окно растягивается панелью на весь экран, вёрстка — черновая (цвета, размеры
+  карточек 420×300, шрифт LiberationSans SDF, кириллица через fallback).
+- Тексты карточек: «Description / уровень из максимума» собираются в
+  HudPresenter; описание в ассете одно на все уровни.
+- Модификаторы, взятые в окне, пересчитываются в конце группы 3 следующего тика;
+  группы 1–2 этого тика видят старые статы (рывок того тика — со старым
+  кулдауном). Отставание на тик, как у источников из групп 6–11.
+- Расхождение (история, не правилось): PROGRESS.md:135 пишет «LeftSlash 36 тиков,
+  RightSlash 26 — выведено из кода, не замерено»; замер — 35 и 25 тиков
+  (Swing.RemainingTicks при старте, интервал стартов подряд ровно столько же).
+- Во время замеров одна play-сессия завершилась сама: Editor.log показывает
+  компиляцию скриптов посреди play mode («AssetDatabase observed changes in
+  script compilation related files» → Reloading assemblies), то есть перезагрузку
+  домена от внешнего изменения файла. Повтор того же зонда на чистой сессии —
+  забег жив, outcome false, _isPaused false.
+- В консоли в той же сессии: «GameControls.Gameplay.Disable() has not been
+  called» — InputService.Dispose не вызывает Disable перед Dispose. Вне скоупа.
+
+==========================================================================
+9. Следующая сессия
+==========================================================================
+Ручная приёмка по §7. Затем блок 2 шага 7 — настоящий опыт: дроп, подбор,
+кривая уровней; снять L (CLAUDE §8).
