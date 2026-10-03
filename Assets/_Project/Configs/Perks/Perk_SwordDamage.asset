@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53717ce3cd87b6640ab973e8d9198c21, type: 3}
+  m_Name: Perk_SwordDamage
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.PerkConfig
+  _id: perk.sword-damage
+  _displayName: "\u0422\u044F\u0436\u0451\u043B\u044B\u0439 \u043A\u043B\u0438\u043D\u043E\u043A"
+  _description: "\u0423\u0440\u043E\u043D \u043C\u0435\u0447\u0430 +20% \u0437\u0430
+    \u0443\u0440\u043E\u0432\u0435\u043D\u044C."
+  _levels:
+  - _modifiers:
+    - _stat: 5
+      _op: 2
+      _value: 0.2
+  - _modifiers:
+    - _stat: 5
+      _op: 2
+      _value: 0.4
+  - _modifiers:
+    - _stat: 5
+      _op: 2
+      _value: 0.6
+  - _modifiers:
+    - _stat: 5
+      _op: 2
+      _value: 0.8
+  - _modifiers:
+    - _stat: 5
+      _op: 2
+      _value: 1

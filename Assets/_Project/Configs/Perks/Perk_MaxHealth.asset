@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53717ce3cd87b6640ab973e8d9198c21, type: 3}
+  m_Name: Perk_MaxHealth
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.PerkConfig
+  _id: perk.max-health
+  _displayName: "\u0417\u0430\u043A\u0430\u043B\u043A\u0430"
+  _description: "\u041C\u0430\u043A\u0441\u0438\u043C\u0443\u043C \u0437\u0434\u043E\u0440\u043E\u0432\u044C\u044F
+    +20 \u0437\u0430 \u0443\u0440\u043E\u0432\u0435\u043D\u044C."
+  _levels:
+  - _modifiers:
+    - _stat: 2
+      _op: 1
+      _value: 20
+  - _modifiers:
+    - _stat: 2
+      _op: 1
+      _value: 40
+  - _modifiers:
+    - _stat: 2
+      _op: 1
+      _value: 60
+  - _modifiers:
+    - _stat: 2
+      _op: 1
+      _value: 80
+  - _modifiers:
+    - _stat: 2
+      _op: 1
+      _value: 100
