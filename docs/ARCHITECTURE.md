@@ -111,7 +111,7 @@ BaseStat (CharacterConfig)
 
 ## 6. Ввод
 
-**Поток:** `InputService` (Input System, вне ECS) → системы группы 1 → **намерение на действие** компонентом игрока: `MoveIntent`, `DashRequest`, `UltimateRequest`. Единого компонента `InputState`, который обещала прежняя формулировка, в коде нет; оставить так или заводить его — открытый пункт `PROGRESS.md` «Ближайшие шаги».
+**Поток:** `InputService` (Input System, вне ECS) → системы группы 1 → **намерение на действие** компонентом игрока: `MoveIntent`, `DashRequest`, `UltimateRequest`. Единого компонента `InputState`, который обещала прежняя формулировка, в коде нет и **не заводится, пока нет потребителя** (решение 2026-10-03, журнал `PROGRESS.md`): каждая система читает ровно одно своё намерение, а нажатия доставляет `IInputService` латчами — `ConsumeDashPressed`, `ConsumeUltimatePressed`, сброс `ResetLatches`.
 
 **Устройства.** Геймпад запланирован (ребайндинг и Steam-аудитория, `GDD.md` §10), но сегодня в `GameControls.inputactions` **привязок геймпада нет ни одной, в том числе для движения**, и схем управления нет. Клавиатура: WASD, пробел — рывок, Q — ульта.
 
@@ -331,6 +331,8 @@ Game.Configs.Editor → Configs, Core, Simulation; includePlatforms: Editor
 Game.Simulation.Tests → Simulation, Core, Configs, Configs.Editor, Leopotam.EcsLite(.Di),
                     UnityEngine/UnityEditor.TestRunner, nunit.framework.dll;
                     includePlatforms: Editor
+Game.View.Tests   → View, Core, UnityEngine/UnityEditor.TestRunner, nunit.framework.dll;
+                    includePlatforms: Editor
 ```
 
 `Game.Simulation` не зависит от `Game.View` и `Game.UI`.
@@ -354,6 +356,8 @@ Game.Simulation.Tests → Simulation, Core, Configs, Configs.Editor, Leopotam.Ec
 **`Game.Configs.Editor` — одиннадцатая сборка, инструмент запекания взмахов** (2026-09-27, шаг 5 блок 3). Editor-only, лежит в `Configs/Editor/`, ссылается на `Game.Configs`, `Game.Core` и `Game.Simulation` (покрытие ударов считается тем же `SwingSweep`, что и попадания). Отдельная сборка, а не `Game.Editor`, чтобы у `Game.Editor` осталось правило «ноль ссылок на проектные сборки». В player-билд не попадает — проверено пробным билдом.
 
 **`Game.Simulation.Tests` — десятая сборка, EditMode-тесты симуляции** (2026-09-26, шаг 5 блок 1). Лежит в `Tests/Simulation/`, а не внутри `Simulation/`: вложенный asmdef забрал бы соседние папки из-под `Game.Simulation` незаметно. `includePlatforms: ["Editor"]` и `defineConstraints: ["UNITY_INCLUDE_TESTS"]` — форма шаблона Test Framework 1.6.0 (его же образцы в `Samples~`). NUnit приходит как precompiled `nunit.framework.dll` из `com.unity.ext.nunit` 2.0.3 с `isExplicitlyReferenced: 0`, то есть без флага он виден всем сборкам без `overrideReferences`; тестовая сборка ставит `overrideReferences: true` и называет его явно. **Граница `Game.Simulation` от этого не меняется:** проверено компиляцией, `using R3;` и `using NUnit.Framework;` внутри неё оба дают `CS0246`. В player-билд сборка не попадает — проверено пробным билдом: в `Managed` семь `Game.*` и ни одной тестовой dll.
+
+**`Game.View.Tests` — EditMode-тесты вьюхи** (2026-10-03, шаг 6 блок 4). Лежит в `Tests/View/`, форма — как у `Game.Simulation.Tests` (`overrideReferences: true`, NUnit явно, `includePlatforms: ["Editor"]`, `UNITY_INCLUDE_TESTS`). Ссылается только на `Game.View` и `Game.Core`; тестовые сборки разделены, чтобы тесты симуляции не видели вьюху. `Game.View` открывает ей `internal` (`Configure`, `ResetFeedback`) через `InternalsVisibleTo` в `View/AssemblyInfo.cs`. Пробным билдом её отсутствие в `Managed` **не проверялось**.
 
 `autoReferenced: false` у всех сборок проекта: `Assembly-CSharp` в проекте не используется, и забытый вне asmdef скрипт должен падать с ошибкой, а не молча компилироваться.
 
