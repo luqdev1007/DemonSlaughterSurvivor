@@ -20,6 +20,7 @@ namespace Game.Configs
 
         [Header("Experience")]
         [SerializeField] private float _pickupRadius = 1.5f;
+        [SerializeField] private ExperienceConfig _experience;
 
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
@@ -40,6 +41,8 @@ namespace Game.Configs
         public float HitInvulnerabilitySeconds => _hitInvulnerabilitySeconds;
 
         public float PickupRadius => _pickupRadius;
+
+        public ExperienceConfig Experience => _experience;
 
         public DashAbilityConfig Dash => _dash;
 

@@ -20,5 +20,6 @@ MonoBehaviour:
   _bodyHeight: 1.77
   _maxHealth: 20
   _contactDamage: 10
+  _gem: {fileID: 11400000, guid: aa57e4a0790ec5e408534ae86cb7b73f, type: 2}
   _separationRadius: 1
   _separationStrength: 0.5

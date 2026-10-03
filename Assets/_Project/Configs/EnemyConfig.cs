@@ -19,6 +19,9 @@ namespace Game.Configs
         [SerializeField] private float _maxHealth = 20f;
         [SerializeField] private float _contactDamage = 10f;
 
+        [Header("Drop")]
+        [SerializeField] private GemConfig _gem;
+
         [Header("Separation")]
         [SerializeField] private float _separationRadius = 1f;
         [SerializeField] private float _separationStrength = 0.5f;
@@ -36,6 +39,8 @@ namespace Game.Configs
         public float MaxHealth => _maxHealth;
 
         public float ContactDamage => _contactDamage;
+
+        public GemConfig Gem => _gem;
 
         public float SeparationRadius => _separationRadius;
 
