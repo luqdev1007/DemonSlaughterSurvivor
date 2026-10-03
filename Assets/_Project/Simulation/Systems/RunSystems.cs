@@ -36,6 +36,7 @@ namespace Game.Simulation.Systems
             systems.Add(new FaceVelocitySystem());
             systems.Add(new FaceNearestEnemySystem());
             systems.Add(new ApplyPushSystem());
+            systems.Add(new ApplyGemFlightSystem());
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());
             // 6.  Weapons
@@ -47,11 +48,13 @@ namespace Game.Simulation.Systems
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
             systems.Add(new DetectContactDamageSystem());
+            systems.Add(new StartGemFlightSystem());
             // 9.  Damage
             systems.Add(new TickInvulnerabilitySystem());
             systems.Add(new ApplyDamageSystem());
             // 10. Death
             systems.Add(new MarkDeadSystem());
+            systems.Add(new DropGemsSystem());
             systems.Add(new TickPendingFinishSystem());
             systems.Add(new FinishRunOnPlayerDeathSystem());
             systems.Add(new ReapDeadEnemiesSystem());
@@ -59,9 +62,12 @@ namespace Game.Simulation.Systems
             systems.Add(new AccumulateRageSystem());
             systems.Add(new DecayRageSystem());
             systems.Add(new DebugLevelUpSystem());
+            systems.Add(new CollectGemsSystem());
+            systems.Add(new AdvanceLevelSystem());
             systems.Add(new OfferUpgradesSystem());
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
+            systems.Add(new SyncGemViewSystem());
             systems.Add(new PlayHitFeedbackSystem());
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());

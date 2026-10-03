@@ -27,6 +27,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<ChaseTarget> _chaseTargets;
         private readonly EcsPool<Separation> _separations;
         private readonly EcsPool<View> _views;
+        private readonly EcsPool<GemDrop> _gemDrops;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
@@ -49,6 +50,7 @@ namespace Game.Simulation.Services
             _chaseTargets = world.GetPool<ChaseTarget>();
             _separations = world.GetPool<Separation>();
             _views = world.GetPool<View>();
+            _gemDrops = world.GetPool<GemDrop>();
         }
 
         public int Create(EnemyConfig config, Vector3 position)
@@ -97,6 +99,9 @@ namespace Game.Simulation.Services
 
             ref View view = ref _views.Add(entity);
             view.Value = _viewFactory.Create(config.ViewPrefab, position);
+
+            if (config.Gem != null)
+                _gemDrops.Add(entity).Config = config.Gem;
 
             _statModifiers.MarkDirty(entity);
 

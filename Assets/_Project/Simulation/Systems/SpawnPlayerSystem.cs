@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<TurnSpeed> _turnSpeeds = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
+        private readonly EcsPoolInject<Experience> _experiences = default;
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<HitInvulnerability> _hitInvulnerabilities = default;
@@ -82,6 +83,10 @@ namespace Game.Simulation.Systems
             ref PickupRadius pickupRadius = ref _pickupRadii.Value.Add(entity);
             pickupRadius.Base = character.PickupRadius;
             pickupRadius.Value = character.PickupRadius;
+
+            ref Experience experience = ref _experiences.Value.Add(entity);
+            experience.Level = 1;
+            experience.Current = 0;
 
             ref MaxHealth maxHealth = ref _maxHealths.Value.Add(entity);
             maxHealth.Base = character.MaxHealth;

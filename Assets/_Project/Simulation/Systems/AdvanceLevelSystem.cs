@@ -7,13 +7,13 @@ using Leopotam.EcsLite.Di;
 
 namespace Game.Simulation.Systems
 {
-    public sealed class DebugLevelUpSystem : IEcsInitSystem, IEcsRunSystem
+    public sealed class AdvanceLevelSystem : IEcsInitSystem, IEcsRunSystem
     {
         private readonly EcsFilterInject<Inc<Player, Experience>, Exc<Dead>> _heroes = default;
 
         private readonly EcsPoolInject<Experience> _experiences = default;
+        private readonly EcsPoolInject<LevelUpEvent> _events = default;
 
-        private readonly EcsCustomInject<IDebugLevelUpInput> _input = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<RunContext> _context = default;
 
@@ -26,17 +26,26 @@ namespace Game.Simulation.Systems
 
         public void Run(IEcsSystems systems)
         {
-            if (_input.Value.ConsumePressed() == false)
-                return;
-
             foreach (int hero in _heroes.Value)
             {
                 ref Experience experience = ref _experiences.Value.Get(hero);
 
-                int missing = _config.Required(experience.Level) - experience.Current;
+                int levels = 0;
 
-                if (missing > 0)
-                    experience.Current += missing;
+                while (experience.Current >= _config.Required(experience.Level))
+                {
+                    experience.Current -= _config.Required(experience.Level);
+                    experience.Level++;
+                    levels++;
+                }
+
+                if (levels == 0)
+                    continue;
+
+                if (_events.Value.Has(hero) == false)
+                    _events.Value.Add(hero);
+
+                _events.Value.Get(hero).Count += levels;
             }
         }
     }
