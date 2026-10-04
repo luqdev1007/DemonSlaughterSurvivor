@@ -30,6 +30,17 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void CounterStrikePerkKeepsItsBehaviourAfterTheFieldRename()
+        {
+            PerkConfig perk = UnityEditor.AssetDatabase.LoadAssetAtPath<PerkConfig>("Assets/_Project/Configs/Perks/Perk_CounterStrike.asset");
+
+            Assert.IsNotNull(perk, "Perk_CounterStrike.asset is missing.");
+            Assert.IsInstanceOf<CounterStrikeConfig>(perk.Behaviour, "the renamed field lost the counter strike reference");
+            Assert.AreEqual("CounterStrike_Berserk", perk.Behaviour.name);
+            Assert.DoesNotThrow(() => PerkConfigValidator.Validate(perk));
+        }
+
+        [Test]
         public void PerkWithoutBehaviourAndModifiersIsRejected()
         {
             PerkConfig perk = CreatePerk(levels: 2, counter: null);
@@ -70,7 +81,7 @@ namespace Game.Simulation.Tests
 
             SetField(perk, "_id", "perk.test-behaviour");
             SetField(perk, "_levels", entries);
-            SetField(perk, "_counterStrike", counter);
+            SetField(perk, "_behaviour", counter);
 
             return perk;
         }

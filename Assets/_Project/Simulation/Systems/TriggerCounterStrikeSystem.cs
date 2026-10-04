@@ -43,7 +43,7 @@ namespace Game.Simulation.Systems
                 if (WasHit(world, hero) == false)
                     continue;
 
-                if (TryFindCounterStrike(world, hero, out CounterStrikeConfig counter, out int level) == false)
+                if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out CounterStrikeConfig counter, out int level) == false)
                     continue;
 
                 if (TryFindWeapon(world, hero, out int weapon) == false)
@@ -65,32 +65,6 @@ namespace Game.Simulation.Systems
                 if (_damageEvents.Value.Get(entity).Target.Unpack(world, out int target) && target == hero)
                     return true;
             }
-
-            return false;
-        }
-
-        private bool TryFindCounterStrike(EcsWorld world, int hero, out CounterStrikeConfig counter, out int level)
-        {
-            foreach (int entity in _taken.Value)
-            {
-                ref TakenPerk taken = ref _takenPool.Value.Get(entity);
-
-                if (taken.Owner.Unpack(world, out int owner) == false || owner != hero)
-                    continue;
-
-                PerkConfig perk = _content.Value.Get<PerkConfig>(taken.PerkId);
-
-                if (perk.CounterStrike == null)
-                    continue;
-
-                counter = perk.CounterStrike;
-                level = taken.Level;
-
-                return true;
-            }
-
-            counter = null;
-            level = 0;
 
             return false;
         }

@@ -300,7 +300,7 @@ namespace Game.Simulation.Tests
 
             SetField(perk, "_id", PerkId);
             SetField(perk, "_levels", levels);
-            SetField(perk, "_counterStrike", _counter);
+            SetField(perk, "_behaviour", _counter);
 
             WaveTimelineConfig timeline = ScriptableObject.CreateInstance<WaveTimelineConfig>();
             _assets.Add(timeline);

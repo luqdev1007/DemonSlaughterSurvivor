@@ -22,41 +22,18 @@ namespace Game.Configs
                 ValidateLevel(perk, level);
             }
 
-            if (perk.CounterStrike != null)
-                ValidateCounterStrike(perk);
+            if (perk.Behaviour != null)
+                ValidateBehaviour(perk, perk.Behaviour);
         }
 
-        private static void ValidateCounterStrike(PerkConfig perk)
+        private static void ValidateBehaviour(PerkConfig perk, PerkBehaviourConfig behaviour)
         {
-            CounterStrikeConfig counter = perk.CounterStrike;
-            string label = $"{nameof(PerkConfig)} '{perk.Id}' counter strike '{counter.name}'";
-
-            if (counter.LevelCount != perk.MaxLevel)
+            if (behaviour.LevelCount != perk.MaxLevel)
                 throw new InvalidOperationException(
-                    $"{label} has {counter.LevelCount} levels, but the perk has {perk.MaxLevel}; every perk level needs its chance and damage share.");
+                    $"{nameof(PerkConfig)} '{perk.Id}' behaviour '{behaviour.name}' has {behaviour.LevelCount} levels, " +
+                    $"but the perk has {perk.MaxLevel}; every perk level needs its behaviour numbers.");
 
-            for (int level = 1; level <= counter.LevelCount; level++)
-            {
-                CounterStrikeLevel entry = counter.Level(level);
-
-                if (entry == null)
-                    throw new InvalidOperationException($"{label} level {level} is empty.");
-
-                if (float.IsNaN(entry.Chance) || entry.Chance <= 0f || entry.Chance > 1f)
-                    throw new InvalidOperationException($"{label} level {level} has chance {entry.Chance}; it must be in (0, 1].");
-
-                if (float.IsNaN(entry.DamageShare) || float.IsInfinity(entry.DamageShare) || entry.DamageShare <= 0f)
-                    throw new InvalidOperationException($"{label} level {level} has damage share {entry.DamageShare}; it must be positive.");
-            }
-
-            SwingVariant swing = counter.Swing;
-
-            if (swing == null || swing.Bake == null)
-                throw new InvalidOperationException($"{label} has no {nameof(SwingBake)} for its swing.");
-
-            if (swing.PlaybackSpeed <= 0f || swing.WindowEnd <= swing.WindowStart)
-                throw new InvalidOperationException(
-                    $"{label} swing has playback speed {swing.PlaybackSpeed} and window {swing.WindowStart}-{swing.WindowEnd}; bake it with Game/Bake Weapon Swings.");
+            behaviour.Validate(perk);
         }
 
         private static void ValidateLevel(PerkConfig perk, int level)

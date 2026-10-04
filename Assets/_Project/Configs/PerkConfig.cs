@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Configs
 {
@@ -12,13 +13,13 @@ namespace Game.Configs
         [SerializeField] private PerkLevel[] _levels;
 
         [Header("Behaviour")]
-        [SerializeField] private CounterStrikeConfig _counterStrike;
+        [SerializeField, FormerlySerializedAs("_counterStrike")] private PerkBehaviourConfig _behaviour;
 
         public string DisplayName => _displayName;
 
-        public CounterStrikeConfig CounterStrike => _counterStrike;
+        public PerkBehaviourConfig Behaviour => _behaviour;
 
-        public bool HasBehaviour => _counterStrike != null;
+        public bool HasBehaviour => _behaviour != null;
 
         public string Description => _description;
 
