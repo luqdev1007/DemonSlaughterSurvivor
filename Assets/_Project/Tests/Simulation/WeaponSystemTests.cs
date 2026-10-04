@@ -118,6 +118,87 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void SpecialAttackKeepsTheWeaponFromStarting()
+        {
+            Build(Front(), 90f, 0.1f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+            MarkSpecialAttack(SpawnAttack());
+
+            Run(30);
+
+            Assert.AreEqual(0, _swingsStarted);
+        }
+
+        [Test]
+        public void SpecialAttackCutsTheWeaponSwingAndClearsItsFlag()
+        {
+            Build(Front(), 90f, 5f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            RunUntilSwing();
+            MarkSpecialAttack(SpawnAttack());
+
+            Run(1);
+
+            Assert.AreEqual(0, _world.Filter<Swing>().End().GetEntitiesCount());
+            Assert.IsFalse(_world.GetPool<Swinging>().Has(_weapon));
+        }
+
+        [Test]
+        public void SpecialAttackKeepsItsOwnSwing()
+        {
+            Build(Front(), 90f, 5f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            int special = RunUntilSwing();
+            _world.GetPool<SpecialSwing>().Add(special);
+            MarkSpecialAttack(special);
+
+            Run(1);
+
+            Assert.AreEqual(1, _world.Filter<Swing>().End().GetEntitiesCount());
+            Assert.IsTrue(_world.GetPool<SpecialAttack>().Has(_hero));
+        }
+
+        [Test]
+        public void SpecialAttackExpiresWithItsAttackAndTheWeaponSwingsAgain()
+        {
+            Build(Front(), 90f, 0.1f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            int attack = SpawnAttack();
+            MarkSpecialAttack(attack);
+
+            Run(5);
+
+            Assert.AreEqual(0, _swingsStarted);
+
+            _world.DelEntity(attack);
+
+            Run(1);
+
+            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero));
+            Assert.AreEqual(1, _swingsStarted, "the weapon starts on the tick the marker goes");
+        }
+
+        [Test]
+        public void DashCutsTheSpecialSwingAndTheMarkerGoesOnTheSameTick()
+        {
+            Build(Front(), 90f, 5f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            int special = RunUntilSwing();
+            _world.GetPool<SpecialSwing>().Add(special);
+            MarkSpecialAttack(special);
+            _world.GetPool<Dashing>().Add(_hero);
+
+            Run(1);
+
+            Assert.AreEqual(0, _world.Filter<Swing>().End().GetEntitiesCount());
+            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero));
+        }
+
+        [Test]
         public void BladeAboveTheBodyHeightDoesNotHit()
         {
             Build(Front(), 90f, 5f);
@@ -487,6 +568,7 @@ namespace Game.Simulation.Tests
             _systems.Add(new RecomputeStatsSystem());
             _systems.Add(new TickWeaponCooldownSystem());
             _systems.Add(new InterruptSwingSystem());
+            _systems.Add(new ExpireSpecialAttackSystem());
             _systems.Add(new StartSwingSystem());
             _systems.Add(new AdvanceSwingSystem());
             _systems.Add(new RebuildSpatialGridSystem());
@@ -583,6 +665,19 @@ namespace Game.Simulation.Tests
             }
 
             return count;
+        }
+
+        private int SpawnAttack()
+        {
+            int attack = _world.NewEntity();
+            _world.GetPool<SpecialSwing>().Add(attack);
+
+            return attack;
+        }
+
+        private void MarkSpecialAttack(int attack)
+        {
+            _world.GetPool<SpecialAttack>().Add(_hero).Attack = _world.PackEntity(attack);
         }
 
         private int RunUntilSwing()

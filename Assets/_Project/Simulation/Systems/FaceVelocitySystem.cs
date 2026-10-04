@@ -8,7 +8,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class FaceVelocitySystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<Velocity, Facing, TurnSpeed>> _filter = default;
+        private readonly EcsFilterInject<Inc<Velocity, Facing, TurnSpeed>, Exc<SpecialAttack>> _filter = default;
 
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<Facing> _facings = default;

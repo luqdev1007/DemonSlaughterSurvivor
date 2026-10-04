@@ -32,6 +32,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Dashing> _dashing = default;
+        private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -61,7 +62,7 @@ namespace Game.Simulation.Systems
                 if (link.Owner.Unpack(world, out int owner) == false)
                     continue;
 
-                if (_dead.Value.Has(owner) || _dashing.Value.Has(owner))
+                if (_dead.Value.Has(owner) || _dashing.Value.Has(owner) || _specialAttacks.Value.Has(owner))
                     continue;
 
                 if (_positions.Value.Has(owner) == false || _facings.Value.Has(owner) == false)

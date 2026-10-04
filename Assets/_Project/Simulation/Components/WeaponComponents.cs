@@ -22,6 +22,12 @@ namespace Game.Simulation.Components
 
     public struct SpecialSwing { }
 
+    public struct SpecialAttack
+    {
+        public EcsPackedEntity Attack;
+        public bool LocksMovement;
+    }
+
     public struct Swing : IEcsAutoReset<Swing>
     {
         public const int InitialHitCapacity = 64;

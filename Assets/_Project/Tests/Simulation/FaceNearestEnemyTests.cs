@@ -111,6 +111,18 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void SpecialAttackLocksFacing()
+        {
+            Build();
+            SpawnEnemy(new Vector3(0f, 0f, -1f));
+            _world.GetPool<SpecialAttack>().Add(_hero);
+
+            Run(30);
+
+            AssertFacing(Vector3.forward);
+        }
+
+        [Test]
         public void TurnIsLimitedByTurnSpeed()
         {
             Build();

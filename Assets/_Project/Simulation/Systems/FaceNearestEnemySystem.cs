@@ -14,7 +14,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Player, MoveIntent, Velocity, Position, Facing, TurnSpeed>, Exc<Dashing, Dead>> _players = default;
+        private readonly EcsFilterInject<Inc<Player, MoveIntent, Velocity, Position, Facing, TurnSpeed>, Exc<Dashing, Dead, SpecialAttack>> _players = default;
         private readonly EcsFilterInject<Inc<Weapon, OwnerLink>> _weapons = default;
 
         private readonly EcsPoolInject<MoveIntent> _intents = default;

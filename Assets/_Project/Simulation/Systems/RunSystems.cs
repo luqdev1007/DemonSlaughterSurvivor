@@ -42,6 +42,7 @@ namespace Game.Simulation.Systems
             // 6.  Weapons
             systems.Add(new TickWeaponCooldownSystem());
             systems.Add(new InterruptSwingSystem());
+            systems.Add(new ExpireSpecialAttackSystem());
             systems.Add(new StartSwingSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
