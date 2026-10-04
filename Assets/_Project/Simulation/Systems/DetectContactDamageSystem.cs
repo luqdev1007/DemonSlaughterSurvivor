@@ -96,6 +96,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Source = world.PackEntity(source);
                     damageEvent.SourcePosition = sourcePosition.Value;
                     damageEvent.Amount = damage.Value;
+                    damageEvent.Kind = DamageKind.Contact;
                 }
             }
         }

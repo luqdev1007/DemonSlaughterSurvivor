@@ -22,12 +22,21 @@ namespace Game.Simulation.Components
         public int TotalTicks;
     }
 
+    public enum DamageKind
+    {
+        Unmarked = 0,
+        Weapon = 1,
+        Contact = 2,
+        Perk = 3,
+    }
+
     public struct DamageEvent
     {
         public EcsPackedEntity Target;
         public EcsPackedEntity Source;
         public Vector3 SourcePosition;
         public float Amount;
+        public DamageKind Kind;
     }
 
     public struct KillingBlow { public Vector3 SourcePosition; }

@@ -489,15 +489,15 @@ namespace Game.Simulation.Tests
 
         private void Hit(float amount)
         {
-            AddEvent(_hero, _enemy, amount);
+            AddEvent(_hero, _enemy, amount, DamageKind.Weapon);
         }
 
         private void Receive(float amount)
         {
-            AddEvent(_enemy, _hero, amount);
+            AddEvent(_enemy, _hero, amount, DamageKind.Contact);
         }
 
-        private void AddEvent(int source, int target, float amount)
+        private void AddEvent(int source, int target, float amount, DamageKind kind)
         {
             int entity = _world.NewEntity();
 
@@ -505,6 +505,7 @@ namespace Game.Simulation.Tests
             damageEvent.Source = _world.PackEntity(source);
             damageEvent.Target = _world.PackEntity(target);
             damageEvent.Amount = amount;
+            damageEvent.Kind = kind;
         }
 
         private void SetCharge(float value)

@@ -58,6 +58,9 @@ namespace Game.Simulation.Systems
                 {
                     ref DamageEvent damageEvent = ref _damageEvents.Value.Get(entity);
 
+                    if (damageEvent.Kind != DamageKind.Weapon && damageEvent.Kind != DamageKind.Contact)
+                        continue;
+
                     if (damageEvent.Source.Unpack(world, out int source) && source == hero)
                     {
                         gain += _dealtPerHit;

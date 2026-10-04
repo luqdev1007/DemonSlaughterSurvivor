@@ -149,6 +149,7 @@ namespace Game.Simulation.Systems
                 damageEvent.Source = world.PackEntity(owner);
                 damageEvent.SourcePosition = ownerPosition;
                 damageEvent.Amount = damage;
+                damageEvent.Kind = DamageKind.Weapon;
             }
         }
 

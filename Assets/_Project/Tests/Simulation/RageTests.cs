@@ -143,6 +143,44 @@ namespace Game.Simulation.Tests
             Assert.Less(Charge(), 50.2f);
         }
 
+        [TestCase(DamageKind.Unmarked)]
+        [TestCase(DamageKind.Perk)]
+        public void DealtDamageOfOtherKindsGivesNoRageAndKeepsTheDelay(DamageKind kind)
+        {
+            Build(heroMaxHealth: 100f, hitInvulnerabilitySeconds: 0f);
+
+            Step(() => Receive(_enemies[0], 50f));
+
+            for (int tick = 1; tick < 150; tick++)
+                Step(null);
+
+            int before = State().TicksSinceCombat;
+
+            Step(() => Hit(_enemies[0], 1f, kind));
+
+            Assert.AreEqual(50f, Charge(), Tolerance);
+            Assert.AreEqual(before + 1, State().TicksSinceCombat, $"{kind} damage must not restart the decay delay");
+        }
+
+        [TestCase(DamageKind.Unmarked)]
+        [TestCase(DamageKind.Perk)]
+        public void ReceivedDamageOfOtherKindsGivesNoRage(DamageKind kind)
+        {
+            Build(heroMaxHealth: 100f, hitInvulnerabilitySeconds: 0f);
+
+            Step(() => Receive(_enemies[0], 20f, kind));
+
+            Assert.AreEqual(0f, Charge(), Tolerance);
+            Assert.AreEqual(1, State().TicksSinceCombat);
+        }
+
+        [Test]
+        public void UnmarkedIsTheDefaultKind()
+        {
+            Assert.AreEqual(DamageKind.Unmarked, default(DamageKind));
+            Assert.AreEqual(DamageKind.Unmarked, default(DamageEvent).Kind);
+        }
+
         [Test]
         public void FullRageDoesNotDecay()
         {
@@ -292,17 +330,17 @@ namespace Game.Simulation.Tests
             _systems.Run();
         }
 
-        private void Hit(int enemy, float amount)
+        private void Hit(int enemy, float amount, DamageKind kind = DamageKind.Weapon)
         {
-            AddEvent(_hero, enemy, amount);
+            AddEvent(_hero, enemy, amount, kind);
         }
 
-        private void Receive(int enemy, float amount)
+        private void Receive(int enemy, float amount, DamageKind kind = DamageKind.Contact)
         {
-            AddEvent(enemy, _hero, amount);
+            AddEvent(enemy, _hero, amount, kind);
         }
 
-        private void AddEvent(int source, int target, float amount)
+        private void AddEvent(int source, int target, float amount, DamageKind kind)
         {
             int entity = _world.NewEntity();
 
@@ -310,6 +348,7 @@ namespace Game.Simulation.Tests
             damageEvent.Source = _world.PackEntity(source);
             damageEvent.Target = _world.PackEntity(target);
             damageEvent.Amount = amount;
+            damageEvent.Kind = kind;
         }
 
         private float Charge()
