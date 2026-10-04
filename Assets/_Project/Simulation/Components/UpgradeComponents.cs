@@ -13,6 +13,8 @@ namespace Game.Simulation.Components
 
     public struct CounterStrikeRandom { public uint State; }
 
+    public struct HeroicLeapCooldown { public int RemainingTicks; }
+
     public struct PendingLevelUps { public int Count; }
 
     public struct PendingChoice

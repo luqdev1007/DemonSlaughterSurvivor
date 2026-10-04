@@ -22,6 +22,8 @@ namespace Game.Simulation.Components
 
     public struct SpecialSwing { }
 
+    public struct LeapStarted { }
+
     public struct HeroicLeap
     {
         public EcsPackedEntity Owner;

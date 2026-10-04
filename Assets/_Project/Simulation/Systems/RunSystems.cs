@@ -41,6 +41,7 @@ namespace Game.Simulation.Systems
             systems.Add(new MoveSystem());
             // 6.  Weapons
             systems.Add(new TickWeaponCooldownSystem());
+            systems.Add(new StartHeroicLeapSystem());
             systems.Add(new InterruptSwingSystem());
             systems.Add(new ExpireSpecialAttackSystem());
             systems.Add(new StartSwingSystem());
@@ -73,6 +74,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncGemViewSystem());
             systems.Add(new PlayHitFeedbackSystem());
             systems.Add(new PlaySwingFeedbackSystem());
+            systems.Add(new PlayLeapFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());
             systems.Add(new SyncBerserkViewSystem());
