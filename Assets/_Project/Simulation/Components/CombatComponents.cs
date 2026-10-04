@@ -46,4 +46,6 @@ namespace Game.Simulation.Components
     public struct DiedEvent { }
 
     public struct PendingFinish { public int RemainingTicks; }
+
+    public struct DissolveCountdown { public int RemainingTicks; }
 }

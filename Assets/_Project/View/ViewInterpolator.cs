@@ -40,6 +40,7 @@ namespace Game.View
         private bool _isRunning;
         private bool _hasSpecialParameter;
         private bool _isSpecial;
+        private bool _isDead;
         private bool _hasAttackSpeedParameter;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
@@ -158,7 +159,7 @@ namespace Game.View
 
         public void SetDashing(bool value)
         {
-            if (_hasDashingParameter == false || _isDashing == value)
+            if (_isDead || _hasDashingParameter == false || _isDashing == value)
                 return;
 
             _isDashing = value;
@@ -168,7 +169,7 @@ namespace Game.View
 
         public void SetSpecialAttack(bool value)
         {
-            if (_hasSpecialParameter == false || _isSpecial == value)
+            if (_isDead || _hasSpecialParameter == false || _isSpecial == value)
                 return;
 
             _isSpecial = value;
@@ -178,7 +179,7 @@ namespace Game.View
 
         public void SetRunning(bool value)
         {
-            if (_hasRunningParameter == false || _isRunning == value)
+            if (_isDead || _hasRunningParameter == false || _isRunning == value)
                 return;
 
             _isRunning = value;
@@ -188,7 +189,7 @@ namespace Game.View
 
         public void PlayAttack(string trigger, float speed)
         {
-            if (_hasAttackSpeedParameter == false)
+            if (_isDead || _hasAttackSpeedParameter == false)
                 return;
 
             _animator.SetFloat(AttackSpeedId, speed);
@@ -197,8 +198,23 @@ namespace Game.View
 
         public void PlayDeath()
         {
-            if (_hasDeathTrigger == false)
+            if (_hasDeathTrigger == false || _isDead)
                 return;
+
+            _isDead = true;
+
+            if (_hasRunningParameter)
+                _animator.SetBool(IsRunningId, false);
+
+            if (_hasDashingParameter)
+                _animator.SetBool(IsDashingId, false);
+
+            if (_hasSpecialParameter)
+                _animator.SetBool(IsSpecialId, false);
+
+            _isRunning = false;
+            _isDashing = false;
+            _isSpecial = false;
 
             _animator.SetTrigger(DeathTriggerId);
         }
@@ -255,6 +271,7 @@ namespace Game.View
             _isDashing = false;
             _isRunning = false;
             _isSpecial = false;
+            _isDead = false;
             _isRetiring = false;
             _isKnockedBack = false;
             _isAirborne = false;
