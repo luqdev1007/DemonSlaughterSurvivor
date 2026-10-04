@@ -49,6 +49,7 @@ namespace Game.Simulation.Systems
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
+            systems.Add(new PulseFireSegmentsSystem());
             systems.Add(new TickFireSegmentsSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());

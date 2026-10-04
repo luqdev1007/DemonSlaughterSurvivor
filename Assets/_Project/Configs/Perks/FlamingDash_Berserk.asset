@@ -27,4 +27,4 @@ MonoBehaviour:
   _segmentRadius: 0.6
   _pulseSeconds: 0.5
   _maxLiveSegments: 200
-  _segmentPrefab: {fileID: 0}
+  _segmentPrefab: {fileID: 6775906986027626410, guid: c0d9710ae3e95614988839b95f558199, type: 3}
