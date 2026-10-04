@@ -12,6 +12,7 @@ namespace Game.Configs
 
         [Header("Dissolve")]
         [SerializeField] private float _dissolveSeconds = 0.8f;
+        [SerializeField] private float _heroDissolveDelaySeconds;
         [SerializeField] private Material _dissolveMaterial;
 
         [Header("Death Knockback")]
@@ -31,6 +32,8 @@ namespace Game.Configs
         public float PlayerDeathDelaySeconds => _playerDeathDelaySeconds;
 
         public float DissolveSeconds => _dissolveSeconds;
+
+        public float HeroDissolveDelaySeconds => _heroDissolveDelaySeconds;
 
         public Material DissolveMaterial => _dissolveMaterial;
 
