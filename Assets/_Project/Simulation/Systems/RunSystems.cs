@@ -46,6 +46,7 @@ namespace Game.Simulation.Systems
             systems.Add(new StartSwingSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
+            systems.Add(new AdvanceHeroicLeapSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
             systems.Add(new DetectContactDamageSystem());

@@ -22,6 +22,15 @@ namespace Game.Simulation.Components
 
     public struct SpecialSwing { }
 
+    public struct HeroicLeap
+    {
+        public EcsPackedEntity Owner;
+        public EcsPackedEntity Weapon;
+        public HeroicLeapConfig Config;
+        public float DamageScale;
+        public int ElapsedTicks;
+    }
+
     public struct SpecialAttack
     {
         public EcsPackedEntity Attack;
