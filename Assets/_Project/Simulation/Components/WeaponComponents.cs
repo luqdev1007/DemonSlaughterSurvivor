@@ -24,6 +24,15 @@ namespace Game.Simulation.Components
 
     public struct LeapStarted { }
 
+    public struct FireSegment
+    {
+        public EcsPackedEntity Owner;
+        public int RemainingTicks;
+        public float DamageScale;
+    }
+
+    public struct FireTrail { public float Carried; }
+
     public struct HeroicLeap
     {
         public EcsPackedEntity Owner;

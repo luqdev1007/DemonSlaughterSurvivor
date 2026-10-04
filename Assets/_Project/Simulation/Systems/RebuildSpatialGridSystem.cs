@@ -7,7 +7,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class RebuildSpatialGridSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<Position>, Exc<Gem>> _filter = default;
+        private readonly EcsFilterInject<Inc<Position>, Exc<Gem, FireSegment>> _filter = default;
 
         private readonly EcsPoolInject<Position> _positions = default;
 
