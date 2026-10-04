@@ -91,6 +91,43 @@ namespace Game.Simulation.Tests
             Assert.Throws<InvalidOperationException>(() => PerkConfigValidator.Validate(perk));
         }
 
+        [Test]
+        public void FlamingDashWithAPrefabPassesValidation()
+        {
+            FlamingDashConfig dash = FlamingDashWithStubPrefab();
+
+            Assert.DoesNotThrow(() => PerkConfigValidator.Validate(CreatePerk(dash.LevelCount, dash)));
+        }
+
+        [TestCase("_segmentPrefab")]
+        [TestCase("_maxLiveSegments")]
+        [TestCase("_segmentSpacing")]
+        public void FlamingDashRejectsMissingOrZeroData(string field)
+        {
+            FlamingDashConfig dash = FlamingDashWithStubPrefab();
+
+            if (field == "_segmentPrefab")
+                SetField(dash, field, null);
+            else if (field == "_maxLiveSegments")
+                SetField(dash, field, 0);
+            else
+                SetField(dash, field, 0f);
+
+            Assert.Throws<InvalidOperationException>(() => PerkConfigValidator.Validate(CreatePerk(dash.LevelCount, dash)));
+        }
+
+        private FlamingDashConfig FlamingDashWithStubPrefab()
+        {
+            FlamingDashConfig dash = Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<FlamingDashConfig>("Assets/_Project/Configs/Perks/FlamingDash_Berserk.asset"));
+            _assets.Add(dash);
+
+            GameObject prefab = new GameObject("StubSegment");
+            _assets.Add(prefab);
+            SetField(dash, "_segmentPrefab", prefab);
+
+            return dash;
+        }
+
         private PerkConfig CreatePerk(int levels, PerkBehaviourConfig counter)
         {
             PerkConfig perk = ScriptableObject.CreateInstance<PerkConfig>();
