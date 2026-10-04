@@ -1,5 +1,6 @@
 using Game.Configs;
 using System;
+using System.Collections.Generic;
 
 namespace Game.Simulation.Services
 {
@@ -33,15 +34,24 @@ namespace Game.Simulation.Services
 
         public float MaxEnemyBodyRadius { get; }
 
-        public static EnemyMotionBounds From(CharacterConfig character, WaveTimelineConfig waves)
+        public static EnemyMotionBounds From(CharacterConfig character, WaveTimelineConfig waves, IReadOnlyList<PerkConfig> perks)
         {
             if (character == null)
                 throw new ArgumentNullException(nameof(character));
+
+            if (perks == null)
+                throw new ArgumentNullException(nameof(perks));
 
             float maxEnemyBodyRadius = WaveTimelineValidator.ResolveMaxBodyRadius(waves);
             float maxOverlapCorrection = character.BodyRadius + maxEnemyBodyRadius;
             float maxEnemyMoveSpeed = WaveTimelineValidator.ResolveMaxMoveSpeed(waves);
             float pushSpeed = character.Dash == null ? 0f : character.Dash.PushSpeed;
+
+            for (int index = 0; index < perks.Count; index++)
+            {
+                if (perks[index] != null && perks[index].Behaviour is HeroicLeapConfig leap)
+                    pushSpeed = Math.Max(pushSpeed, leap.PushSpeed);
+            }
 
             return new EnemyMotionBounds(maxEnemyMoveSpeed, maxOverlapCorrection, pushSpeed, maxEnemyBodyRadius);
         }

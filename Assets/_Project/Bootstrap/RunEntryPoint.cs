@@ -91,7 +91,7 @@ namespace Game.Bootstrap
 
             CharacterConfig character = _registry.Get<CharacterConfig>(_context.CharacterId);
 
-            _motionBounds = EnemyMotionBounds.From(character, _levelConfig.Waves);
+            _motionBounds = EnemyMotionBounds.From(character, _levelConfig.Waves, _registry.All<PerkConfig>());
 
             _choiceGate = new UpgradeChoiceGate();
 
