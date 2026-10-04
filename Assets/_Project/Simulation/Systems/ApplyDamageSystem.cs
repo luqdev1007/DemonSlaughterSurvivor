@@ -23,6 +23,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<DamageApplied> _applied = default;
         private readonly EcsPoolInject<KillingBlow> _killingBlows = default;
+        private readonly EcsPoolInject<Player> _players = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -58,6 +59,16 @@ namespace Game.Simulation.Systems
                 if (_invulnerables.Value.Has(target))
                     continue;
 
+                if (_players.Value.Has(target) == false)
+                {
+                    if (_healths.Value.Get(target).Current <= 0f)
+                        continue;
+
+                    Apply(target, entity, ref damageEvent, _clock.Value.Delta);
+
+                    continue;
+                }
+
                 if (_strongest.TryGetValue(target, out int previous))
                 {
                     ref DamageEvent previousEvent = ref _damageEvents.Value.Get(previous);
@@ -74,28 +85,34 @@ namespace Game.Simulation.Systems
             foreach (KeyValuePair<int, int> pair in _strongest)
             {
                 ref DamageEvent damageEvent = ref _damageEvents.Value.Get(pair.Value);
-                ref Health health = ref _healths.Value.Get(pair.Key);
 
-                bool wasAlive = health.Current > 0f;
-
-                float amount = damageEvent.Amount;
-
-                if (_damageTakens.Value.Has(pair.Key))
-                    amount *= _damageTakens.Value.Get(pair.Key).Value;
-
-                health.Current -= amount;
-
-                ref DamageApplied applied = ref _applied.Value.Add(pair.Value);
-                applied.Amount = amount;
-
-                if (wasAlive && health.Current <= 0f && _killingBlows.Value.Has(pair.Key) == false)
-                {
-                    ref KillingBlow killingBlow = ref _killingBlows.Value.Add(pair.Key);
-                    killingBlow.SourcePosition = damageEvent.SourcePosition;
-                }
-
-                GrantInvulnerability(pair.Key, delta);
+                Apply(pair.Key, pair.Value, ref damageEvent, delta);
             }
+        }
+
+        private void Apply(int target, int eventEntity, ref DamageEvent damageEvent, float delta)
+        {
+            ref Health health = ref _healths.Value.Get(target);
+
+            bool wasAlive = health.Current > 0f;
+
+            float amount = damageEvent.Amount;
+
+            if (_damageTakens.Value.Has(target))
+                amount *= _damageTakens.Value.Get(target).Value;
+
+            health.Current -= amount;
+
+            ref DamageApplied applied = ref _applied.Value.Add(eventEntity);
+            applied.Amount = amount;
+
+            if (wasAlive && health.Current <= 0f && _killingBlows.Value.Has(target) == false)
+            {
+                ref KillingBlow killingBlow = ref _killingBlows.Value.Add(target);
+                killingBlow.SourcePosition = damageEvent.SourcePosition;
+            }
+
+            GrantInvulnerability(target, delta);
         }
 
         private void GrantInvulnerability(int entity, float delta)
