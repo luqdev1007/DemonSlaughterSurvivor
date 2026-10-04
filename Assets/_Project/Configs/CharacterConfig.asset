@@ -17,7 +17,7 @@ MonoBehaviour:
   _moveSpeed: 5
   _turnSpeed: 1000
   _bodyRadius: 0.4
-  _maxHealth: 1000
+  _maxHealth: 100
   _hitInvulnerabilitySeconds: 0.5
   _pickupRadius: 1.5
   _experience: {fileID: 11400000, guid: 810d3fda96e086643898af6c4dfed372, type: 2}
