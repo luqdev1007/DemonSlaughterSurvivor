@@ -36,6 +36,13 @@ namespace Game.Configs.Editor
                 report.Append(Bake(weapon));
             }
 
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(CounterStrikeConfig)))
+            {
+                CounterStrikeConfig counter = AssetDatabase.LoadAssetAtPath<CounterStrikeConfig>(AssetDatabase.GUIDToAssetPath(guid));
+
+                report.Append(Bake(counter));
+            }
+
             AssetDatabase.SaveAssets();
 
             return report.ToString();
@@ -83,14 +90,7 @@ namespace Game.Configs.Editor
 
         public static string Bake(WeaponConfig weapon)
         {
-            if (weapon.BakeRig == null)
-                throw new InvalidOperationException($"{nameof(WeaponConfig)} '{weapon.Id}' has no bake rig.");
-
-            if (string.IsNullOrEmpty(weapon.HandBoneName))
-                throw new InvalidOperationException($"{nameof(WeaponConfig)} '{weapon.Id}' has no hand bone name.");
-
-            if (weapon.BakeSampleRate <= 0f)
-                throw new InvalidOperationException($"{nameof(WeaponConfig)} '{weapon.Id}' has a non-positive bake sample rate.");
+            ValidateInputs(weapon);
 
             StringBuilder report = new StringBuilder();
             report.Append($"{weapon.Id}:\n");
@@ -99,22 +99,8 @@ namespace Game.Configs.Editor
 
             try
             {
-                GameObject instance = (GameObject)Object.Instantiate(weapon.BakeRig);
-                SceneManager.MoveGameObjectToScene(instance, scene);
-                instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                OpenRig(weapon, scene, out Animator animator, out Transform hand, out MeshFilter blade);
 
-                Animator animator = instance.GetComponentInChildren<Animator>(true);
-                Transform hand = FindDescendant(instance.transform, weapon.HandBoneName);
-
-                if (hand == null)
-                    throw new InvalidOperationException($"Bake rig '{weapon.BakeRig.name}' has no bone '{weapon.HandBoneName}'.");
-
-                MeshFilter blade = hand.GetComponentInChildren<MeshFilter>(true);
-
-                if (blade == null || blade.sharedMesh == null)
-                    throw new InvalidOperationException($"Bone '{weapon.HandBoneName}' has no mesh under it to take the blade from.");
-
-                SwingCoverage trigger = null;
                 bool[] intersection = new bool[SwingCoverage.AngleBins * SwingCoverage.DistanceBins];
 
                 for (int cell = 0; cell < intersection.Length; cell++)
@@ -122,55 +108,16 @@ namespace Game.Configs.Editor
 
                 for (int index = 0; index < weapon.VariantCount; index++)
                 {
-                    SwingVariant variant = weapon.Variant(index);
-                    AnimationClip clip = FindClip(weapon.BakeRig, variant.AnimatorTrigger);
-
-                    SwingBake bake = variant.Bake;
-
-                    if (bake == null)
-                        throw new InvalidOperationException(
-                            $"{nameof(WeaponConfig)} '{weapon.Id}' variant '{variant.AnimatorTrigger}' has no {nameof(SwingBake)} asset assigned.");
-
-                    SampleClip(clip, animator.gameObject, hand, blade, weapon.BakeSampleRate, out Vector3[] hands, out Vector3[] tips);
-
-                    bake.Overwrite(clip, weapon.BakeSampleRate, clip.length, SwingClipHash.Compute(clip), hands, tips);
-                    EditorUtility.SetDirty(bake);
-
-                    float windowStart = variant.WindowStart;
-                    float windowEnd = variant.WindowEnd;
-
-                    if (windowEnd <= windowStart)
-                        SuggestWindow(hands, tips, weapon.BakeSampleRate, weapon.WindowReachThreshold, weapon.CoverageBodyHeight, variant.HalfAngleDegrees, out windowStart, out windowEnd);
-
-                    float maxReach = ResolveMaxReach(bake, windowStart, windowEnd);
-
-                    SwingCoverage coverage = ComputeCoverage(bake, variant.PlaybackSpeed, windowStart, windowEnd, variant.HalfAngleDegrees, weapon.CoverageBodyHeight, weapon.CoverageBodyRadius);
-
-                    variant.OverwriteBakeResults(windowStart, windowEnd, maxReach, coverage);
+                    SwingCoverage coverage = BakeVariant(weapon, weapon.Variant(index), $"{nameof(WeaponConfig)} '{weapon.Id}'", animator, hand, blade, report);
 
                     for (int angle = 0; angle < SwingCoverage.AngleBins; angle++)
                     {
                         for (int distance = 0; distance < SwingCoverage.DistanceBins; distance++)
                             intersection[angle * SwingCoverage.DistanceBins + distance] &= coverage.Cell(angle, distance);
                     }
-
-                    report.Append(string.Format(
-                        CultureInfo.InvariantCulture,
-                        "  {0}: clip {1:F4}s, {2} samples, hash {3}, window {4:F4}-{5:F4}s (ticks {6:F1}-{7:F1} at speed {8}), max reach {9:F2} m, covered cells {10}\n",
-                        variant.AnimatorTrigger,
-                        clip.length,
-                        hands.Length,
-                        bake.ClipHash,
-                        windowStart,
-                        windowEnd,
-                        windowStart / variant.PlaybackSpeed / TickSeconds,
-                        windowEnd / variant.PlaybackSpeed / TickSeconds,
-                        variant.PlaybackSpeed,
-                        maxReach,
-                        coverage.CoveredCount));
                 }
 
-                trigger = new SwingCoverage();
+                SwingCoverage trigger = new SwingCoverage();
                 trigger.Overwrite(intersection);
                 weapon.OverwriteTriggerCoverage(trigger);
                 EditorUtility.SetDirty(weapon);
@@ -184,6 +131,112 @@ namespace Game.Configs.Editor
             }
 
             return report.ToString();
+        }
+
+        public static string Bake(CounterStrikeConfig counter)
+        {
+            WeaponConfig source = counter.BakeSource;
+
+            if (source == null)
+                throw new InvalidOperationException($"{nameof(CounterStrikeConfig)} '{counter.name}' has no bake source weapon to take the rig from.");
+
+            ValidateInputs(source);
+
+            StringBuilder report = new StringBuilder();
+            report.Append($"{counter.name} (rig of {source.Id}):\n");
+
+            Scene scene = EditorSceneManager.NewPreviewScene();
+
+            try
+            {
+                OpenRig(source, scene, out Animator animator, out Transform hand, out MeshFilter blade);
+
+                SwingCoverage coverage = BakeVariant(source, counter.Swing, $"{nameof(CounterStrikeConfig)} '{counter.name}'", animator, hand, blade, report);
+
+                EditorUtility.SetDirty(counter);
+
+                report.Append(DescribeCoverage(coverage));
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(scene);
+            }
+
+            return report.ToString();
+        }
+
+        private static void ValidateInputs(WeaponConfig weapon)
+        {
+            if (weapon.BakeRig == null)
+                throw new InvalidOperationException($"{nameof(WeaponConfig)} '{weapon.Id}' has no bake rig.");
+
+            if (string.IsNullOrEmpty(weapon.HandBoneName))
+                throw new InvalidOperationException($"{nameof(WeaponConfig)} '{weapon.Id}' has no hand bone name.");
+
+            if (weapon.BakeSampleRate <= 0f)
+                throw new InvalidOperationException($"{nameof(WeaponConfig)} '{weapon.Id}' has a non-positive bake sample rate.");
+        }
+
+        private static void OpenRig(WeaponConfig weapon, Scene scene, out Animator animator, out Transform hand, out MeshFilter blade)
+        {
+            GameObject instance = (GameObject)Object.Instantiate(weapon.BakeRig);
+            SceneManager.MoveGameObjectToScene(instance, scene);
+            instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+            animator = instance.GetComponentInChildren<Animator>(true);
+            hand = FindDescendant(instance.transform, weapon.HandBoneName);
+
+            if (hand == null)
+                throw new InvalidOperationException($"Bake rig '{weapon.BakeRig.name}' has no bone '{weapon.HandBoneName}'.");
+
+            blade = hand.GetComponentInChildren<MeshFilter>(true);
+
+            if (blade == null || blade.sharedMesh == null)
+                throw new InvalidOperationException($"Bone '{weapon.HandBoneName}' has no mesh under it to take the blade from.");
+        }
+
+        private static SwingCoverage BakeVariant(WeaponConfig inputs, SwingVariant variant, string owner, Animator animator, Transform hand, MeshFilter blade, StringBuilder report)
+        {
+            AnimationClip clip = FindClip(inputs.BakeRig, variant.AnimatorTrigger);
+
+            SwingBake bake = variant.Bake;
+
+            if (bake == null)
+                throw new InvalidOperationException($"{owner} variant '{variant.AnimatorTrigger}' has no {nameof(SwingBake)} asset assigned.");
+
+            SampleClip(clip, animator.gameObject, hand, blade, inputs.BakeSampleRate, out Vector3[] hands, out Vector3[] tips);
+
+            bake.Overwrite(clip, inputs.BakeSampleRate, clip.length, SwingClipHash.Compute(clip), hands, tips);
+            EditorUtility.SetDirty(bake);
+
+            float windowStart = variant.WindowStart;
+            float windowEnd = variant.WindowEnd;
+
+            if (windowEnd <= windowStart)
+                SuggestWindow(hands, tips, inputs.BakeSampleRate, inputs.WindowReachThreshold, inputs.CoverageBodyHeight, variant.HalfAngleDegrees, out windowStart, out windowEnd);
+
+            float maxReach = ResolveMaxReach(bake, windowStart, windowEnd);
+
+            SwingCoverage coverage = ComputeCoverage(bake, variant.PlaybackSpeed, windowStart, windowEnd, variant.HalfAngleDegrees, inputs.CoverageBodyHeight, inputs.CoverageBodyRadius);
+
+            variant.OverwriteBakeResults(windowStart, windowEnd, maxReach, coverage);
+
+            report.Append(string.Format(
+                CultureInfo.InvariantCulture,
+                "  {0}: clip {1:F4}s, {2} samples, hash {3}, window {4:F4}-{5:F4}s (ticks {6:F1}-{7:F1} at speed {8}), max reach {9:F2} m, covered cells {10}\n",
+                variant.AnimatorTrigger,
+                clip.length,
+                hands.Length,
+                bake.ClipHash,
+                windowStart,
+                windowEnd,
+                windowStart / variant.PlaybackSpeed / TickSeconds,
+                windowEnd / variant.PlaybackSpeed / TickSeconds,
+                variant.PlaybackSpeed,
+                maxReach,
+                coverage.CoveredCount));
+
+            return coverage;
         }
 
         public static void SampleClip(AnimationClip clip, GameObject animatorObject, Transform hand, MeshFilter blade, float sampleRate, out Vector3[] hands, out Vector3[] tips)

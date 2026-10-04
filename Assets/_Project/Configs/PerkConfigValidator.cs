@@ -21,6 +21,42 @@ namespace Game.Configs
             {
                 ValidateLevel(perk, level);
             }
+
+            if (perk.CounterStrike != null)
+                ValidateCounterStrike(perk);
+        }
+
+        private static void ValidateCounterStrike(PerkConfig perk)
+        {
+            CounterStrikeConfig counter = perk.CounterStrike;
+            string label = $"{nameof(PerkConfig)} '{perk.Id}' counter strike '{counter.name}'";
+
+            if (counter.LevelCount != perk.MaxLevel)
+                throw new InvalidOperationException(
+                    $"{label} has {counter.LevelCount} levels, but the perk has {perk.MaxLevel}; every perk level needs its chance and damage share.");
+
+            for (int level = 1; level <= counter.LevelCount; level++)
+            {
+                CounterStrikeLevel entry = counter.Level(level);
+
+                if (entry == null)
+                    throw new InvalidOperationException($"{label} level {level} is empty.");
+
+                if (float.IsNaN(entry.Chance) || entry.Chance <= 0f || entry.Chance > 1f)
+                    throw new InvalidOperationException($"{label} level {level} has chance {entry.Chance}; it must be in (0, 1].");
+
+                if (float.IsNaN(entry.DamageShare) || float.IsInfinity(entry.DamageShare) || entry.DamageShare <= 0f)
+                    throw new InvalidOperationException($"{label} level {level} has damage share {entry.DamageShare}; it must be positive.");
+            }
+
+            SwingVariant swing = counter.Swing;
+
+            if (swing == null || swing.Bake == null)
+                throw new InvalidOperationException($"{label} has no {nameof(SwingBake)} for its swing.");
+
+            if (swing.PlaybackSpeed <= 0f || swing.WindowEnd <= swing.WindowStart)
+                throw new InvalidOperationException(
+                    $"{label} swing has playback speed {swing.PlaybackSpeed} and window {swing.WindowStart}-{swing.WindowEnd}; bake it with Game/Bake Weapon Swings.");
         }
 
         private static void ValidateLevel(PerkConfig perk, int level)
@@ -28,8 +64,14 @@ namespace Game.Configs
             PerkLevel entry = perk.Level(level);
             string label = $"{nameof(PerkConfig)} '{perk.Id}' level {level}";
 
-            if (entry == null || entry.Modifiers == null || entry.Modifiers.Count == 0)
-                throw new InvalidOperationException($"{label} has no modifiers, so taking it would change nothing.");
+            if (entry == null)
+                throw new InvalidOperationException($"{label} is empty.");
+
+            if ((entry.Modifiers == null || entry.Modifiers.Count == 0) && perk.HasBehaviour == false)
+                throw new InvalidOperationException($"{label} has no modifiers and the perk has no behaviour, so taking it would change nothing.");
+
+            if (entry.Modifiers == null)
+                return;
 
             IReadOnlyList<StatModifierEntry> modifiers = entry.Modifiers;
 

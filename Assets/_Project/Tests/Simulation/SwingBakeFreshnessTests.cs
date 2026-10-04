@@ -13,6 +13,27 @@ namespace Game.Simulation.Tests
     public sealed class SwingBakeFreshnessTests
     {
         private const float PositionTolerance = 1e-4f;
+        private const string AttackLayer = "Attack";
+        private const string SpinLayer = "Spin";
+
+        private sealed class BakedSwing
+        {
+            public BakedSwing(string label, WeaponConfig inputs, SwingVariant variant, string layer)
+            {
+                Label = label;
+                Inputs = inputs;
+                Variant = variant;
+                Layer = layer;
+            }
+
+            public string Label { get; }
+
+            public WeaponConfig Inputs { get; }
+
+            public SwingVariant Variant { get; }
+
+            public string Layer { get; }
+        }
 
         private static IEnumerable<WeaponConfig> Weapons()
         {
@@ -20,15 +41,46 @@ namespace Game.Simulation.Tests
                 yield return AssetDatabase.LoadAssetAtPath<WeaponConfig>(AssetDatabase.GUIDToAssetPath(guid));
         }
 
-        [Test]
-        public void ThereIsAtLeastOneWeaponToCheck()
+        private static IEnumerable<CounterStrikeConfig> CounterStrikes()
         {
-            int count = 0;
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(CounterStrikeConfig)))
+                yield return AssetDatabase.LoadAssetAtPath<CounterStrikeConfig>(AssetDatabase.GUIDToAssetPath(guid));
+        }
+
+        private static IEnumerable<BakedSwing> Swings()
+        {
+            foreach (WeaponConfig weapon in Weapons())
+            {
+                for (int index = 0; index < weapon.VariantCount; index++)
+                {
+                    SwingVariant variant = weapon.Variant(index);
+
+                    yield return new BakedSwing($"{weapon.Id} / {variant.AnimatorTrigger}", weapon, variant, AttackLayer);
+                }
+            }
+
+            foreach (CounterStrikeConfig counter in CounterStrikes())
+            {
+                Assert.IsNotNull(counter.BakeSource, $"{counter.name} has no bake source weapon.");
+
+                yield return new BakedSwing($"{counter.name} / {counter.Swing.AnimatorTrigger}", counter.BakeSource, counter.Swing, SpinLayer);
+            }
+        }
+
+        [Test]
+        public void ThereIsAtLeastOneWeaponAndOneCounterStrikeToCheck()
+        {
+            int weapons = 0;
+            int counters = 0;
 
             foreach (WeaponConfig weapon in Weapons())
-                count++;
+                weapons++;
 
-            Assert.Greater(count, 0);
+            foreach (CounterStrikeConfig counter in CounterStrikes())
+                counters++;
+
+            Assert.Greater(weapons, 0);
+            Assert.Greater(counters, 0);
         }
 
         [Test]
@@ -37,85 +89,89 @@ namespace Game.Simulation.Tests
             foreach (WeaponConfig weapon in Weapons())
             {
                 Assert.Greater(weapon.VariantCount, 0, $"{weapon.Id} has no swing variants.");
-
-                for (int index = 0; index < weapon.VariantCount; index++)
-                {
-                    SwingVariant variant = weapon.Variant(index);
-                    string label = $"{weapon.Id} / {variant.AnimatorTrigger}";
-
-                    Assert.IsNotNull(variant.Bake, $"{label}: no bake asset.");
-
-                    AnimationClip clip = SwingBaker.FindClip(weapon.BakeRig, variant.AnimatorTrigger);
-
-                    Assert.AreSame(clip, variant.Bake.Clip, $"{label}: the controller now plays another clip; rebake with Game/Bake Weapon Swings.");
-                    Assert.AreEqual(SwingClipHash.Compute(clip), variant.Bake.ClipHash, $"{label}: the clip curves changed after the bake; rebake.");
-                    Assert.AreEqual(clip.length, variant.Bake.ClipLength, $"{label}: the clip length changed after the bake; rebake.");
-                    Assert.AreEqual(weapon.BakeSampleRate, variant.Bake.SampleRate, $"{label}: the sample rate changed after the bake; rebake.");
-                    Assert.AreEqual(Mathf.FloorToInt(clip.length * variant.Bake.SampleRate + 1e-3f) + 1, variant.Bake.SampleCount, $"{label}: sample count does not match the clip length.");
-
-                    Assert.GreaterOrEqual(variant.WindowStart, 0f, $"{label}: window starts before the clip.");
-                    Assert.Greater(variant.WindowEnd, variant.WindowStart, $"{label}: empty window.");
-                    Assert.LessOrEqual(variant.WindowEnd, clip.length, $"{label}: window ends after the clip.");
-                    Assert.Greater(variant.PlaybackSpeed, 0f, $"{label}: playback speed must be positive.");
-                    Assert.IsTrue(variant.HalfAngleDegrees > 0f && (variant.HalfAngleDegrees <= 90f || variant.HalfAngleDegrees >= 180f), $"{label}: half angle must be in (0, 90] or 180 and above.");
-                    Assert.IsTrue(variant.Coverage.IsBaked && variant.Coverage.CoveredCount > 0, $"{label}: coverage is not baked.");
-                    Assert.Greater(variant.MaxReach, 0f, $"{label}: max reach is not baked.");
-                }
-
                 Assert.IsTrue(weapon.TriggerCoverage.IsBaked && weapon.TriggerCoverage.CoveredCount > 0, $"{weapon.Id}: trigger coverage is empty; the weapon would never swing.");
+            }
+
+            foreach (BakedSwing swing in Swings())
+            {
+                SwingVariant variant = swing.Variant;
+                string label = swing.Label;
+
+                Assert.IsNotNull(variant.Bake, $"{label}: no bake asset.");
+
+                AnimationClip clip = SwingBaker.FindClip(swing.Inputs.BakeRig, variant.AnimatorTrigger);
+
+                Assert.AreSame(clip, variant.Bake.Clip, $"{label}: the controller now plays another clip; rebake with Game/Bake Weapon Swings.");
+                Assert.AreEqual(SwingClipHash.Compute(clip), variant.Bake.ClipHash, $"{label}: the clip curves changed after the bake; rebake.");
+                Assert.AreEqual(clip.length, variant.Bake.ClipLength, $"{label}: the clip length changed after the bake; rebake.");
+                Assert.AreEqual(swing.Inputs.BakeSampleRate, variant.Bake.SampleRate, $"{label}: the sample rate changed after the bake; rebake.");
+                Assert.AreEqual(Mathf.FloorToInt(clip.length * variant.Bake.SampleRate + 1e-3f) + 1, variant.Bake.SampleCount, $"{label}: sample count does not match the clip length.");
+
+                Assert.GreaterOrEqual(variant.WindowStart, 0f, $"{label}: window starts before the clip.");
+                Assert.Greater(variant.WindowEnd, variant.WindowStart, $"{label}: empty window.");
+                Assert.LessOrEqual(variant.WindowEnd, clip.length, $"{label}: window ends after the clip.");
+                Assert.Greater(variant.PlaybackSpeed, 0f, $"{label}: playback speed must be positive.");
+                Assert.IsTrue(variant.HalfAngleDegrees > 0f && (variant.HalfAngleDegrees <= 90f || variant.HalfAngleDegrees >= 180f), $"{label}: half angle must be in (0, 90] or 180 and above.");
+                Assert.IsTrue(variant.Coverage.IsBaked && variant.Coverage.CoveredCount > 0, $"{label}: coverage is not baked.");
+                Assert.Greater(variant.MaxReach, 0f, $"{label}: max reach is not baked.");
             }
         }
 
         [Test]
-        public void AttackLayerPlaysEveryBakedSwingAtTheSimulationSpeed()
+        public void EverySwingStatePlaysTheBakedClipAtTheSimulationSpeed()
         {
-            foreach (WeaponConfig weapon in Weapons())
+            foreach (BakedSwing swing in Swings())
             {
-                Animator animator = weapon.BakeRig.GetComponentInChildren<Animator>(true);
+                Animator animator = swing.Inputs.BakeRig.GetComponentInChildren<Animator>(true);
                 AnimatorController controller = animator.runtimeAnimatorController as AnimatorController;
 
-                Assert.IsNotNull(controller, $"{weapon.Id}: the bake rig has no AnimatorController.");
-                Assert.IsFalse(animator.applyRootMotion, $"{weapon.Id}: root motion is on; the simulation owns movement.");
+                Assert.IsNotNull(controller, $"{swing.Label}: the bake rig has no AnimatorController.");
+                Assert.IsFalse(animator.applyRootMotion, $"{swing.Label}: root motion is on; the simulation owns movement.");
 
-                AnimatorControllerLayer attack = null;
+                AnimatorControllerLayer layer = FindLayer(controller, swing.Layer);
+                AnimatorState state = FindState(layer.stateMachine, swing.Variant.AnimatorTrigger);
 
-                foreach (AnimatorControllerLayer layer in controller.layers)
-                {
-                    if (layer.name == "Attack")
-                        attack = layer;
-                }
+                Assert.IsNotNull(state, $"{swing.Layer} layer has no state '{swing.Variant.AnimatorTrigger}'.");
+                Assert.AreSame(swing.Variant.Bake.Clip, state.motion, $"'{swing.Variant.AnimatorTrigger}' plays another clip than the bake.");
+                Assert.AreEqual(1f, state.speed, $"'{swing.Variant.AnimatorTrigger}' has its own speed; the playback speed lives in the config.");
+                Assert.IsTrue(state.speedParameterActive && state.speedParameter == "AttackSpeed", $"'{swing.Variant.AnimatorTrigger}' does not follow the AttackSpeed parameter.");
+            }
+        }
 
-                Assert.IsNotNull(attack, $"{controller.name} has no Attack layer.");
+        [Test]
+        public void SpinLayerOverridesTheWholeBodyAndYieldsToTheDash()
+        {
+            foreach (CounterStrikeConfig counter in CounterStrikes())
+            {
+                AnimatorController controller = counter.BakeSource.BakeRig.GetComponentInChildren<Animator>(true).runtimeAnimatorController as AnimatorController;
 
-                for (int index = 0; index < weapon.VariantCount; index++)
-                {
-                    SwingVariant variant = weapon.Variant(index);
-                    AnimatorState state = null;
+                AnimatorControllerLayer spin = FindLayer(controller, SpinLayer);
+                AnimatorControllerLayer attack = FindLayer(controller, AttackLayer);
 
-                    foreach (ChildAnimatorState child in attack.stateMachine.states)
-                    {
-                        if (child.state.name == variant.AnimatorTrigger)
-                            state = child.state;
-                    }
+                Assert.AreEqual(AnimatorLayerBlendingMode.Override, spin.blendingMode, "Spin must override the layers below.");
+                Assert.AreEqual(1f, spin.defaultWeight, "Spin must play at full weight.");
+                Assert.IsNull(spin.avatarMask, "Spin must drive the whole body, as the bake samples it.");
+                Assert.AreEqual("Empty", spin.stateMachine.defaultState.name, "Spin must rest in an empty state.");
+                Assert.IsNull(spin.stateMachine.defaultState.motion, "Spin's rest state must not play a clip.");
 
-                    Assert.IsNotNull(state, $"Attack layer has no state '{variant.AnimatorTrigger}'.");
-                    Assert.AreSame(variant.Bake.Clip, state.motion, $"'{variant.AnimatorTrigger}' plays another clip than the bake.");
-                    Assert.AreEqual(1f, state.speed, $"'{variant.AnimatorTrigger}' has its own speed; the playback speed lives in the weapon config.");
-                    Assert.IsTrue(state.speedParameterActive && state.speedParameter == "AttackSpeed", $"'{variant.AnimatorTrigger}' does not follow the AttackSpeed parameter.");
-                }
+                Assert.IsTrue(LayerIndex(controller, SpinLayer) > LayerIndex(controller, AttackLayer), "Spin must sit above Attack.");
+                Assert.IsTrue(HasAnyStateTransitionToEmpty(spin.stateMachine, "IsDashing"), "a dash must cut the Spin on screen as it does in the simulation.");
+                Assert.IsTrue(HasAnyStateTransitionToEmpty(attack.stateMachine, "IsSpecial"), "a special attack must clear the weapon swing on the Attack layer.");
+                Assert.IsNull(FindState(attack.stateMachine, counter.Swing.AnimatorTrigger), "the Spin state must live only on the Spin layer.");
             }
         }
 
         [Test]
         public void ResamplingTheRigReproducesTheBakedBlade()
         {
-            foreach (WeaponConfig weapon in Weapons())
+            foreach (BakedSwing swing in Swings())
             {
                 Scene scene = EditorSceneManager.NewPreviewScene();
 
                 try
                 {
-                    GameObject instance = Object.Instantiate(weapon.BakeRig);
+                    WeaponConfig inputs = swing.Inputs;
+                    GameObject instance = Object.Instantiate(inputs.BakeRig);
                     SceneManager.MoveGameObjectToScene(instance, scene);
                     instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
 
@@ -124,29 +180,25 @@ namespace Game.Simulation.Tests
 
                     foreach (Transform child in instance.GetComponentsInChildren<Transform>(true))
                     {
-                        if (child.name == weapon.HandBoneName)
+                        if (child.name == inputs.HandBoneName)
                             hand = child;
                     }
 
-                    Assert.IsNotNull(hand, $"{weapon.Id}: hand bone '{weapon.HandBoneName}' is gone from the rig.");
+                    Assert.IsNotNull(hand, $"{swing.Label}: hand bone '{inputs.HandBoneName}' is gone from the rig.");
 
                     MeshFilter blade = hand.GetComponentInChildren<MeshFilter>(true);
+                    SwingBake bake = swing.Variant.Bake;
 
-                    for (int index = 0; index < weapon.VariantCount; index++)
+                    SwingBaker.SampleClip(bake.Clip, animator.gameObject, hand, blade, bake.SampleRate, out Vector3[] hands, out Vector3[] tips);
+
+                    Assert.AreEqual(bake.SampleCount, hands.Length);
+
+                    for (int sample = 0; sample < hands.Length; sample++)
                     {
-                        SwingVariant variant = weapon.Variant(index);
+                        bake.SampleAt(sample / bake.SampleRate, out Vector3 bakedHand, out Vector3 bakedTip);
 
-                        SwingBaker.SampleClip(variant.Bake.Clip, animator.gameObject, hand, blade, variant.Bake.SampleRate, out Vector3[] hands, out Vector3[] tips);
-
-                        Assert.AreEqual(variant.Bake.SampleCount, hands.Length);
-
-                        for (int sample = 0; sample < hands.Length; sample++)
-                        {
-                            variant.Bake.SampleAt(sample / variant.Bake.SampleRate, out Vector3 bakedHand, out Vector3 bakedTip);
-
-                            Assert.Less((bakedHand - hands[sample]).magnitude, PositionTolerance, $"{weapon.Id} / {variant.AnimatorTrigger} sample {sample}: the hand moved; rebake.");
-                            Assert.Less((bakedTip - tips[sample]).magnitude, PositionTolerance, $"{weapon.Id} / {variant.AnimatorTrigger} sample {sample}: the blade moved; rebake.");
-                        }
+                        Assert.Less((bakedHand - hands[sample]).magnitude, PositionTolerance, $"{swing.Label} sample {sample}: the hand moved; rebake.");
+                        Assert.Less((bakedTip - tips[sample]).magnitude, PositionTolerance, $"{swing.Label} sample {sample}: the blade moved; rebake.");
                     }
                 }
                 finally
@@ -187,6 +239,60 @@ namespace Game.Simulation.Tests
             {
                 Object.DestroyImmediate(copy);
             }
+        }
+
+        private static AnimatorControllerLayer FindLayer(AnimatorController controller, string name)
+        {
+            foreach (AnimatorControllerLayer layer in controller.layers)
+            {
+                if (layer.name == name)
+                    return layer;
+            }
+
+            Assert.Fail($"{controller.name} has no {name} layer.");
+
+            return null;
+        }
+
+        private static int LayerIndex(AnimatorController controller, string name)
+        {
+            AnimatorControllerLayer[] layers = controller.layers;
+
+            for (int index = 0; index < layers.Length; index++)
+            {
+                if (layers[index].name == name)
+                    return index;
+            }
+
+            return -1;
+        }
+
+        private static AnimatorState FindState(AnimatorStateMachine machine, string name)
+        {
+            foreach (ChildAnimatorState child in machine.states)
+            {
+                if (child.state.name == name)
+                    return child.state;
+            }
+
+            return null;
+        }
+
+        private static bool HasAnyStateTransitionToEmpty(AnimatorStateMachine machine, string boolParameter)
+        {
+            foreach (AnimatorStateTransition transition in machine.anyStateTransitions)
+            {
+                if (transition.destinationState == null || transition.destinationState.name != "Empty")
+                    continue;
+
+                foreach (AnimatorCondition condition in transition.conditions)
+                {
+                    if (condition.parameter == boolParameter && condition.mode == AnimatorConditionMode.If)
+                        return true;
+                }
+            }
+
+            return false;
         }
     }
 }

@@ -11,7 +11,14 @@ namespace Game.Configs
         [SerializeField, TextArea] private string _description;
         [SerializeField] private PerkLevel[] _levels;
 
+        [Header("Behaviour")]
+        [SerializeField] private CounterStrikeConfig _counterStrike;
+
         public string DisplayName => _displayName;
+
+        public CounterStrikeConfig CounterStrike => _counterStrike;
+
+        public bool HasBehaviour => _counterStrike != null;
 
         public string Description => _description;
 
