@@ -16,6 +16,7 @@ namespace Game.View
         private static readonly int IsDashingId = Animator.StringToHash("IsDashing");
         private static readonly int IsRunningId = Animator.StringToHash("IsRunning");
         private static readonly int AttackSpeedId = Animator.StringToHash("AttackSpeed");
+        private static readonly int IsSpecialId = Animator.StringToHash("IsSpecial");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -37,6 +38,8 @@ namespace Game.View
         private bool _isDashing;
         private bool _hasRunningParameter;
         private bool _isRunning;
+        private bool _hasSpecialParameter;
+        private bool _isSpecial;
         private bool _hasAttackSpeedParameter;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
@@ -83,6 +86,7 @@ namespace Game.View
             _hasDashingParameter = HasParameter(animator, IsDashingId, AnimatorControllerParameterType.Bool);
             _hasRunningParameter = HasParameter(animator, IsRunningId, AnimatorControllerParameterType.Bool);
             _hasAttackSpeedParameter = HasParameter(animator, AttackSpeedId, AnimatorControllerParameterType.Float);
+            _hasSpecialParameter = HasParameter(animator, IsSpecialId, AnimatorControllerParameterType.Bool);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -160,6 +164,16 @@ namespace Game.View
             _isDashing = value;
 
             _animator.SetBool(IsDashingId, value);
+        }
+
+        public void SetSpecialAttack(bool value)
+        {
+            if (_hasSpecialParameter == false || _isSpecial == value)
+                return;
+
+            _isSpecial = value;
+
+            _animator.SetBool(IsSpecialId, value);
         }
 
         public void SetRunning(bool value)
@@ -240,6 +254,7 @@ namespace Game.View
             _isBlinking = false;
             _isDashing = false;
             _isRunning = false;
+            _isSpecial = false;
             _isRetiring = false;
             _isKnockedBack = false;
             _isAirborne = false;

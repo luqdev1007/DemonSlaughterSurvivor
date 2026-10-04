@@ -639,6 +639,10 @@ namespace Game.Simulation.Tests
             {
             }
 
+            public void SetSpecialAttack(bool value)
+            {
+            }
+
             public void PlayAttack(string trigger, float speed)
             {
             }

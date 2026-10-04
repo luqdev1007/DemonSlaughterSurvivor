@@ -60,6 +60,7 @@ namespace Game.Simulation.Systems
             systems.Add(new FinishRunOnPlayerDeathSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
+            systems.Add(new TriggerCounterStrikeSystem());
             systems.Add(new AccumulateRageSystem());
             systems.Add(new DecayRageSystem());
             systems.Add(new DebugLevelUpSystem());
@@ -75,6 +76,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncInvulnerabilityViewSystem());
             systems.Add(new SyncBerserkViewSystem());
             systems.Add(new SyncDashViewSystem());
+            systems.Add(new SyncSpecialAttackViewSystem());
             systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
             systems.Add(new PublishExperienceSystem());
