@@ -43,6 +43,13 @@ namespace Game.Configs.Editor
                 report.Append(Bake(counter));
             }
 
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(HeroicLeapConfig)))
+            {
+                HeroicLeapConfig leap = AssetDatabase.LoadAssetAtPath<HeroicLeapConfig>(AssetDatabase.GUIDToAssetPath(guid));
+
+                report.Append(LeapBaker.Bake(leap));
+            }
+
             AssetDatabase.SaveAssets();
 
             return report.ToString();

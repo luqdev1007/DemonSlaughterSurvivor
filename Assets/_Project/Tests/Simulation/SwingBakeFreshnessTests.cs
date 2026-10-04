@@ -47,6 +47,12 @@ namespace Game.Simulation.Tests
                 yield return AssetDatabase.LoadAssetAtPath<CounterStrikeConfig>(AssetDatabase.GUIDToAssetPath(guid));
         }
 
+        private static IEnumerable<HeroicLeapConfig> Leaps()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(HeroicLeapConfig)))
+                yield return AssetDatabase.LoadAssetAtPath<HeroicLeapConfig>(AssetDatabase.GUIDToAssetPath(guid));
+        }
+
         private static IEnumerable<BakedSwing> Swings()
         {
             foreach (WeaponConfig weapon in Weapons())
@@ -205,6 +211,42 @@ namespace Game.Simulation.Tests
                 {
                     EditorSceneManager.ClosePreviewScene(scene);
                 }
+            }
+        }
+
+        [Test]
+        public void EveryLeapMatchesTheClipAndTheFixedStateSpeed()
+        {
+            int count = 0;
+
+            foreach (HeroicLeapConfig leap in Leaps())
+            {
+                count++;
+
+                Assert.IsNotNull(leap.BakeSource, $"{leap.name} has no bake source weapon.");
+
+                AnimationClip clip = SwingBaker.FindClip(leap.BakeSource.BakeRig, leap.AnimatorTrigger);
+                float stateSpeed = LeapBaker.FindStateSpeed(leap.BakeSource.BakeRig, leap.AnimatorTrigger, out bool speedParameterActive);
+
+                Assert.AreSame(clip, leap.Clip, $"{leap.name}: the controller now plays another clip; rebake with Game/Bake Weapon Swings.");
+                Assert.AreEqual(SwingClipHash.Compute(clip), leap.ClipHash, $"{leap.name}: the clip curves changed after the bake; rebake.");
+                Assert.IsFalse(speedParameterActive, $"{leap.name}: '{leap.AnimatorTrigger}' follows a speed parameter; AttackSpeed must not move the landing.");
+                Assert.AreEqual(stateSpeed, leap.StateSpeed, $"{leap.name}: the state speed changed after the bake; rebake.");
+                Assert.GreaterOrEqual(leap.TotalTicks, leap.LandingTick, $"{leap.name}: walking unlocks before the landing.");
+            }
+
+            Assert.Greater(count, 0, "no heroic leap to check");
+        }
+
+        [Test]
+        public void ResamplingTheRigReproducesTheLanding()
+        {
+            foreach (HeroicLeapConfig leap in Leaps())
+            {
+                float landing = LeapBaker.FindLanding(leap.Clip, leap.BakeSource.BakeRig, leap.ToeBoneNames, leap.ContactHeight, leap.BakeSource.BakeSampleRate);
+
+                Assert.AreEqual(leap.LandingClipTime, landing, 1e-4f, $"{leap.name}: the toes land at another time; rebake.");
+                Assert.AreEqual(LeapBaker.LandingTick(landing, leap.StateSpeed), leap.LandingTick, $"{leap.name}: the landing tick no longer follows the clip; rebake.");
             }
         }
 

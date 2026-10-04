@@ -66,7 +66,32 @@ namespace Game.Simulation.Tests
             Assert.Throws<InvalidOperationException>(() => PerkConfigValidator.Validate(perk));
         }
 
-        private PerkConfig CreatePerk(int levels, CounterStrikeConfig counter)
+        [Test]
+        public void HeroicLeapAssetPassesValidation()
+        {
+            HeroicLeapConfig leap = UnityEditor.AssetDatabase.LoadAssetAtPath<HeroicLeapConfig>("Assets/_Project/Configs/Perks/HeroicLeap_Berserk.asset");
+
+            Assert.IsNotNull(leap, "HeroicLeap_Berserk.asset is missing.");
+
+            PerkConfig perk = CreatePerk(leap.LevelCount, leap);
+
+            Assert.DoesNotThrow(() => PerkConfigValidator.Validate(perk));
+        }
+
+        [TestCase("_totalTicks", 9)]
+        [TestCase("_surroundCount", 0)]
+        public void HeroicLeapRejectsBrokenNumbers(string field, int value)
+        {
+            HeroicLeapConfig leap = Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<HeroicLeapConfig>("Assets/_Project/Configs/Perks/HeroicLeap_Berserk.asset"));
+            _assets.Add(leap);
+            SetField(leap, field, value);
+
+            PerkConfig perk = CreatePerk(leap.LevelCount, leap);
+
+            Assert.Throws<InvalidOperationException>(() => PerkConfigValidator.Validate(perk));
+        }
+
+        private PerkConfig CreatePerk(int levels, PerkBehaviourConfig counter)
         {
             PerkConfig perk = ScriptableObject.CreateInstance<PerkConfig>();
             _assets.Add(perk);

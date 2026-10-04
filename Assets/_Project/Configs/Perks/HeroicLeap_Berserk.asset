@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 266df8b38fc9e2340a3fac54467f315b, type: 3}
+  m_Name: HeroicLeap_Berserk
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.HeroicLeapConfig
+  _levels:
+  - _cooldownSeconds: 8
+    _damageShare: 1
+  - _cooldownSeconds: 7
+    _damageShare: 1.25
+  - _cooldownSeconds: 6
+    _damageShare: 1.5
+  - _cooldownSeconds: 5
+    _damageShare: 1.75
+  - _cooldownSeconds: 4
+    _damageShare: 2
+  _locksMovement: 1
+  _totalTicks: 16
+  _surroundRadius: 1.5
+  _surroundCount: 4
+  _sectorHalfAngleDegrees: 60
+  _sectorReach: 2.5
+  _pushRadius: 2.5
+  _pushSpeed: 5
+  _pushSeconds: 0.6
+  _animatorTrigger: AttackJump
+  _bakeSource: {fileID: 11400000, guid: 38d7d496e9513a04db5690e72178dff4, type: 2}
+  _toeBoneNames:
+  - mixamorig:LeftToe_End
+  - mixamorig:RightToe_End
+  _contactHeight: 0.05
+  _clip: {fileID: 7400000, guid: 6a78e69c956bd21429103fed3a6cce2c, type: 2}
+  _clipHash: 3614785110
+  _stateSpeed: 2
+  _landingClipTime: 0.33047816
+  _landingTick: 10
