@@ -68,6 +68,56 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void WeaponSwingHitsAtFullDamageMarkedAsWeapon()
+        {
+            Build(Front(), 90f, 5f);
+            int enemy = SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            ref Swing swing = ref _world.GetPool<Swing>().Get(RunUntilSwing());
+
+            Assert.AreEqual(1f, swing.DamageScale);
+            Assert.AreEqual(DamageKind.Weapon, swing.Kind);
+            Assert.AreSame(_config.Variant(0), swing.Variant);
+
+            Run(Mathf.CeilToInt(ClipLength / Tick) + 2);
+
+            Assert.AreEqual(20f, DamageTo(enemy), 1e-4f);
+            Assert.AreEqual(DamageKind.Weapon, KindTo(enemy));
+        }
+
+        [Test]
+        public void SwingDamageIsScaledAndMarkedByTheSwing()
+        {
+            Build(Front(), 90f, 5f);
+            int enemy = SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            ref Swing swing = ref _world.GetPool<Swing>().Get(RunUntilSwing());
+            swing.DamageScale = 0.5f;
+            swing.Kind = DamageKind.Perk;
+
+            Run(Mathf.CeilToInt(ClipLength / Tick) + 2);
+
+            Assert.AreEqual(1, CountEvents(enemy));
+            Assert.AreEqual(10f, DamageTo(enemy), 1e-4f);
+            Assert.AreEqual(DamageKind.Perk, KindTo(enemy));
+        }
+
+        [Test]
+        public void SpecialSwingLeavesTheWeaponSwingingFlagAlone()
+        {
+            Build(Front(), 90f, 5f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            int entity = RunUntilSwing();
+            _world.GetPool<SpecialSwing>().Add(entity);
+
+            Run(Mathf.CeilToInt(ClipLength / Tick) + 2);
+
+            Assert.AreEqual(0, _world.Filter<Swing>().End().GetEntitiesCount());
+            Assert.IsTrue(_world.GetPool<Swinging>().Has(_weapon), "a special swing must not clear the weapon's own flag");
+        }
+
+        [Test]
         public void BladeAboveTheBodyHeightDoesNotHit()
         {
             Build(Front(), 90f, 5f);
@@ -331,7 +381,7 @@ namespace Game.Simulation.Tests
                 {
                     ref Swing swing = ref swingPool.Get(entity);
 
-                    trace.Add(swing.Variant);
+                    trace.Add(VariantIndex(swing.Variant));
                     trace.Add(swing.RemainingTicks);
                     trace.Add(System.BitConverter.SingleToInt32Bits(swing.PlaybackSpeed));
                     trace.Add(System.BitConverter.SingleToInt32Bits(swing.ClipTime));
@@ -488,12 +538,25 @@ namespace Game.Simulation.Tests
                 foreach (int entity in started)
                 {
                     clear.Add(entity);
-                    _startedVariants.Add(_world.GetPool<Swing>().Get(entity).Variant);
+                    _startedVariants.Add(VariantIndex(_world.GetPool<Swing>().Get(entity).Variant));
                 }
 
                 for (int index = 0; index < clear.Count; index++)
                     _world.GetPool<SwingStarted>().Del(clear[index]);
             }
+        }
+
+        private int VariantIndex(SwingVariant variant)
+        {
+            for (int index = 0; index < _config.VariantCount; index++)
+            {
+                if (_config.Variant(index) == variant)
+                    return index;
+            }
+
+            Assert.Fail("the swing plays a variant that is not in the weapon config");
+
+            return -1;
         }
 
         private int SpawnEnemy(Vector3 position, float height)
@@ -520,6 +583,38 @@ namespace Game.Simulation.Tests
             }
 
             return count;
+        }
+
+        private int RunUntilSwing()
+        {
+            EcsFilter swings = _world.Filter<Swing>().End();
+
+            for (int tick = 0; tick < 10; tick++)
+            {
+                Run(1);
+
+                foreach (int entity in swings)
+                    return entity;
+            }
+
+            Assert.Fail("no swing started in 10 ticks");
+
+            return -1;
+        }
+
+        private DamageKind KindTo(int target)
+        {
+            EcsPool<DamageEvent> events = _world.GetPool<DamageEvent>();
+
+            foreach (int entity in _world.Filter<DamageEvent>().End())
+            {
+                if (events.Get(entity).Target.Unpack(_world, out int unpacked) && unpacked == target)
+                    return events.Get(entity).Kind;
+            }
+
+            Assert.Fail("no damage event reached the target");
+
+            return DamageKind.Unmarked;
         }
 
         private float DamageTo(int target)

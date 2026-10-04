@@ -167,7 +167,9 @@ namespace Game.Simulation.Systems
             ref Swing swing = ref _swings.Value.Add(entity);
             swing.Weapon = world.PackEntity(weapon);
             swing.Owner = world.PackEntity(owner);
-            swing.Variant = variant;
+            swing.Variant = chosen;
+            swing.DamageScale = 1f;
+            swing.Kind = DamageKind.Weapon;
             swing.ClipTime = 0f;
             swing.PlaybackSpeed = bake.ClipLength / (ticks * delta);
             swing.RemainingTicks = ticks;

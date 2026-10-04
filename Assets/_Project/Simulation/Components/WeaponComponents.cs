@@ -20,13 +20,17 @@ namespace Game.Simulation.Components
 
     public struct SwingStarted { }
 
+    public struct SpecialSwing { }
+
     public struct Swing : IEcsAutoReset<Swing>
     {
         public const int InitialHitCapacity = 64;
 
         public EcsPackedEntity Weapon;
         public EcsPackedEntity Owner;
-        public int Variant;
+        public SwingVariant Variant;
+        public float DamageScale;
+        public DamageKind Kind;
         public float ClipTime;
         public float PlaybackSpeed;
         public int RemainingTicks;
@@ -42,7 +46,9 @@ namespace Game.Simulation.Components
 
             c.Weapon = default;
             c.Owner = default;
-            c.Variant = 0;
+            c.Variant = null;
+            c.DamageScale = 0f;
+            c.Kind = DamageKind.Unmarked;
             c.ClipTime = 0f;
             c.PlaybackSpeed = 0f;
             c.RemainingTicks = 0;

@@ -1,4 +1,3 @@
-using Game.Configs;
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
@@ -12,7 +11,6 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<Swing, SwingStarted>> _started = default;
 
         private readonly EcsPoolInject<Swing> _swings = default;
-        private readonly EcsPoolInject<Weapon> _weapons = default;
         private readonly EcsPoolInject<View> _views = default;
 
         public void Run(IEcsSystems systems)
@@ -23,7 +21,7 @@ namespace Game.Simulation.Systems
             {
                 ref Swing swing = ref _swings.Value.Get(entity);
 
-                if (swing.Owner.Unpack(world, out int owner) == false || swing.Weapon.Unpack(world, out int weapon) == false)
+                if (swing.Owner.Unpack(world, out int owner) == false)
                     continue;
 
                 if (_views.Value.Has(owner) == false)
@@ -34,9 +32,7 @@ namespace Game.Simulation.Systems
                 if (view.Value == null)
                     continue;
 
-                SwingVariant variant = _weapons.Value.Get(weapon).Config.Variant(swing.Variant);
-
-                view.Value.PlayAttack(variant.AnimatorTrigger, swing.PlaybackSpeed);
+                view.Value.PlayAttack(swing.Variant.AnimatorTrigger, swing.PlaybackSpeed);
             }
         }
     }

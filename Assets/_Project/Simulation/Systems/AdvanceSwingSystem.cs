@@ -20,7 +20,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsPoolInject<Swing> _swingPool = default;
         private readonly EcsPoolInject<Swinging> _swinging = default;
-        private readonly EcsPoolInject<Weapon> _weapons = default;
+        private readonly EcsPoolInject<SpecialSwing> _special = default;
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
@@ -61,8 +61,7 @@ namespace Game.Simulation.Systems
                     continue;
                 }
 
-                WeaponConfig config = _weapons.Value.Get(weapon).Config;
-                SwingVariant variant = config.Variant(swing.Variant);
+                SwingVariant variant = swing.Variant;
                 SwingBake bake = variant.Bake;
 
                 Vector3 ownerPosition = _positions.Value.Get(owner).Value;
@@ -87,7 +86,7 @@ namespace Game.Simulation.Systems
                 if (lastTick == false)
                     continue;
 
-                if (_swinging.Value.Has(weapon))
+                if (_special.Value.Has(entity) == false && _swinging.Value.Has(weapon))
                     _swinging.Value.Del(weapon);
 
                 world.DelEntity(entity);
@@ -108,7 +107,7 @@ namespace Game.Simulation.Systems
 
             _grid.Value.Query(ownerPosition, radius, _motionBounds.Value.CandidateSlack(delta), _candidates);
 
-            float damage = _weaponDamages.Value.Get(weapon).Value;
+            float damage = _weaponDamages.Value.Get(weapon).Value * swing.DamageScale;
 
             for (int index = 0; index < _candidates.Count; index++)
             {
@@ -149,7 +148,7 @@ namespace Game.Simulation.Systems
                 damageEvent.Source = world.PackEntity(owner);
                 damageEvent.SourcePosition = ownerPosition;
                 damageEvent.Amount = damage;
-                damageEvent.Kind = DamageKind.Weapon;
+                damageEvent.Kind = swing.Kind;
             }
         }
 
