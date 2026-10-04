@@ -40,6 +40,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());
             // 6.  Weapons
+            systems.Add(new SpawnFireTrailSystem());
             systems.Add(new TickWeaponCooldownSystem());
             systems.Add(new StartHeroicLeapSystem());
             systems.Add(new InterruptSwingSystem());
@@ -48,6 +49,7 @@ namespace Game.Simulation.Systems
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
+            systems.Add(new TickFireSegmentsSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
             systems.Add(new DetectContactDamageSystem());
