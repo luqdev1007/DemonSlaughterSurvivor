@@ -47,6 +47,7 @@ namespace Game.View
         private float _dissolveSeconds;
         private Func<Material, Material> _dissolveMaterialFor;
         private Action<ViewInterpolator> _onRetired;
+        private Action<ViewInterpolator, Vector3> _onHit;
 
         private bool _isFlashing;
         private float _flashEndTime;
@@ -78,7 +79,8 @@ namespace Game.View
             float blinkSeconds,
             float dissolveSeconds,
             Func<Material, Material> dissolveMaterialFor,
-            Action<ViewInterpolator> onRetired)
+            Action<ViewInterpolator> onRetired,
+            Action<ViewInterpolator, Vector3> onHit)
         {
             _animator = animator;
             _renderers = CollectOwnRenderers();
@@ -93,6 +95,7 @@ namespace Game.View
             _dissolveSeconds = dissolveSeconds;
             _dissolveMaterialFor = dissolveMaterialFor;
             _onRetired = onRetired;
+            _onHit = onHit;
         }
 
         public void SetPosition(Vector3 position)
@@ -129,6 +132,9 @@ namespace Game.View
 
         public void PlayHit(Vector3 direction)
         {
+            if (_isDead == false)
+                _onHit?.Invoke(this, direction);
+
             if (_hitFlashSeconds <= 0f || _isDissolving)
                 return;
 

@@ -46,6 +46,7 @@ namespace Game.View
         private readonly float _dissolveSeconds;
         private readonly Material _dissolveTemplate;
         private readonly Action<ViewInterpolator> _onRetired;
+        private readonly Action<ViewInterpolator, Vector3> _onHit;
         private readonly Func<Material, Material> _dissolveMaterialFor;
         private readonly System.Random _random = new System.Random();
 
@@ -96,6 +97,7 @@ namespace Game.View
             _dissolveSeconds = feedback.DissolveSeconds;
             _dissolveTemplate = feedback.DissolveMaterial;
             _onRetired = CompleteRetire;
+            _onHit = OnHit;
             _dissolveMaterialFor = DissolveMaterialFor;
             _knockbackSpeed = feedback.KnockbackSpeed;
             _knockbackUpSpeed = feedback.KnockbackUpSpeed;
@@ -157,6 +159,11 @@ namespace Game.View
 
             corpse.View.BeginRetire(seconds, velocity, _knockbackGravity, _knockbackFriction);
 
+            if (_gore == null)
+                return;
+
+            _gore.PlayDeath(corpse.View.transform.position, blow.Direction);
+
             if (corpse != entry)
                 _gore.Dismember(corpse.Dismemberable, corpse.View.transform, blow, velocity);
         }
@@ -202,6 +209,14 @@ namespace Game.View
                 return;
 
             Return(_known[view.GetInstanceID()]);
+        }
+
+        private void OnHit(ViewInterpolator view, Vector3 direction)
+        {
+            if (_disposed || _gore == null)
+                return;
+
+            _gore.PlayHit(view.transform.position, direction);
         }
 
         private Entry SwapForDismembered(Entry entry, in DeathBlow blow)
@@ -376,7 +391,7 @@ namespace Game.View
                 Prefab = prefab
             };
 
-            view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired);
+            view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired, _onHit);
 
             _known.Add(view.GetInstanceID(), entry);
             _all.Add(entry);

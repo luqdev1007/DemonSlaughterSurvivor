@@ -165,7 +165,7 @@ namespace Game.View.Tests
 
             Assert.Greater(arcs.Length, 0, "fixture: the arcs must exist before Configure, as they do after Awake");
 
-            _view.Configure(null, 0f, 0.1f, 0.8f, _ => dissolve, null);
+            _view.Configure(null, 0f, 0.1f, 0.8f, _ => dissolve, null, null);
 
             Renderer[] own = (Renderer[])typeof(ViewInterpolator)
                 .GetField("_renderers", BindingFlags.Instance | BindingFlags.NonPublic)

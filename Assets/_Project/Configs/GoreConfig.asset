@@ -28,3 +28,19 @@ MonoBehaviour:
   _gibSpinDegreesPerSecond: 540
   _gibMass: 2
   _gibColliderScale: 0.8
+  _hitSpray: {fileID: 2476026444620154661, guid: abf9dc73a85194941abe6ab89a2ec72e, type: 3}
+  _hitSplat: {fileID: 8086314461076744572, guid: d8a3bd14b7eb0b04894e617225311e7a, type: 3}
+  _deathSpray: {fileID: 2136732566078171580, guid: 45a22e822918c854ca2d15d26988259d, type: 3}
+  _deathSplat: {fileID: 8086314461076744572, guid: ec6e63fe070be2d4c844fc52497cb6bc, type: 3}
+  _stumpFountain: {fileID: 5674054183390321588, guid: 1b655176c7ed7cf44b0ebcf212edff72, type: 3}
+  _gibDrip: {fileID: 2843949503680058784, guid: 3c7360642c46b324a8d3efb511a2dab1, type: 3}
+  _gibImpactSplat: {fileID: 8086314461076744572, guid: 93d688dc3ea0c55459b8e9d957c68fd3, type: 3}
+  _maxSprays: 24
+  _maxSplats: 40
+  _maxFountains: 8
+  _maxDrips: 12
+  _hitHeight: 1
+  _sprayLift: 0.3
+  _splatHeight: 0.02
+  _fountainSeconds: 1
+  _gibImpactMinSpeed: 1.5

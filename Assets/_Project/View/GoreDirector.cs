@@ -21,9 +21,11 @@ namespace Game.View
             public BoxCollider Collider;
             public bool Active;
             public bool Sinking;
+            public bool Landed;
             public float Age;
             public float SpawnTime;
             public float SinkFromY;
+            public int Drip;
         }
 
         private readonly GoreConfig _config;
@@ -32,6 +34,15 @@ namespace Game.View
         private readonly GameObject _root;
         private readonly Gib[] _gibs;
         private readonly float[] _partWeights = new float[8];
+        private readonly Action<int, Collision> _onGibContact;
+
+        private readonly BloodFxPool _hitSprays;
+        private readonly BloodFxPool _hitSplats;
+        private readonly BloodFxPool _deathSprays;
+        private readonly BloodFxPool _deathSplats;
+        private readonly BloodFxPool _fountains;
+        private readonly BloodFxPool _drips;
+        private readonly BloodFxPool _impactSplats;
 
         private int _gibCount;
         private bool _disposed;
@@ -57,6 +68,36 @@ namespace Game.View
             BoxCollider floor = _root.AddComponent<BoxCollider>();
             floor.center = new Vector3(0f, -FloorThickness * 0.5f, 0f);
             floor.size = new Vector3(FloorSize, FloorThickness, FloorSize);
+
+            _onGibContact = OnGibContact;
+
+            Transform parent = _root.transform;
+
+            _hitSprays = new BloodFxPool(_config.HitSpray, _config.MaxSprays, parent, 1f);
+            _deathSprays = new BloodFxPool(_config.DeathSpray, _config.MaxSprays, parent, 1f);
+            _hitSplats = new BloodFxPool(_config.HitSplat, _config.MaxSplats, parent, _config.SplatScale);
+            _deathSplats = new BloodFxPool(_config.DeathSplat, _config.MaxSplats, parent, _config.SplatScale);
+            _impactSplats = new BloodFxPool(_config.GibImpactSplat, _config.MaxSplats, parent, _config.SplatScale);
+            _fountains = new BloodFxPool(_config.StumpFountain, _config.MaxFountains, parent, 1f);
+            _drips = new BloodFxPool(_config.GibDrip, _config.MaxDrips, parent, 1f);
+        }
+
+        public void PlayHit(Vector3 position, Vector3 direction)
+        {
+            if (_disposed)
+                return;
+
+            PlaySpray(_hitSprays, position, direction);
+            PlaySplat(_hitSplats, position, direction);
+        }
+
+        public void PlayDeath(Vector3 position, Vector3 direction)
+        {
+            if (_disposed)
+                return;
+
+            PlaySpray(_deathSprays, position, direction);
+            PlaySplat(_deathSplats, position, direction);
         }
 
         public bool RollDismember(float chance, in DeathBlow blow)
@@ -86,7 +127,60 @@ namespace Game.View
 
             part.Renderer.enabled = false;
 
-            SpawnGib(part.Renderer, blow.Direction, corpseVelocity);
+            Gib gib = SpawnGib(part.Renderer, blow.Direction, corpseVelocity);
+
+            Vector3 gibCenter = gib.Transform.TransformPoint(gib.Mesh.bounds.center);
+            Vector3 outward = gibCenter - part.Stump.position;
+
+            if (outward.sqrMagnitude <= MinDirectionSqr)
+                outward = Vector3.up;
+
+            Quaternion world = Quaternion.LookRotation(outward.normalized);
+
+            _fountains.PlayAttached(part.Stump, Vector3.zero, Quaternion.Inverse(part.Stump.rotation) * world, _config.FountainSeconds);
+
+            gib.Drip = _drips.PlayAttached(gib.Transform, gib.Mesh.bounds.center, Quaternion.identity, 0f);
+        }
+
+        private void PlaySpray(BloodFxPool pool, Vector3 position, Vector3 direction)
+        {
+            Vector3 aim = direction;
+            aim.y = 0f;
+            aim = aim.sqrMagnitude > MinDirectionSqr ? aim.normalized : Vector3.zero;
+            aim.y = _config.SprayLift;
+
+            if (aim.sqrMagnitude <= MinDirectionSqr)
+                aim = Vector3.up;
+
+            pool.Play(position + Vector3.up * _config.HitHeight, Quaternion.LookRotation(aim.normalized));
+        }
+
+        private void PlaySplat(BloodFxPool pool, Vector3 position, Vector3 direction)
+        {
+            direction.y = 0f;
+
+            float yaw = direction.sqrMagnitude > MinDirectionSqr
+                ? Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg
+                : (float)_random.NextDouble() * 360f;
+
+            pool.Play(new Vector3(position.x, _config.SplatHeight, position.z), Quaternion.Euler(0f, yaw, 0f));
+        }
+
+        private void OnGibContact(int index, Collision collision)
+        {
+            if (_disposed || index < 0 || index >= _gibCount)
+                return;
+
+            Gib gib = _gibs[index];
+
+            if (gib.Active == false || gib.Landed || collision.relativeVelocity.magnitude < _config.GibImpactMinSpeed)
+                return;
+
+            gib.Landed = true;
+
+            Vector3 point = collision.contactCount > 0 ? collision.GetContact(0).point : gib.Transform.position;
+
+            PlaySplat(_impactSplats, point, gib.Body.linearVelocity);
         }
 
         public void Dispose()
@@ -162,7 +256,7 @@ namespace Game.View
             return count - 1;
         }
 
-        private void SpawnGib(SkinnedMeshRenderer source, Vector3 blowDirection, Vector3 corpseVelocity)
+        private Gib SpawnGib(SkinnedMeshRenderer source, Vector3 blowDirection, Vector3 corpseVelocity)
         {
             Gib gib = TakeGib();
 
@@ -186,8 +280,12 @@ namespace Game.View
 
             gib.Active = true;
             gib.Sinking = false;
+            gib.Landed = false;
             gib.Age = 0f;
             gib.SpawnTime = Time.time;
+            gib.Drip = -1;
+
+            return gib;
         }
 
         private Vector3 ResolveGibVelocity(Vector3 blowDirection, Vector3 corpseVelocity)
@@ -254,6 +352,8 @@ namespace Game.View
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
+            gameObject.AddComponent<GibContact>().Bind(number, _onGibContact);
+
             return new Gib
             {
                 Object = gameObject,
@@ -270,6 +370,21 @@ namespace Game.View
             if (_disposed)
                 return;
 
+            TickGibs(deltaTime);
+
+            float now = Time.time;
+
+            _hitSprays.Tick(now);
+            _deathSprays.Tick(now);
+            _hitSplats.Tick(now);
+            _deathSplats.Tick(now);
+            _impactSplats.Tick(now);
+            _fountains.Tick(now);
+            _drips.Tick(now);
+        }
+
+        private void TickGibs(float deltaTime)
+        {
             for (int index = 0; index < _gibCount; index++)
             {
                 Gib gib = _gibs[index];
@@ -288,6 +403,8 @@ namespace Game.View
                     gib.Body.isKinematic = true;
                     gib.Collider.enabled = false;
                     gib.SinkFromY = gib.Transform.position.y;
+
+                    _drips.Stop(gib.Drip, gib.Transform);
                 }
 
                 float sink = _config.GibSinkSeconds > 0f ? (gib.Age - _config.GibLifetimeSeconds) / _config.GibSinkSeconds : 1f;
@@ -344,6 +461,14 @@ namespace Game.View
             if (config.GibMass <= 0f || config.GibColliderScale <= 0f)
                 throw new InvalidOperationException(
                     $"{nameof(GoreConfig)} '{config.name}' needs a positive gib mass and collider scale.");
+
+            if (config.MaxSprays < 0 || config.MaxSplats < 0 || config.MaxFountains < 0 || config.MaxDrips < 0)
+                throw new InvalidOperationException(
+                    $"{nameof(GoreConfig)} '{config.name}' has a negative blood effect limit. Use 0 to switch an effect off.");
+
+            if (config.FountainSeconds < 0f || config.GibImpactMinSpeed < 0f || config.SplatScale <= 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(GoreConfig)} '{config.name}' has a negative fountain duration or gib impact speed, or a non-positive splat scale.");
 
             if (config.GibSpeedJitter < 0f || config.GibSpeedJitter >= 1f)
                 throw new InvalidOperationException(
