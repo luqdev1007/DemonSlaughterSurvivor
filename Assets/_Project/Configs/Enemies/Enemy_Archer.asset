@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1458f76ca681cf4385026de7bcd50b9, type: 3}
+  m_Name: Enemy_Archer
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.EnemyConfig
+  _id: enemy.archer
+  _viewPrefab: {fileID: 7453882988192446395, guid: 831ceae91d6e77049bcddaf7b1e82599, type: 3}
+  _moveSpeed: 2.3
+  _turnSpeed: 360
+  _bodyRadius: 0.4
+  _bodyHeight: 1.76
+  _maxHealth: 15
+  _contactDamage: 5
+  _gem: {fileID: 11400000, guid: a3dac15c9f95f9845a8b71df9fa8a0c8, type: 2}
+  _rangedAttack: {fileID: 11400000, guid: 7c24c5310df1aca4595202c2ab6cd262, type: 2}
+  _separationRadius: 1
+  _separationStrength: 0.5
