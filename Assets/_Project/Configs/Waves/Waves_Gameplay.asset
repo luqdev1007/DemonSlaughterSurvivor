@@ -25,6 +25,8 @@ MonoBehaviour:
       _weight: 0.5
     - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
       _weight: 0.5
+    - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
+      _weight: 0.25
     _guaranteed: []
   - _durationSeconds: 60
     _spawnRatePerSecond: 2
