@@ -618,7 +618,7 @@ namespace Game.Simulation.Tests
             {
             }
 
-            public void PlayHit()
+            public void PlayHit(Vector3 direction)
             {
             }
 

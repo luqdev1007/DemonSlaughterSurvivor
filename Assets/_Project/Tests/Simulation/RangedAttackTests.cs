@@ -506,7 +506,7 @@ namespace Game.Simulation.Tests
                 Released++;
             }
 
-            public void Retire(IView view, float seconds, Vector3 knockbackDirection)
+            public void Retire(IView view, float seconds, DeathBlow blow)
             {
                 Release(view);
             }
@@ -524,7 +524,7 @@ namespace Game.Simulation.Tests
             {
             }
 
-            public void PlayHit()
+            public void PlayHit(Vector3 direction)
             {
             }
 

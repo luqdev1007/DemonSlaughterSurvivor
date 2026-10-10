@@ -26,3 +26,4 @@ MonoBehaviour:
   _knockbackAngleJitterDegrees: 20
   _knockbackGravity: 20
   _knockbackFriction: 12
+  _gore: {fileID: 11400000, guid: b2b96930238db9540b54964708cd0553, type: 2}

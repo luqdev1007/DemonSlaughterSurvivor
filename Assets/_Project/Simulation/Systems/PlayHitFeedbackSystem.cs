@@ -1,6 +1,7 @@
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
@@ -13,6 +14,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<Player> _players = default;
+        private readonly EcsPoolInject<Position> _positions = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -36,8 +38,19 @@ namespace Game.Simulation.Systems
                 if (view.Value == null)
                     continue;
 
-                view.Value.PlayHit();
+                view.Value.PlayHit(ResolveDirection(target, damageEvent.SourcePosition));
             }
+        }
+
+        private Vector3 ResolveDirection(int target, Vector3 sourcePosition)
+        {
+            if (_positions.Value.Has(target) == false)
+                return Vector3.zero;
+
+            Vector3 away = _positions.Value.Get(target).Value - sourcePosition;
+            away.y = 0f;
+
+            return away.sqrMagnitude > 1e-8f ? away.normalized : Vector3.zero;
         }
     }
 }

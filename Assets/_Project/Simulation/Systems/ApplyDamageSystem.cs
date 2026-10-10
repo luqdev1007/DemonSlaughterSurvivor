@@ -24,6 +24,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageApplied> _applied = default;
         private readonly EcsPoolInject<KillingBlow> _killingBlows = default;
         private readonly EcsPoolInject<Player> _players = default;
+        private readonly EcsPoolInject<BerserkMode> _berserkModes = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -110,9 +111,19 @@ namespace Game.Simulation.Systems
             {
                 ref KillingBlow killingBlow = ref _killingBlows.Value.Add(target);
                 killingBlow.SourcePosition = damageEvent.SourcePosition;
+                killingBlow.IsSlash = damageEvent.IsSlash;
+                killingBlow.IsEmpowered = IsEmpowered(damageEvent.Source);
             }
 
             GrantInvulnerability(target, delta);
+        }
+
+        private bool IsEmpowered(EcsPackedEntity source)
+        {
+            if (source.Unpack(_world.Value, out int sourceEntity) == false)
+                return false;
+
+            return _berserkModes.Value.Has(sourceEntity);
         }
 
         private void GrantInvulnerability(int entity, float delta)

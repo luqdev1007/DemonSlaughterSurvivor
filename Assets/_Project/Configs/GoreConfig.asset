@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a440e2c0cb86f7438fb67880c4b9aac, type: 3}
+  m_Name: GoreConfig
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.GoreConfig
+  _berserkChanceMultiplier: 2
+  _headWeight: 0.4
+  _nearArmWeight: 0.45
+  _farArmWeight: 0.15
+  _frontalBlowThreshold: 0.3
+  _maxActiveGibs: 24
+  _gibLifetimeSeconds: 3
+  _gibSinkSeconds: 1
+  _gibSinkDepth: 0.6
+  _gibSpeed: 4
+  _gibUpSpeed: 3.5
+  _gibSpeedJitter: 0.3
+  _gibCorpseVelocityShare: 0.5
+  _gibSpinDegreesPerSecond: 540
+  _gibMass: 2
+  _gibColliderScale: 0.8

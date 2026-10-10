@@ -52,13 +52,25 @@ namespace Game.Simulation.Systems
                 {
                     ref View view = ref _views.Value.Get(entity);
 
-                    _viewFactory.Value.Retire(view.Value, _deathSeconds, ResolveKnockbackDirection(entity));
+                    _viewFactory.Value.Retire(view.Value, _deathSeconds, ResolveDeathBlow(entity));
 
                     view.Value = null;
                 }
 
                 world.DelEntity(entity);
             }
+        }
+
+        private DeathBlow ResolveDeathBlow(int entity)
+        {
+            Vector3 direction = ResolveKnockbackDirection(entity);
+
+            if (_killingBlows.Value.Has(entity) == false)
+                return new DeathBlow(direction, false, false);
+
+            ref KillingBlow killingBlow = ref _killingBlows.Value.Get(entity);
+
+            return new DeathBlow(direction, killingBlow.IsSlash, killingBlow.IsEmpowered);
         }
 
         private Vector3 ResolveKnockbackDirection(int entity)

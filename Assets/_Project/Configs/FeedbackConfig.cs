@@ -23,6 +23,9 @@ namespace Game.Configs
         [SerializeField] private float _knockbackGravity = 20f;
         [SerializeField] private float _knockbackFriction = 12f;
 
+        [Header("Gore")]
+        [SerializeField] private GoreConfig _gore;
+
         public float HitFlashSeconds => _hitFlashSeconds;
 
         public float InvulnerabilityBlinkSeconds => _invulnerabilityBlinkSeconds;
@@ -48,5 +51,7 @@ namespace Game.Configs
         public float KnockbackGravity => _knockbackGravity;
 
         public float KnockbackFriction => _knockbackFriction;
+
+        public GoreConfig Gore => _gore;
     }
 }

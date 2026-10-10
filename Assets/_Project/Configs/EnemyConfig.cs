@@ -25,6 +25,10 @@ namespace Game.Configs
         [Header("Ranged")]
         [SerializeField] private RangedAttackConfig _rangedAttack;
 
+        [Header("Gore")]
+        [SerializeField] private GameObject _dismemberedViewPrefab;
+        [SerializeField, Range(0f, 1f)] private float _dismemberChance = 0.35f;
+
         [Header("Separation")]
         [SerializeField] private float _separationRadius = 1f;
         [SerializeField] private float _separationStrength = 0.5f;
@@ -46,6 +50,10 @@ namespace Game.Configs
         public GemConfig Gem => _gem;
 
         public RangedAttackConfig RangedAttack => _rangedAttack;
+
+        public GameObject DismemberedViewPrefab => _dismemberedViewPrefab;
+
+        public float DismemberChance => _dismemberChance;
 
         public float SeparationRadius => _separationRadius;
 

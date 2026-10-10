@@ -127,7 +127,7 @@ namespace Game.View
             transform.rotation = rotation;
         }
 
-        public void PlayHit()
+        public void PlayHit(Vector3 direction)
         {
             if (_hitFlashSeconds <= 0f || _isDissolving)
                 return;

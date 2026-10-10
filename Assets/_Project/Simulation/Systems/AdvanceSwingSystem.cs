@@ -149,6 +149,7 @@ namespace Game.Simulation.Systems
                 damageEvent.SourcePosition = ownerPosition;
                 damageEvent.Amount = damage;
                 damageEvent.Kind = swing.Kind;
+                damageEvent.IsSlash = true;
             }
         }
 

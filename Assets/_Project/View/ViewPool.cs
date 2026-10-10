@@ -12,7 +12,21 @@ namespace Game.View
         {
             public ViewInterpolator View;
             public Animator Animator;
+            public AnimatorControllerParameter[] Parameters;
+            public DismemberableView Dismemberable;
             public GameObject Prefab;
+        }
+
+        private readonly struct Dismemberment
+        {
+            public readonly GameObject Prefab;
+            public readonly float Chance;
+
+            public Dismemberment(GameObject prefab, float chance)
+            {
+                Prefab = prefab;
+                Chance = chance;
+            }
         }
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -24,6 +38,8 @@ namespace Game.View
         private readonly HashSet<int> _retiring = new HashSet<int>();
         private readonly List<Entry> _all = new List<Entry>();
         private readonly Dictionary<Material, Material> _dissolveCopies = new Dictionary<Material, Material>();
+        private readonly Dictionary<GameObject, Dismemberment> _dismemberments = new Dictionary<GameObject, Dismemberment>();
+        private readonly GoreDirector _gore;
 
         private readonly float _hitFlashSeconds;
         private readonly float _blinkSeconds;
@@ -42,7 +58,7 @@ namespace Game.View
 
         private bool _disposed;
 
-        public ViewPool(LevelConfig level)
+        public ViewPool(LevelConfig level, IContentRegistry content, GoreDirector gore)
         {
             FeedbackConfig feedback = level.Feedback;
 
@@ -87,6 +103,10 @@ namespace Game.View
             _knockbackAngleJitterDegrees = feedback.KnockbackAngleJitterDegrees;
             _knockbackGravity = feedback.KnockbackGravity;
             _knockbackFriction = feedback.KnockbackFriction;
+
+            _gore = gore;
+
+            CollectDismemberments(content);
         }
 
         public IView Create(GameObject prefab, Vector3 position)
@@ -99,16 +119,7 @@ namespace Game.View
 
             Entry entry = Take(prefab);
 
-            entry.View.gameObject.SetActive(true);
-            entry.View.transform.SetPositionAndRotation(position, Quaternion.identity);
-            entry.View.ResetInterpolation();
-            entry.View.ResetFeedback();
-
-            if (entry.Animator != null)
-            {
-                entry.Animator.Rebind();
-                entry.Animator.Update(0f);
-            }
+            Activate(entry, position, Quaternion.identity);
 
             _issued.Add(entry.View.GetInstanceID());
 
@@ -125,7 +136,7 @@ namespace Game.View
             Return(entry);
         }
 
-        public void Retire(IView view, float seconds, Vector3 knockbackDirection)
+        public void Retire(IView view, float seconds, DeathBlow blow)
         {
             if (_disposed)
                 return;
@@ -139,9 +150,15 @@ namespace Game.View
                 return;
             }
 
-            _retiring.Add(entry.View.GetInstanceID());
+            Vector3 velocity = ResolveKnockbackVelocity(blow.Direction);
+            Entry corpse = SwapForDismembered(entry, blow);
 
-            entry.View.BeginRetire(seconds, ResolveKnockbackVelocity(knockbackDirection), _knockbackGravity, _knockbackFriction);
+            _retiring.Add(corpse.View.GetInstanceID());
+
+            corpse.View.BeginRetire(seconds, velocity, _knockbackGravity, _knockbackFriction);
+
+            if (corpse != entry)
+                _gore.Dismember(corpse.Dismemberable, corpse.View.transform, blow, velocity);
         }
 
         public void Dispose()
@@ -187,6 +204,108 @@ namespace Game.View
             Return(_known[view.GetInstanceID()]);
         }
 
+        private Entry SwapForDismembered(Entry entry, in DeathBlow blow)
+        {
+            if (_gore == null || _dismemberments.TryGetValue(entry.Prefab, out Dismemberment dismemberment) == false)
+                return entry;
+
+            if (_gore.RollDismember(dismemberment.Chance, blow) == false)
+                return entry;
+
+            Entry corpse = Take(dismemberment.Prefab);
+            Transform source = entry.View.transform;
+
+            Activate(corpse, source.position, source.rotation);
+
+            corpse.View.SetPosition(source.position);
+            corpse.View.SetRotation(source.rotation);
+
+            CopyPose(entry, corpse);
+
+            Return(entry);
+
+            return corpse;
+        }
+
+        private void Activate(Entry entry, Vector3 position, Quaternion rotation)
+        {
+            entry.View.gameObject.SetActive(true);
+            entry.View.transform.SetPositionAndRotation(position, rotation);
+            entry.View.ResetInterpolation();
+            entry.View.ResetFeedback();
+
+            if (entry.Animator != null)
+            {
+                entry.Animator.Rebind();
+                entry.Animator.Update(0f);
+            }
+        }
+
+        private static void CopyPose(Entry from, Entry to)
+        {
+            if (from.Animator == null || to.Animator == null)
+                return;
+
+            Transform fromBody = from.Animator.transform;
+            Transform toBody = to.Animator.transform;
+
+            toBody.localPosition = fromBody.localPosition;
+            toBody.localRotation = fromBody.localRotation;
+
+            for (int index = 0; index < from.Parameters.Length; index++)
+            {
+                AnimatorControllerParameter parameter = from.Parameters[index];
+
+                if (parameter.type == AnimatorControllerParameterType.Float)
+                    to.Animator.SetFloat(parameter.nameHash, from.Animator.GetFloat(parameter.nameHash));
+                else if (parameter.type == AnimatorControllerParameterType.Bool)
+                    to.Animator.SetBool(parameter.nameHash, from.Animator.GetBool(parameter.nameHash));
+                else if (parameter.type == AnimatorControllerParameterType.Int)
+                    to.Animator.SetInteger(parameter.nameHash, from.Animator.GetInteger(parameter.nameHash));
+            }
+
+            int layers = Mathf.Min(from.Animator.layerCount, to.Animator.layerCount);
+
+            for (int layer = 0; layer < layers; layer++)
+            {
+                AnimatorStateInfo state = from.Animator.GetCurrentAnimatorStateInfo(layer);
+
+                to.Animator.Play(state.fullPathHash, layer, state.normalizedTime);
+            }
+
+            to.Animator.Update(0f);
+        }
+
+        private void CollectDismemberments(IContentRegistry content)
+        {
+            if (content == null)
+                return;
+
+            IReadOnlyList<EnemyConfig> enemies = content.All<EnemyConfig>();
+
+            for (int index = 0; index < enemies.Count; index++)
+            {
+                EnemyConfig enemy = enemies[index];
+
+                if (enemy.DismemberedViewPrefab == null || enemy.ViewPrefab == null)
+                    continue;
+
+                string owner = $"{nameof(EnemyConfig)} '{enemy.Id}'";
+
+                if (enemy.DismemberedViewPrefab.TryGetComponent(out ViewInterpolator _) == false)
+                    throw new InvalidOperationException(
+                        $"{owner}: dismembered view prefab '{enemy.DismemberedViewPrefab.name}' has no {nameof(ViewInterpolator)} on its root.");
+
+                if (enemy.DismemberedViewPrefab.TryGetComponent(out DismemberableView dismemberable) == false)
+                    throw new InvalidOperationException(
+                        $"{owner}: dismembered view prefab '{enemy.DismemberedViewPrefab.name}' has no {nameof(DismemberableView)} on its root.");
+
+                dismemberable.Validate(owner);
+
+                _dismemberments[enemy.ViewPrefab] = new Dismemberment(enemy.DismemberedViewPrefab, enemy.DismemberChance);
+            }
+        }
+
         private Entry Withdraw(IView view, string operation)
         {
             if (view is ViewInterpolator instance == false)
@@ -212,6 +331,9 @@ namespace Game.View
 
         private void Return(Entry entry)
         {
+            if (entry.Dismemberable != null)
+                entry.Dismemberable.Restore();
+
             entry.View.ResetInterpolation();
             entry.View.ResetFeedback();
             entry.View.gameObject.SetActive(false);
@@ -243,10 +365,14 @@ namespace Game.View
                     $"Prefab '{prefab.name}' has no {nameof(ViewInterpolator)} on its root object.");
             }
 
+            Animator animator = instance.GetComponentInChildren<Animator>(true);
+
             Entry entry = new Entry
             {
                 View = view,
-                Animator = instance.GetComponentInChildren<Animator>(true),
+                Animator = animator,
+                Parameters = animator != null ? animator.parameters : Array.Empty<AnimatorControllerParameter>(),
+                Dismemberable = instance.GetComponent<DismemberableView>(),
                 Prefab = prefab
             };
 

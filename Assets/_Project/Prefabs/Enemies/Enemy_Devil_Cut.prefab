@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4305505894204420390}
   - component: {fileID: 602902280908142115}
+  - component: {fileID: 892026337747753803}
   m_Layer: 0
   m_Name: Enemy_Devil_Cut
   m_TagString: Untagged
@@ -46,6 +47,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.View::Game.View.ViewInterpolator
   _berserkFx: {fileID: 0}
+--- !u!114 &892026337747753803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5655266033515176150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9809fcfd19dd9454ca1798797aa758bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.DismemberableView
+  _parts:
+  - _kind: 0
+    _renderer: {fileID: 901748133526718457}
+    _stump: {fileID: 4534586510413650577}
+  - _kind: 1
+    _renderer: {fileID: 4397386559636878333}
+    _stump: {fileID: 8941349083412347311}
+  - _kind: 2
+    _renderer: {fileID: 2965177994052912205}
+    _stump: {fileID: 2170385138754816351}
 --- !u!1001 &2667518084684618143
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -282,9 +305,24 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 4440252596340696507}
   m_SourcePrefab: {fileID: 100100000, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
+--- !u!137 &901748133526718457 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -6230929410506760602, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
+  m_PrefabInstance: {fileID: 2667518084684618143}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2170385138754816351 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -4964606881532604224, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
+  m_PrefabInstance: {fileID: 2667518084684618143}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2490021024678280820 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
+  m_PrefabInstance: {fileID: 2667518084684618143}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &2965177994052912205 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -8348969761943921198, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
   m_PrefabInstance: {fileID: 2667518084684618143}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &3009957342713455822 stripped
@@ -314,3 +352,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!137 &4397386559636878333 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1730026946780539490, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
+  m_PrefabInstance: {fileID: 2667518084684618143}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4534586510413650577 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -7211674813093035250, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
+  m_PrefabInstance: {fileID: 2667518084684618143}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8941349083412347311 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6418438772442013744, guid: 224128a200b469b4889c361bb8cd36b4, type: 3}
+  m_PrefabInstance: {fileID: 2667518084684618143}
+  m_PrefabAsset: {fileID: 0}

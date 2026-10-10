@@ -38,9 +38,15 @@ namespace Game.Simulation.Components
         public Vector3 SourcePosition;
         public float Amount;
         public DamageKind Kind;
+        public bool IsSlash;
     }
 
-    public struct KillingBlow { public Vector3 SourcePosition; }
+    public struct KillingBlow
+    {
+        public Vector3 SourcePosition;
+        public bool IsSlash;
+        public bool IsEmpowered;
+    }
 
     public struct DamageApplied { public float Amount; }
 

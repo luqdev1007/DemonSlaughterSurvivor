@@ -10,7 +10,7 @@ namespace Game.Core
 
         void SetRotation(Quaternion rotation);
 
-        void PlayHit();
+        void PlayHit(Vector3 direction);
 
         void SetInvulnerable(bool value);
 

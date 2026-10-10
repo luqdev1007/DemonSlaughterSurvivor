@@ -16,6 +16,10 @@ namespace Game.Bootstrap
 
             builder.Register<RunOutcome>(Lifetime.Scoped);
 
+            builder.Register<DebugGoreInput>(Lifetime.Scoped).As<IDebugGoreInput>();
+
+            builder.Register<GoreDirector>(Lifetime.Scoped);
+
             builder.Register<ViewPool>(Lifetime.Scoped).As<IViewFactory>();
 
             builder.Register<CameraService>(Lifetime.Scoped).As<ICameraService>();
