@@ -19,6 +19,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Gem> _gems = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
@@ -57,6 +58,7 @@ namespace Game.Simulation.Systems
                 _gems.Value.Add(gem).Experience = config.Experience;
                 _positions.Value.Add(gem).Value = enemyPosition.Value;
                 _velocities.Value.Add(gem);
+                _notIndexed.Value.Add(gem);
                 _views.Value.Add(gem).Value = _viewFactory.Value.Create(config.ViewPrefab, enemyPosition.Value);
             }
         }

@@ -25,6 +25,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<FireTrail> _trails = default;
         private readonly EcsPoolInject<FireSegment> _segmentPool = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
@@ -82,6 +83,7 @@ namespace Game.Simulation.Systems
             segment.DamageScale = entry.DamageShare;
 
             _positions.Value.Add(entity).Value = point;
+            _notIndexed.Value.Add(entity);
             _views.Value.Add(entity).Value = _viewFactory.Value.Create(config.SegmentPrefab, point);
         }
     }

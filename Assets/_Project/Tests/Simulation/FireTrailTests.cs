@@ -56,6 +56,7 @@ namespace Game.Simulation.Tests
 
             Assert.AreEqual(13, Segments());
             Assert.AreEqual(13, _views.Created);
+            Assert.AreEqual(13, _world.Filter<FireSegment>().Inc<NotIndexed>().End().GetEntitiesCount(), "every segment stays out of the grid");
         }
 
         [TestCase(1, 3f)]

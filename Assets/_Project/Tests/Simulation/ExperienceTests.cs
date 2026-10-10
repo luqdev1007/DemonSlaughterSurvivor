@@ -202,13 +202,18 @@ namespace Game.Simulation.Tests
         {
             Fixture fixture = Build(withPerks: false);
 
-            fixture.SpawnGem(new Vector3(10f, 0f, 10f), 1);
+            fixture.KillEnemy(new Vector3(10f, 0f, 10f), withGem: true);
             fixture.Step();
+
+            Assert.AreEqual(1, fixture.GemCount(), "the dropped gem exists");
 
             List<int> found = new List<int>();
             fixture.Grid.Query(new Vector3(10f, 0f, 10f), 0.5f, 0f, found);
 
-            Assert.AreEqual(0, found.Count);
+            EcsPool<Gem> gems = fixture.World.GetPool<Gem>();
+
+            for (int index = 0; index < found.Count; index++)
+                Assert.IsFalse(gems.Has(found[index]), "a dropped gem is not in the grid");
         }
 
         [Test]
