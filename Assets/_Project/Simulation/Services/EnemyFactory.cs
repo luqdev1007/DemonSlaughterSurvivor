@@ -28,6 +28,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<Separation> _separations;
         private readonly EcsPool<View> _views;
         private readonly EcsPool<GemDrop> _gemDrops;
+        private readonly EcsPool<RangedAttack> _rangedAttacks;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
@@ -51,6 +52,7 @@ namespace Game.Simulation.Services
             _separations = world.GetPool<Separation>();
             _views = world.GetPool<View>();
             _gemDrops = world.GetPool<GemDrop>();
+            _rangedAttacks = world.GetPool<RangedAttack>();
         }
 
         public int Create(EnemyConfig config, Vector3 position)
@@ -102,6 +104,9 @@ namespace Game.Simulation.Services
 
             if (config.Gem != null)
                 _gemDrops.Add(entity).Config = config.Gem;
+
+            if (config.RangedAttack != null)
+                _rangedAttacks.Add(entity).Config = config.RangedAttack;
 
             _statModifiers.MarkDirty(entity);
 

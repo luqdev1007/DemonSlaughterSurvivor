@@ -13,11 +13,13 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<SwingStarted>> _swingStarts = default;
         private readonly EcsFilterInject<Inc<LevelUpEvent>> _levelUps = default;
         private readonly EcsFilterInject<Inc<LeapStarted>> _leapStarts = default;
+        private readonly EcsFilterInject<Inc<RangedWindupStarted>> _windupStarts = default;
 
         private readonly EcsPoolInject<DiedEvent> _diedEventPool = default;
         private readonly EcsPoolInject<SwingStarted> _swingStartPool = default;
         private readonly EcsPoolInject<LevelUpEvent> _levelUpPool = default;
         private readonly EcsPoolInject<LeapStarted> _leapStartPool = default;
+        private readonly EcsPoolInject<RangedWindupStarted> _windupStartPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -37,6 +39,9 @@ namespace Game.Simulation.Systems
 
             foreach (int entity in _leapStarts.Value)
                 _leapStartPool.Value.Del(entity);
+
+            foreach (int entity in _windupStarts.Value)
+                _windupStartPool.Value.Del(entity);
         }
     }
 }

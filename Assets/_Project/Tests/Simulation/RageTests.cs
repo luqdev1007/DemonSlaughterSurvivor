@@ -175,6 +175,26 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void ReceivedProjectileDamageAddsRageLikeContact()
+        {
+            Build(heroMaxHealth: 100f, hitInvulnerabilitySeconds: 0f);
+
+            Step(() => Receive(_enemies[0], 10f, DamageKind.Projectile));
+
+            Assert.AreEqual(10f, Charge(), Tolerance);
+        }
+
+        [Test]
+        public void DealtProjectileDamageGivesNoRage()
+        {
+            Build(heroMaxHealth: 100f, hitInvulnerabilitySeconds: 0f);
+
+            Step(() => Hit(_enemies[0], 10f, DamageKind.Projectile));
+
+            Assert.AreEqual(0f, Charge(), Tolerance);
+        }
+
+        [Test]
         public void UnmarkedIsTheDefaultKind()
         {
             Assert.AreEqual(DamageKind.Unmarked, default(DamageKind));

@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());
             systems.Add(new ChaseTargetSystem());
+            systems.Add(new HoldForRangedAttackSystem());
             systems.Add(new SeparateNeighborsSystem());
             // 5.  Movement
             systems.Add(new StorePreviousPositionSystem());
@@ -35,6 +36,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new FaceVelocitySystem());
             systems.Add(new FaceNearestEnemySystem());
+            systems.Add(new FaceRangedTargetSystem());
             systems.Add(new ApplyPushSystem());
             systems.Add(new ApplyGemFlightSystem());
             systems.Add(new ResolveBodyOverlapSystem());
@@ -46,11 +48,14 @@ namespace Game.Simulation.Systems
             systems.Add(new InterruptSwingSystem());
             systems.Add(new ExpireSpecialAttackSystem());
             systems.Add(new StartSwingSystem());
+            systems.Add(new ReleaseRangedAttackSystem());
+            systems.Add(new StartRangedAttackSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
             systems.Add(new PulseFireSegmentsSystem());
             systems.Add(new TickFireSegmentsSystem());
+            systems.Add(new AdvanceProjectilesSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
             systems.Add(new DetectContactDamageSystem());
@@ -78,6 +83,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PlayHitFeedbackSystem());
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayLeapFeedbackSystem());
+            systems.Add(new PlayRangedAttackFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());
             systems.Add(new SyncBerserkViewSystem());

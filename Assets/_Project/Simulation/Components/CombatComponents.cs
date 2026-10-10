@@ -28,6 +28,7 @@ namespace Game.Simulation.Components
         Weapon = 1,
         Contact = 2,
         Perk = 3,
+        Projectile = 4,
     }
 
     public struct DamageEvent

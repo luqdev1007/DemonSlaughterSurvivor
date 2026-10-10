@@ -22,6 +22,9 @@ namespace Game.Configs
         [Header("Drop")]
         [SerializeField] private GemConfig _gem;
 
+        [Header("Ranged")]
+        [SerializeField] private RangedAttackConfig _rangedAttack;
+
         [Header("Separation")]
         [SerializeField] private float _separationRadius = 1f;
         [SerializeField] private float _separationStrength = 0.5f;
@@ -41,6 +44,8 @@ namespace Game.Configs
         public float ContactDamage => _contactDamage;
 
         public GemConfig Gem => _gem;
+
+        public RangedAttackConfig RangedAttack => _rangedAttack;
 
         public float SeparationRadius => _separationRadius;
 
