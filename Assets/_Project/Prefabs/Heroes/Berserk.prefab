@@ -973,6 +973,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7000941709097960948}
   - component: {fileID: 6406449896726833975}
+  - component: {fileID: 2634756502424836516}
   m_Layer: 0
   m_Name: Berserk
   m_TagString: Untagged
@@ -1010,6 +1011,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.View::Game.View.ViewInterpolator
   _berserkFx: {fileID: 1066350606233101641}
+  _swordTrail: {fileID: 2634756502424836516}
+--- !u!114 &2634756502424836516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2234588097227066470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 677e5ed8d28d0674998d768df1a572bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.SwordTrail
+  _config: {fileID: 11400000, guid: e2945bd33a2e09d47a80c4e9038a884b, type: 2}
+  _animator: {fileID: 7930089890447808555}
+  _base: {fileID: 1628060768796246058}
+  _tip: {fileID: 1582353027700211701}
 --- !u!1 &2459505138293471858
 GameObject:
   m_ObjectHideFlags: 0
@@ -3021,7 +3039,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1628060768796246058}
+  - {fileID: 1582353027700211701}
   m_Father: {fileID: 8025916660140161712}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &757572716979830311
@@ -3429,6 +3449,37 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.01704393, y: 0.24338278, z: 0.06319034}
     m_Extent: {x: 0.054023217, y: 0.08468849, z: 0.076808214}
   m_DirtyAABB: 0
+--- !u!1 &8067398205129682773
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1628060768796246058}
+  m_Layer: 0
+  m_Name: TrailBase
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1628060768796246058
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8067398205129682773}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.39999998, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3514302970311634236}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8132480547366289976
 GameObject:
   m_ObjectHideFlags: 0
@@ -3549,6 +3600,37 @@ MonoBehaviour:
   _width: 0.04
   _color: {r: 1, g: 0.06, b: 0.02, a: 1}
   _fadeSeconds: 0.15
+--- !u!1 &8274549692126087250
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1582353027700211701}
+  m_Layer: 0
+  m_Name: TrailTip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1582353027700211701
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8274549692126087250}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3514302970311634236}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8368275980192675628
 GameObject:
   m_ObjectHideFlags: 0

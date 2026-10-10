@@ -22,6 +22,7 @@ namespace Game.View
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
 
         [SerializeField] private BerserkLightningFx _berserkFx;
+        [SerializeField] private SwordTrail _swordTrail;
 
         private Vector3 _previousPosition;
         private Vector3 _currentPosition;
@@ -157,6 +158,9 @@ namespace Game.View
 
         public void SetBerserk(bool value)
         {
+            if (_swordTrail != null)
+                _swordTrail.SetBerserk(value);
+
             if (_berserkFx == null)
                 return;
 
@@ -287,6 +291,12 @@ namespace Game.View
 
             if (_berserkFx != null)
                 _berserkFx.ResetImmediate();
+
+            if (_swordTrail != null)
+            {
+                _swordTrail.SetBerserk(false);
+                _swordTrail.ResetTrail();
+            }
 
             ApplyBlock();
             SetRenderersVisible(true);
