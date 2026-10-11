@@ -22,5 +22,7 @@ MonoBehaviour:
   _contactDamage: 5
   _gem: {fileID: 11400000, guid: a3dac15c9f95f9845a8b71df9fa8a0c8, type: 2}
   _rangedAttack: {fileID: 11400000, guid: 7c24c5310df1aca4595202c2ab6cd262, type: 2}
+  _dismemberedViewPrefab: {fileID: 283212021244546512, guid: 3c3ab761a5b0ad845be8bf10ecf537de, type: 3}
+  _dismemberChance: 0.35
   _separationRadius: 1
   _separationStrength: 0.5
