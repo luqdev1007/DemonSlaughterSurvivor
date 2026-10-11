@@ -7,6 +7,11 @@ namespace Game.Simulation.Services
     public sealed class EnemyMotionBounds
     {
         public EnemyMotionBounds(float maxEnemyMoveSpeed, float maxOverlapCorrection, float pushSpeed, float maxEnemyBodyRadius)
+            : this(maxEnemyMoveSpeed, maxOverlapCorrection, pushSpeed, maxEnemyBodyRadius, 0f)
+        {
+        }
+
+        public EnemyMotionBounds(float maxEnemyMoveSpeed, float maxOverlapCorrection, float pushSpeed, float maxEnemyBodyRadius, float maxEnemyRushSpeed)
         {
             if (maxEnemyMoveSpeed < 0f)
                 throw new ArgumentOutOfRangeException(nameof(maxEnemyMoveSpeed), maxEnemyMoveSpeed, "Enemy move speed ceiling must not be negative.");
@@ -20,10 +25,14 @@ namespace Game.Simulation.Services
             if (pushSpeed < 0f)
                 throw new ArgumentOutOfRangeException(nameof(pushSpeed), pushSpeed, "Push speed must not be negative.");
 
+            if (maxEnemyRushSpeed < 0f)
+                throw new ArgumentOutOfRangeException(nameof(maxEnemyRushSpeed), maxEnemyRushSpeed, "Enemy rush speed must not be negative.");
+
             MaxEnemyMoveSpeed = maxEnemyMoveSpeed;
             MaxOverlapCorrection = maxOverlapCorrection;
             PushSpeed = pushSpeed;
             MaxEnemyBodyRadius = maxEnemyBodyRadius;
+            MaxEnemyRushSpeed = maxEnemyRushSpeed;
         }
 
         public float MaxEnemyMoveSpeed { get; }
@@ -33,6 +42,8 @@ namespace Game.Simulation.Services
         public float PushSpeed { get; }
 
         public float MaxEnemyBodyRadius { get; }
+
+        public float MaxEnemyRushSpeed { get; }
 
         public static EnemyMotionBounds From(CharacterConfig character, WaveTimelineConfig waves, IReadOnlyList<PerkConfig> perks)
         {
@@ -45,6 +56,7 @@ namespace Game.Simulation.Services
             float maxEnemyBodyRadius = WaveTimelineValidator.ResolveMaxBodyRadius(waves);
             float maxOverlapCorrection = character.BodyRadius + maxEnemyBodyRadius;
             float maxEnemyMoveSpeed = WaveTimelineValidator.ResolveMaxMoveSpeed(waves);
+            float maxEnemyRushSpeed = WaveTimelineValidator.ResolveMaxRushSpeed(waves);
             float pushSpeed = character.Dash == null ? 0f : character.Dash.PushSpeed;
 
             for (int index = 0; index < perks.Count; index++)
@@ -53,15 +65,16 @@ namespace Game.Simulation.Services
                     pushSpeed = Math.Max(pushSpeed, leap.PushSpeed);
             }
 
-            return new EnemyMotionBounds(maxEnemyMoveSpeed, maxOverlapCorrection, pushSpeed, maxEnemyBodyRadius);
+            return new EnemyMotionBounds(maxEnemyMoveSpeed, maxOverlapCorrection, pushSpeed, maxEnemyBodyRadius, maxEnemyRushSpeed);
         }
 
         public float CandidateSlack(float deltaTime)
         {
             float walkedAndCorrected = MaxEnemyMoveSpeed * deltaTime + MaxOverlapCorrection;
             float pushed = PushSpeed * deltaTime;
+            float rushed = MaxEnemyRushSpeed * deltaTime;
 
-            return Math.Max(walkedAndCorrected, pushed);
+            return Math.Max(walkedAndCorrected, Math.Max(pushed, rushed));
         }
     }
 }

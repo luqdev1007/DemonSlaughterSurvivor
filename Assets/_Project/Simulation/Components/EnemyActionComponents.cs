@@ -1,4 +1,5 @@
 using Game.Configs;
+using UnityEngine;
 
 namespace Game.Simulation.Components
 {
@@ -27,4 +28,14 @@ namespace Game.Simulation.Components
     }
 
     public struct PendingVictory { public int RemainingTicks; }
+
+    public struct EnemyCharge
+    {
+        public ChargeAbilityConfig Config;
+        public int CooldownTicks;
+        public Vector3 Direction;
+        public bool HasHit;
+    }
+
+    public struct Rushing { }
 }

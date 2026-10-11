@@ -621,6 +621,10 @@ namespace Game.Simulation.Tests
             {
             }
 
+            public void SetAction(in ActionCue cue)
+            {
+            }
+
             public void PlayDeath()
             {
             }

@@ -1,4 +1,5 @@
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using UnityEngine;
@@ -24,14 +25,9 @@ namespace Game.Simulation.Systems
 
             foreach (int entity in _filter.Value)
             {
-                if (HoldsPosition(_actions.Value.Get(entity).Phase) || IsInContact(world, entity))
+                if (EnemyActionPhases.HoldsPosition(_actions.Value.Get(entity).Phase) || IsInContact(world, entity))
                     _intents.Value.Get(entity).Value = Vector3.zero;
             }
-        }
-
-        public static bool HoldsPosition(EnemyActionPhase phase)
-        {
-            return phase != EnemyActionPhase.None && phase != EnemyActionPhase.Spinning;
         }
 
         private bool IsInContact(EcsWorld world, int entity)

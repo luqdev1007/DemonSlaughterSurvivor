@@ -33,6 +33,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<NotPushable> _notPushables;
         private readonly EcsPool<PreviousPosition> _previousPositions;
         private readonly EcsPool<EnemyAction> _actions;
+        private readonly EcsPool<EnemyCharge> _charges;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
@@ -61,6 +62,7 @@ namespace Game.Simulation.Services
             _notPushables = world.GetPool<NotPushable>();
             _previousPositions = world.GetPool<PreviousPosition>();
             _actions = world.GetPool<EnemyAction>();
+            _charges = world.GetPool<EnemyCharge>();
         }
 
         public int Create(EnemyConfig config, Vector3 position)
@@ -118,6 +120,9 @@ namespace Game.Simulation.Services
 
             if (config.Boss != null)
                 AddBoss(entity, config.Boss, position);
+
+            if (config.Charge != null)
+                _charges.Add(entity).Config = config.Charge;
 
             _statModifiers.MarkDirty(entity);
 

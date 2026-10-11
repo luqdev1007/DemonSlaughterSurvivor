@@ -30,6 +30,7 @@ namespace Game.Simulation.Systems
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());
             systems.Add(new ChaseTargetSystem());
+            systems.Add(new AdvanceEnemyChargeSystem());
             systems.Add(new BossDecideSystem());
             systems.Add(new HoldForEnemyActionSystem());
             systems.Add(new HoldForRangedAttackSystem());
@@ -37,10 +38,12 @@ namespace Game.Simulation.Systems
             // 5.  Movement
             systems.Add(new StorePreviousPositionSystem());
             systems.Add(new ApplyDashVelocitySystem());
+            systems.Add(new ApplyEnemyChargeVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new FaceVelocitySystem());
             systems.Add(new FaceNearestEnemySystem());
             systems.Add(new FaceRangedTargetSystem());
+            systems.Add(new FaceEnemyChargeTargetSystem());
             systems.Add(new ApplyPushSystem());
             systems.Add(new ApplyGemFlightSystem());
             systems.Add(new ResolveBodyOverlapSystem());
@@ -62,6 +65,7 @@ namespace Game.Simulation.Systems
             systems.Add(new AdvanceProjectilesSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
+            systems.Add(new SweepEnemyChargeSystem());
             systems.Add(new DetectContactDamageSystem());
             systems.Add(new StartGemFlightSystem());
             // 9.  Damage
@@ -102,6 +106,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncDashViewSystem());
             systems.Add(new SyncSpecialAttackViewSystem());
             systems.Add(new SyncLocomotionViewSystem());
+            systems.Add(new SyncEnemyActionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
             systems.Add(new PublishBossVitalsSystem());
             systems.Add(new PublishExperienceSystem());

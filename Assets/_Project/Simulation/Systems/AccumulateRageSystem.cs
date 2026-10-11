@@ -60,7 +60,7 @@ namespace Game.Simulation.Systems
                     ref DamageEvent damageEvent = ref _damageEvents.Value.Get(entity);
 
                     bool countsDealt = damageEvent.Kind == DamageKind.Weapon || damageEvent.Kind == DamageKind.Contact;
-                    bool countsReceived = countsDealt || damageEvent.Kind == DamageKind.Projectile;
+                    bool countsReceived = countsDealt || damageEvent.Kind == DamageKind.Projectile || damageEvent.Kind == DamageKind.EnemyAbility;
 
                     if (countsReceived == false)
                         continue;

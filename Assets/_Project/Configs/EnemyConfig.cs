@@ -27,6 +27,7 @@ namespace Game.Configs
 
         [Header("Boss")]
         [SerializeField] private BossConfig _boss;
+        [SerializeField] private ChargeAbilityConfig _charge;
 
         [Header("Gore")]
         [SerializeField] private GameObject _dismemberedViewPrefab;
@@ -55,6 +56,8 @@ namespace Game.Configs
         public RangedAttackConfig RangedAttack => _rangedAttack;
 
         public BossConfig Boss => _boss;
+
+        public ChargeAbilityConfig Charge => _charge;
 
         public GameObject DismemberedViewPrefab => _dismemberedViewPrefab;
 

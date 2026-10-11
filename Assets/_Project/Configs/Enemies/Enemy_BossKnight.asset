@@ -23,6 +23,7 @@ MonoBehaviour:
   _gem: {fileID: 0}
   _rangedAttack: {fileID: 0}
   _boss: {fileID: 11400000, guid: b62df07ca74bc3b45a1796b4f14cef35, type: 2}
+  _charge: {fileID: 11400000, guid: 8fd18d80b13de4b4f96e0f430b8bc05a, type: 2}
   _dismemberedViewPrefab: {fileID: 0}
   _dismemberChance: 0
   _separationRadius: 1

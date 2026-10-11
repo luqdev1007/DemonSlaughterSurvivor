@@ -30,6 +30,8 @@ namespace Game.Core
 
         void PlayAttack(string trigger, float speed);
 
+        void SetAction(in ActionCue cue);
+
         void PlayDeath();
 
         void Dissolve();

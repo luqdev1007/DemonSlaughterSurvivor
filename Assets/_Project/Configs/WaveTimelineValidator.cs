@@ -158,6 +158,45 @@ namespace Game.Configs
             return max;
         }
 
+        public static float ResolveMaxRushSpeed(WaveTimelineConfig timeline)
+        {
+            return ResolveMax(timeline, enemy => enemy.Charge == null ? 0f : enemy.Charge.RushSpeed);
+        }
+
+        private static float ResolveMax(WaveTimelineConfig timeline, Func<EnemyConfig, float> value)
+        {
+            if (timeline == null || timeline.Waves == null)
+                return 0f;
+
+            float max = 0f;
+
+            for (int index = 0; index < timeline.Waves.Count; index++)
+            {
+                Wave wave = timeline.Waves[index];
+
+                if (wave == null)
+                    continue;
+
+                for (int entry = 0; entry < wave.Enemies.Count; entry++)
+                {
+                    EnemyConfig enemy = wave.Enemies[entry] == null ? null : wave.Enemies[entry].Enemy;
+
+                    if (enemy != null)
+                        max = Math.Max(max, value(enemy));
+                }
+
+                for (int entry = 0; entry < wave.Guaranteed.Count; entry++)
+                {
+                    EnemyConfig enemy = wave.Guaranteed[entry] == null ? null : wave.Guaranteed[entry].Enemy;
+
+                    if (enemy != null)
+                        max = Math.Max(max, value(enemy));
+                }
+            }
+
+            return max;
+        }
+
         public static int ResolveMaxLiveCap(WaveTimelineConfig timeline)
         {
             if (timeline == null)

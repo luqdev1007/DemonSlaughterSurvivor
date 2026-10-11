@@ -19,12 +19,14 @@ namespace Game.View
         private static readonly int IsSpecialId = Animator.StringToHash("IsSpecial");
         private static readonly int IsPoweringUpId = Animator.StringToHash("IsPoweringUp");
         private static readonly int PowerUpTimeId = Animator.StringToHash("PowerUpTime");
+        private static readonly int ActionPhaseId = Animator.StringToHash("ActionPhase");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
 
         [SerializeField] private BerserkLightningFx _berserkFx;
         [SerializeField] private SwordTrail _swordTrail;
+        [SerializeField] private BossKnightView _actionView;
 
         private Vector3 _previousPosition;
         private Vector3 _currentPosition;
@@ -49,6 +51,8 @@ namespace Game.View
         private bool _isPoweringUp;
         private bool _isDead;
         private bool _hasAttackSpeedParameter;
+        private bool _hasActionPhaseParameter;
+        private int _actionPhase;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
         private float _dissolveSeconds;
@@ -98,6 +102,7 @@ namespace Game.View
             _hasDashingParameter = HasParameter(animator, IsDashingId, AnimatorControllerParameterType.Bool);
             _hasRunningParameter = HasParameter(animator, IsRunningId, AnimatorControllerParameterType.Bool);
             _hasAttackSpeedParameter = HasParameter(animator, AttackSpeedId, AnimatorControllerParameterType.Float);
+            _hasActionPhaseParameter = HasParameter(animator, ActionPhaseId, AnimatorControllerParameterType.Int);
             _hasSpecialParameter = HasParameter(animator, IsSpecialId, AnimatorControllerParameterType.Bool);
             _hasPowerUpParameters = HasParameter(animator, IsPoweringUpId, AnimatorControllerParameterType.Bool)
                 && HasParameter(animator, PowerUpTimeId, AnimatorControllerParameterType.Float);
@@ -254,8 +259,35 @@ namespace Game.View
             _onCue?.Invoke(this, ViewCue.Attack, trigger);
         }
 
+        public void SetAction(in ActionCue cue)
+        {
+            if (_isDead)
+                return;
+
+            if (_actionView != null)
+                _actionView.Apply(cue);
+
+            if (_hasActionPhaseParameter == false)
+                return;
+
+            int phase = (int)cue.Pose;
+
+            if (_hasAttackSpeedParameter)
+                _animator.SetFloat(AttackSpeedId, cue.PlaybackSpeed > 0f ? cue.PlaybackSpeed : 1f);
+
+            if (_actionPhase == phase)
+                return;
+
+            _actionPhase = phase;
+
+            _animator.SetInteger(ActionPhaseId, phase);
+        }
+
         public void PlayDeath()
         {
+            if (_actionView != null)
+                _actionView.ResetImmediate();
+
             if (_hasDeathTrigger == false || _isDead)
                 return;
 
@@ -343,6 +375,10 @@ namespace Game.View
             _knockbackVelocity = Vector3.zero;
             _knockbackOffset = Vector3.zero;
             _isBerserkSuppressed = false;
+            _actionPhase = 0;
+
+            if (_actionView != null)
+                _actionView.ResetImmediate();
 
             if (_berserkFx != null)
                 _berserkFx.ResetImmediate();
@@ -442,24 +478,23 @@ namespace Game.View
         {
             Renderer[] all = GetComponentsInChildren<Renderer>(true);
 
-            if (_berserkFx == null)
-                return all;
-
-            Transform excluded = _berserkFx.transform;
             int count = 0;
 
             for (int index = 0; index < all.Length; index++)
             {
-                if (all[index].transform.IsChildOf(excluded) == false)
+                if (IsBody(all[index]))
                     count++;
             }
+
+            if (count == all.Length)
+                return all;
 
             Renderer[] own = new Renderer[count];
             int next = 0;
 
             for (int index = 0; index < all.Length; index++)
             {
-                if (all[index].transform.IsChildOf(excluded))
+                if (IsBody(all[index]) == false)
                     continue;
 
                 own[next] = all[index];
@@ -467,6 +502,14 @@ namespace Game.View
             }
 
             return own;
+        }
+
+        private bool IsBody(Renderer renderer)
+        {
+            if (_berserkFx != null && renderer.transform.IsChildOf(_berserkFx.transform))
+                return false;
+
+            return renderer.GetComponentInParent<NotBody>(true) == null;
         }
 
         private void BuildDissolveMaterials()
