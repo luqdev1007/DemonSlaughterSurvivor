@@ -14,6 +14,21 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: Gore
     second: {fileID: 2100000, guid: 8b60c4293e45b5c4993d8fd25c66f40d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Gore_ArmL
+    second: {fileID: 2100000, guid: 8b60c4293e45b5c4993d8fd25c66f40d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Gore_ArmR
+    second: {fileID: 2100000, guid: 8b60c4293e45b5c4993d8fd25c66f40d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Gore_Head
+    second: {fileID: 2100000, guid: 8b60c4293e45b5c4993d8fd25c66f40d, type: 2}
   materials:
     materialImportMode: 2
     materialName: 1
