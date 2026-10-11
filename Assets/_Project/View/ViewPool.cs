@@ -40,6 +40,7 @@ namespace Game.View
         private readonly Dictionary<Material, Material> _dissolveCopies = new Dictionary<Material, Material>();
         private readonly Dictionary<GameObject, Dismemberment> _dismemberments = new Dictionary<GameObject, Dismemberment>();
         private readonly GoreDirector _gore;
+        private readonly CombatAudio _audio;
 
         private readonly float _hitFlashSeconds;
         private readonly float _blinkSeconds;
@@ -59,7 +60,7 @@ namespace Game.View
 
         private bool _disposed;
 
-        public ViewPool(LevelConfig level, IContentRegistry content, GoreDirector gore)
+        public ViewPool(LevelConfig level, IContentRegistry content, GoreDirector gore, CombatAudio audio)
         {
             FeedbackConfig feedback = level.Feedback;
 
@@ -107,6 +108,7 @@ namespace Game.View
             _knockbackFriction = feedback.KnockbackFriction;
 
             _gore = gore;
+            _audio = audio;
 
             CollectDismemberments(content);
         }
@@ -158,6 +160,8 @@ namespace Game.View
             _retiring.Add(corpse.View.GetInstanceID());
 
             corpse.View.BeginRetire(seconds, velocity, _knockbackGravity, _knockbackFriction);
+
+            _audio?.PlayEnemyDeath(corpse.View.transform.position);
 
             if (_gore == null)
                 return;
@@ -213,7 +217,12 @@ namespace Game.View
 
         private void OnHit(ViewInterpolator view, Vector3 direction)
         {
-            if (_disposed || _gore == null)
+            if (_disposed)
+                return;
+
+            _audio?.PlayEnemyHit(view.transform.position);
+
+            if (_gore == null)
                 return;
 
             _gore.PlayHit(view.transform.position, direction);

@@ -20,6 +20,8 @@ namespace Game.Bootstrap
 
             builder.Register<GoreDirector>(Lifetime.Scoped);
 
+            builder.Register<CombatAudio>(Lifetime.Scoped);
+
             builder.Register<ViewPool>(Lifetime.Scoped).As<IViewFactory>();
 
             builder.Register<CameraService>(Lifetime.Scoped).As<ICameraService>();

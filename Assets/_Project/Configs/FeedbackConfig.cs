@@ -26,6 +26,9 @@ namespace Game.Configs
         [Header("Gore")]
         [SerializeField] private GoreConfig _gore;
 
+        [Header("Audio")]
+        [SerializeField] private SfxConfig _sfx;
+
         public float HitFlashSeconds => _hitFlashSeconds;
 
         public float InvulnerabilityBlinkSeconds => _invulnerabilityBlinkSeconds;
@@ -53,5 +56,7 @@ namespace Game.Configs
         public float KnockbackFriction => _knockbackFriction;
 
         public GoreConfig Gore => _gore;
+
+        public SfxConfig Sfx => _sfx;
     }
 }
