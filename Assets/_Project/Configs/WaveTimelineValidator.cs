@@ -1,3 +1,4 @@
+using Game.Core;
 using System;
 using System.Collections.Generic;
 
@@ -5,8 +6,11 @@ namespace Game.Configs
 {
     public static class WaveTimelineValidator
     {
-        public static void Validate(WaveTimelineConfig timeline)
+        public static void Validate(WaveTimelineConfig timeline, IContentRegistry content)
         {
+            if (content == null)
+                throw new ArgumentNullException(nameof(content));
+
             if (timeline == null)
                 return;
 
@@ -32,6 +36,7 @@ namespace Game.Configs
                     WeightedEnemy entry = weighted[entryIndex];
 
                     ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "weighted");
+                    ValidateRegistered(timeline, content, entry.Enemy, waveIndex, entryIndex, "weighted");
                     ValidateWeight(timeline, entry, waveIndex, entryIndex);
                 }
 
@@ -42,6 +47,7 @@ namespace Game.Configs
                     GuaranteedSpawn entry = guaranteed[entryIndex];
 
                     ValidateEnemy(timeline, entry == null ? null : entry.Enemy, waveIndex, entryIndex, "guaranteed");
+                    ValidateRegistered(timeline, content, entry.Enemy, waveIndex, entryIndex, "guaranteed");
                     ValidateGuaranteed(timeline, entry, waveIndex, entryIndex);
                 }
             }
@@ -270,6 +276,35 @@ namespace Game.Configs
                     $"of {entry.Count} in wave {waveIndex}, guaranteed entry {entryIndex}. " +
                     "A negative count spawns nothing and still marks the event as fired, so it disappears without a message. " +
                     "Set the count to zero to disable the event on purpose.");
+        }
+
+        private static void ValidateRegistered(
+            WaveTimelineConfig timeline,
+            IContentRegistry content,
+            EnemyConfig enemy,
+            int waveIndex,
+            int entryIndex,
+            string kind)
+        {
+            string place = $"{nameof(WaveTimelineConfig)} '{timeline.Id}', wave {waveIndex}, {kind} entry {entryIndex}";
+
+            if (string.IsNullOrWhiteSpace(enemy.Id))
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.name}' has no stable id ({place}). " +
+                    "Content is addressed by id through the content registry; give it an id and add it to the ContentDatabase.");
+
+            if (content.TryGet(enemy.Id, out EnemyConfig registered) == false)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' ({enemy.name}) is spawned by {place}, " +
+                    "but it is not registered in the ContentDatabase. The timeline holds a direct asset reference, so the " +
+                    "enemy still spawns, while everything that finds enemies through the content registry (dismembered " +
+                    "views, saves, meta) silently skips it. Add the asset to the ContentDatabase.");
+
+            if (ReferenceEquals(registered, enemy) == false)
+                throw new InvalidOperationException(
+                    $"{nameof(EnemyConfig)} '{enemy.Id}' spawned by {place} is the asset '{enemy.name}', but the " +
+                    $"ContentDatabase registers that id for '{registered.name}'. The timeline and the registry would disagree " +
+                    "about the same enemy; reference the registered asset or give the other one its own id.");
         }
 
         private static void ValidateEnemy(

@@ -24,6 +24,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
         private readonly EcsCustomInject<StatModifiers> _statModifiers = default;
+        private readonly EcsCustomInject<IContentRegistry> _content = default;
 
         private RingSpawnPlacement _placement;
         private WeightedEnemyPicker _picker;
@@ -43,7 +44,7 @@ namespace Game.Simulation.Systems
 
             _timeline = _level.Value.Waves;
 
-            WaveTimelineValidator.Validate(_timeline);
+            WaveTimelineValidator.Validate(_timeline, _content.Value);
 
             _placement = new RingSpawnPlacement();
             _picker = new WeightedEnemyPicker();
