@@ -12,29 +12,84 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5a8eb4427a9b0b4d9953742eab5005a, type: 3}
   m_Name: SfxConfig
   m_EditorClassIdentifier: Game.Configs::Game.Configs.SfxConfig
-  _voiceCount: 12
+  _voiceCount: 16
   _spatialBlend: 0.5
   _minDistance: 20
   _maxDistance: 50
-  _enemyHit:
+  _swordHit:
     _clips:
-    - {fileID: 8300000, guid: 9124c2c37e477a54686b350039376bfb, type: 3}
-    - {fileID: 8300000, guid: ef0dfd3405d8636489e4159596bdc391, type: 3}
-    - {fileID: 8300000, guid: 3d6ea543e4995744fadec5c80901878b, type: 3}
-    - {fileID: 8300000, guid: a669f55e8db957847811008a27dcec43, type: 3}
-    - {fileID: 8300000, guid: f2d6d78ce1df86f43ad27475f8eb687c, type: 3}
-    _volume: 0.6
-    _minPitch: 0.9
-    _maxPitch: 1.1
-    _maxConcurrent: 5
+    - {fileID: 8300000, guid: 1e111bc14fae7c740a47a6167109c2f1, type: 3}
+    - {fileID: 8300000, guid: f636cfccba395514fb847758c823789d, type: 3}
+    - {fileID: 8300000, guid: 7099253aaa5bef74da4fe3057564ded4, type: 3}
+    - {fileID: 8300000, guid: 7a310e088203f8e4793a19a274735d0d, type: 3}
+    _volume: 0.8
+    _minPitch: 0.92
+    _maxPitch: 1.05
+    _delaySeconds: 0
+    _maxConcurrent: 4
     _maxPerFrame: 2
   _enemyDeath:
-    _clips:
-    - {fileID: 8300000, guid: f3a6cc6788a551b49813dbdb32da4e26, type: 3}
-    - {fileID: 8300000, guid: b947e20e18b2db143ba4d957f64fface, type: 3}
-    - {fileID: 8300000, guid: 3d0496b18b8152a41b054dcb59776f09, type: 3}
+    _clips: []
     _volume: 0.5
     _minPitch: 0.85
     _maxPitch: 1.1
+    _delaySeconds: 0
     _maxConcurrent: 3
     _maxPerFrame: 1
+  _gemPickup:
+    _clips:
+    - {fileID: 8300000, guid: 47db9b27d1771ba45b4efbd70dc62663, type: 3}
+    - {fileID: 8300000, guid: c20d45ab1b56d5548a6ceffaa3a31eea, type: 3}
+    - {fileID: 8300000, guid: 5c2a7a909dc0d344e8798cb2b09fdb8c, type: 3}
+    _volume: 0.45
+    _minPitch: 0.95
+    _maxPitch: 1.15
+    _delaySeconds: 0
+    _maxConcurrent: 4
+    _maxPerFrame: 1
+  _dash:
+    _clips:
+    - {fileID: 8300000, guid: c960824e945b1b04fbe10d432cb46195, type: 3}
+    - {fileID: 8300000, guid: f967d7363120ee943ae65151e6df896a, type: 3}
+    - {fileID: 8300000, guid: ec1b8960449f69a4da50c35491a361e7, type: 3}
+    _volume: 0.7
+    _minPitch: 0.75
+    _maxPitch: 0.9
+    _delaySeconds: 0
+    _maxConcurrent: 2
+    _maxPerFrame: 1
+  _heroDeath:
+    _clips:
+    - {fileID: 8300000, guid: 451170552db55214fa7eb54c11045095, type: 3}
+    - {fileID: 8300000, guid: 438be918f9d1d654eb439c30ff53e813, type: 3}
+    - {fileID: 8300000, guid: ddec50db29f001842946b4e483714349, type: 3}
+    _volume: 0.9
+    _minPitch: 0.85
+    _maxPitch: 0.95
+    _delaySeconds: 0
+    _maxConcurrent: 1
+    _maxPerFrame: 1
+  _attacks:
+  - _animatorTrigger: AttackSpin
+    _cue:
+      _clips:
+      - {fileID: 8300000, guid: 0940ca7f3f010d54bacfa2adf615330a, type: 3}
+      - {fileID: 8300000, guid: 77a0f8f68e9a7234bb3f1226c7c65017, type: 3}
+      - {fileID: 8300000, guid: 57d959f27659bc14b9920226dfefa889, type: 3}
+      _volume: 0.8
+      _minPitch: 0.7
+      _maxPitch: 0.8
+      _delaySeconds: 0
+      _maxConcurrent: 2
+      _maxPerFrame: 1
+  - _animatorTrigger: AttackJump
+    _cue:
+      _clips:
+      - {fileID: 8300000, guid: e61209038946fa24aaad7008ab870b1f, type: 3}
+      - {fileID: 8300000, guid: 915ce45bf6a93e54f8cd010430a3f35d, type: 3}
+      _volume: 0.9
+      _minPitch: 0.9
+      _maxPitch: 1
+      _delaySeconds: 0.17
+      _maxConcurrent: 1
+      _maxPerFrame: 1

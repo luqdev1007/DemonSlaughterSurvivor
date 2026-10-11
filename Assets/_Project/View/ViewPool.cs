@@ -39,6 +39,7 @@ namespace Game.View
         private readonly List<Entry> _all = new List<Entry>();
         private readonly Dictionary<Material, Material> _dissolveCopies = new Dictionary<Material, Material>();
         private readonly Dictionary<GameObject, Dismemberment> _dismemberments = new Dictionary<GameObject, Dismemberment>();
+        private readonly HashSet<GameObject> _gemPrefabs = new HashSet<GameObject>();
         private readonly GoreDirector _gore;
         private readonly CombatAudio _audio;
 
@@ -48,6 +49,7 @@ namespace Game.View
         private readonly Material _dissolveTemplate;
         private readonly Action<ViewInterpolator> _onRetired;
         private readonly Action<ViewInterpolator, Vector3> _onHit;
+        private readonly Action<ViewInterpolator, ViewCue, string> _onCue;
         private readonly Func<Material, Material> _dissolveMaterialFor;
         private readonly System.Random _random = new System.Random();
 
@@ -99,6 +101,7 @@ namespace Game.View
             _dissolveTemplate = feedback.DissolveMaterial;
             _onRetired = CompleteRetire;
             _onHit = OnHit;
+            _onCue = OnCue;
             _dissolveMaterialFor = DissolveMaterialFor;
             _knockbackSpeed = feedback.KnockbackSpeed;
             _knockbackUpSpeed = feedback.KnockbackUpSpeed;
@@ -111,6 +114,7 @@ namespace Game.View
             _audio = audio;
 
             CollectDismemberments(content);
+            CollectGemPrefabs(content);
         }
 
         public IView Create(GameObject prefab, Vector3 position)
@@ -136,6 +140,9 @@ namespace Game.View
                 return;
 
             Entry entry = Withdraw(view, nameof(Release));
+
+            if (_audio != null && _gemPrefabs.Contains(entry.Prefab))
+                _audio.PlayGemPickup(entry.View.transform.position);
 
             Return(entry);
         }
@@ -217,15 +224,35 @@ namespace Game.View
 
         private void OnHit(ViewInterpolator view, Vector3 direction)
         {
-            if (_disposed)
-                return;
-
-            _audio?.PlayEnemyHit(view.transform.position);
-
-            if (_gore == null)
+            if (_disposed || _gore == null)
                 return;
 
             _gore.PlayHit(view.transform.position, direction);
+        }
+
+        private void OnCue(ViewInterpolator view, ViewCue cue, string trigger)
+        {
+            if (_disposed || _audio == null)
+                return;
+
+            Vector3 position = view.transform.position;
+
+            switch (cue)
+            {
+                case ViewCue.WeaponHit:
+                    _audio.PlaySwordHit(position);
+                    break;
+                case ViewCue.DashStarted:
+                    _audio.PlayDash(position);
+                    break;
+                case ViewCue.Attack:
+                    _audio.PlayAttack(trigger, position);
+                    break;
+                case ViewCue.Death:
+                    if (_retiring.Contains(view.GetInstanceID()) == false)
+                        _audio.PlayHeroDeath(position);
+                    break;
+            }
         }
 
         private Entry SwapForDismembered(Entry entry, in DeathBlow blow)
@@ -298,6 +325,20 @@ namespace Game.View
             }
 
             to.Animator.Update(0f);
+        }
+
+        private void CollectGemPrefabs(IContentRegistry content)
+        {
+            if (content == null)
+                return;
+
+            IReadOnlyList<GemConfig> gems = content.All<GemConfig>();
+
+            for (int index = 0; index < gems.Count; index++)
+            {
+                if (gems[index].ViewPrefab != null)
+                    _gemPrefabs.Add(gems[index].ViewPrefab);
+            }
         }
 
         private void CollectDismemberments(IContentRegistry content)
@@ -400,7 +441,7 @@ namespace Game.View
                 Prefab = prefab
             };
 
-            view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired, _onHit);
+            view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired, _onHit, _onCue);
 
             _known.Add(view.GetInstanceID(), entry);
             _all.Add(entry);

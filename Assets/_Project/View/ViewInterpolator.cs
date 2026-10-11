@@ -49,6 +49,7 @@ namespace Game.View
         private Func<Material, Material> _dissolveMaterialFor;
         private Action<ViewInterpolator> _onRetired;
         private Action<ViewInterpolator, Vector3> _onHit;
+        private Action<ViewInterpolator, ViewCue, string> _onCue;
 
         private bool _isFlashing;
         private float _flashEndTime;
@@ -81,7 +82,8 @@ namespace Game.View
             float dissolveSeconds,
             Func<Material, Material> dissolveMaterialFor,
             Action<ViewInterpolator> onRetired,
-            Action<ViewInterpolator, Vector3> onHit)
+            Action<ViewInterpolator, Vector3> onHit,
+            Action<ViewInterpolator, ViewCue, string> onCue)
         {
             _animator = animator;
             _renderers = CollectOwnRenderers();
@@ -97,6 +99,7 @@ namespace Game.View
             _dissolveMaterialFor = dissolveMaterialFor;
             _onRetired = onRetired;
             _onHit = onHit;
+            _onCue = onCue;
         }
 
         public void SetPosition(Vector3 position)
@@ -147,6 +150,8 @@ namespace Game.View
 
         public void PlayWeaponHit()
         {
+            _onCue?.Invoke(this, ViewCue.WeaponHit, null);
+
             if (_swordTrail != null)
                 _swordTrail.PlayBlood();
         }
@@ -181,6 +186,9 @@ namespace Game.View
             _isDashing = value;
 
             _animator.SetBool(IsDashingId, value);
+
+            if (value)
+                _onCue?.Invoke(this, ViewCue.DashStarted, null);
         }
 
         public void SetSpecialAttack(bool value)
@@ -210,6 +218,8 @@ namespace Game.View
 
             _animator.SetFloat(AttackSpeedId, speed);
             _animator.SetTrigger(Animator.StringToHash(trigger));
+
+            _onCue?.Invoke(this, ViewCue.Attack, trigger);
         }
 
         public void PlayDeath()
@@ -233,6 +243,8 @@ namespace Game.View
             _isSpecial = false;
 
             _animator.SetTrigger(DeathTriggerId);
+
+            _onCue?.Invoke(this, ViewCue.Death, null);
         }
 
         public void Dissolve()
