@@ -21,5 +21,8 @@ MonoBehaviour:
   _maxHealth: 40
   _contactDamage: 15
   _gem: {fileID: 11400000, guid: a3dac15c9f95f9845a8b71df9fa8a0c8, type: 2}
+  _rangedAttack: {fileID: 0}
+  _dismemberedViewPrefab: {fileID: 404740550040734148, guid: 10303a7a593c645419213812f8e8cdac, type: 3}
+  _dismemberChance: 0.35
   _separationRadius: 1
   _separationStrength: 0.5
