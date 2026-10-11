@@ -21,5 +21,10 @@ MonoBehaviour:
   _arenaRadius: 45
   _spatialCellSize: 1
   _waves: {fileID: 11400000, guid: 0a3de98ea0151284d83773301bded08e, type: 2}
+  _breakable: {fileID: 11400000, guid: 7c3611dace6cc9e42a5b2ca4df16c9c9, type: 2}
+  _breakableCount: 8
+  _breakableMinRadius: 4
+  _breakableMaxRadius: 15
+  _breakableSpacing: 2
   _feedback: {fileID: 11400000, guid: 1e3e2f9fcb2a8cb429beae9cc1f19c96, type: 2}
   _hudPrefab: {fileID: 5707546872913258700, guid: 737023acb467e244e9f020d184bec290, type: 3}

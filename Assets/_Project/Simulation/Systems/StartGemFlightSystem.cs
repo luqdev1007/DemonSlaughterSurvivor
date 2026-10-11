@@ -14,10 +14,13 @@ namespace Game.Simulation.Systems
 
         private readonly EcsFilterInject<Inc<Player, Position, PickupRadius>, Exc<Dead>> _heroes = default;
         private readonly EcsFilterInject<Inc<Gem, Position>, Exc<GemFlight>> _resting = default;
+        private readonly EcsFilterInject<Inc<HealOrb, Position>, Exc<GemFlight>> _restingOrbs = default;
 
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<PickupRadius> _radii = default;
         private readonly EcsPoolInject<GemFlight> _flights = default;
+        private readonly EcsPoolInject<Health> _healths = default;
+        private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -41,22 +44,39 @@ namespace Game.Simulation.Systems
                 float radiusSqr = radius * radius;
 
                 foreach (int gem in _resting.Value)
-                {
-                    Vector3 position = _positions.Value.Get(gem).Value;
+                    TryStart(world, hero, heroPosition, radiusSqr, gem);
 
-                    float dx = position.x - heroPosition.x;
-                    float dz = position.z - heroPosition.z;
+                if (IsWounded(hero) == false)
+                    continue;
 
-                    if (dx * dx + dz * dz > radiusSqr)
-                        continue;
-
-                    ref GemFlight flight = ref _flights.Value.Add(gem);
-                    flight.Start = position;
-                    flight.TotalTicks = ExperienceRules.FlightTicks(_config, _clock.Value.Delta);
-                    flight.ElapsedTicks = 0;
-                    flight.Target = world.PackEntity(hero);
-                }
+                foreach (int orb in _restingOrbs.Value)
+                    TryStart(world, hero, heroPosition, radiusSqr, orb);
             }
+        }
+
+        private void TryStart(EcsWorld world, int hero, Vector3 heroPosition, float radiusSqr, int pickup)
+        {
+            Vector3 position = _positions.Value.Get(pickup).Value;
+
+            float dx = position.x - heroPosition.x;
+            float dz = position.z - heroPosition.z;
+
+            if (dx * dx + dz * dz > radiusSqr)
+                return;
+
+            ref GemFlight flight = ref _flights.Value.Add(pickup);
+            flight.Start = position;
+            flight.TotalTicks = ExperienceRules.FlightTicks(_config, _clock.Value.Delta);
+            flight.ElapsedTicks = 0;
+            flight.Target = world.PackEntity(hero);
+        }
+
+        private bool IsWounded(int hero)
+        {
+            if (_healths.Value.Has(hero) == false || _maxHealths.Value.Has(hero) == false)
+                return false;
+
+            return _healths.Value.Get(hero).Current < _maxHealths.Value.Get(hero).Value;
         }
     }
 }

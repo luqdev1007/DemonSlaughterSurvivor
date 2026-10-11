@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<RageState> _states = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
+        private readonly EcsPoolInject<Breakable> _breakables = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -64,13 +65,15 @@ namespace Game.Simulation.Systems
                     if (countsReceived == false)
                         continue;
 
-                    if (countsDealt && damageEvent.Source.Unpack(world, out int source) && source == hero)
+                    bool hasTarget = damageEvent.Target.Unpack(world, out int target);
+
+                    if (countsDealt && damageEvent.Source.Unpack(world, out int source) && source == hero && (hasTarget == false || _breakables.Value.Has(target) == false))
                     {
                         gain += _dealtPerHit;
                         inCombat = true;
                     }
 
-                    if (damageEvent.Target.Unpack(world, out int target) && target == hero)
+                    if (hasTarget && target == hero)
                     {
                         if (maxHealth.Value > 0f)
                             gain += _appliedPool.Value.Get(entity).Amount / maxHealth.Value * _receivedScale;

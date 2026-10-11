@@ -53,6 +53,7 @@ namespace Game.Configs
         [Header("Cues")]
         [FormerlySerializedAs("_enemyHit")]
         [SerializeField] private Cue _swordHit = new Cue();
+        [SerializeField] private Cue _woodHit = new Cue();
         [SerializeField] private Cue _enemyDeath = new Cue();
         [SerializeField] private Cue _gemPickup = new Cue();
         [SerializeField] private Cue _dash = new Cue();
@@ -68,6 +69,8 @@ namespace Game.Configs
         public float MaxDistance => _maxDistance;
 
         public Cue SwordHit => _swordHit;
+
+        public Cue WoodHit => _woodHit;
 
         public Cue EnemyDeath => _enemyDeath;
 

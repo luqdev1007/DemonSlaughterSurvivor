@@ -40,6 +40,7 @@ namespace Game.View
         private readonly Dictionary<Material, Material> _dissolveCopies = new Dictionary<Material, Material>();
         private readonly Dictionary<GameObject, Dismemberment> _dismemberments = new Dictionary<GameObject, Dismemberment>();
         private readonly HashSet<GameObject> _gemPrefabs = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _breakablePrefabs = new HashSet<GameObject>();
         private readonly GoreDirector _gore;
         private readonly CombatAudio _audio;
 
@@ -115,6 +116,7 @@ namespace Game.View
 
             CollectDismemberments(content);
             CollectGemPrefabs(content);
+            CollectBreakablePrefabs(content);
         }
 
         public IView Create(GameObject prefab, Vector3 position)
@@ -224,7 +226,17 @@ namespace Game.View
 
         private void OnHit(ViewInterpolator view, Vector3 direction)
         {
-            if (_disposed || _gore == null)
+            if (_disposed)
+                return;
+
+            if (_known.TryGetValue(view.GetInstanceID(), out Entry entry) && _breakablePrefabs.Contains(entry.Prefab))
+            {
+                _audio?.PlayWoodHit(view.transform.position);
+
+                return;
+            }
+
+            if (_gore == null)
                 return;
 
             _gore.PlayHit(view.transform.position, direction);
@@ -338,6 +350,20 @@ namespace Game.View
             {
                 if (gems[index].ViewPrefab != null)
                     _gemPrefabs.Add(gems[index].ViewPrefab);
+            }
+        }
+
+        private void CollectBreakablePrefabs(IContentRegistry content)
+        {
+            if (content == null)
+                return;
+
+            IReadOnlyList<BreakableConfig> breakables = content.All<BreakableConfig>();
+
+            for (int index = 0; index < breakables.Count; index++)
+            {
+                if (breakables[index].ViewPrefab != null)
+                    _breakablePrefabs.Add(breakables[index].ViewPrefab);
             }
         }
 

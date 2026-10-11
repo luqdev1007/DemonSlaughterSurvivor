@@ -25,6 +25,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<Breakable> _breakables = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
@@ -113,7 +114,7 @@ namespace Game.Simulation.Systems
             {
                 int candidate = _candidates[index];
 
-                if (_enemies.Value.Has(candidate) == false)
+                if (_enemies.Value.Has(candidate) == false && _breakables.Value.Has(candidate) == false)
                     continue;
 
                 if (_bodyRadii.Value.Has(candidate) == false || _bodyHeights.Value.Has(candidate) == false)

@@ -11,7 +11,7 @@ namespace Game.Simulation.Systems
     {
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Gem, GemFlight, Position, Velocity>> _flying = default;
+        private readonly EcsFilterInject<Inc<GemFlight, Position, Velocity>> _flying = default;
 
         private readonly EcsPoolInject<GemFlight> _flights = default;
         private readonly EcsPoolInject<Position> _positions = default;

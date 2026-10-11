@@ -73,14 +73,14 @@ namespace Game.Simulation.Services
             Vector3 target = pose.ToLocal(targetPosition);
             Vector2 center = new Vector2(target.x, target.z);
 
-            bool hasFrom = SwingGeometry.ClipBelow(pose.ToLocal(hands[0]), pose.ToLocal(tips[0]), targetHeight, out Vector2 fromA, out Vector2 fromB);
+            bool hasFrom = ClipFromBody(pose.ToLocal(hands[0]), pose.ToLocal(tips[0]), targetHeight, out Vector2 fromA, out Vector2 fromB);
 
             if (count == 1)
                 return SwingGeometry.CircleHitsBand(center, targetRadius, hasFrom, fromA, fromB, false, default, default, halfAngleDegrees);
 
             for (int index = 1; index < count; index++)
             {
-                bool hasTo = SwingGeometry.ClipBelow(pose.ToLocal(hands[index]), pose.ToLocal(tips[index]), targetHeight, out Vector2 toA, out Vector2 toB);
+                bool hasTo = ClipFromBody(pose.ToLocal(hands[index]), pose.ToLocal(tips[index]), targetHeight, out Vector2 toA, out Vector2 toB);
 
                 if (SwingGeometry.CircleHitsBand(center, targetRadius, hasFrom, fromA, fromB, hasTo, toA, toB, halfAngleDegrees))
                     return true;
@@ -91,6 +91,16 @@ namespace Game.Simulation.Services
             }
 
             return false;
+        }
+
+        private static bool ClipFromBody(Vector3 hand, Vector3 tip, float height, out Vector2 inner, out Vector2 outer)
+        {
+            bool below = SwingGeometry.ClipBelow(hand, tip, height, out inner, out outer);
+
+            if (below)
+                inner = Vector2.zero;
+
+            return below;
         }
     }
 }

@@ -22,6 +22,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ExpireUltimateRequestSystem());
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
+            systems.Add(new SpawnBreakablesSystem());
             systems.Add(new EquipStartingWeaponSystem());
             systems.Add(new SpawnWaveSystem());
             systems.Add(new RecomputeStatsSystem());
@@ -66,6 +67,7 @@ namespace Game.Simulation.Systems
             // 10. Death
             systems.Add(new MarkDeadSystem());
             systems.Add(new DropGemsSystem());
+            systems.Add(new DropHealOrbsSystem());
             systems.Add(new TickPendingFinishSystem());
             systems.Add(new FinishRunOnPlayerDeathSystem());
             systems.Add(new ReapDeadEnemiesSystem());
@@ -75,6 +77,8 @@ namespace Game.Simulation.Systems
             systems.Add(new DecayRageSystem());
             systems.Add(new DebugLevelUpSystem());
             systems.Add(new CollectGemsSystem());
+            systems.Add(new CollectHealOrbsSystem());
+            systems.Add(new ApplyHealSystem());
             systems.Add(new AdvanceLevelSystem());
             systems.Add(new OfferUpgradesSystem());
             // 12. ViewSync
@@ -94,6 +98,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PublishExperienceSystem());
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup
+            systems.Add(new ReapBreakablesSystem());
             systems.Add(new CleanupEventsSystem());
             systems.Add(new SweepOrphanModifiersSystem());
             systems.Add(new SweepOrphanOwnedSystem());

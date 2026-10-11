@@ -21,6 +21,7 @@ namespace Game.View
         private readonly CueState[] _voiceCues;
         private readonly float[] _busyUntil;
         private readonly CueState _swordHit;
+        private readonly CueState _woodHit;
         private readonly CueState _enemyDeath;
         private readonly CueState _gemPickup;
         private readonly CueState _dash;
@@ -44,6 +45,7 @@ namespace Game.View
                     $"{nameof(SfxConfig)} '{config.name}' needs at least one voice and 0 < min distance <= max distance.");
 
             _swordHit = CreateState(config, config.SwordHit, nameof(SfxConfig.SwordHit), null);
+            _woodHit = CreateState(config, config.WoodHit, nameof(SfxConfig.WoodHit), null);
             _enemyDeath = CreateState(config, config.EnemyDeath, nameof(SfxConfig.EnemyDeath), null);
             _gemPickup = CreateState(config, config.GemPickup, nameof(SfxConfig.GemPickup), null);
             _dash = CreateState(config, config.Dash, nameof(SfxConfig.Dash), null);
@@ -91,6 +93,11 @@ namespace Game.View
         public void PlaySwordHit(Vector3 position)
         {
             Play(_swordHit, position);
+        }
+
+        public void PlayWoodHit(Vector3 position)
+        {
+            Play(_woodHit, position);
         }
 
         public void PlayEnemyDeath(Vector3 position)

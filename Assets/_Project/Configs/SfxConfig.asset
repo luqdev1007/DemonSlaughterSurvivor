@@ -18,51 +18,71 @@ MonoBehaviour:
   _maxDistance: 50
   _swordHit:
     _clips:
-    - {fileID: 8300000, guid: 1e111bc14fae7c740a47a6167109c2f1, type: 3}
-    - {fileID: 8300000, guid: f636cfccba395514fb847758c823789d, type: 3}
-    - {fileID: 8300000, guid: 7099253aaa5bef74da4fe3057564ded4, type: 3}
-    - {fileID: 8300000, guid: 7a310e088203f8e4793a19a274735d0d, type: 3}
+    - {fileID: 8300000, guid: d58accb4b0e3e3146b8e9268a8975f95, type: 3}
+    - {fileID: 8300000, guid: 60cb5b8b1b48b794787611e3e4b3347c, type: 3}
+    - {fileID: 8300000, guid: 3ee254b85f3d51e45b6c54bdb8e86009, type: 3}
+    - {fileID: 8300000, guid: 311e89664ad647d4fb2ec88d025804f8, type: 3}
+    - {fileID: 8300000, guid: cd3ee38e40d05df42a1559ccdc6a31b8, type: 3}
+    - {fileID: 8300000, guid: d82a401668c87b14ca9ddcc091835668, type: 3}
+    - {fileID: 8300000, guid: aea84d0687eb0964b8bad00323abd13d, type: 3}
+    - {fileID: 8300000, guid: 4a56730c3bbe3444c89ec9cf1561df7e, type: 3}
+    - {fileID: 8300000, guid: 289b457f4c456f545bc149d8941de16a, type: 3}
+    - {fileID: 8300000, guid: 3cd89744321093740867432219bfd489, type: 3}
+    - {fileID: 8300000, guid: ccbd4b1ef74926d4f9325df0fadd4641, type: 3}
+    - {fileID: 8300000, guid: 6418de0764922104c921d1ba22e34927, type: 3}
+    - {fileID: 8300000, guid: f540527a3e72e9d41901de30832f7f83, type: 3}
+    - {fileID: 8300000, guid: b429d1e1f05dd624282c0a6b3e653612, type: 3}
     _volume: 0.8
-    _minPitch: 0.92
-    _maxPitch: 1.05
+    _minPitch: 0.84
+    _maxPitch: 0.96
+    _delaySeconds: 0
+    _maxConcurrent: 4
+    _maxPerFrame: 2
+  _woodHit:
+    _clips:
+    - {fileID: 8300000, guid: 454cbdca8118e764793f06d4aaa4808d, type: 3}
+    - {fileID: 8300000, guid: 64564892dddf4a74ab1fa40da87e8435, type: 3}
+    - {fileID: 8300000, guid: e11ba0ef562fa27459fd5c0dbde4b70c, type: 3}
+    _volume: 0.8
+    _minPitch: 0.84
+    _maxPitch: 0.96
     _delaySeconds: 0
     _maxConcurrent: 4
     _maxPerFrame: 2
   _enemyDeath:
     _clips: []
     _volume: 0.5
-    _minPitch: 0.85
-    _maxPitch: 1.1
+    _minPitch: 0.88
+    _maxPitch: 1.12
     _delaySeconds: 0
     _maxConcurrent: 3
     _maxPerFrame: 1
   _gemPickup:
     _clips:
-    - {fileID: 8300000, guid: 47db9b27d1771ba45b4efbd70dc62663, type: 3}
-    - {fileID: 8300000, guid: c20d45ab1b56d5548a6ceffaa3a31eea, type: 3}
-    - {fileID: 8300000, guid: 5c2a7a909dc0d344e8798cb2b09fdb8c, type: 3}
+    - {fileID: 8300000, guid: 6aceef482c01f9b4e80848423523b1d0, type: 3}
+    - {fileID: 8300000, guid: 7f4068e78d323754283d6d896b7b4234, type: 3}
+    - {fileID: 8300000, guid: ddd3ab55588998640b02cb9b8fb44802, type: 3}
     _volume: 0.45
-    _minPitch: 0.95
-    _maxPitch: 1.15
+    _minPitch: 0.92
+    _maxPitch: 1.12
     _delaySeconds: 0
     _maxConcurrent: 4
     _maxPerFrame: 1
   _dash:
     _clips:
-    - {fileID: 8300000, guid: c960824e945b1b04fbe10d432cb46195, type: 3}
-    - {fileID: 8300000, guid: f967d7363120ee943ae65151e6df896a, type: 3}
-    - {fileID: 8300000, guid: ec1b8960449f69a4da50c35491a361e7, type: 3}
+    - {fileID: 8300000, guid: deae1db645cef7142843fee67522f648, type: 3}
+    - {fileID: 8300000, guid: a2e55d02cff66cc4bb096a8257fad7ac, type: 3}
+    - {fileID: 8300000, guid: 77e0802916bc4074fad3d0da48cce0d6, type: 3}
+    - {fileID: 8300000, guid: f3cd5e5bec686474eafc17d7ba6935e4, type: 3}
+    - {fileID: 8300000, guid: d3fb9f4dd1ea0c046b76629139814211, type: 3}
     _volume: 0.7
-    _minPitch: 0.75
-    _maxPitch: 0.9
+    _minPitch: 1.22
+    _maxPitch: 1.38
     _delaySeconds: 0
     _maxConcurrent: 2
     _maxPerFrame: 1
   _heroDeath:
-    _clips:
-    - {fileID: 8300000, guid: 451170552db55214fa7eb54c11045095, type: 3}
-    - {fileID: 8300000, guid: 438be918f9d1d654eb439c30ff53e813, type: 3}
-    - {fileID: 8300000, guid: ddec50db29f001842946b4e483714349, type: 3}
+    _clips: []
     _volume: 0.9
     _minPitch: 0.85
     _maxPitch: 0.95
@@ -73,23 +93,27 @@ MonoBehaviour:
   - _animatorTrigger: AttackSpin
     _cue:
       _clips:
-      - {fileID: 8300000, guid: 0940ca7f3f010d54bacfa2adf615330a, type: 3}
-      - {fileID: 8300000, guid: 77a0f8f68e9a7234bb3f1226c7c65017, type: 3}
-      - {fileID: 8300000, guid: 57d959f27659bc14b9920226dfefa889, type: 3}
+      - {fileID: 8300000, guid: a3b93762feba8774290f453d468d6b06, type: 3}
+      - {fileID: 8300000, guid: 902067210295da144bf920f8345d5595, type: 3}
+      - {fileID: 8300000, guid: dd2f4b05352e93b4e96927b16a834692, type: 3}
+      - {fileID: 8300000, guid: 834e0baf11e659f4a870cf3cf3f8c91b, type: 3}
+      - {fileID: 8300000, guid: 83b9df2bfcaa26b4daa06ba7cf180841, type: 3}
       _volume: 0.8
-      _minPitch: 0.7
-      _maxPitch: 0.8
+      _minPitch: 0.92
+      _maxPitch: 1.08
       _delaySeconds: 0
       _maxConcurrent: 2
       _maxPerFrame: 1
   - _animatorTrigger: AttackJump
     _cue:
       _clips:
-      - {fileID: 8300000, guid: e61209038946fa24aaad7008ab870b1f, type: 3}
-      - {fileID: 8300000, guid: 915ce45bf6a93e54f8cd010430a3f35d, type: 3}
+      - {fileID: 8300000, guid: 6fc9b5bfd283ded43896a2165f15cc6b, type: 3}
+      - {fileID: 8300000, guid: 1fee94feb8e908e4aa9978caf1b0b41d, type: 3}
+      - {fileID: 8300000, guid: c378b39f54061e744bf4928b985013cf, type: 3}
+      - {fileID: 8300000, guid: 92f29badd503906469c3051dc24051f5, type: 3}
       _volume: 0.9
-      _minPitch: 0.9
-      _maxPitch: 1
-      _delaySeconds: 0.17
+      _minPitch: 0.92
+      _maxPitch: 1.08
+      _delaySeconds: 0
       _maxConcurrent: 1
       _maxPerFrame: 1

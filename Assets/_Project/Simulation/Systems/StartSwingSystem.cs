@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<Breakable> _breakables = default;
         private readonly EcsPoolInject<MoveIntent> _intents = default;
         private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<Dead> _dead = default;
@@ -98,7 +99,7 @@ namespace Game.Simulation.Systems
             {
                 int candidate = _candidates[index];
 
-                if (_enemies.Value.Has(candidate) == false)
+                if (_enemies.Value.Has(candidate) == false && _breakables.Value.Has(candidate) == false)
                     continue;
 
                 Vector3 position = _positions.Value.Get(candidate).Value;

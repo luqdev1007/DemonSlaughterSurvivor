@@ -14,6 +14,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<Player> _players = default;
+        private readonly EcsPoolInject<Breakable> _breakables = default;
         private readonly EcsPoolInject<Position> _positions = default;
 
         public void Run(IEcsSystems systems)
@@ -24,10 +25,12 @@ namespace Game.Simulation.Systems
             {
                 ref DamageEvent damageEvent = ref _damageEvents.Value.Get(entity);
 
-                if (damageEvent.IsSlash)
+                bool hasTarget = damageEvent.Target.Unpack(world, out int target);
+
+                if (damageEvent.IsSlash && (hasTarget == false || _breakables.Value.Has(target) == false))
                     PlayWeaponHit(world, damageEvent.Source);
 
-                if (damageEvent.Target.Unpack(world, out int target) == false)
+                if (hasTarget == false)
                     continue;
 
                 if (_players.Value.Has(target))

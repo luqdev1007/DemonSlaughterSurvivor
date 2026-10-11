@@ -20,6 +20,13 @@ namespace Game.Configs
         [Header("Waves")]
         [SerializeField] private WaveTimelineConfig _waves;
 
+        [Header("Breakables")]
+        [SerializeField] private BreakableConfig _breakable;
+        [SerializeField] private int _breakableCount;
+        [SerializeField] private float _breakableMinRadius = 4f;
+        [SerializeField] private float _breakableMaxRadius = 15f;
+        [SerializeField] private float _breakableSpacing = 2f;
+
         [Header("Feedback")]
         [SerializeField] private FeedbackConfig _feedback;
         [SerializeField] private GameObject _hudPrefab;
@@ -39,6 +46,16 @@ namespace Game.Configs
         public float SpatialCellSize => _spatialCellSize;
 
         public WaveTimelineConfig Waves => _waves;
+
+        public BreakableConfig Breakable => _breakable;
+
+        public int BreakableCount => _breakableCount;
+
+        public float BreakableMinRadius => _breakableMinRadius;
+
+        public float BreakableMaxRadius => _breakableMaxRadius;
+
+        public float BreakableSpacing => _breakableSpacing;
 
         public FeedbackConfig Feedback => _feedback;
 

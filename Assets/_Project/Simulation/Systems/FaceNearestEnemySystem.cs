@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
         private readonly EcsPoolInject<Swinging> _swinging = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<Breakable> _breakables = default;
         private readonly EcsPoolInject<Dead> _dead = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
@@ -98,7 +99,7 @@ namespace Game.Simulation.Systems
             {
                 int candidate = _candidates[index];
 
-                if (_enemies.Value.Has(candidate) == false || _dead.Value.Has(candidate))
+                if ((_enemies.Value.Has(candidate) == false && _breakables.Value.Has(candidate) == false) || _dead.Value.Has(candidate))
                     continue;
 
                 Vector3 offset = _positions.Value.Get(candidate).Value - position;

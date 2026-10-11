@@ -52,6 +52,12 @@ namespace Game.Simulation.Components
 
     public struct DiedEvent { }
 
+    public struct HealEvent
+    {
+        public EcsPackedEntity Target;
+        public float Amount;
+    }
+
     public struct PendingFinish { public int RemainingTicks; }
 
     public struct DissolveCountdown { public int RemainingTicks; }

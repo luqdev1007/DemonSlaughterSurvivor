@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b585a8daeeedc704f8a432343d5e4bc6, type: 3}
+  m_Name: Breakable_CrateMock
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.BreakableConfig
+  _id: breakable.crate_mock
+  _viewPrefab: {fileID: 8486070970180778440, guid: ee166456f46115e4db77666b4d7b44e2, type: 3}
+  _maxHealth: 40
+  _bodyRadius: 0.4
+  _bodyHeight: 1.77
+  _healOrb: {fileID: 11400000, guid: b18ebaaf4ea92264b86ba9b529bab801, type: 2}
+  _healOrbChance: 0.7

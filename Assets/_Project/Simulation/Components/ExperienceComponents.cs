@@ -12,6 +12,14 @@ namespace Game.Simulation.Components
 
     public struct Gem { public int Experience; }
 
+    public struct HealOrbDrop
+    {
+        public HealOrbConfig Config;
+        public float Chance;
+    }
+
+    public struct HealOrb { public float Fraction; }
+
     public struct GemFlight
     {
         public Vector3 Start;

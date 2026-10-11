@@ -66,6 +66,20 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void EnemyCloserThanTheHandIsStillHit()
+        {
+            SwingPose pose = new SwingPose(Vector3.zero, Vector3.forward);
+
+            Vector3[] hands = { new Vector3(-0.8f, 0.9f, 0.8f), new Vector3(0.8f, 0.9f, 0.8f) };
+            Vector3[] tips = { new Vector3(-1.8f, 0.9f, 1.8f), new Vector3(1.8f, 0.9f, 1.8f) };
+            Vector3 close = new Vector3(0.3f, 0f, 0.3f);
+            Vector3 behind = new Vector3(0f, 0f, -0.65f);
+
+            Assert.IsTrue(SwingSweep.Hits(hands, tips, 2, pose, 90f, close, 0.4f, 1.77f), "the band runs from the body, not from the hand");
+            Assert.IsFalse(SwingSweep.Hits(hands, tips, 2, pose, 90f, behind, 0.4f, 1.77f), "the half angle still cuts the back");
+        }
+
+        [Test]
         public void SubstepsCatchAFastTurnThatOneChordMisses()
         {
             SwingBake fine = RotatingBake(240f);
