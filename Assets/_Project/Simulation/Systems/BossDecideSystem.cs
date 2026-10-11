@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Boss> _bosses = default;
         private readonly EcsPoolInject<EnemyAction> _actions = default;
         private readonly EcsPoolInject<EnemyCharge> _charges = default;
+        private readonly EcsPoolInject<EnemySpin> _spins = default;
         private readonly EcsPoolInject<BossRandom> _randoms = default;
         private readonly EcsPoolInject<ChaseTarget> _chaseTargets = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -45,6 +46,9 @@ namespace Game.Simulation.Systems
 
                 if (enemy.Charge != null)
                     enemy.Charge.Validate(enemy);
+
+                if (enemy.Spin != null)
+                    enemy.Spin.Validate(enemy);
             }
         }
 
@@ -74,7 +78,8 @@ namespace Game.Simulation.Systems
                 BossConfig boss = _bosses.Value.Get(entity).Config;
 
                 float chargeWeight = CanCharge(entity, distance) ? boss.ChargeWeight : 0f;
-                float total = chargeWeight;
+                float spinWeight = CanSpin(entity, distance) ? boss.SpinWeight : 0f;
+                float total = chargeWeight + spinWeight;
 
                 if (total <= 0f)
                     continue;
@@ -83,7 +88,28 @@ namespace Game.Simulation.Systems
 
                 if (roll < chargeWeight)
                     StartCharge(entity, ref action, delta);
+                else
+                    StartSpin(entity, ref action, delta);
             }
+        }
+
+        private bool CanSpin(int entity, float distance)
+        {
+            if (_spins.Value.Has(entity) == false)
+                return false;
+
+            ref EnemySpin spin = ref _spins.Value.Get(entity);
+
+            return spin.CooldownTicks <= 0 && distance <= spin.Config.TriggerRange;
+        }
+
+        private void StartSpin(int entity, ref EnemyAction action, float delta)
+        {
+            ref EnemySpin spin = ref _spins.Value.Get(entity);
+
+            spin.CooldownTicks = EnemyActionPhases.ToCooldownTicks(spin.Config.CooldownSeconds, delta);
+
+            EnemyActionPhases.Enter(ref action, EnemyActionPhase.SpinRaise, spin.Config.RaiseSeconds, delta);
         }
 
         private bool CanCharge(int entity, float distance)

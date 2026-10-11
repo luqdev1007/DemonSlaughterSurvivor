@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8eded2021298cb47aac60c4a0616616, type: 3}
+  m_Name: Spin_BossKnight
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.SpinAbilityConfig
+  _id: ability.spin.boss_knight
+  _triggerRange: 5
+  _cooldownSeconds: 10
+  _raiseSeconds: 0.8
+  _spinSeconds: 4
+  _recoverSeconds: 0.8
+  _moveSpeedMultiplier: 0.6
+  _radius: 4
+  _damageAtCenter: 15
+  _damageAtEdge: 4
+  _tickSeconds: 0.5
+  _raiseClipSeconds: 0.8
+  _spinAngularSpeedDegrees: 540
+  _armWobbleDegrees: 12

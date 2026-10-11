@@ -34,6 +34,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<PreviousPosition> _previousPositions;
         private readonly EcsPool<EnemyAction> _actions;
         private readonly EcsPool<EnemyCharge> _charges;
+        private readonly EcsPool<EnemySpin> _spins;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
@@ -63,6 +64,7 @@ namespace Game.Simulation.Services
             _previousPositions = world.GetPool<PreviousPosition>();
             _actions = world.GetPool<EnemyAction>();
             _charges = world.GetPool<EnemyCharge>();
+            _spins = world.GetPool<EnemySpin>();
         }
 
         public int Create(EnemyConfig config, Vector3 position)
@@ -123,6 +125,9 @@ namespace Game.Simulation.Services
 
             if (config.Charge != null)
                 _charges.Add(entity).Config = config.Charge;
+
+            if (config.Spin != null)
+                _spins.Add(entity).Config = config.Spin;
 
             _statModifiers.MarkDirty(entity);
 

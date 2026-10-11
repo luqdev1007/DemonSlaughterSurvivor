@@ -236,8 +236,8 @@ namespace Game.Configs
             if (enemy == null)
                 return max;
 
-            if (enemy.MoveSpeed > max)
-                return enemy.MoveSpeed;
+            if (enemy.PeakMoveSpeed > max)
+                return enemy.PeakMoveSpeed;
 
             return max;
         }

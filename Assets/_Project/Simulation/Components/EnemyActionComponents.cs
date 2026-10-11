@@ -38,4 +38,12 @@ namespace Game.Simulation.Components
     }
 
     public struct Rushing { }
+
+    public struct EnemySpin
+    {
+        public SpinAbilityConfig Config;
+        public int CooldownTicks;
+        public int PulseTicks;
+        public int PulseTotalTicks;
+    }
 }

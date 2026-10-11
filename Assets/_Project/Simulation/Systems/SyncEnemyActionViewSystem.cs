@@ -12,6 +12,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsPoolInject<EnemyAction> _actions = default;
         private readonly EcsPoolInject<EnemyCharge> _charges = default;
+        private readonly EcsPoolInject<EnemySpin> _spins = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<View> _views = default;
 
@@ -34,8 +35,36 @@ namespace Game.Simulation.Systems
 
                 if (EnemyActionPhases.IsCharge(action.Phase) && _charges.Value.Has(entity))
                     DescribeCharge(entity, ref action, delta, ref cue);
+                else if (EnemyActionPhases.IsSpin(action.Phase) && _spins.Value.Has(entity))
+                    DescribeSpin(entity, ref action, delta, ref cue);
 
                 view.Value.SetAction(cue);
+            }
+        }
+
+        private void DescribeSpin(int entity, ref EnemyAction action, float delta, ref ActionCue cue)
+        {
+            ref EnemySpin spin = ref _spins.Value.Get(entity);
+
+            cue.MarkerRadius = spin.Config.Radius;
+            cue.SpinDegreesPerSecond = spin.Config.SpinAngularSpeedDegrees;
+            cue.ArmWobbleDegrees = spin.Config.ArmWobbleDegrees;
+
+            switch (action.Phase)
+            {
+                case EnemyActionPhase.SpinRaise:
+                    cue.Pose = ActionPose.SpinRaise;
+                    cue.Marker = GroundMarker.SpinWarning;
+                    cue.PlaybackSpeed = spin.Config.RaiseClipSeconds / (action.PhaseTotalTicks * delta);
+                    break;
+                case EnemyActionPhase.Spinning:
+                    cue.Pose = ActionPose.Spinning;
+                    cue.Marker = GroundMarker.SpinActive;
+                    cue.Pulse = spin.PulseTotalTicks > 0 ? 1f - (float)spin.PulseTicks / spin.PulseTotalTicks : 0f;
+                    break;
+                default:
+                    cue.Pose = ActionPose.Recover;
+                    break;
             }
         }
 

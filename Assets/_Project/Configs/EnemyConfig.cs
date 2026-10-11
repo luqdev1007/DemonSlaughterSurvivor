@@ -28,6 +28,7 @@ namespace Game.Configs
         [Header("Boss")]
         [SerializeField] private BossConfig _boss;
         [SerializeField] private ChargeAbilityConfig _charge;
+        [SerializeField] private SpinAbilityConfig _spin;
 
         [Header("Gore")]
         [SerializeField] private GameObject _dismemberedViewPrefab;
@@ -58,6 +59,10 @@ namespace Game.Configs
         public BossConfig Boss => _boss;
 
         public ChargeAbilityConfig Charge => _charge;
+
+        public SpinAbilityConfig Spin => _spin;
+
+        public float PeakMoveSpeed => _spin == null ? _moveSpeed : _moveSpeed * Mathf.Max(1f, _spin.MoveSpeedMultiplier);
 
         public GameObject DismemberedViewPrefab => _dismemberedViewPrefab;
 

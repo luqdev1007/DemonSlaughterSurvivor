@@ -31,6 +31,7 @@ namespace Game.Simulation.Systems
             systems.Add(new AcquireChaseTargetSystem());
             systems.Add(new ChaseTargetSystem());
             systems.Add(new AdvanceEnemyChargeSystem());
+            systems.Add(new AdvanceEnemySpinSystem());
             systems.Add(new BossDecideSystem());
             systems.Add(new HoldForEnemyActionSystem());
             systems.Add(new HoldForRangedAttackSystem());
@@ -63,6 +64,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PulseFireSegmentsSystem());
             systems.Add(new TickFireSegmentsSystem());
             systems.Add(new AdvanceProjectilesSystem());
+            systems.Add(new PulseEnemySpinSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
             systems.Add(new SweepEnemyChargeSystem());
