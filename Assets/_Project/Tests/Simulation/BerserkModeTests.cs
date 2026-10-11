@@ -618,6 +618,10 @@ namespace Game.Simulation.Tests
             {
             }
 
+            public void PlayWeaponHit()
+            {
+            }
+
             public void PlayHit(Vector3 direction)
             {
             }

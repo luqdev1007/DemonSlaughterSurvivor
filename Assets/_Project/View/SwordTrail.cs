@@ -18,6 +18,7 @@ namespace Game.View
         private Vector3[] _tips;
         private float[] _times;
         private bool[] _connected;
+        private float[] _bloodTints;
         private int _head;
         private int _count;
 
@@ -31,14 +32,23 @@ namespace Game.View
         private bool _isBerserk;
         private bool _hasPreviousTip;
         private Vector3 _previousTip;
+        private bool _hasBlood;
+        private float _bloodTime;
 
         public void SetBerserk(bool value)
         {
             _isBerserk = value;
         }
 
+        public void PlayBlood()
+        {
+            _hasBlood = true;
+            _bloodTime = Time.time;
+        }
+
         public void ResetTrail()
         {
+            _hasBlood = false;
             _count = 0;
             _head = 0;
             _wasEmitting = false;
@@ -63,6 +73,7 @@ namespace Game.View
             _tips = new Vector3[capacity];
             _times = new float[capacity];
             _connected = new bool[capacity];
+            _bloodTints = new float[capacity];
 
             _vertices = new Vector3[capacity * 2];
             _colors = new Color[capacity * 2];
@@ -126,7 +137,7 @@ namespace Game.View
             bool emitting = IsAttacking() && tipSpeed >= _config.MinTipSpeed;
 
             if (emitting)
-                AddSample(_base.position, tip, now, _wasEmitting);
+                AddSample(_base.position, tip, now, _wasEmitting, ResolveBloodTint(now));
 
             _wasEmitting = emitting;
 
@@ -164,7 +175,15 @@ namespace Game.View
             return false;
         }
 
-        private void AddSample(Vector3 basePosition, Vector3 tipPosition, float time, bool connected)
+        private float ResolveBloodTint(float now)
+        {
+            if (_hasBlood == false || _config.BloodSeconds <= 0f)
+                return 0f;
+
+            return 1f - Mathf.Clamp01((now - _bloodTime) / _config.BloodSeconds);
+        }
+
+        private void AddSample(Vector3 basePosition, Vector3 tipPosition, float time, bool connected, float bloodTint)
         {
             int capacity = _bases.Length;
             int slot = (_head + _count) % capacity;
@@ -178,6 +197,7 @@ namespace Game.View
             _bases[slot] = basePosition;
             _tips[slot] = tipPosition;
             _times[slot] = time;
+            _bloodTints[slot] = bloodTint;
             _connected[slot] = connected && _count > 0;
             _count++;
         }
@@ -203,6 +223,8 @@ namespace Game.View
             Gradient gradient = _isBerserk ? _config.BerserkColor : _config.Color;
             Color baseColor = gradient.Evaluate(0f);
             Color tipColor = gradient.Evaluate(1f);
+            Color bloodBase = _config.BloodColor.Evaluate(0f);
+            Color bloodTip = _config.BloodColor.Evaluate(1f);
             float fade = Mathf.Max(_config.FadeSeconds, 1e-4f);
             int capacity = _bases.Length;
             int triangleCount = 0;
@@ -216,9 +238,10 @@ namespace Game.View
                 _vertices[vertex] = _bases[slot];
                 _vertices[vertex + 1] = _tips[slot];
 
-                Color fadedBase = baseColor;
+                float blood = _bloodTints[slot];
+                Color fadedBase = Color.Lerp(baseColor, bloodBase, blood);
                 fadedBase.a *= life;
-                Color fadedTip = tipColor;
+                Color fadedTip = Color.Lerp(tipColor, bloodTip, blood);
                 fadedTip.a *= life;
 
                 _colors[vertex] = fadedBase;

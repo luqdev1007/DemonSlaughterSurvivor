@@ -24,6 +24,9 @@ namespace Game.Simulation.Systems
             {
                 ref DamageEvent damageEvent = ref _damageEvents.Value.Get(entity);
 
+                if (damageEvent.IsSlash)
+                    PlayWeaponHit(world, damageEvent.Source);
+
                 if (damageEvent.Target.Unpack(world, out int target) == false)
                     continue;
 
@@ -40,6 +43,17 @@ namespace Game.Simulation.Systems
 
                 view.Value.PlayHit(ResolveDirection(target, damageEvent.SourcePosition));
             }
+        }
+
+        private void PlayWeaponHit(EcsWorld world, EcsPackedEntity source)
+        {
+            if (source.Unpack(world, out int wielder) == false || _views.Value.Has(wielder) == false)
+                return;
+
+            ref View view = ref _views.Value.Get(wielder);
+
+            if (view.Value != null)
+                view.Value.PlayWeaponHit();
         }
 
         private Vector3 ResolveDirection(int target, Vector3 sourcePosition)

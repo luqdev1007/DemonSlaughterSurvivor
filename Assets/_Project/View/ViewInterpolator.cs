@@ -145,6 +145,12 @@ namespace Game.View
             ApplyBlock();
         }
 
+        public void PlayWeaponHit()
+        {
+            if (_swordTrail != null)
+                _swordTrail.PlayBlood();
+        }
+
         public void SetInvulnerable(bool value)
         {
             if (_isBlinking == value)

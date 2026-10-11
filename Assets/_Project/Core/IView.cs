@@ -12,6 +12,8 @@ namespace Game.Core
 
         void PlayHit(Vector3 direction);
 
+        void PlayWeaponHit();
+
         void SetInvulnerable(bool value);
 
         void SetBerserk(bool value);
