@@ -26,6 +26,17 @@ namespace Game.View
             public float SpawnTime;
             public float SinkFromY;
             public int Drip;
+            public GibPiece[] Pieces;
+            public int PieceCount;
+        }
+
+        private sealed class GibPiece
+        {
+            public GameObject Object;
+            public Transform Transform;
+            public MeshFilter Filter;
+            public MeshRenderer Renderer;
+            public Mesh Baked;
         }
 
         private readonly GoreConfig _config;
@@ -125,9 +136,9 @@ namespace Game.View
 
             DismemberableView.Part part = view.GetPart(index);
 
-            part.Renderer.enabled = false;
+            Gib gib = SpawnGib(part, view.ResolveGibMaterials(part), blow.Direction, corpseVelocity);
 
-            Gib gib = SpawnGib(part.Renderer, blow.Direction, corpseVelocity);
+            view.Detach(part);
 
             Vector3 gibCenter = gib.Transform.TransformPoint(gib.Mesh.bounds.center);
             Vector3 outward = gibCenter - part.Stump.position;
@@ -192,8 +203,19 @@ namespace Game.View
 
             for (int index = 0; index < _gibCount; index++)
             {
-                if (_gibs[index].Mesh != null)
-                    UnityEngine.Object.Destroy(_gibs[index].Mesh);
+                Gib gib = _gibs[index];
+
+                if (gib.Mesh != null)
+                    UnityEngine.Object.Destroy(gib.Mesh);
+
+                if (gib.Pieces == null)
+                    continue;
+
+                for (int piece = 0; piece < gib.Pieces.Length; piece++)
+                {
+                    if (gib.Pieces[piece] != null && gib.Pieces[piece].Baked != null)
+                        UnityEngine.Object.Destroy(gib.Pieces[piece].Baked);
+                }
             }
 
             if (_root != null)
@@ -233,7 +255,7 @@ namespace Game.View
                     weight = Mathf.Sign(armSide) == Mathf.Sign(side) ? _config.NearArmWeight : _config.FarArmWeight;
                 }
 
-                if (part.Renderer.enabled == false)
+                if (part.IsAttached == false)
                     weight = 0f;
 
                 _partWeights[index] = weight;
@@ -256,17 +278,21 @@ namespace Game.View
             return count - 1;
         }
 
-        private Gib SpawnGib(SkinnedMeshRenderer source, Vector3 blowDirection, Vector3 corpseVelocity)
+        private Gib SpawnGib(DismemberableView.Part part, Material[] materials, Vector3 blowDirection, Vector3 corpseVelocity)
         {
             Gib gib = TakeGib();
+            SkinnedMeshRenderer source = part.Renderer;
 
             source.BakeMesh(gib.Mesh, false);
             gib.Mesh.RecalculateBounds();
 
             gib.Transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
-            gib.Renderer.sharedMaterials = source.sharedMaterials;
+            gib.Renderer.sharedMaterials = materials;
 
             Bounds bounds = gib.Mesh.bounds;
+
+            AttachPieces(gib, part.Attachments, ref bounds);
+
             gib.Collider.center = bounds.center;
             gib.Collider.size = bounds.size * _config.GibColliderScale;
             gib.Collider.enabled = true;
@@ -286,6 +312,102 @@ namespace Game.View
             gib.Drip = -1;
 
             return gib;
+        }
+
+        private void AttachPieces(Gib gib, Renderer[] attachments, ref Bounds bounds)
+        {
+            HidePieces(gib);
+
+            if (gib.Pieces == null || gib.Pieces.Length < attachments.Length)
+                Array.Resize(ref gib.Pieces, attachments.Length);
+
+            Matrix4x4 toGib = gib.Transform.worldToLocalMatrix;
+
+            for (int index = 0; index < attachments.Length; index++)
+            {
+                Renderer attachment = attachments[index];
+
+                if (attachment == null || attachment.enabled == false)
+                    continue;
+
+                GibPiece piece = gib.Pieces[gib.PieceCount];
+
+                if (piece == null)
+                {
+                    piece = CreatePiece(gib.Transform);
+                    gib.Pieces[gib.PieceCount] = piece;
+                }
+
+                Transform source = attachment.transform;
+
+                if (attachment is SkinnedMeshRenderer skinned)
+                {
+                    skinned.BakeMesh(piece.Baked, false);
+                    piece.Baked.RecalculateBounds();
+                    piece.Filter.sharedMesh = piece.Baked;
+                    piece.Transform.SetPositionAndRotation(source.position, source.rotation);
+                    piece.Transform.localScale = Vector3.one;
+                }
+                else
+                {
+                    MeshFilter filter = attachment.GetComponent<MeshFilter>();
+
+                    if (filter == null || filter.sharedMesh == null)
+                        continue;
+
+                    piece.Filter.sharedMesh = filter.sharedMesh;
+                    piece.Transform.SetPositionAndRotation(source.position, source.rotation);
+                    piece.Transform.localScale = source.lossyScale;
+                }
+
+                piece.Renderer.sharedMaterials = attachment.sharedMaterials;
+                piece.Object.SetActive(true);
+                gib.PieceCount++;
+
+                EncapsulateIn(ref bounds, toGib * piece.Transform.localToWorldMatrix, piece.Filter.sharedMesh.bounds);
+            }
+        }
+
+        private static void EncapsulateIn(ref Bounds bounds, Matrix4x4 matrix, Bounds local)
+        {
+            Vector3 min = local.min;
+            Vector3 max = local.max;
+
+            for (int corner = 0; corner < 8; corner++)
+            {
+                Vector3 point = new Vector3(
+                    (corner & 1) == 0 ? min.x : max.x,
+                    (corner & 2) == 0 ? min.y : max.y,
+                    (corner & 4) == 0 ? min.z : max.z);
+
+                bounds.Encapsulate(matrix.MultiplyPoint3x4(point));
+            }
+        }
+
+        private GibPiece CreatePiece(Transform parent)
+        {
+            GameObject gameObject = new GameObject("Piece");
+            gameObject.transform.SetParent(parent, false);
+
+            Mesh baked = new Mesh { name = "Gib Piece" };
+            baked.MarkDynamic();
+
+            return new GibPiece
+            {
+                Object = gameObject,
+                Transform = gameObject.transform,
+                Filter = gameObject.AddComponent<MeshFilter>(),
+                Renderer = gameObject.AddComponent<MeshRenderer>(),
+                Baked = baked
+            };
+        }
+
+        private static void HidePieces(Gib gib)
+        {
+            for (int index = 0; index < gib.PieceCount; index++)
+                gib.Pieces[index].Object.SetActive(false);
+
+            gib.PieceCount = 0;
         }
 
         private Vector3 ResolveGibVelocity(Vector3 blowDirection, Vector3 corpseVelocity)

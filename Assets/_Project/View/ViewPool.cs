@@ -108,7 +108,7 @@ namespace Game.View
 
             _gore = gore;
 
-            CollectDismemberments(content);
+            CollectDismemberments(content, level.Waves);
         }
 
         public IView Create(GameObject prefab, Vector3 position)
@@ -291,34 +291,54 @@ namespace Game.View
             to.Animator.Update(0f);
         }
 
-        private void CollectDismemberments(IContentRegistry content)
+        private void CollectDismemberments(IContentRegistry content, WaveTimelineConfig waves)
         {
-            if (content == null)
+            if (content != null)
+            {
+                IReadOnlyList<EnemyConfig> enemies = content.All<EnemyConfig>();
+
+                for (int index = 0; index < enemies.Count; index++)
+                    AddDismemberment(enemies[index]);
+            }
+
+            if (waves == null)
                 return;
 
-            IReadOnlyList<EnemyConfig> enemies = content.All<EnemyConfig>();
-
-            for (int index = 0; index < enemies.Count; index++)
+            for (int wave = 0; wave < waves.Waves.Count; wave++)
             {
-                EnemyConfig enemy = enemies[index];
+                IReadOnlyList<WeightedEnemy> weighted = waves.Waves[wave].Enemies;
 
-                if (enemy.DismemberedViewPrefab == null || enemy.ViewPrefab == null)
-                    continue;
+                for (int index = 0; index < weighted.Count; index++)
+                    AddDismemberment(weighted[index].Enemy);
 
-                string owner = $"{nameof(EnemyConfig)} '{enemy.Id}'";
+                IReadOnlyList<GuaranteedSpawn> guaranteed = waves.Waves[wave].Guaranteed;
 
-                if (enemy.DismemberedViewPrefab.TryGetComponent(out ViewInterpolator _) == false)
-                    throw new InvalidOperationException(
-                        $"{owner}: dismembered view prefab '{enemy.DismemberedViewPrefab.name}' has no {nameof(ViewInterpolator)} on its root.");
-
-                if (enemy.DismemberedViewPrefab.TryGetComponent(out DismemberableView dismemberable) == false)
-                    throw new InvalidOperationException(
-                        $"{owner}: dismembered view prefab '{enemy.DismemberedViewPrefab.name}' has no {nameof(DismemberableView)} on its root.");
-
-                dismemberable.Validate(owner);
-
-                _dismemberments[enemy.ViewPrefab] = new Dismemberment(enemy.DismemberedViewPrefab, enemy.DismemberChance);
+                for (int index = 0; index < guaranteed.Count; index++)
+                    AddDismemberment(guaranteed[index].Enemy);
             }
+        }
+
+        private void AddDismemberment(EnemyConfig enemy)
+        {
+            if (enemy == null || enemy.DismemberedViewPrefab == null || enemy.ViewPrefab == null)
+                return;
+
+            if (_dismemberments.ContainsKey(enemy.ViewPrefab))
+                return;
+
+            string owner = $"{nameof(EnemyConfig)} '{enemy.Id}'";
+
+            if (enemy.DismemberedViewPrefab.TryGetComponent(out ViewInterpolator _) == false)
+                throw new InvalidOperationException(
+                    $"{owner}: dismembered view prefab '{enemy.DismemberedViewPrefab.name}' has no {nameof(ViewInterpolator)} on its root.");
+
+            if (enemy.DismemberedViewPrefab.TryGetComponent(out DismemberableView dismemberable) == false)
+                throw new InvalidOperationException(
+                    $"{owner}: dismembered view prefab '{enemy.DismemberedViewPrefab.name}' has no {nameof(DismemberableView)} on its root.");
+
+            dismemberable.Validate(owner);
+
+            _dismemberments[enemy.ViewPrefab] = new Dismemberment(enemy.DismemberedViewPrefab, enemy.DismemberChance);
         }
 
         private Entry Withdraw(IView view, string operation)
