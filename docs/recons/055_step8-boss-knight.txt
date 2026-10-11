@@ -1,0 +1,376 @@
+055 · Шаг 8 — мини-босс Boss Knight
+Дата: 2026-10-12. Основа — разведка 054. Код готов, ждёт ручной приёмки.
+
+=====================================================================
+0. Что делали
+=====================================================================
+
+Шаг 8 роадмапа целиком, одним заходом по заданию разработчика: этапы 0 (данные),
+A (каркас, спавн, смерть, победа, HP-бар), B (таран), C (вихрь), D (тесты, доки,
+отчёт), коммит на этап. План — само задание; развилки, о которых оно молчит,
+решены по ближайшему прецеденту и записаны в §4 и в журнал PROGRESS.md.
+
+Коммиты:
+  d8d3986  этап 0 — префаб, нарезка клипов, контроллер по фазам
+  5604ea6  этап A — спавн, удержание на контакте, смерть, победа, HUD
+  a01dcce  этап B — таран
+  36222a0  этап C — вихрь
+  ca1d412  этап D — 19 EditMode-тестов
+  (этот)   этап D — доки и отчёт
+
+Тесты: 297 EditMode зелёные (было 278, +19 BossKnightTests). После каждого этапа
+прогонялся весь набор — существующие враги не сломаны.
+
+Песочницы (все удалены, после удаления — refresh и компиляция, проверено: типов
+зондов в домене нет, папки Assets/_Sandbox нет, git status чистый):
+  - Assets/_Sandbox/BossPhaseProbe.cs — этап 0, прогон всех фаз аниматора;
+  - Assets/_Sandbox/Sandbox.asmdef + BossLiveProbe.cs — живой забег этапа D;
+  - временная правка Waves_Gameplay.asset (волны 0 и 1 по 1 с) — откатана
+    git checkout, длительности снова 30 / 60 / 600;
+  - три мутации кода для проверки тестов (§5.2) — откатаны копией файлов.
+
+Атлас LiberationSans SDF - Fallback.asset после прогонов не испачкан (git status).
+
+=====================================================================
+1. Изменённые и созданные файлы
+=====================================================================
+
+Данные
+  Prefabs/Enemies/Bosses/Boss_Knight.prefab      ViewInterpolator + BossKnightView на корне,
+                                                 applyRootMotion off, KnightBoss ×1.7
+  Art/Animations/BossKnight/Charge.fbx.meta       Charge_Windup f2–f3 (loop), Charge_Rush f3–f15
+  Art/Animations/BossKnight/StartSpin.fbx.meta    f0–f24
+  Art/Animations/BossKnight/BossKnight.controller IsRunning, AttackSpeed, ActionPhase, Death
+  Configs/Enemies/Enemy_BossKnight.asset          enemy.boss_knight
+  Configs/Enemies/Boss_Knight.asset               boss.knight
+  Configs/Enemies/Charge_BossKnight.asset         ability.charge.boss_knight
+  Configs/Enemies/Spin_BossKnight.asset           ability.spin.boss_knight
+  Configs/ContentDatabase.asset                   +4 записи
+  Configs/Waves/Waves_Gameplay.asset              третья волна «boss»
+  Configs/Feedback_Default.asset                  _victoryBannerSeconds = 3
+  Prefabs/UI/Hud.prefab                           BossBar (фон, Fill, Name), VictoryBanner
+  Art/Shaders/GroundMarker.shader                 Game/GroundMarker
+  Art/Materials/M_GroundMarker.mat
+
+Конфиги (Game.Configs)
+  BossConfig.cs, ChargeAbilityConfig.cs, SpinAbilityConfig.cs — новые
+  EnemyConfig.cs        _boss, _charge, _spin, PeakMoveSpeed
+  FeedbackConfig.cs     _victoryBannerSeconds
+  WaveTimelineValidator ResolveMaxRushSpeed; ResolveMaxMoveSpeed берёт PeakMoveSpeed
+
+Core
+  RunEndReason.cs, IBossVitalsSink.cs, IRunResultSink.cs, ActionCue.cs — новые
+  IView.cs              SetAction(in ActionCue)
+
+Simulation
+  Components/EnemyActionComponents.cs  Boss, BossRandom, EnemyAction(+Phase enum),
+                                       PendingVictory, EnemyCharge, Rushing, EnemySpin
+  Components/TagComponents.cs          NotPushable
+  Components/CombatComponents.cs       DamageKind.EnemyAbility = 5
+  Services/EnemyActionPhases.cs        тики, вход в фазу, конец действия
+  Services/EnemyFactory.cs             босс и способности из конфига
+  Services/EnemyMotionBounds.cs        MaxEnemyRushSpeed в CandidateSlack
+  Services/RingSpawnPlacement.cs       Resolve(..., minDistance)
+  Services/RunOutcome.cs               Finish(RunEndReason), Reason
+  Systems/ новые: BossDecideSystem, HoldForEnemyActionSystem, AdvanceEnemyChargeSystem,
+           AdvanceEnemySpinSystem, ApplyEnemyChargeVelocitySystem, FaceEnemyChargeTargetSystem,
+           PulseEnemySpinSystem, SweepEnemyChargeSystem, FinishRunOnBossDeathSystem,
+           SyncEnemyActionViewSystem, PublishBossVitalsSystem
+  Systems/ правки: RunSystems, SpawnWaveSystem, StorePreviousPositionSystem (любая сущность
+           с PreviousPosition), ApplyMoveSpeedSystem (Exc<Rushing>), SweepDashPushSystem
+           (Exc<NotPushable>), AdvanceHeroicLeapSystem и ResolveBodyOverlapSystem
+           (пропуск NotPushable), ReapDeadEnemiesSystem (время смерти босса),
+           FinishRunOnPlayerDeathSystem (причина Death), AccumulateRageSystem (EnemyAbility)
+
+View
+  BossKnightView.cs, NotBody.cs — новые
+  ViewInterpolator.cs   SetAction, _actionView, исключение NotBody из рендереров тела
+
+UI
+  BossVitals.cs, RunResult.cs — новые; HudView.cs (ShowBoss, ShowVictory), HudPresenter.cs
+
+Bootstrap
+  RunEntryPoint.cs      синки босса и победы, заморозка времени на плашке
+  RunLifetimeScope.cs   BossVitals, RunResult
+
+Tests
+  BossKnightTests.cs (19), заглушки IView в шести тестовых файлах (+SetAction)
+
+Доки: PROGRESS.md, ARCHITECTURE.md (§8 вид урона, §10 порядок), GDD.md (§4, §12),
+CLAUDE.md §8 (закрыт пункт про эффекты, сужен пункт про трупы, +3 пункта).
+
+=====================================================================
+2. Карта блока — где что живёт
+=====================================================================
+
+Конфиг → спавн
+  Waves_Gameplay (волна 2: гарантия enemy.boss_knight ×1 на 0-й с)
+  → SpawnWaveSystem.Spawn (гр. 3): RingSpawnPlacement.Resolve(..., Boss.MinSpawnDistanceToHero)
+  → EnemyFactory.Create: обычный враг + AddBoss (Boss, NotPushable, PreviousPosition,
+    EnemyAction) + EnemyCharge / EnemySpin из ссылок EnemyConfig.
+
+Решение (гр. 4, после ChaseTargetSystem)
+  AdvanceEnemyChargeSystem / AdvanceEnemySpinSystem — тикают кулдауны способностей и
+  PhaseTicks текущей фазы; на нуле — следующая фаза (EnemyActionPhases.Enter) или конец
+  (EnemyActionPhases.Finish ставит общий кулдаун из BossConfig).
+  BossDecideSystem — в фазе None: общий кулдаун; дистанция до цели; готовые способности
+  (таран 6–18 м, вихрь ≤ 5 м); бросок из потока "boss.knight" (BossRandom, лениво).
+  HoldForEnemyActionSystem — MoveIntent = 0 во всех фазах, кроме Spinning, и на контакте.
+
+Таран
+  гр. 4  Windup (1 с) → Lock (0.35 с: EnemyCharge.Direction = Facing) → Rush (0.5 с,
+         тег Rushing) → Recover (1 с) → None
+  гр. 5  FaceEnemyChargeTargetSystem — поворот в windup ≤ WindupTurnSpeedDegrees;
+         ApplyEnemyChargeVelocitySystem — Velocity = Direction × RushSpeed (ApplyMoveSpeed
+         исключает Rushing); MoveSystem двигает
+  гр. 8  SweepEnemyChargeSystem — SweptHit(отрезок босса, отрезок героя,
+         BodyRadius босса + HitRadiusExtra + BodyRadius героя), DamageEvent EnemyAbility,
+         HasHit
+  гр. 9  ApplyDamageSystem — i-frames, «сильнейшее за тик»
+
+Вихрь
+  гр. 4  Raise (0.8 с) → Spinning (4 с; модификатор MoveSpeed More (×0.6 − 1), источник —
+         Id конфига) → Recover (0.8 с; модификатор снят) → None
+  гр. 3  RecomputeStatsSystem применяет модификатор со следующего тика
+  гр. 7  PulseEnemySpinSystem — каждые TickSeconds, герой в Radius + его радиус:
+         DamageAt(d) = lerp(DamageAtCenter, DamageAtEdge, clamp01(d / Radius))
+
+Смерть и победа
+  гр. 10 MarkDeadSystem → FinishRunOnBossDeathSystem (DiedEvent босса → PendingVictory на
+         DeathSeconds; на нуле, если герой жив, RunOutcome.Finish(Victory)) →
+         ReapDeadEnemiesSystem (вьюха босса уходит в Retire на DeathSeconds без отлёта)
+  RunEntryPoint.Tick: Reason == Victory → IRunResultSink.ShowVictory → Time.timeScale 0 →
+         UniTask.Delay(VictoryBannerSeconds, ignoreTimeScale) → время назад →
+         IRunLauncher.FinishAsync (тот же выход в меню, что при смерти)
+
+HUD
+  гр. 12 PublishBossVitalsSystem → IBossVitalsSink (Core) → BossVitals (UI, R3) →
+         HudPresenter.RefreshBoss → HudView.ShowBoss (бар — anchorMax.x Fill, как полоса
+         опыта; имя — BossConfig.DisplayName). Нет живого босса — бар скрыт.
+  RunResult.Victory → HudView.ShowVictory → VictoryBanner.
+
+Вьюха
+  гр. 12 SyncEnemyActionViewSystem → IView.SetAction(ActionCue) каждый тик:
+         Pose (параметр ActionPhase 0–5), PlaybackSpeed (параметр AttackSpeed: длина клипа /
+         длительность фазы), Marker + размеры, Pulse, скорость вращения и качание рук.
+  ViewInterpolator.SetAction → аниматор + BossKnightView.Apply.
+  BossKnightView: две метки (полоса тарана, диск вихря) — дети корня с NotBody, свой
+  меш-квад, шейдер Game/GroundMarker через MaterialPropertyBlock; LateUpdate — «вертолёт»
+  алебарды вокруг середины кистей и качание плечевых костей; возврат в WeaponPoint за 0.2 с.
+
+Где крутить числа
+  Configs/Enemies/Enemy_BossKnight.asset   HP, скорость, контакт, радиус/высота тела
+  Configs/Enemies/Boss_Knight.asset         имя, общий кулдаун, веса, мин. дистанция спавна,
+                                            время смерти
+  Configs/Enemies/Charge_BossKnight.asset   все числа тарана
+  Configs/Enemies/Spin_BossKnight.asset     все числа вихря, включая скорость вращения во вьюхе
+  Configs/Waves/Waves_Gameplay.asset        волна «boss»: темп, потолок, состав
+  Configs/Feedback_Default.asset            _victoryBannerSeconds
+  Prefabs/Enemies/Bosses/Boss_Knight.prefab BossKnightView: цвета меток, высота над полом,
+                                            время возврата алебарды
+
+=====================================================================
+3. Расчёт HP босса
+=====================================================================
+
+Меч берсерка: урон 20, кулдаун 0.25 с — короче удара, темп задаёт клип. Два варианта:
+LeftSlash 0.881 / 1.5 = 0.587 с (35 тиков), RightSlash 0.422 / 1 = 0.422 с (25 тиков),
+жребий 1 : 1 → в среднем ≈ 30–31 тик на удар → ≈ 38.7 DPS при непрерывной атаке.
+Целевые 45–60 с при доле времени у цели около 70% (таран уводит босса, вихрь выгоняет
+из зоны): 38.7 × 0.7 × 55 ≈ 1490 → взято 1500 (39 с при 100%).
+Замер в живом забеге: стоящий герой без перков убил босса за 52.3 с (спавн t = 2.02,
+смерть t = 54.35). Герой стоял, и после первого тарана босс до конца стоял вплотную
+(1.08 м) и крутил вихри — то есть это близко к «100% у цели», но с 5 × 4.8 с вихря, во
+время которых урон героя шёл так же. Расхождение с 39 с — пауза окна перков, которую
+зонд закрывал кликом (не время боя, но время забега), и автонаведение героя на других
+врагов. Не мерилось отдельно.
+
+=====================================================================
+4. Выборы и развилки (что выбрано, почему, цена)
+=====================================================================
+
+В1. Charge_Windup — f2–f3 со скоростью состояния 0. Проверено импортом: клип f2–f2
+    Unity принимает (длина 1.0 с), но стопы уходят под пол на 0.58–0.76 м — нормировка
+    корня на клипе нулевой длины вырождается. Петля f2–f3 качает голову на 2.5 см
+    (×1.7 = 4.3 см) с частотой 30 Гц. Скорость 0 держит кадр 2: голова 1.278 м,
+    носки −0.041 м (чуть в полу, как в исходном клипе), проверено Animator.Update.
+В2. Масштаб ×1.7 на дочернем KnightBoss (прецедент лучника ×2.25). Корень остаётся в
+    метрах мира — метки на земле под ним без пересчёта.
+В3. ViewInterpolator получил SetAction и ссылку на BossKnightView (прецедент _berserkFx,
+    _swordTrail); IView расширен одним методом с ActionCue — заглушки в шести тестах
+    дописаны (прецедент SetPowerUp, 6cbf9e5).
+В4. Поправка перекрытия к боссу не применяется (задание), босс сам стоит на контакте
+    (HoldForEnemyActionSystem). Герой может войти в босса — §8 CLAUDE.md.
+В5. Кулдаун способности — от старта (как оружие и лучник), общий — от конца действия.
+В6. DamageKind.EnemyAbility = 5; ярость — как полученный (как болт). Контрудар не
+    смотрит на вид. Отвергнут Contact.
+В7. Удар тарана тратится и по неуязвимому герою (событие создаётся, ApplyDamage его
+    отбрасывает) — прецедент болта: рывок героя «уклонил» удар.
+В8. Победа: заморозка времени на плашке; мёртвому герою победа не объявляется; первый
+    Finish побеждает.
+В9. Спавн ближе MinSpawnDistanceToHero зеркалится к центру арены, без лишнего броска
+    случайности — последовательность спавна обычных врагов не сдвигается.
+В10. NotBody — общий признак «не тело» (условие §8 сработало на втором эффекте).
+В11. EnemyAction вешается только боссу (решатель босс-специфичен: веса в BossConfig).
+    Элите с EnemyCharge понадобится свой решатель — не делалось.
+
+=====================================================================
+5. Что проверено и как
+=====================================================================
+
+5.1 EditMode (BossKnightTests, 19 тестов, все зелёные; итого 297)
+  - таран идёт Windup 60 → Lock 21 → Rush 30 → Recover 60 тиков, рывок ровно 10.000 м
+    (= TelegraphLength);
+  - общий кулдаун 179 после конца (3 с, первый тик уже снят), следующий таран — ровно на
+    тике 481 = 1 + 480 (кулдаун 8 с от старта);
+  - поворот windup при 30°/с — 30° ± 0.6, направление после фиксации не следует за героем;
+  - один удар 60 за рывок сквозь героя; неуязвимый герой — 1 событие, 0 урона;
+  - 600 м/с (10 м за тик, сэмплы на 10 и 20 м, герой радиусом 0.1 на 15 м) — попадание;
+    1.2 м вбок — промах;
+  - вихрь: первый импульс на первом тике вращения, 8 импульсов за 4 с, на 2 м урон 9.5,
+    на 4.3 м (внутри 4 + 0.4) — 4, на 4.5 м — 0; модификатор есть в Spinning и снят в
+    Recover;
+  - выбор: 64 сида, оба варианта встречаются, одинаковый сид — одинаковый выбор, вес 0 —
+    никогда; поток "boss.knight" ≠ поток спавна;
+  - победа через 270 тиков (4.5 с), не на 269; мёртвому герою — нет; первый Finish
+    побеждает;
+  - EnemyMotionBounds: таран 600 м/с → CandidateSlack 10.0 м; индекс с запасом без тарана
+    (1.15 м) теряет босса, уехавшего на 10 м от ячейки, с запасом тарана — находит;
+  - вихрь ×1.5 поднимает потолок скорости таймлайна до 3.75, RecomputeStats пропускает
+    3.75 и бросает исключение при потолке 2.5; вихрь ×0.6 оставляет базу 2.5;
+  - спавн у края (герой на 44 м): без минимума точка в 1 м от героя (известный случай),
+    с минимумом 12 м — (14, 0, 0), то есть 30 м.
+
+5.2 Мутации (проверка, что тесты умеют падать; откатаны)
+  - HasHit не ставится → падают TheRushHitsOnce… (10 вместо 1) и AnInvulnerable… (10);
+  - урон вихря без убывания → падают оба теста вихря (15 вместо 9.5 и 4).
+
+5.3 Этап 0, play mode (BossPhaseProbe, AlwaysAnimate)
+  Прогон фаз 1, 2, 5, 0 (бег/стоп), 3, 4, 5, 0, 1, Death: каждое состояние достигнуто и
+  вернулось в Idle, SpinRaise держал последний кадр в фазе 4 (голова неподвижна 2.634),
+  Death сработал из ChargeWindup, дрейф дочернего KnightBoss — 0.0000 м.
+
+5.4 Живой забег, play mode (BossLiveProbe; волны 0 и 1 временно по 1 с; герою каждый кадр
+    возвращалось HP; окно перков закрывалось первой карточкой)
+  - спавн босса на t = 2.02 в 29.96 м от героя, масштаб вьюхи 1.70;
+  - таран: windup 0.997–1.000 с, lock 0.351 с, rush 0.501 с (рывок 9.667 м — фаза
+    ловится покадрово, один тик опоздания; тест даёт ровно 10), AttackSpeed на рывке 0.80
+    (= 0.4 / 0.5), метка тарана видна в windup и lock, гаснет в rush;
+  - вихрь ×5: raise 0.796–0.803 с, вращение 3.996–4.005 с, скорость босса во вращении
+    1.50 (= 2.5 × 0.6), метка вихря видна в raise и вращении, гаснет в recover;
+    вращение алебарды 539.9°/с (задано 540); после вихря алебарда возвращается точно в
+    WeaponPoint (local 0, 0, 0 / 0°);
+  - босс убит на t = 54.35, победа через 4.51 с (DeathSeconds 4.5), плашка «Победа»
+    видна, timeScale на плашке 0, MainMenu через 3.05 с, timeScale в меню 1.
+
+5.5 «Вертолёт» алебарды (preview-сцена, прямой вызов BeginSpin / AdvanceSpin / EndSpin /
+    AdvanceReturn на позе f24)
+  - скачок наконечника на старте вращения 0.0000 м;
+  - наконечник ходит по окружности 2.32 м вокруг середины кистей (разведка: 1.36 × 1.7),
+    шаги ровно по 45°, высота торца 2.97–3.00 и наконечника 4.03–4.06 — наклон сохранён;
+  - расстояние между кистями при качании 0.52–0.64 м;
+  - возврат: первый шаг 0.05 с сдвигает наконечник на 0.975 м (плавная доводка за 0.2 с),
+    в конце local (0, 0, 0) / 0°.
+
+5.6 Факты фреймворков, установленные экспериментом
+  - VContainer: RegisterEntryPoint<RunEntryPoint> не регистрирует тип сам по себе —
+    Resolve(typeof(RunEntryPoint)) даёт «No such registration»; экземпляр достаётся через
+    IReadOnlyList<ITickable>.
+  - UniTask.Delay(..., ignoreTimeScale: true) дожидается при timeScale 0 (3.05 с при 3).
+  - Animator с CullUpdateTransforms вне кадра кости не пишет (живой прогон: голова
+    2.60 в windup вместо 1.278; с AlwaysAnimate — 1.278).
+  - Сигнатура UniTask.Delay — проверена рефлексией до кода.
+
+=====================================================================
+6. К2 — как изменились радиусы запросов
+=====================================================================
+
+Максимумы выводятся из всего таймлайна один раз на старте — то есть действуют весь забег,
+в том числе первые 90 с без босса.
+
+                                до босса          с боссом
+  MaxEnemyBodyRadius            0.5 (тролль)      0.7
+  радиус контактного урона      0.4 + 0.5 = 0.9   0.4 + 0.7 = 1.1
+  MaxOverlapCorrection          0.9               1.1
+  CandidateSlack (скорость 3)   0.05 + 0.9 = 0.95 0.05 + 1.1 = 1.15   (рывок тарана
+                                                                      20/60 = 0.33 меньше)
+  кольца DetectContactDamage    ceil(1.85) = 2    ceil(2.25) = 3      (5×5 → 7×7 ячеек)
+  кольца ResolveBodyOverlap     ceil(0.9) = 1     ceil(1.1) = 2       (3×3 → 5×5 ячеек)
+  радиус удара прыжка           SectorReach + 0.5 SectorReach + 0.7
+
+Цена в миллисекундах не мерилась (не проверено). Запросов по одному на героя за тик,
+то есть рост в ячейках, а не в числе запросов.
+
+=====================================================================
+7. Что не проверено и что вылезло
+=====================================================================
+
+Не проверено:
+  - глазами: вид меток на земле, читаемость телеграфа, вид «вертолёта» и качания рук,
+    пульсация зоны, плашка «Победа» на экране (проверено только, что она активна);
+  - попадание тарана по герою в живом забеге (в прогоне таран стартовал с 18 м и не
+    достал — см. ниже); в тестах попадание проверено;
+  - стоимость К2 в мс;
+  - поведение, когда герой умирает во время DeathSeconds босса (покрыто тестом на уровне
+    системы, вживую нет);
+  - запуск без временной правки волн (босс на 90-й секунде) — путь тот же, но целиком
+    не прогонялся.
+
+Вылезло:
+  Р1. Дальность тарана длиннее тарана. MaxRange 18 м, рывок 10 м (TelegraphLength): с
+      края диапазона по стоящему герою таран гарантированно мажет — так и было в живом
+      прогоне. Числа — задания; решить при приёмке (MaxRange ≈ 10–11 или длиннее рывок).
+  Р2. Стоящий герой видит почти только вихрь: после первого тарана босс подходит
+      вплотную (1.08 м), а таран требует ≥ 6 м. Таран увидит тот, кто бегает. Это
+      следствие правил дистанции, а не ошибка.
+  Р3. К8: герою за тик применяется только сильнейшее событие — вихрь (4–15), контакт
+      босса (30) и толпа не складываются. На контакте вплотную вихрь поэтому почти не
+      добавляет урона к контакту 30 раз в 0.5 с (i-frames). Свойство, а не баг; учесть
+      в балансе.
+  Р4. Герой может войти в босса (CLAUDE.md §8).
+  Р5. Длины клипов 0.4 и 0.8 в конфигах — руками (CLAUDE.md §8).
+  Р6. Глифы «Победа» попадут в динамический атлас шрифта при первом показе плашки —
+      перед коммитом откатывать LiberationSans SDF - Fallback.asset (известный пункт §8).
+  Р7. _maxHealth героя = 1000 — временно, вернуть 100 перед закрытием шага (PROGRESS).
+
+=====================================================================
+8. Сценарий ручной приёмки (для Кости)
+=====================================================================
+
+Подготовка (по желанию, чтобы не ждать 90 с): в Waves_Gameplay временно поставить волнам
+0 и 1 _durationSeconds = 5. Перед коммитом — вернуть (git checkout файла).
+
+Запуск: Bootstrap → «Играть».
+
+1. Спавн. Через 90 с (или ~10 с с правкой) появляется рыцарь заметно выше героя, сверху
+   по центру — бар «Boss Knight». Появился не ближе 12 м и не на глазах вплотную.
+   Обычных врагов становится меньше (потолок 12).
+2. Погоня и контакт. Босс идёт за героем и останавливается вплотную, не залезая в него.
+   Касание — 30 урона раз в 0.5 с. Рывок героя и героический прыжок босса не толкают.
+3. Таран. Отбежать на 6–10 м. Босс приседает, на земле — красная полупрозрачная полоса
+   ширины его тела, которая следует за его поворотом (поворачивается медленно, 120°/с).
+   Через 1 с полоса ярче и замирает (0.35 с) — тут надо уйти вбок или рывком. Затем рывок
+   на 10 м за 0.5 с сквозь врагов и героя; попадание — 60 урона один раз. После — стоит
+   1 с. Попасть рывком героя в момент рывка босса — урона нет.
+4. Вихрь. Подойти вплотную (≤ 5 м). Босс поднимает алебарду (0.8 с, бледный круг), затем
+   4 с крутит её над головой (вертолётом), руки покачиваются, круг радиусом 4 м ярче и
+   пульсирует раз в 0.5 с; босс медленно идёт за героем. Урон 15 в центре, 4 у края. После —
+   алебарда без рывка возвращается в руку.
+5. Смерть. Бар убывает с уроном. При смерти бар исчезает, рыцарь падает целиком (клип
+   4.3 с), не отлетает и не разваливается. Через 4.5 с — плашка «Победа», всё замирает,
+   через 3 с — меню. Новый забег стартует чисто.
+6. Смерть героя до победы — обычный выход в меню, без плашки.
+
+На что смотреть особо: читается ли телеграф тарана; не дёргается ли присед в windup
+(нормально — стоит неподвижно); вид алебарды при вращении и в конце; не висит ли
+лезвие в полу в присяде (в исходном клипе оно уходит под пол до 0.77 м × 1.7).
+
+Что крутить и где — §2 «Где крутить числа». Первым — MaxRange тарана (Р1).
+
+=====================================================================
+9. Что дальше
+=====================================================================
+
+1. Ручная приёмка по §8; решения по Р1 и числам.
+2. Вернуть _maxHealth героя 100 и закрыть шаг 8 в PROGRESS.md.
+3. Шаг 9: экран итогов, лут с босса, меню.
