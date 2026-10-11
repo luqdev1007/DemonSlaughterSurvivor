@@ -18,6 +18,14 @@ namespace Game.UI
         [SerializeField] private TMP_Text _levelText;
         [SerializeField] private float _experienceFillSeconds = 0.25f;
 
+        [Header("Boss")]
+        [SerializeField] private GameObject _bossBar;
+        [SerializeField] private RectTransform _bossFill;
+        [SerializeField] private TMP_Text _bossName;
+
+        [Header("Victory")]
+        [SerializeField] private GameObject _victoryBanner;
+
         [Header("Berserk vignette")]
         [SerializeField] private Image _vignette;
         [SerializeField] private Color _vignetteColor = new Color(0.55f, 0f, 0f, 0.85f);
@@ -32,7 +40,8 @@ namespace Game.UI
 
         public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
             && _upgradeChoice != null && _upgradeChoice.IsWired
-            && _experienceFill != null && _levelText != null;
+            && _experienceFill != null && _levelText != null
+            && _bossBar != null && _bossFill != null && _bossName != null && _victoryBanner != null;
 
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
 
@@ -70,6 +79,25 @@ namespace Game.UI
         public void ShowBerserk(bool active)
         {
             _vignetteTarget = active ? 1f : 0f;
+        }
+
+        public void ShowBoss(bool visible, string displayName, float health, float maxHealth)
+        {
+            _bossBar.SetActive(visible);
+
+            if (visible == false)
+                return;
+
+            Vector2 anchorMax = _bossFill.anchorMax;
+            anchorMax.x = maxHealth > 0f ? Mathf.Clamp01(health / maxHealth) : 0f;
+            _bossFill.anchorMax = anchorMax;
+
+            _bossName.SetText(displayName);
+        }
+
+        public void ShowVictory(bool visible)
+        {
+            _victoryBanner.SetActive(visible);
         }
 
         private void Awake()

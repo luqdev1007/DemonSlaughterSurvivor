@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 356b44739b0618f49a841e6e41103db4, type: 3}
+  m_Name: Boss_Knight
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.BossConfig
+  _id: boss.knight
+  _displayName: Boss Knight
+  _globalAbilityCooldownSeconds: 3
+  _chargeWeight: 1
+  _spinWeight: 1
+  _minSpawnDistanceToHero: 12
+  _deathSeconds: 4.5

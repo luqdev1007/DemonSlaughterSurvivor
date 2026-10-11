@@ -28,6 +28,10 @@ namespace Game.Bootstrap
 
             builder.Register<PlayerVitals>(Lifetime.Scoped).AsSelf().As<IPlayerVitalsSink>();
 
+            builder.Register<BossVitals>(Lifetime.Scoped).AsSelf().As<IBossVitalsSink>();
+
+            builder.Register<RunResult>(Lifetime.Scoped).AsSelf().As<IRunResultSink>();
+
             builder.Register<UpgradeChoice>(Lifetime.Scoped).AsSelf().As<IUpgradeChoiceSink>();
 
             builder.Register<PlayerExperience>(Lifetime.Scoped).AsSelf().As<IExperienceSink>();

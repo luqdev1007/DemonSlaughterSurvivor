@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<KillingBlow> _killingBlows = default;
+        private readonly EcsPoolInject<Boss> _bosses = default;
 
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -52,13 +53,25 @@ namespace Game.Simulation.Systems
                 {
                     ref View view = ref _views.Value.Get(entity);
 
-                    _viewFactory.Value.Retire(view.Value, _deathSeconds, ResolveDeathBlow(entity));
+                    RetireView(entity, view.Value);
 
                     view.Value = null;
                 }
 
                 world.DelEntity(entity);
             }
+        }
+
+        private void RetireView(int entity, IView view)
+        {
+            if (_bosses.Value.Has(entity))
+            {
+                _viewFactory.Value.Retire(view, _bosses.Value.Get(entity).Config.DeathSeconds, new DeathBlow(Vector3.zero, false, false));
+
+                return;
+            }
+
+            _viewFactory.Value.Retire(view, _deathSeconds, ResolveDeathBlow(entity));
         }
 
         private DeathBlow ResolveDeathBlow(int entity)

@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<Pushed> _pushes = default;
+        private readonly EcsPoolInject<NotPushable> _notPushables = default;
         private readonly EcsPoolInject<LeapLandedEvent> _landedEvents = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
@@ -117,7 +118,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Kind = DamageKind.Perk;
                 }
 
-                if (pushes && distance <= config.PushRadius && _velocities.Value.Has(candidate))
+                if (pushes && distance <= config.PushRadius && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)
                     PushFromPoint.Apply(_pushes.Value, candidate, direction, config.PushSpeed, pushTicks);
             }
         }

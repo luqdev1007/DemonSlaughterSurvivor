@@ -30,6 +30,8 @@ namespace Game.Simulation.Systems
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());
             systems.Add(new ChaseTargetSystem());
+            systems.Add(new BossDecideSystem());
+            systems.Add(new HoldForEnemyActionSystem());
             systems.Add(new HoldForRangedAttackSystem());
             systems.Add(new SeparateNeighborsSystem());
             // 5.  Movement
@@ -71,6 +73,7 @@ namespace Game.Simulation.Systems
             systems.Add(new DropHealOrbsSystem());
             systems.Add(new TickPendingFinishSystem());
             systems.Add(new FinishRunOnPlayerDeathSystem());
+            systems.Add(new FinishRunOnBossDeathSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
             systems.Add(new TriggerCounterStrikeSystem());
@@ -100,6 +103,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncSpecialAttackViewSystem());
             systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
+            systems.Add(new PublishBossVitalsSystem());
             systems.Add(new PublishExperienceSystem());
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup

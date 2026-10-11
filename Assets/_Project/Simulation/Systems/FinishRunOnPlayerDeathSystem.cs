@@ -1,3 +1,4 @@
+using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
@@ -22,7 +23,7 @@ namespace Game.Simulation.Systems
                 if (pending.RemainingTicks > 0)
                     continue;
 
-                _outcome.Value.Finish();
+                _outcome.Value.Finish(RunEndReason.Death);
             }
         }
     }

@@ -191,11 +191,14 @@ namespace Game.Simulation.Systems
 
         private void Spawn(EnemyConfig enemy, Vector3 anchor)
         {
+            float minDistance = enemy.Boss == null ? 0f : enemy.Boss.MinSpawnDistanceToHero;
+
             Vector3 spawnPosition = _placement.Resolve(
                 anchor,
                 _timeline.SpawnRadius,
                 _level.Value.ArenaRadius,
-                _random.NextUnit());
+                _random.NextUnit(),
+                minDistance);
 
             _factory.Create(enemy, spawnPosition);
         }

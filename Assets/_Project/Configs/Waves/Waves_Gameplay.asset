@@ -40,3 +40,17 @@ MonoBehaviour:
     - _offsetSeconds: 10
       _enemy: {fileID: 11400000, guid: 5c4d8ad96055c5140913d77e93b29e29, type: 2}
       _count: 5
+  - _durationSeconds: 600
+    _spawnRatePerSecond: 0.5
+    _liveCap: 12
+    _liveFloor: 0
+    _refillRatePerSecond: 0
+    _enemies:
+    - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
+      _weight: 1
+    - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
+      _weight: 1
+    _guaranteed:
+    - _offsetSeconds: 0
+      _enemy: {fileID: 11400000, guid: 87a1416bceabcb04387ce73a79b44b23, type: 2}
+      _count: 1

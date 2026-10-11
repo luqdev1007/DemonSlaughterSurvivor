@@ -5,4 +5,5 @@ namespace Game.Simulation.Components
     public struct Breakable { }
     public struct Dead { }
     public struct NotIndexed { }
+    public struct NotPushable { }
 }

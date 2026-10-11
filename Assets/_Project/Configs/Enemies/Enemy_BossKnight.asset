@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1458f76ca681cf4385026de7bcd50b9, type: 3}
+  m_Name: Enemy_BossKnight
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.EnemyConfig
+  _id: enemy.boss_knight
+  _viewPrefab: {fileID: 7985096020183796014, guid: f8ee9e4a484c961429ebcfb9ee350517, type: 3}
+  _moveSpeed: 2.5
+  _turnSpeed: 240
+  _bodyRadius: 0.7
+  _bodyHeight: 2.8
+  _maxHealth: 1500
+  _contactDamage: 30
+  _gem: {fileID: 0}
+  _rangedAttack: {fileID: 0}
+  _boss: {fileID: 11400000, guid: b62df07ca74bc3b45a1796b4f14cef35, type: 2}
+  _dismemberedViewPrefab: {fileID: 0}
+  _dismemberChance: 0
+  _separationRadius: 1
+  _separationStrength: 0

@@ -6,7 +6,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class StorePreviousPositionSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<Player, Position, PreviousPosition>> _filter = default;
+        private readonly EcsFilterInject<Inc<Position, PreviousPosition>> _filter = default;
 
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;

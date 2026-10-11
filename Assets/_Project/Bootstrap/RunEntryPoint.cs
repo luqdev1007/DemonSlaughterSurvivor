@@ -29,6 +29,8 @@ namespace Game.Bootstrap
         private readonly IUpgradeChoiceInput _choiceInput;
         private readonly IDebugLevelUpInput _debugLevelUpInput;
         private readonly IExperienceSink _experienceSink;
+        private readonly IBossVitalsSink _bossVitalsSink;
+        private readonly IRunResultSink _resultSink;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
@@ -44,6 +46,8 @@ namespace Game.Bootstrap
         private bool _isFinishing;
         private bool _isPaused;
         private float _timeScaleBeforePause;
+        private bool _isVictoryFrozen;
+        private float _timeScaleBeforeVictory;
 
         public RunEntryPoint(
             RunContext context,
@@ -59,6 +63,8 @@ namespace Game.Bootstrap
             IUpgradeChoiceInput choiceInput,
             IDebugLevelUpInput debugLevelUpInput,
             IExperienceSink experienceSink,
+            IBossVitalsSink bossVitalsSink,
+            IRunResultSink resultSink,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
@@ -75,6 +81,8 @@ namespace Game.Bootstrap
             _choiceInput = choiceInput;
             _debugLevelUpInput = debugLevelUpInput;
             _experienceSink = experienceSink;
+            _bossVitalsSink = bossVitalsSink;
+            _resultSink = resultSink;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -125,7 +133,8 @@ namespace Game.Bootstrap
                 _choiceSink,
                 _choiceInput,
                 _debugLevelUpInput,
-                _experienceSink
+                _experienceSink,
+                _bossVitalsSink
                 );
         }
 
@@ -176,6 +185,13 @@ namespace Game.Bootstrap
             if (_isFinishing == false)
                 return;
 
+            if (_outcome.Reason == RunEndReason.Victory)
+            {
+                FinishWithVictoryAsync().Forget();
+
+                return;
+            }
+
             _launcher.FinishAsync().Forget();
         }
 
@@ -183,6 +199,8 @@ namespace Game.Bootstrap
         {
             if (_isPaused)
                 Resume();
+
+            ReleaseVictoryFreeze();
 
             _cameraService.SetFollowTarget(null);
 
@@ -199,6 +217,31 @@ namespace Game.Bootstrap
             _statModifiers = null;
             _motionBounds = null;
             _choiceGate = null;
+        }
+
+        private async UniTaskVoid FinishWithVictoryAsync()
+        {
+            _resultSink.ShowVictory();
+
+            _isVictoryFrozen = true;
+            _timeScaleBeforeVictory = Time.timeScale;
+            Time.timeScale = 0f;
+
+            await UniTask.Delay(TimeSpan.FromSeconds(_levelConfig.Feedback.VictoryBannerSeconds), ignoreTimeScale: true);
+
+            ReleaseVictoryFreeze();
+
+            await _launcher.FinishAsync();
+        }
+
+        private void ReleaseVictoryFreeze()
+        {
+            if (_isVictoryFrozen == false)
+                return;
+
+            _isVictoryFrozen = false;
+
+            Time.timeScale = _timeScaleBeforeVictory;
         }
 
         private void Pause()

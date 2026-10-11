@@ -17,6 +17,7 @@ MonoBehaviour:
   _invulnerabilityBlinkSeconds: 0
   _enemyDeathSeconds: 2
   _playerDeathDelaySeconds: 4.5
+  _victoryBannerSeconds: 3
   _dissolveSeconds: 0.8
   _heroDissolveDelaySeconds: 3.6
   _dissolveMaterial: {fileID: 2100000, guid: 16098906d1c754641bb152973c5e7853, type: 2}

@@ -29,6 +29,10 @@ namespace Game.Simulation.Services
         private readonly EcsPool<View> _views;
         private readonly EcsPool<GemDrop> _gemDrops;
         private readonly EcsPool<RangedAttack> _rangedAttacks;
+        private readonly EcsPool<Boss> _bosses;
+        private readonly EcsPool<NotPushable> _notPushables;
+        private readonly EcsPool<PreviousPosition> _previousPositions;
+        private readonly EcsPool<EnemyAction> _actions;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
@@ -53,6 +57,10 @@ namespace Game.Simulation.Services
             _views = world.GetPool<View>();
             _gemDrops = world.GetPool<GemDrop>();
             _rangedAttacks = world.GetPool<RangedAttack>();
+            _bosses = world.GetPool<Boss>();
+            _notPushables = world.GetPool<NotPushable>();
+            _previousPositions = world.GetPool<PreviousPosition>();
+            _actions = world.GetPool<EnemyAction>();
         }
 
         public int Create(EnemyConfig config, Vector3 position)
@@ -108,9 +116,20 @@ namespace Game.Simulation.Services
             if (config.RangedAttack != null)
                 _rangedAttacks.Add(entity).Config = config.RangedAttack;
 
+            if (config.Boss != null)
+                AddBoss(entity, config.Boss, position);
+
             _statModifiers.MarkDirty(entity);
 
             return entity;
+        }
+
+        private void AddBoss(int entity, BossConfig boss, Vector3 position)
+        {
+            _bosses.Add(entity).Config = boss;
+            _notPushables.Add(entity);
+            _previousPositions.Add(entity).Value = position;
+            _actions.Add(entity);
         }
     }
 }

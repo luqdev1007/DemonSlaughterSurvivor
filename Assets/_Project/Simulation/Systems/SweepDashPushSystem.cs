@@ -17,7 +17,7 @@ namespace Game.Simulation.Systems
         private const float TieBreakAngleScale = 6.2831855f / 4294967296f;
 
         private readonly EcsFilterInject<Inc<Player, Dashing, DashStats, Position, PreviousPosition, BodyRadius>> _dashers = default;
-        private readonly EcsFilterInject<Inc<Enemy, Position, BodyRadius, Velocity>> _targets = default;
+        private readonly EcsFilterInject<Inc<Enemy, Position, BodyRadius, Velocity>, Exc<NotPushable>> _targets = default;
 
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;

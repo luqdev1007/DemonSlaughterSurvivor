@@ -16,6 +16,8 @@ namespace Game.UI
         private readonly IUpgradeChoiceSubmit _submit;
         private readonly IContentRegistry _content;
         private readonly PlayerExperience _experience;
+        private readonly BossVitals _bossVitals;
+        private readonly RunResult _result;
 
         private GameObject _instance;
         private HudView _view;
@@ -23,7 +25,7 @@ namespace Game.UI
         private Tween _experienceTween;
         private int _shownLevel;
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result)
         {
             _level = level;
             _vitals = vitals;
@@ -31,6 +33,8 @@ namespace Game.UI
             _submit = submit;
             _content = content;
             _experience = experience;
+            _bossVitals = bossVitals;
+            _result = result;
         }
 
         public void Initialize()
@@ -46,7 +50,7 @@ namespace Game.UI
                 throw new InvalidOperationException(
                     $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
                     $"an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} buttons, titles and descriptions, " +
-                    "and the experience fill and level text assigned.");
+                    "the experience fill and level text, the boss bar with its fill and name, and the victory banner assigned.");
 
             _view.UpgradeChoice.Bind(_submit.Submit);
             RefreshChoice();
@@ -57,7 +61,12 @@ namespace Game.UI
                 _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()),
-                _experience.Changed.Subscribe(this, (_, presenter) => presenter.RefreshExperience()));
+                _experience.Changed.Subscribe(this, (_, presenter) => presenter.RefreshExperience()),
+                _bossVitals.Visible.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
+                _bossVitals.Health.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
+                _bossVitals.MaxHealth.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
+                _bossVitals.DisplayName.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
+                _result.Victory.Subscribe(this, (victory, presenter) => presenter._view.ShowVictory(victory)));
         }
 
         public void Dispose()
@@ -89,6 +98,11 @@ namespace Game.UI
             _view.ShowHealth(_vitals.Health.CurrentValue, maxHealth);
             _view.ShowUltimateCharge(_vitals.UltimateCharge.CurrentValue);
             _view.ShowBerserk(_vitals.UltimateActive.CurrentValue);
+        }
+
+        private void RefreshBoss()
+        {
+            _view.ShowBoss(_bossVitals.Visible.CurrentValue, _bossVitals.DisplayName.CurrentValue, _bossVitals.Health.CurrentValue, _bossVitals.MaxHealth.CurrentValue);
         }
 
         private void RefreshExperience()

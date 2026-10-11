@@ -9,6 +9,7 @@ namespace Game.Configs
         [SerializeField] private float _invulnerabilityBlinkSeconds = 0.1f;
         [SerializeField] private float _enemyDeathSeconds = 1f;
         [SerializeField] private float _playerDeathDelaySeconds = 1.5f;
+        [SerializeField] private float _victoryBannerSeconds = 3f;
 
         [Header("Dissolve")]
         [SerializeField] private float _dissolveSeconds = 0.8f;
@@ -36,6 +37,8 @@ namespace Game.Configs
         public float EnemyDeathSeconds => _enemyDeathSeconds;
 
         public float PlayerDeathDelaySeconds => _playerDeathDelaySeconds;
+
+        public float VictoryBannerSeconds => _victoryBannerSeconds;
 
         public float DissolveSeconds => _dissolveSeconds;
 

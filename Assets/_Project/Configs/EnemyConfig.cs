@@ -25,6 +25,9 @@ namespace Game.Configs
         [Header("Ranged")]
         [SerializeField] private RangedAttackConfig _rangedAttack;
 
+        [Header("Boss")]
+        [SerializeField] private BossConfig _boss;
+
         [Header("Gore")]
         [SerializeField] private GameObject _dismemberedViewPrefab;
         [SerializeField, Range(0f, 1f)] private float _dismemberChance = 0.35f;
@@ -50,6 +53,8 @@ namespace Game.Configs
         public GemConfig Gem => _gem;
 
         public RangedAttackConfig RangedAttack => _rangedAttack;
+
+        public BossConfig Boss => _boss;
 
         public GameObject DismemberedViewPrefab => _dismemberedViewPrefab;
 

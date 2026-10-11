@@ -24,6 +24,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<Pushed> _pushes = default;
+        private readonly EcsPoolInject<NotPushable> _notPushables = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -82,7 +83,7 @@ namespace Game.Simulation.Systems
                     if (_velocities.Value.Has(enemy) == false)
                         continue;
 
-                    if (_pushes.Value.Has(enemy))
+                    if (_pushes.Value.Has(enemy) || _notPushables.Value.Has(enemy))
                         continue;
 
                     ref Position enemyPosition = ref _positions.Value.Get(enemy);
