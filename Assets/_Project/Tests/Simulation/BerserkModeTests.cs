@@ -21,6 +21,8 @@ namespace Game.Simulation.Tests
         private const float BaseWeaponDamage = 20f;
         private const float HeroMaxHealth = 100f;
         private const int ModeTicks = 480;
+        private const float PowerUpSeconds = 0.5f;
+        private const int PowerUpTicks = 30;
 
         private readonly List<ScriptableObject> _assets = new List<ScriptableObject>();
 
@@ -291,6 +293,154 @@ namespace Game.Simulation.Tests
             CollectionAssert.AreEqual(first, second);
         }
 
+        [Test]
+        public void PowerUpLastsItsTicksAndBlocksDamage()
+        {
+            Build(PowerUpSeconds);
+            StartMode();
+
+            Assert.IsTrue(PoweringUp());
+            Assert.AreEqual(PowerUpTicks, _world.GetPool<PoweringUp>().Get(_hero).TotalTicks);
+
+            for (int tick = 1; tick < PowerUpTicks; tick++)
+            {
+                Receive(10f);
+                Step();
+
+                Assert.IsTrue(PoweringUp(), $"stance tick {tick}");
+                Assert.IsFalse(_lastApplied.ContainsKey(_hero), $"stance tick {tick}: the hero must be invulnerable");
+            }
+
+            Receive(10f);
+            Step();
+
+            Assert.IsFalse(PoweringUp(), "the stance lasts exactly its tick count");
+            Assert.AreEqual(15f, AppliedTo(_hero), 1e-5f, "the first tick after the stance takes damage, with the mode multiplier");
+            Assert.AreEqual(HeroMaxHealth - 15f, _world.GetPool<Health>().Get(_hero).Current, 1e-4f);
+        }
+
+        [Test]
+        public void HeroStandsDuringPowerUpAndWalksAfter()
+        {
+            Build(PowerUpSeconds);
+
+            Step();
+
+            Assert.AreEqual(BaseMoveSpeed, Speed(), 1e-5f, "fixture: the hero walks before the ultimate");
+
+            StartMode();
+
+            for (int tick = 0; tick < PowerUpTicks; tick++)
+            {
+                Assert.AreEqual(0f, Speed(), $"stance tick {tick}");
+
+                Step();
+            }
+
+            Assert.IsFalse(PoweringUp());
+            Assert.AreEqual(BaseMoveSpeed * 1.3f, Speed(), 1e-4f);
+        }
+
+        [Test]
+        public void DashWaitsForTheEndOfPowerUp()
+        {
+            Build(PowerUpSeconds);
+            StartMode();
+
+            Step(10);
+            _world.GetPool<DashRequest>().Add(_hero);
+
+            while (PoweringUp())
+            {
+                Assert.IsFalse(_world.GetPool<Dashing>().Has(_hero), "no dash during the stance");
+
+                Step();
+            }
+
+            Step();
+
+            Assert.IsTrue(_world.GetPool<Dashing>().Has(_hero), "the held request dashes right after the stance");
+        }
+
+        [Test]
+        public void PowerUpCutsTheSwingInProgress()
+        {
+            Build(PowerUpSeconds);
+
+            int swing = _world.NewEntity();
+            ref Swing data = ref _world.GetPool<Swing>().Add(swing);
+            data.Owner = _world.PackEntity(_hero);
+            data.Weapon = _world.PackEntity(_weapon);
+            _world.GetPool<Swinging>().Add(_weapon);
+
+            EcsPackedEntity packed = _world.PackEntity(swing);
+
+            Step();
+
+            Assert.IsTrue(packed.Unpack(_world, out _), "fixture: the swing survives a normal tick");
+
+            StartMode();
+
+            Assert.IsFalse(packed.Unpack(_world, out _), "the stance must cut the swing on its first tick");
+            Assert.IsFalse(_world.GetPool<Swinging>().Has(_weapon), "the weapon must be free once the swing is cut");
+        }
+
+        [Test]
+        public void UltimatePressedMidDashWaitsInsteadOfExpiring()
+        {
+            Build(PowerUpSeconds);
+
+            SetCharge(100f);
+            _world.GetPool<Dashing>().Add(_hero);
+
+            Press();
+            Step(30);
+
+            Assert.IsFalse(InMode(), "the ultimate must not start mid-dash");
+            Assert.IsTrue(_world.GetPool<UltimateRequest>().Has(_hero), "a press held through a 0.5 s dash must not expire");
+
+            _world.GetPool<Dashing>().Del(_hero);
+            Step();
+
+            Assert.IsTrue(InMode());
+            Assert.IsTrue(PoweringUp());
+        }
+
+        [Test]
+        public void ViewGetsPowerUpProgressUpToTheEndOfTheClip()
+        {
+            Build(PowerUpSeconds);
+            StartMode();
+
+            int first = _view.PowerUpActive.Count - 1;
+
+            Step(PowerUpTicks);
+
+            List<float> progress = _view.PowerUpProgress;
+
+            Assert.IsTrue(_view.PowerUpActive[first]);
+            Assert.AreEqual(1f / PowerUpTicks, progress[first], 1e-6f);
+
+            for (int index = first + 1; index < first + PowerUpTicks; index++)
+            {
+                Assert.IsTrue(_view.PowerUpActive[index], $"call {index}");
+                Assert.Greater(progress[index], progress[index - 1], $"call {index}: progress must grow every tick");
+            }
+
+            Assert.AreEqual(1f, progress[first + PowerUpTicks - 1], 1e-6f, "the last stance tick shows the end of the clip");
+            Assert.IsFalse(_view.PowerUpActive[first + PowerUpTicks], "the view must be told when the stance ends");
+        }
+
+        [Test]
+        public void ZeroPowerUpSecondsSkipsTheStance()
+        {
+            Build(0f);
+            StartMode();
+
+            Assert.IsFalse(PoweringUp());
+            Assert.AreEqual(BaseMoveSpeed * 1.3f, Speed(), 1e-4f);
+        }
+
         private byte[] RecordSeededRun(int seed)
         {
             TearDown();
@@ -324,7 +474,7 @@ namespace Game.Simulation.Tests
             return trace.ToArray();
         }
 
-        private void Build()
+        private void Build(float powerUpSeconds = 0f)
         {
             RageConfig rage = ScriptableObject.CreateInstance<RageConfig>();
             SetField(rage, "_id", "resource.rage.test");
@@ -333,6 +483,7 @@ namespace Game.Simulation.Tests
             BerserkAbilityConfig ultimate = ScriptableObject.CreateInstance<BerserkAbilityConfig>();
             SetField(ultimate, "_id", "ability.ult.test");
             SetField(ultimate, "_durationSeconds", 8f);
+            SetField(ultimate, "_powerUpSeconds", powerUpSeconds);
             SetField(ultimate, "_modifiers", new[]
             {
                 Entry(StatId.MoveSpeed, 0.3f),
@@ -368,15 +519,20 @@ namespace Game.Simulation.Tests
             _systems = new EcsSystems(_world);
 
             _systems.Add(new ReadUltimateInputSystem());
+            _systems.Add(new StartDashSystem());
             _systems.Add(new TickBerserkModeSystem());
+            _systems.Add(new TickPowerUpSystem());
             _systems.Add(new StartBerserkSystem());
             _systems.Add(new ExpireUltimateRequestSystem());
             _systems.Add(new RecomputeStatsSystem());
+            _systems.Add(new ApplyMoveSpeedSystem());
+            _systems.Add(new InterruptSwingSystem());
             _systems.Add(new TickInvulnerabilitySystem());
             _systems.Add(new ApplyDamageSystem());
             _systems.Add(new AccumulateRageSystem());
             _systems.Add(new DecayRageSystem());
             _systems.Add(new SyncBerserkViewSystem());
+            _systems.Add(new SyncPowerUpViewSystem());
             _systems.Inject(context, registry, level, _clock, _modifiers, _input, inputConfig, new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f));
             _systems.Init();
 
@@ -398,6 +554,14 @@ namespace Game.Simulation.Tests
             damageTaken.Value = 1f;
 
             _world.GetPool<HitInvulnerability>().Add(_hero).Seconds = 0f;
+            _world.GetPool<MoveIntent>().Add(_hero).Value = Vector3.right;
+            _world.GetPool<Velocity>().Add(_hero);
+            _world.GetPool<Facing>().Add(_hero).Value = Vector3.forward;
+
+            ref DashStats dashStats = ref _world.GetPool<DashStats>().Add(_hero);
+            dashStats.Distance = 4f;
+            dashStats.Duration = 0.2f;
+            dashStats.Direction = DashDirection.Forward;
             _world.GetPool<UltimateCharge>().Add(_hero).Max = 100f;
             _world.GetPool<RageState>().Add(_hero);
 
@@ -518,6 +682,16 @@ namespace Game.Simulation.Tests
             return _world.GetPool<UltimateCharge>().Get(_hero).Value;
         }
 
+        private bool PoweringUp()
+        {
+            return _world.GetPool<PoweringUp>().Has(_hero);
+        }
+
+        private float Speed()
+        {
+            return _world.GetPool<Velocity>().Get(_hero).Value.magnitude;
+        }
+
         private bool InMode()
         {
             return _world.GetPool<BerserkMode>().Has(_hero);
@@ -607,6 +781,8 @@ namespace Game.Simulation.Tests
         private sealed class FakeView : IView
         {
             public readonly List<bool> Berserk = new List<bool>();
+            public readonly List<bool> PowerUpActive = new List<bool>();
+            public readonly List<float> PowerUpProgress = new List<float>();
 
             public Transform Transform => null;
 
@@ -633,6 +809,12 @@ namespace Game.Simulation.Tests
             public void SetBerserk(bool value)
             {
                 Berserk.Add(value);
+            }
+
+            public void SetPowerUp(bool active, float progress)
+            {
+                PowerUpActive.Add(active);
+                PowerUpProgress.Add(progress);
             }
 
             public void SetDashing(bool value)

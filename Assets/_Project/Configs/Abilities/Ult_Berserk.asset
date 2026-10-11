@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.BerserkAbilityConfig
   _id: ability.ult.berserk
   _durationSeconds: 8
+  _powerUpSeconds: 0.5
   _modifiers:
   - _stat: 1
     _op: 3

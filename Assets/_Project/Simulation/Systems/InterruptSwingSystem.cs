@@ -16,6 +16,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Dashing> _dashing = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
         private readonly EcsPoolInject<SpecialSwing> _specialSwings = default;
+        private readonly EcsPoolInject<PoweringUp> _poweringUps = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -39,7 +40,7 @@ namespace Game.Simulation.Systems
 
         private bool CanContinue(int swing, int owner)
         {
-            if (_dead.Value.Has(owner) || _dashing.Value.Has(owner))
+            if (_dead.Value.Has(owner) || _dashing.Value.Has(owner) || _poweringUps.Value.Has(owner))
                 return false;
 
             return _specialAttacks.Value.Has(owner) == false || _specialSwings.Value.Has(swing);

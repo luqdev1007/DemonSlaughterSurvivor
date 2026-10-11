@@ -11,7 +11,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class StartDashSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<DashRequest, DashStats, Facing>, Exc<Dashing, DashCooldown>> _filter = default;
+        private readonly EcsFilterInject<Inc<DashRequest, DashStats, Facing>, Exc<Dashing, DashCooldown, PoweringUp>> _filter = default;
 
         private readonly EcsPoolInject<DashRequest> _requests = default;
         private readonly EcsPoolInject<DashStats> _stats = default;

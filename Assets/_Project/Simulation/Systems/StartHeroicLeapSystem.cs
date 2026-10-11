@@ -16,7 +16,7 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<HeroicLeapCooldown>> _cooldowns = default;
-        private readonly EcsFilterInject<Inc<Player, Position, Facing>, Exc<Dead, Dashing, SpecialAttack>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Player, Position, Facing>, Exc<Dead, Dashing, SpecialAttack, PoweringUp>> _heroes = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
         private readonly EcsFilterInject<Inc<Weapon, OwnerLink>> _weapons = default;
 

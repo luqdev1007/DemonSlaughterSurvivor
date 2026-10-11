@@ -12,6 +12,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
+        private readonly EcsPoolInject<PoweringUp> _poweringUps = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -21,7 +22,7 @@ namespace Game.Simulation.Systems
                 ref var speed = ref _speeds.Value.Get(entity);
                 ref var velocity = ref _velocities.Value.Get(entity);
 
-                if (_specialAttacks.Value.Has(entity) && _specialAttacks.Value.Get(entity).LocksMovement)
+                if (_poweringUps.Value.Has(entity) || (_specialAttacks.Value.Has(entity) && _specialAttacks.Value.Get(entity).LocksMovement))
                 {
                     velocity.Value = Vector3.zero;
 

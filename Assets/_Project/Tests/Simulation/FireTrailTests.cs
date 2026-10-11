@@ -302,6 +302,10 @@ namespace Game.Simulation.Tests
             {
             }
 
+            public void SetPowerUp(bool active, float progress)
+            {
+            }
+
             public void SetDashing(bool value)
             {
             }

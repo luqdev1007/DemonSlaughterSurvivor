@@ -17,6 +17,8 @@ namespace Game.View
         private static readonly int IsRunningId = Animator.StringToHash("IsRunning");
         private static readonly int AttackSpeedId = Animator.StringToHash("AttackSpeed");
         private static readonly int IsSpecialId = Animator.StringToHash("IsSpecial");
+        private static readonly int IsPoweringUpId = Animator.StringToHash("IsPoweringUp");
+        private static readonly int PowerUpTimeId = Animator.StringToHash("PowerUpTime");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -43,6 +45,8 @@ namespace Game.View
         private bool _isRunning;
         private bool _hasSpecialParameter;
         private bool _isSpecial;
+        private bool _hasPowerUpParameters;
+        private bool _isPoweringUp;
         private bool _isDead;
         private bool _hasAttackSpeedParameter;
         private float _hitFlashSeconds;
@@ -95,6 +99,8 @@ namespace Game.View
             _hasRunningParameter = HasParameter(animator, IsRunningId, AnimatorControllerParameterType.Bool);
             _hasAttackSpeedParameter = HasParameter(animator, AttackSpeedId, AnimatorControllerParameterType.Float);
             _hasSpecialParameter = HasParameter(animator, IsSpecialId, AnimatorControllerParameterType.Bool);
+            _hasPowerUpParameters = HasParameter(animator, IsPoweringUpId, AnimatorControllerParameterType.Bool)
+                && HasParameter(animator, PowerUpTimeId, AnimatorControllerParameterType.Float);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -188,6 +194,22 @@ namespace Game.View
             _berserkFx.SetShowing(value && _isBerserkSuppressed == false);
         }
 
+        public void SetPowerUp(bool active, float progress)
+        {
+            if (_isDead || _hasPowerUpParameters == false)
+                return;
+
+            if (active)
+                _animator.SetFloat(PowerUpTimeId, progress);
+
+            if (_isPoweringUp == active)
+                return;
+
+            _isPoweringUp = active;
+
+            _animator.SetBool(IsPoweringUpId, active);
+        }
+
         public void SetDashing(bool value)
         {
             if (_isDead || _hasDashingParameter == false || _isDashing == value)
@@ -248,9 +270,13 @@ namespace Game.View
             if (_hasSpecialParameter)
                 _animator.SetBool(IsSpecialId, false);
 
+            if (_hasPowerUpParameters)
+                _animator.SetBool(IsPoweringUpId, false);
+
             _isRunning = false;
             _isDashing = false;
             _isSpecial = false;
+            _isPoweringUp = false;
 
             _animator.SetTrigger(DeathTriggerId);
 
@@ -309,6 +335,7 @@ namespace Game.View
             _isDashing = false;
             _isRunning = false;
             _isSpecial = false;
+            _isPoweringUp = false;
             _isDead = false;
             _isRetiring = false;
             _isKnockedBack = false;

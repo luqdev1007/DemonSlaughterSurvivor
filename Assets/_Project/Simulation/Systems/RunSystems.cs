@@ -18,6 +18,7 @@ namespace Game.Simulation.Systems
             systems.Add(new StartDashSystem());
             systems.Add(new ExpireDashRequestSystem());
             systems.Add(new TickBerserkModeSystem());
+            systems.Add(new TickPowerUpSystem());
             systems.Add(new StartBerserkSystem());
             systems.Add(new ExpireUltimateRequestSystem());
             // 3.  Spawn
@@ -94,6 +95,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());
             systems.Add(new SyncBerserkViewSystem());
+            systems.Add(new SyncPowerUpViewSystem());
             systems.Add(new SyncDashViewSystem());
             systems.Add(new SyncSpecialAttackViewSystem());
             systems.Add(new SyncLocomotionViewSystem());

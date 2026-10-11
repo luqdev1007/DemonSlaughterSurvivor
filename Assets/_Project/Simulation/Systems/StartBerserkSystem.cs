@@ -14,11 +14,13 @@ namespace Game.Simulation.Systems
     {
         public const string SourceId = "ult.berserk";
 
-        private readonly EcsFilterInject<Inc<Player, UltimateRequest, UltimateCharge>, Exc<BerserkMode, Dead>> _filter = default;
+        private readonly EcsFilterInject<Inc<Player, UltimateRequest, UltimateCharge>, Exc<BerserkMode, Dead, Dashing, SpecialAttack>> _filter = default;
 
         private readonly EcsPoolInject<UltimateRequest> _requests = default;
         private readonly EcsPoolInject<UltimateCharge> _charges = default;
         private readonly EcsPoolInject<BerserkMode> _modes = default;
+        private readonly EcsPoolInject<PoweringUp> _poweringUps = default;
+        private readonly EcsPoolInject<Invulnerable> _invulnerables = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -62,8 +64,24 @@ namespace Game.Simulation.Systems
                     _statModifiers.Value.Add(hero, entry.Stat, entry.Op, entry.Value, SourceId);
                 }
 
+                StartPowerUp(hero);
+
                 _requests.Value.Del(hero);
             }
+        }
+
+        private void StartPowerUp(int hero)
+        {
+            if (_config.PowerUpSeconds <= 0f)
+                return;
+
+            int ticks = Mathf.Max(1, Mathf.RoundToInt(_config.PowerUpSeconds / _clock.Value.Delta));
+
+            ref PoweringUp powerUp = ref _poweringUps.Value.Add(hero);
+            powerUp.RemainingTicks = ticks;
+            powerUp.TotalTicks = ticks;
+
+            Invulnerability.Grant(_invulnerables.Value, hero, ticks + Invulnerability.TicksSpentBeforeDamage);
         }
 
         private static void Validate(CharacterConfig character, BerserkAbilityConfig config)
@@ -76,6 +94,15 @@ namespace Game.Simulation.Systems
             if (config.DurationSeconds <= 0f)
                 throw new InvalidOperationException(
                     $"{nameof(BerserkAbilityConfig)} '{config.Id}' has duration {config.DurationSeconds}; it must be positive.");
+
+            if (config.PowerUpSeconds < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(BerserkAbilityConfig)} '{config.Id}' has power-up {config.PowerUpSeconds}; it must be zero or positive.");
+
+            if (config.PowerUpSeconds >= config.DurationSeconds)
+                throw new InvalidOperationException(
+                    $"{nameof(BerserkAbilityConfig)} '{config.Id}' has power-up {config.PowerUpSeconds} s, not shorter than the mode " +
+                    $"({config.DurationSeconds} s); the stance would eat the whole ultimate.");
 
             IReadOnlyList<StatModifierEntry> modifiers = config.Modifiers;
 

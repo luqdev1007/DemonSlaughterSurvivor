@@ -18,6 +18,8 @@ namespace Game.Core
 
         void SetBerserk(bool value);
 
+        void SetPowerUp(bool active, float progress);
+
         void SetDashing(bool value);
 
         void SetRunning(bool value);

@@ -9,9 +9,12 @@ namespace Game.Configs
     public sealed class BerserkAbilityConfig : ContentConfig
     {
         [SerializeField] private float _durationSeconds = 8f;
+        [SerializeField] private float _powerUpSeconds = 0.5f;
         [SerializeField] private StatModifierEntry[] _modifiers;
 
         public float DurationSeconds => _durationSeconds;
+
+        public float PowerUpSeconds => _powerUpSeconds;
 
         public IReadOnlyList<StatModifierEntry> Modifiers => _modifiers;
     }

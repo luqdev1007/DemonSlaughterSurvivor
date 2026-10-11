@@ -24,6 +24,8 @@ namespace Game.Simulation.Components
 
     public struct BerserkMode { public int RemainingTicks; public int TotalTicks; }
 
+    public struct PoweringUp { public int RemainingTicks; public int TotalTicks; }
+
     public struct DashStats
     {
         public float Distance;

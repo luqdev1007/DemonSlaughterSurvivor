@@ -11,6 +11,8 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<UltimateRequest>> _filter = default;
 
         private readonly EcsPoolInject<UltimateRequest> _requests = default;
+        private readonly EcsPoolInject<Dashing> _dashing = default;
+        private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<InputConfig> _input = default;
@@ -19,6 +21,9 @@ namespace Game.Simulation.Systems
         {
             foreach (int entity in _filter.Value)
             {
+                if (_dashing.Value.Has(entity) || _specialAttacks.Value.Has(entity))
+                    continue;
+
                 ref UltimateRequest request = ref _requests.Value.Get(entity);
 
                 request.Age += _clock.Value.Delta;
