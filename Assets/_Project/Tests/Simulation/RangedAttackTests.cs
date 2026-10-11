@@ -552,6 +552,10 @@ namespace Game.Simulation.Tests
             {
             }
 
+            public void SetLift(float height)
+            {
+            }
+
             public void PlayAttack(string trigger, float speed)
             {
             }

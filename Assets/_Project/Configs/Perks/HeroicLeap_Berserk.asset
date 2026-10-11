@@ -24,14 +24,17 @@ MonoBehaviour:
   - _cooldownSeconds: 4
     _damageShare: 2
   _locksMovement: 1
-  _totalTicks: 16
+  _totalTicks: 26
   _surroundRadius: 1.5
   _surroundCount: 4
   _sectorHalfAngleDegrees: 60
   _sectorReach: 2.5
-  _pushRadius: 2.5
+  _pushRadius: 4
   _pushSpeed: 5
   _pushSeconds: 0.6
+  _arcHeight: 1.5
+  _impactFxPrefab: {fileID: 6511278628527712182, guid: 99d59f0cb6139c14ea5cdfd03051171f, type: 3}
+  _impactFxSeconds: 0.4
   _animatorTrigger: AttackJump
   _bakeSource: {fileID: 11400000, guid: 38d7d496e9513a04db5690e72178dff4, type: 2}
   _toeBoneNames:
@@ -40,6 +43,6 @@ MonoBehaviour:
   _contactHeight: 0.05
   _clip: {fileID: 7400000, guid: 6a78e69c956bd21429103fed3a6cce2c, type: 2}
   _clipHash: 3614785110
-  _stateSpeed: 2
+  _stateSpeed: 1.25
   _landingClipTime: 0.33047816
-  _landingTick: 10
+  _landingTick: 16

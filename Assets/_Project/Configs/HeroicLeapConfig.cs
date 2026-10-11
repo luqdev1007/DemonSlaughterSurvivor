@@ -23,6 +23,11 @@ namespace Game.Configs
         [SerializeField] private float _pushSpeed = 5f;
         [SerializeField] private float _pushSeconds = 0.6f;
 
+        [Header("View")]
+        [SerializeField] private float _arcHeight = 1.5f;
+        [SerializeField] private GameObject _impactFxPrefab;
+        [SerializeField] private float _impactFxSeconds = 0.4f;
+
         [Header("Bake inputs")]
         [SerializeField] private string _animatorTrigger = "AttackJump";
         [SerializeField] private WeaponConfig _bakeSource;
@@ -55,6 +60,12 @@ namespace Game.Configs
         public float PushSpeed => _pushSpeed;
 
         public float PushSeconds => _pushSeconds;
+
+        public float ArcHeight => _arcHeight;
+
+        public GameObject ImpactFxPrefab => _impactFxPrefab;
+
+        public float ImpactFxSeconds => _impactFxSeconds;
 
         public string AnimatorTrigger => _animatorTrigger;
 
@@ -111,6 +122,9 @@ namespace Game.Configs
 
             if (_pushRadius < 0f || _pushSpeed < 0f || _pushSeconds < 0f)
                 throw new InvalidOperationException($"{label} pushes within {_pushRadius} m at {_pushSpeed} m/s for {_pushSeconds} s; none may be negative.");
+
+            if (_arcHeight < 0f || _impactFxSeconds < 0f)
+                throw new InvalidOperationException($"{label} has arc height {_arcHeight} m and impact effect {_impactFxSeconds} s; neither may be negative.");
 
             if (_clip == null || _stateSpeed <= 0f || _landingTick < 1)
                 throw new InvalidOperationException($"{label} has no baked landing; run Game/Bake Weapon Swings.");

@@ -28,6 +28,8 @@ namespace Game.View
         private Vector3 _currentPosition;
         private float _lastSyncTime;
         private bool _hasPosition;
+        private float _previousLift;
+        private float _currentLift;
 
         private Renderer[] _renderers;
         private Material[][] _originalMaterials;
@@ -121,10 +123,18 @@ namespace Game.View
             _lastSyncTime = Time.time;
         }
 
+        public void SetLift(float height)
+        {
+            _previousLift = _currentLift;
+            _currentLift = height;
+        }
+
         public void ResetInterpolation()
         {
             _previousPosition = Vector3.zero;
             _currentPosition = Vector3.zero;
+            _previousLift = 0f;
+            _currentLift = 0f;
             _lastSyncTime = 0f;
             _hasPosition = false;
         }
@@ -328,7 +338,7 @@ namespace Game.View
                 AdvanceKnockback(Time.deltaTime);
 
             if (_hasPosition)
-                transform.position = ResolvePosition() + _knockbackOffset;
+                transform.position = ResolvePosition() + Vector3.up * ResolveLift() + _knockbackOffset;
 
             if (_isFlashing && time >= _flashEndTime)
             {
@@ -392,6 +402,13 @@ namespace Game.View
             float phase = Mathf.Clamp01((Time.time - _lastSyncTime) / TickSeconds);
 
             return Vector3.Lerp(_previousPosition, _currentPosition, phase);
+        }
+
+        private float ResolveLift()
+        {
+            float phase = Mathf.Clamp01((Time.time - _lastSyncTime) / TickSeconds);
+
+            return Mathf.Lerp(_previousLift, _currentLift, phase);
         }
 
         private Renderer[] CollectOwnRenderers()

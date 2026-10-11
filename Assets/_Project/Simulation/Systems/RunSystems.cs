@@ -87,6 +87,9 @@ namespace Game.Simulation.Systems
             systems.Add(new PlayHitFeedbackSystem());
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayLeapFeedbackSystem());
+            systems.Add(new TickLeapImpactFxSystem());
+            systems.Add(new SpawnLeapImpactFxSystem());
+            systems.Add(new SyncLeapLiftViewSystem());
             systems.Add(new PlayRangedAttackFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());

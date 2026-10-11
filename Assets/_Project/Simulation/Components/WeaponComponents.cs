@@ -24,6 +24,14 @@ namespace Game.Simulation.Components
 
     public struct LeapStarted { }
 
+    public struct LeapLandedEvent
+    {
+        public Vector3 Position;
+        public HeroicLeapConfig Config;
+    }
+
+    public struct LeapImpactFx { public int RemainingTicks; }
+
     public struct FireSegment
     {
         public EcsPackedEntity Owner;

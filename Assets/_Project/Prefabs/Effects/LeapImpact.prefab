@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6511278628527712182
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6844963222837306157}
+  - component: {fileID: 5376364575902822634}
+  - component: {fileID: 1617186330665312846}
+  m_Layer: 0
+  m_Name: LeapImpact
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6844963222837306157
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6511278628527712182}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5376364575902822634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6511278628527712182}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27bd928a97da63b44bc1e08395dad2d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.ViewInterpolator
+  _berserkFx: {fileID: 0}
+  _swordTrail: {fileID: 0}
+--- !u!114 &1617186330665312846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6511278628527712182}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c60bbabaf7d2594fa02d1ec4cc994a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.LeapImpactFx
+  _material: {fileID: 2100000, guid: fa4b02283b3326b4f9f55a66526f1b0b, type: 2}
+  _boltCount: 10
+  _pointsPerBolt: 10
+  _innerRadius: 0.3
+  _radius: 4
+  _height: 0.08
+  _jitter: 0.35
+  _width: 0.14
+  _color: {r: 1, g: 0.06, b: 0.02, a: 1}
+  _durationSeconds: 0.4
+  _growShare: 0.3
+  _refreshSeconds: 0.04

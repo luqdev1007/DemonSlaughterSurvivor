@@ -52,7 +52,7 @@ namespace Game.Simulation.Tests
             StartLeap();
             Run(_config.LandingTick);
 
-            Assert.AreEqual(10, _config.LandingTick);
+            Assert.AreEqual(16, _config.LandingTick);
             Assert.AreEqual(0, CountEvents(enemy), "no strike before the landing tick");
 
             Run(1);
@@ -111,8 +111,8 @@ namespace Game.Simulation.Tests
             Build();
 
             int behind = SpawnEnemy(Polar(180f, 1f));
-            int side = SpawnEnemy(Polar(90f, 2.4f));
-            int far = SpawnEnemy(Polar(90f, 2.6f));
+            int side = SpawnEnemy(Polar(90f, _config.PushRadius - 0.1f));
+            int far = SpawnEnemy(Polar(90f, _config.PushRadius + 0.1f));
 
             StartLeap();
             Run(_config.LandingTick + 1);
@@ -124,7 +124,7 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(new Vector3(0f, 0f, -_config.PushSpeed), Round(pushes.Get(behind).Velocity));
             Assert.AreEqual(ticks, pushes.Get(behind).TotalTicks);
             Assert.AreEqual(new Vector3(_config.PushSpeed, 0f, 0f), Round(pushes.Get(side).Velocity));
-            Assert.IsFalse(pushes.Has(far), "2.6 m is outside the 2.5 m push radius");
+            Assert.IsFalse(pushes.Has(far), $"{_config.PushRadius + 0.1f} m is outside the {_config.PushRadius} m push radius");
         }
 
         [TestCase(true)]
@@ -154,6 +154,52 @@ namespace Game.Simulation.Tests
 
             Assert.AreEqual(0, CountEvents(enemy));
             Assert.IsFalse(_world.GetPool<Pushed>().Has(enemy));
+        }
+
+        [Test]
+        public void LandingEmitsOneLandedEventAtTheHero()
+        {
+            Build();
+            _world.GetPool<Position>().Get(_hero).Value = new Vector3(3f, 0f, -2f);
+
+            StartLeap();
+            Run(_config.LandingTick);
+
+            Assert.AreEqual(0, _world.Filter<LeapLandedEvent>().End().GetEntitiesCount());
+
+            Run(_config.TotalTicks);
+
+            EcsFilter landed = _world.Filter<LeapLandedEvent>().End();
+
+            Assert.AreEqual(1, landed.GetEntitiesCount());
+
+            foreach (int entity in landed)
+            {
+                Assert.AreEqual(new Vector3(3f, 0f, -2f), _world.GetPool<LeapLandedEvent>().Get(entity).Position);
+                Assert.AreSame(_config, _world.GetPool<LeapLandedEvent>().Get(entity).Config);
+            }
+        }
+
+        [Test]
+        public void LiftRisesToTheArcHeightAndIsBackOnTheGroundAtTheLanding()
+        {
+            const float Height = 1.5f;
+            const int Landing = 17;
+
+            Assert.AreEqual(0f, SyncLeapLiftViewSystem.Arc(Height, 0, Landing));
+            Assert.AreEqual(0f, SyncLeapLiftViewSystem.Arc(Height, Landing, Landing));
+            Assert.AreEqual(0f, SyncLeapLiftViewSystem.Arc(Height, Landing + 5, Landing));
+            Assert.AreEqual(Height, SyncLeapLiftViewSystem.Arc(Height, 8, Landing), 0.01f);
+
+            float previous = 0f;
+
+            for (int tick = 1; tick <= 8; tick++)
+            {
+                float lift = SyncLeapLiftViewSystem.Arc(Height, tick, Landing);
+
+                Assert.Greater(lift, previous, $"rising at tick {tick}");
+                previous = lift;
+            }
         }
 
         [Test]

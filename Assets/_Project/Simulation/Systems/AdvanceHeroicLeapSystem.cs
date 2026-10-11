@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<Pushed> _pushes = default;
+        private readonly EcsPoolInject<LeapLandedEvent> _landedEvents = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -72,6 +73,10 @@ namespace Game.Simulation.Systems
             Vector3 origin = _positions.Value.Get(owner).Value;
             Vector3 facing = _facings.Value.Get(owner).Value;
             Vector3 forward = PushFromPoint.Direction(Vector3.zero, facing, Vector3.forward);
+
+            ref LeapLandedEvent landed = ref _landedEvents.Value.Add(world.NewEntity());
+            landed.Position = origin;
+            landed.Config = config;
 
             float damage = 0f;
 

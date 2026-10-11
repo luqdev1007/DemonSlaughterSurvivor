@@ -10,6 +10,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsFilterInject<Inc<DamageEvent>> _damageEvents = default;
         private readonly EcsFilterInject<Inc<HealEvent>> _healEvents = default;
+        private readonly EcsFilterInject<Inc<LeapLandedEvent>> _landedEvents = default;
         private readonly EcsFilterInject<Inc<DiedEvent>> _diedEvents = default;
         private readonly EcsFilterInject<Inc<SwingStarted>> _swingStarts = default;
         private readonly EcsFilterInject<Inc<LevelUpEvent>> _levelUps = default;
@@ -30,6 +31,9 @@ namespace Game.Simulation.Systems
                 world.DelEntity(entity);
 
             foreach (int entity in _healEvents.Value)
+                world.DelEntity(entity);
+
+            foreach (int entity in _landedEvents.Value)
                 world.DelEntity(entity);
 
             foreach (int entity in _diedEvents.Value)

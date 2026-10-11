@@ -24,6 +24,8 @@ namespace Game.Core
 
         void SetSpecialAttack(bool value);
 
+        void SetLift(float height);
+
         void PlayAttack(string trigger, float speed);
 
         void PlayDeath();
