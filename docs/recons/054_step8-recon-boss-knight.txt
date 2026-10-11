@@ -1,0 +1,588 @@
+054 · Шаг 8 — разведка перед мини-боссом Boss Knight
+Дата: 2026-10-11. Формат: разведка, код игры не менялся. Коммит на входе: 6cbf9e5.
+
+=====================================================================
+0. Что делали и что не трогали
+=====================================================================
+
+Шаг роадмапа: 8 (мини-босс, завершение уровня, итоги). Сессия — разведка по
+десяти вопросам задания; результат — этот отчёт.
+
+Изменённых файлов игры нет. git status после сессии чистый.
+
+Как получены числа:
+- чтение кода и YAML ассетов;
+- execute_code в редакторе (ModelImporter, AnimatorController, меш алебарды,
+  покадровый SampleAnimation префаба босса в preview-сцене
+  EditorSceneManager.NewPreviewScene, которая закрывалась в finally — в
+  открытые сцены ничего не попадало);
+- один эксперимент в play mode (§8 ниже) — песочница.
+
+Песочница: Assets/_Sandbox/BossProbe.cs (MonoBehaviour в Assembly-CSharp,
+RuntimeInitializeOnLoadMethod создавал копию Boss_Knight в (500, 0, 500)).
+УДАЛЕНА вместе с папкой и .meta; после удаления — refresh и компиляция,
+проверено: тип BossProbe в домене отсутствует, папки Assets/_Sandbox нет,
+git status пуст.
+
+Расхождения доков с кодом, найденные по ходу (не чинились):
+- Р-а. CharacterConfig.asset: _maxHealth = 1000 (коммит 220d03c, 2026-10-11),
+  а PROGRESS.md (блок 3 шага 7 и запись арбалетчика) утверждает «в ассете
+  снова 100». Похоже на временную правку для теста, уехавшую в коммит.
+- Р-б. В docs/recons/ лежит каталог 051_registry-trail-blood/ с trail_blood.png
+  рядом с файлом 051_registry-trail-blood.txt. Мусор или вложение — решить.
+- Р-в. Префаб Boss_Knight не готов к ViewPool (подробно §1.5).
+
+=====================================================================
+1. Префаб и модель босса
+=====================================================================
+
+1.1 Пути
+- Префаб:      Assets/_Project/Prefabs/Enemies/Bosses/Boss_Knight.prefab
+- Модель:      Assets/_Project/Art/Models/Enemies/BossKnight/KnightBoss.fbx
+               (+ KnightBoss_Armor_MAT.mat, BaseColor / MetallicSmoothness png,
+               исходник Source~/KnightBoss.blend — тильда, Unity не импортирует)
+- Контроллер:  Assets/_Project/Art/Animations/BossKnight/BossKnight.controller
+- Клипы:       Assets/_Project/Art/Animations/BossKnight/{TwoHandedWalk,Charge,StartSpin,Death}.fbx
+- Алебарда:    Assets/_Project/Art/Models/Weapons/Halberd.prefab
+               (меш из Assets/_Project/Art/Models/Weapons/source/Halberd.fbx)
+
+1.2 Иерархия префаба (28 узлов — легче всех врагов: дьявол 350, лучник 172)
+  Boss_Knight                          ← корень, только Transform
+  └─ KnightBoss                        ← Animator (контроллер BossKnight, аватар KnightBossAvatar)
+     ├─ Knight                         ← SkinnedMeshRenderer, 5 материалов URP/Lit
+     └─ Armature/mixamorig:Hips/Spine/Spine1/Spine2/RightShoulder/RightArm/RightForeArm/
+        mixamorig:RightHand
+        └─ WeaponPoint                 ← добавлен в префабе, lpos (-0.136, 0.094, -0.028),
+           │                              lrot (315.4, 87.8, 150.9)
+           └─ Halberd                  ← вложенный префаб; MeshFilter + MeshRenderer (URP/Lit),
+                                          lpos 0, lrot 0, scale 100
+
+  Кость кисти: mixamorig:RightHand. Алебарда — дочерняя кости через свою
+  трансформу WeaponPoint (не прямой ребёнок кости). Левая рука с алебардой
+  не связана ничем.
+
+1.3 Аватар и импорт
+- KnightBoss.fbx: Animation Type = Humanoid, Avatar = Create From This Model,
+  KnightBossAvatar — isHuman true, isValid true. Optimize Game Objects выключен.
+  Scale 1, Use File Scale. humanScale аватара 0.886.
+- Все четыре клипа импортированы как Humanoid, каждый со СВОИМ аватаром
+  (Create From This Model), а не Copy From Other Avatar. Для Mixamo-ригов с
+  одинаковыми именами костей это работает (позы ниже сняты именно так), но
+  ретаргет идёт через четыре разных аватара.
+- Рост в позе ходьбы: голова ~1.50 м, таз 0.72 м. То есть босс — обычного
+  человеческого роста; «массивность» сейчас нигде не задана (масштаб 1 на всех
+  уровнях). Для сравнения: лучник масштабирован ×2.25.
+
+1.4 Алебарда: пивот и хват
+- Длина 2.215 м (меш 0.02215 × scale 100). Ось древка — локальная Z меша,
+  древко проходит через x = y = 0 (сечение ±0.02 м на всей длине).
+- Пивот (z = 0) — на 0.64 м от торца (−0.64 м), то есть на 29% длины.
+  Лезвие и навершие — z = 0.86…1.58 м от пивота, наконечник 1.576 м.
+  Геометрическая середина алебарды — z = +0.47 м от пивота.
+- Пивот = точка WeaponPoint = хват правой кисти: проекция кости RightHand на
+  ось древка 0.03 м во всех кадрах всех клипов. Середины хвата в меше не
+  размечено.
+- Левая кисть на древке НЕ лежит: расстояние кости LeftHand от оси древка
+  0.24–0.27 м в Walk, 0.30–0.36 м в StartSpin, 0.8–1.1 м в Charge.
+  Проекция LeftHand на ось: 0.75 м от пивота в Walk, 0.21–0.24 м в StartSpin.
+  Середина хвата двумя руками поэтому зависит от клипа: ≈ 0.39 м от пивота
+  в Walk, ≈ 0.13 м в StartSpin. Кость кисти — запястье, ладонь на 8–10 см
+  дальше; даже с этой поправкой левая рука висит рядом с древком, а не на нём.
+- Halberd.prefab в собственном корне хранит lpos (-13.84, 3.62, -28.07) и
+  lrot (270, 0, 0); в Boss_Knight обе величины переопределены в 0 — менять
+  Halberd.prefab безопасно только с оглядкой на этот override.
+
+1.5 Чего у префаба нет (блокирует подключение как есть)
+- На корне нет ViewInterpolator. ViewPool.Take (View/ViewPool.cs:451) бросает
+  InvalidOperationException «has no ViewInterpolator on its root object».
+- Animator.applyRootMotion = true на дочернем KnightBoss. Проверено в play
+  mode (§8): за клип Charge дочерний объект уехал от корня на 1.59 м и там
+  остался. Это ровно тот пункт техдолга, что был закрыт у героя
+  (CLAUDE.md §8, «Рут-моушен включён на дочернем Animator»).
+- cullingMode = CullUpdateTransforms (как у героя; для процедурного вращения
+  костей в LateUpdate это значит: вне кадра поза не пишется).
+- Параметры контроллера не совпадают с тем, что знает ViewInterpolator
+  (§3.6): Walk вместо IsRunning, нет AttackSpeed.
+
+=====================================================================
+2. Клипы
+=====================================================================
+
+Все — Mixamo (take «mixamo.com»), 30 fps, импорт целиком (firstFrame 0,
+lastFrame = длина тейка), keepOriginalOrientation / PositionY = 1,
+PositionXZ = 0, у всех hasRootCurves = true.
+
+| Клип          | Кадры | Длина   | Loop | averageSpeed (м/с)     |
+|---------------|-------|---------|------|------------------------|
+| TwoHandedWalk | 0–39  | 1.300 с | да   | ≈ 0 (на месте)         |
+| Charge        | 0–15  | 0.500 с | нет  | (−0.03, 0, 2.27)       |
+| StartSpin     | 0–34  | 1.133 с | нет  | ≈ 0                    |
+| Death         | 0–130 | 4.333 с | нет  | (0.13, 0, 0.33)        |
+
+Run, Idle, Hit — нет. Единственный локомоушен — TwoHandedWalk, и он на месте
+(apparentSpeed 9e-6): скорость движения целиком задаёт симуляция, но длина
+шага на скорость не подогнана — скольжение стоп при выбранном MoveSpeed не
+мерилось (не проверено).
+
+2.1 Charge — покадрово (таз, голова, наконечник алебарды)
+  f0–f2  присед: таз y 0.40–0.42, голова 0.86 → 0.75, вперёд ≤ 0.01 м;
+         алебарда наконечником вперёд-вниз (на 1.85 м вперёд), стопы на полу.
+  f3     голова 0.73 (низшая точка), таз начинает ехать: +0.04 м.
+  f4–f10 подъём и мах: алебарда проворачивается через верх назад
+         (f8–f9 наконечник за спиной), таз вперёд по 0.06–0.11 м за кадр.
+  f11–f15 выпрямление, удар/проброс вперёд-вверх, таз по 0.13 м за кадр,
+         к f15 таз уехал на 1.28 м, голова 1.38, левая стопа оторвана (0.35).
+  ВЫВОД: бега после подготовки в клипе НЕТ. Это 0.5 с «присед → выпад с
+  махом алебарды», кончается на одной ноге. Тейк в FBX тоже 15 кадров —
+  обрезан не импортом, исходник такой.
+  Поза подготовки кончается на f3 (0.100 с): после него начинается и
+  поступательное движение, и мах.
+  Артефакт: в позе подготовки алебарда уходит под пол — нижняя точка меша
+  y = −0.63 (f0), −0.68 (f3), −0.77 (f6). Стопы при этом на полу (носки
+  −0.03…−0.08), то есть это поза, а не сдвиг корня. На полу-плоскости это
+  будет выглядеть как лезвие, воткнутое в землю.
+
+  Предложение нарезки (решать разработчику, §11 развилка Р1):
+  - Charge_Windup: firstFrame 1, lastFrame 3, loop — почти неподвижный
+    присед (голова гуляет на 0.13 м за 3 кадра — петля будет «кивать»);
+    либо firstFrame = lastFrame = 2 (статичная поза; Unity клип из одного
+    кадра — не проверено, проверять при нарезке).
+  - Charge_Rush: firstFrame 3, lastFrame 15 (0.4 с), без loop, root motion
+    гасится (симуляция везёт сама).
+  Если рывок длиннее 0.4 с — кадров на него нет: замедлять клип, держать
+  последний кадр или искать отдельный клип бега.
+
+2.2 StartSpin — покадрово
+  f0–f9   руки поднимаются (RightHand y 1.06 → 1.42), алебарда встаёт
+          почти вертикально; пик наконечника f10 (y 2.64).
+  f10–f22 алебарда опускается в почти горизонталь над головой, руки до
+          RH 1.80 / LH 1.87.
+  f22–f25 финальная поза: руки выше всего (LH 1.87–1.90, RH 1.79–1.80),
+          вся алебарда выше 1.65 м (минимум меша 1.66 на f24), древко
+          наклонено ~16° (shaftDir.y 0.28).
+  f25–f34 доводка: руки опускаются на 0.05 м, наконечник смещается на 0.17 м.
+  ВЫВОД: поза «алебарда над головой» финальная на f24 (0.800 с).
+  Предложение: lastFrame 24 и удержание последнего кадра, либо петля f22–f25
+  как основа под процедурное вращение.
+  Геометрия позы на f24 (корень в 0, взгляд +Z): торец (0.79, 1.76, −0.11),
+  наконечник (−1.26, 2.38, −0.69). Древко лежит поперёк плеч, наконечником
+  влево-назад. Середина между кистями (0.005, 1.85, −0.19) — почти над осью
+  тела; если вращать вокруг вертикали через неё: наконечник описывает
+  радиус ≈ 1.36 м, торец ≈ 0.79 м. Зона урона «больше размаха» — значит
+  больше 1.4 м + радиус героя 0.4.
+
+2.3 Death
+  4.333 с. Падение происходит на 2.0–3.3 с (таз y 0.68 → 0.12 между f60 и
+  f100), к концу таз уехал вперёд на 1.2 м. Алебарда в конце под полом
+  (−0.54 м).
+  Конфликт с нынешней смертью врага: FeedbackConfig._enemyDeathSeconds = 2.0
+  на всех врагов, ViewPool.Retire возвращает вьюху в пул через 2.0 с —
+  ровно до начала падения. Плюс отлёт трупа (KnockbackSpeed) применится и к
+  боссу.
+
+2.4 Transitions контроллера BossKnight
+  Base Layer, default = Walk. Параметры: Walk (Bool), Spin, Charge, Death
+  (Trigger). Переходы только Any State → Spin / Charge / Death (0.1 с,
+  canTransitionToSelf = false). Из Walk, Spin, Charge выходов нет. Проверено
+  в play mode: после Charge через 1.3 нормированного времени состояние всё ещё
+  Charge — босс застревает в последнем кадре, пока не придёт следующий
+  триггер. Параметр Walk не используется ни одним переходом.
+
+=====================================================================
+3. Существующий враг end-to-end (рыцарь-враг и лучник)
+=====================================================================
+
+3.1 Конфиг: EnemyConfig (Configs/EnemyConfig.cs), ContentConfig со _id.
+  Поля: _viewPrefab; _moveSpeed, _turnSpeed; _bodyRadius, _bodyHeight;
+  _maxHealth, _contactDamage; _gem; _rangedAttack (RangedAttackConfig или
+  null); _dismemberedViewPrefab, _dismemberChance; _separationRadius,
+  _separationStrength.
+  Рыцарь-враг: enemy.knight_shield (Configs/Enemies/Enemy_KnightShield.asset):
+  скорость 3, радиус 0.3, HP 40, контакт 15. Лучник: enemy.archer — 2.3 / 0.4 /
+  15 / 5 + RangedAttack_Archer (attack.archer_crossbow).
+
+3.2 Регистрация: ContentDatabase.asset (_entries — ручной список ссылок на
+  ContentConfig) → ProjectLifetimeScope.cs:39 new ContentRegistry(entries)
+  → IContentRegistry (проектный синглтон). Реестр валидирует пустые и
+  дублирующиеся id в конструкторе. WaveTimelineValidator проверяет, что каждый
+  враг таймлайна зарегистрирован тем же объектом.
+
+3.3 Спавн: SpawnWaveSystem (группа 3) → EnemyFactory.Create(config, position)
+  (Simulation/Services/EnemyFactory.cs). Фабрика создаётся в Init системы,
+  в DI не зарегистрирована (журнал PROGRESS: «условие пересмотра — второй
+  потребитель, мини-босс шага 8»). Размещение — RingSpawnPlacement на кольце
+  SpawnRadius = 30 вокруг героя, прижатое к ArenaRadius = 45.
+
+3.4 Компоненты врага (EnemyFactory): Enemy, Position, Facing, MoveSpeed
+  (Base/Value), TurnSpeed, BodyRadius, BodyHeight, ContactDamage, MaxHealth,
+  Health, Separation, MoveIntent, Velocity, ChaseTarget, View; опционально
+  GemDrop и RangedAttack. Затем StatModifiers.MarkDirty → RecomputeStatsSystem.
+
+3.5 ИИ и движение (группа 4 → 5):
+  AcquireChaseTargetSystem — первая сущность Player в ChaseTarget.
+  ChaseTargetSystem — MoveIntent = нормаль к цели.
+  HoldForRangedAttackSystem — если идёт замах или цель в Range: MoveIntent = 0.
+  SeparateNeighborsSystem — подмешивает разделение (сила < 1).
+  Группа 5: ApplyMoveSpeedSystem (Velocity = Intent·MoveSpeed,
+  Exc<Dashing, Pushed>), FaceVelocitySystem (Exc<SpecialAttack>),
+  FaceRangedTargetSystem, ApplyPushSystem, ResolveBodyOverlapSystem,
+  MoveSystem.
+
+3.6 Лучник — ближайший аналог автомата состояний. Состояние — поля одного
+  компонента RangedAttack { Config, CooldownTicks, WindupTicks, PlaybackSpeed,
+  IsHolding }, без enum и без отдельных компонентов-фаз:
+  - группа 4 HoldForRangedAttackSystem: стоять, если WindupTicks > 0 или цель
+    в Range;
+  - группа 6 ReleaseRangedAttackSystem: тикает кулдаун и замах; на
+    WindupTicks → 0 создаёт болт (сущность Projectile + NotIndexed + View);
+  - группа 6 StartRangedAttackSystem: если не в замахе/кулдауне и цель в
+    Range — WindupTicks = round(windup/dt), PlaybackSpeed = клип/длительность,
+    одноразовый маркер RangedWindupStarted;
+  - группа 7 AdvanceProjectilesSystem: свип болта;
+  - группа 12 PlayRangedAttackFeedbackSystem: по RangedWindupStarted →
+    IView.PlayAttack(trigger, speed).
+  Замах — коммит: уход героя и толчок не отменяют, смерть отменяет (Exc<Dead>).
+
+3.7 Как вьюха получает состояние. IView (Core/IView.cs), реализация —
+  ViewInterpolator (View/ViewInterpolator.cs). Симуляция пишет из группы 12:
+  SetPosition / SetRotation (SyncViewSystem), SetRunning (SyncLocomotion —
+  по MoveIntent != 0), SetDashing, SetSpecialAttack (только Player),
+  SetInvulnerable, SetBerserk, SetPowerUp, SetLift, PlayAttack(trigger,
+  speed), PlayHit, PlayDeath, Dissolve.
+  Хеши параметров аниматора в ViewInterpolator зашиты константами: Death
+  (Trigger), IsDashing, IsRunning, IsSpecial, IsPoweringUp (Bool),
+  AttackSpeed, PowerUpTime (Float). Наличие проверяется в Configure;
+  нет параметра — вызов молча игнорируется.
+  Для босса это значит: SetRunning не сработает (у него Walk), PlayAttack не
+  сработает вовсе — ViewInterpolator.cs:248 выходит, если нет Float
+  AttackSpeed. PlayDeath сработает (Trigger Death есть).
+  SetRotation пишет transform.rotation напрямую, без интерполяции; позиция
+  интерполируется в ViewInterpolator.Update.
+
+=====================================================================
+4. Волны
+=====================================================================
+
+4.1 Формат: WaveTimelineConfig (waves.gameplay) = _spawnRadius + массив Wave.
+  Wave: _durationSeconds, _spawnRatePerSecond, _liveCap, _liveFloor,
+  _refillRatePerSecond, _enemies (WeightedEnemy: враг + вес),
+  _guaranteed (GuaranteedSpawn: _offsetSeconds от начала волны, _enemy,
+  _count).
+  Сдаваемый ассет: волна 0 — 30 с, 1/с, кап 30, дьявол 0.5 / рыцарь 0.5 /
+  лучник 0.25; волна 1 — 60 с, 2/с, кап 60, пол 15, дозаправка 1/с, дьяволы,
+  гарантия тролль ×5 на 10-й секунде. Итого 90 с, затем спавн прекращается.
+
+4.2 «Заспавнить босса в конце»: механически это уже выражается данными —
+  GuaranteedSpawn с _offsetSeconds ≈ duration − ε в последней волне (или
+  отдельная последняя волна с rate 0 и гарантией на 0-й секунде). Гарантия
+  срабатывает один раз на волну (_firedGuaranteed), спавнит через ту же
+  EnemyFactory на кольце 30 м. Но босс должен стать особой сущностью (тег,
+  способности, победа), а GuaranteedSpawn знает только EnemyConfig — нужен
+  признак «босс» в EnemyConfig или отдельный BossConfig (развилка Р2).
+  Тонкость: после конца таймлайна (_timelineFinished) гарантии больше не
+  проверяются. Событие должно стоять внутри последней волны.
+
+4.3 Временно менять spawn rate / live cap: способа нет. Rate, LiveCap,
+  LiveFloor, Refill читаются из Wave каждый тик (SpawnWaveSystem.Run),
+  накопители — приватные поля системы; WaveState хранит только Index и
+  Elapsed. Место вставки: множитель в SpawnWaveSystem.Run на rate и cap
+  (например, компонент на сущности WaveState, который пишет система босса),
+  либо отдельная волна «боссовая» с пониженными числами — тогда без кода.
+
+4.4 Что тянут за собой числа таймлайна (важно для босса):
+  - EnemyMotionBounds.From берёт максимальные MoveSpeed и BodyRadius ТОЛЬКО по
+    врагам таймлайна (WaveTimelineValidator.ResolveMaxMoveSpeed /
+    ResolveMaxBodyRadius). Из них — радиус запроса контактного урона,
+    перекрытия и запас кандидатов индекса.
+  - RecomputeStatsSystem.GuardEnemySpeed бросает исключение, если итоговый
+    MoveSpeed врага выше максимума таймлайна.
+  - Ёмкости буферов (ApplyDamage, SweepDashPush, DetectContactDamage) —
+    из ResolveMaxLiveCap.
+  Если босс стоит в таймлайне — его радиус и скорость попадут в максимумы
+  автоматически. Если он спавнится мимо таймлайна — нет. Скорость рывка
+  тарана, если пойдёт не через MoveSpeed, в CandidateSlack не попадёт ни так,
+  ни так (§11 риск К1).
+
+=====================================================================
+5. Урон и игрок
+=====================================================================
+
+5.1 Путь урона: источник создаёт сущность DamageEvent { Target, Source,
+  SourcePosition, Amount, Kind, IsSlash } → ApplyDamageSystem (группа 9).
+  Для игрока за тик применяется ОДНО событие — самое сильное (ничья — первое
+  по порядку создания: болт гр.7 раньше контакта гр.8). Для врагов — все.
+  DamageTaken умножает урон. После удара — HitInvulnerability героя (0.5 с в
+  тиках) через Invulnerability.Grant.
+  Виды урона (DamageKind): Weapon, Contact, Perk, Projectile — для тарана /
+  вихря нужен будет свой или переиспользование (ярость считает полученный
+  урон по видам — проверять при реализации).
+
+5.2 Неуязвимость: компонент Invulnerable { RemainingTicks }. Выдают:
+  StartDashSystem (рывок + 1 тик), StartBerserkSystem, ApplyDamageSystem
+  (i-frames после удара). Проверка одна и централизованная —
+  ApplyDamageSystem: если у цели Invulnerable, событие отбрасывается. Ни
+  враги, ни снаряды неуязвимость сами не проверяют: событие создаётся всегда,
+  отбрасывается при применении. То же автоматически получат таран и вихрь,
+  если пойдут через DamageEvent. Тикает TickInvulnerabilitySystem (группа 9
+  перед ApplyDamage).
+  «Урон тарана один раз»: i-frames 0.5 с после удара уже дают «один раз за
+  рывок», если рывок короче 0.5 с; надёжнее — флаг «уже ударил» на сущности
+  тарана (как _pushedThisDash у SweepDashPushSystem).
+
+5.3 Knockback игрока: нет нигде. Pushed выдают только SweepDashPushSystem и
+  AdvanceHeroicLeapSystem, и только врагам (Inc<Enemy>). ApplyPushSystem и
+  ApplyMoveSpeedSystem (Exc<Pushed>) к игроку применимы по фильтрам, но
+  поведение Pushed на герое (рывок, ввод, FaceVelocity) не проверено.
+  Контакт с врагом героя не двигает вообще: ResolveBodyOverlapSystem
+  выталкивает из героя ВРАГА (добавляет скорость врагу). Следствие для
+  тарана: босс, пробегающий сквозь героя, получит выталкивающую поправку,
+  если его не исключить (у врага с Pushed поправка не применяется — это
+  готовый рычаг).
+
+5.4 Push / stagger врагов:
+  - SweepDashPushSystem (гр. 8): Inc<Enemy, Position, BodyRadius, Velocity>,
+    отрезок героя «до → после», Pushed с убывающей скоростью.
+  - AdvanceHeroicLeapSystem (гр. 7): запрос к индексу радиусом
+    max(SectorReach + MaxEnemyBodyRadius, PushRadius); фильтр — _enemies.Has
+    и не Dead; толчок PushFromPoint.Apply, если есть Velocity.
+  - ResolveBodyOverlapSystem (гр. 5) — поправка перекрытия.
+  Исключить босса: тег (например, Boss или общий «NotPushable») и Exc<> в
+  SweepDashPush, проверка в цикле AdvanceHeroicLeap и ResolveBodyOverlap.
+  Три места, все известны. Stagger как отдельной механики нет.
+
+=====================================================================
+6. Конец забега и UI
+=====================================================================
+
+6.1 Смерть героя: MarkDeadSystem (гр. 10) вешает Dead + DiedEvent, герою —
+  MoveIntent = 0, снимает DashRequest, PendingFinish = 4.5 с в тиках
+  (FeedbackConfig._playerDeathDelaySeconds). TickPendingFinishSystem
+  считает вниз, FinishRunOnPlayerDeathSystem при 0 зовёт RunOutcome.Finish().
+  RunEntryPoint.Tick после systems.Run видит IsFinished, перестаёт тикать и
+  зовёт IRunLauncher.FinishAsync(): NextFrame → Stop() (Dispose скоупа
+  забега) → загрузка MainMenu.
+
+6.2 RunOutcome — один bool IsFinished, без причины (смерть / победа).
+  RunContext — LevelId, CharacterId, Mode, Seed, StartModifiers;
+  итога забега в нём нет. Победы и экрана итогов нет нигде (grep Victory /
+  Summary — ноль). GDD §12 п. 8 включает «экран итогов».
+
+6.3 HP-бары врагов: нет ни одного. Единственный бар — HP героя в HudView
+  (UI/HudView.cs): Image _healthFill.fillAmount + TMP_Text «hp / max».
+  Путь данных: PublishPlayerVitalsSystem (гр. 12) → IPlayerVitalsSink.Publish
+  (Core) → PlayerVitals (UI, R3 ReactiveProperty) → HudPresenter (подписки) →
+  HudView.ShowHealth. Префаб HUD — LevelConfig._hudPrefab. Бар босса по
+  образцу: IBossVitalsSink в Core + свой ReactiveProperty + элемент в HudView.
+
+=====================================================================
+7. Рендер и VFX
+=====================================================================
+
+Проверено в редакторе (GraphicsSettings.currentRenderPipeline):
+- URP 17.4.0, активный ассет PC_RPAsset (качество «PC», уровень 1),
+  рендерер PC_Renderer.
+- Renderer Features PC_Renderer: только ScreenSpaceAmbientOcclusion.
+  Decal Renderer Feature НЕ включён. У Mobile_Renderer фич нет.
+- Свои шейдеры (Art/Shaders): Game/AdditiveTrail (след меча),
+  Game/Dissolve, Game/Gem, Game/Hidden. Shader Graph стоит зависимостью URP,
+  но в CLAUDE.md §8 упомянут «запрет Shader Graph».
+- Зона на земле, ближайший аналог: FireSegment.prefab — ViewInterpolator +
+  дочерний Disc = примитив Cylinder (сплюснутый) с M_FireSegment
+  (URP/Unlit, opaque, queue 2000). Кольца подбора нет. LeapImpact —
+  LineRenderer-молнии (LeapImpactFx).
+- Чем делаются VFX: LineRenderer, созданные кодом (BerserkLightningFx,
+  LeapImpactFx), процедурный меш (SwordTrail), Particle System (BloodFxPool,
+  пак Vefects/Free Blood VFX). VFX Graph: пакет com.unity.visualeffectgraph
+  НЕ установлен (модуль VFX движка есть, графа нет) — в проекте не используется.
+
+=====================================================================
+8. Процедурная анимация
+=====================================================================
+
+- Animation Rigging НЕ установлен (нет в списке пакетов, тип
+  UnityEngine.Animations.Rigging.Rig не загружен).
+- LateUpdate-логики поверх аниматора с правкой костей в проекте нет.
+  LateUpdate есть только у SwordTrail (читает позу клинка). IK нет.
+- ViewInterpolator.Update: позиция = Lerp(prev, cur, фаза) + подъём (SetLift)
+  + смещение отлёта; плюс таймеры вспышки / дизолва / мигания / ретайра.
+  Rotation интерполятор не трогает.
+- Порядок кадра (PlayerLoop, прочитан вживую): Update: ... VContainerUpdate
+  (RunEntryPoint.Tick → systems.Run → SetPosition) → ScriptRunBehaviourUpdate
+  (ViewInterpolator.Update) → ... → PreLateUpdate: DirectorUpdateAnimationBegin
+  / End → ... → ScriptRunBehaviourLateUpdate.
+
+ЭКСПЕРИМЕНТ (песочница BossProbe, play mode, удалена):
+  Копия Boss_Knight вдали от камеры, cullingMode принудительно AlwaysAnimate,
+  кость RightUpperArm. В Update запоминалось вращение, в LateUpdate —
+  сравнивалось и перезаписывалось (+90° по Z), в следующем Update —
+  проверялось, дожила ли перезапись.
+  Результат на 118 кадрах:
+  - аниматор переписал кость между Update и LateUpdate — 118 из 118;
+  - перезапись из LateUpdate дожила до следующего Update (то есть до
+    рендера) — 118 из 118.
+  Вывод: процедурное вращение костей в LateUpdate поверх Animator (Normal)
+  работает и не требует Animation Rigging. Сброс к позе клипа делает сам
+  аниматор каждый кадр — накапливать поворот нужно в своём поле, а не
+  в кости.
+  Там же: триггер Charge при applyRootMotion = true увёл дочерний KnightBoss
+  от корня на 0.566 м к середине клипа и на 1.592 м к концу; состояние
+  после конца клипа осталось Charge (норм. время 1.30).
+  Не проверено: поведение при CullUpdateTransforms вне кадра для босса (у
+  героя проверено ранее: поза не пишется); взаимодействие с ViewPool.Rebind
+  при повторной выдаче.
+
+=====================================================================
+9. Арена
+=====================================================================
+
+- LevelConfig._arenaRadius = 45 (Level_Gameplay.asset). Используется в двух
+  местах: RingSpawnPlacement (прижимает точку спавна к кругу) и размер
+  SpatialGrid (половина стороны = 45 + 2 ячейки).
+- Обрезки движения по арене нет ни у врагов, ни у героя: сущности свободно
+  уезжают за край. SpatialGrid.ResolveCell зажимает индекс ячейки в
+  [0, count−1], то есть уехавшие кладутся в крайние ячейки (запросы остаются
+  корректны, но крайняя ячейка пухнет).
+- Ground — меш 60×60 (CLAUDE.md §8), меньше арены 45 радиусом.
+- Для тарана: обрезку отрезка рывка по кругу 45 придётся писать (точки
+  пересечения отрезка с окружностью) либо ограничиться дистанцией рывка так,
+  чтобы с кольца спавна (30 м от героя, ≤ 45 от центра) не вылетать.
+  Отдельно: известный пункт §8 — у края арены спавн бывает в 0.6 м от героя;
+  для босса это означает появление вплотную.
+
+=====================================================================
+10. Детерминизм, шаг, свипы
+=====================================================================
+
+- Фиксированный шаг: RunEntryPoint.FixedDelta = 1/60, до 5 шагов за кадр
+  (при упоре накопитель обнуляется). SimulationClock.Delta / Elapsed —
+  инжектируется (EcsCustomInject<SimulationClock>). ViewInterpolator держит
+  свою константу TickSeconds = 1/60.
+- SimulationRandom — свой xorshift. Два способа получения:
+  а) экземпляр с сидом забега — только SpawnWaveSystem
+     (new SimulationRandom(_context.Value.Seed));
+  б) независимый поток: SimulationRandom.StreamState(seed, "stream.id") +
+     static NextUnit(ref uint state) — DropHealOrbsSystem, SpawnBreakables,
+     OfferUpgrades, EquipStartingWeapon (поток на оружие в компоненте
+     SwingRandom), PerkPool.
+  Для босса — поток (б) со своим id: не сдвигает последовательность спавна,
+  эталоны волн не поплывут.
+- Свип клинка (SwingSweep): запечённые из клипа точки кисти и острия
+  (SwingBake, 240 Гц), за тик строятся отрезки «кисть–острие» на сэмплах,
+  каждая пара соседних отрезков — полоса (четырёхугольник), проверка
+  «окружность цели против полосы» (SwingGeometry.CircleHitsBand) с
+  отсечением по высоте тела и переднему полупространству.
+- Проверки отрезком, годные для тарана:
+  - SweepDashPushSystem.ClosestPointOnSegment — точка (враг) против отрезка
+    движения героя PreviousPosition → Position за тик;
+  - RangedTarget.SweptHit (AdvanceProjectilesSystem.TryHit) — отрезок против
+    отрезка: ближайшее сближение болта и героя за тик, оба движутся. Это
+    прямой аналог «таран (отрезок босса за тик) против героя (его отрезок
+    за тик)», и он уже покрыт тестами (RangedAttackTests).
+  PreviousPosition пишет StorePreviousPositionSystem в начале группы 5 —
+  есть у тех, у кого компонент добавлен (у врагов из фабрики его нет).
+
+=====================================================================
+11. Развилки, риски, предложения по месту систем (без реализации)
+=====================================================================
+
+Развилки — решает разработчик:
+
+Р1. Клип рывка тарана. Бега в Charge нет (0.5 с, выпад с махом).
+  а) Charge_Rush f3–f15, скорость клипа подгонять под длительность рывка
+     (как PlaybackSpeed лучника). Дёшево; при рывке ~1 с мах будет вялым.
+  б) Rush 0.4 с + удержание последнего кадра. Мах быстрый, потом поза стоит.
+  в) Отдельный клип бега с алебардой из Mixamo. Лучше всего выглядит, нужен
+     импорт.
+  Рекомендация: (а) на первую итерацию, длительность рывка ≈ 0.4–0.6 с.
+
+Р2. Как босс попадает в данные.
+  а) Флаг/секция «Boss» в EnemyConfig (ссылки на конфиги тарана и вихря) +
+     GuaranteedSpawn в последней волне. Вписывается в EnemyMotionBounds и
+     валидатор таймлайна автоматически.
+  б) Отдельный BossConfig + поле в LevelConfig / WaveTimelineConfig
+     «спавн босса на t». Чище по смыслу, но EnemyMotionBounds, ёмкости и
+     валидатор надо учить про второй источник врагов.
+  Рекомендация: (а), по прецеденту поведенческих конфигов
+  (RangedAttackConfig внутри EnemyConfig).
+
+Р3. Вьюха босса: расширять ViewInterpolator (параметры Spin/Charge, свой
+  LateUpdate вращения) или отдельный компонент BossKnightView рядом с ним.
+  Рекомендация: отдельный компонент для процедурного вращения (по прецеденту
+  BerserkLightningFx / SwordTrail), а контроллер привести к именам
+  ViewInterpolator (IsRunning, AttackSpeed) — данные, не код.
+
+Р4. Победа: RunOutcome расширить причиной (Death / Victory) или отдельный
+  сервис итогов. Плюс экран итогов — шаг 8 по GDD, но объём (лут, мета)
+  граничит с шагом 9; границу MVP сверить с GDD §11 до плана.
+
+Риски:
+
+К1. Скорость тарана мимо EnemyMotionBounds. Если таран двигает босса
+  Velocity-перезаписью (как рывок героя), а не MoveSpeed, CandidateSlack не
+  знает этой скорости → DetectContactDamage / Leap могут молча терять
+  кандидата. Если через MoveSpeed-модификатор — сработает сторож
+  GuardEnemySpeed (исключение). Нужно явно добавить скорость тарана в
+  EnemyMotionBounds (по образцу PushSpeed прыжка).
+К2. Радиус тела босса раздувает запросы всех. MaxEnemyBodyRadius входит в
+  радиус контактного урона и перекрытия героя для ВСЕХ врагов. Радиус 1.0
+  вместо 0.5 почти удвоит радиус запросов на весь забег. Плюс
+  SeparateNeighbors: при силе < 1 толпа не может вытолкнуть босса и он её
+  тоже — «сквозь толпу» на таране надо делать исключением из разделения.
+К3. Контроллер босса без выходов из Spin/Charge и без AttackSpeed —
+  PlayAttack молча ничего не сделает, босс без триггера застрянет в позе.
+  Ошибки в консоли не будет (CLAUDE.md §6.7).
+К4. Root motion на дочернем Animator — 1.59 м дрейфа за Charge (замерено).
+  Выключить на префабе до любой приёмки.
+К5. Смерть босса = 2.0 с ретайра + отлёт трупа + шанс расчленения
+  (DismemberedViewPrefab пуст — шанс просто не сработает). Клип падает на
+  2.0–3.3 с — исчезнет до падения. Нужно отдельное время смерти для босса
+  (пункт §8 «одна длительность жизни трупа» — его условие возврата
+  срабатывает: клип длиннее 1.8 с).
+К6. Алебарда под полом в позе подготовки (до −0.77 м) и в конце смерти
+  (−0.54 м).
+К7. Левая рука не держит древко (0.25–0.36 м от оси). Если важно — IK
+  кисти (Animation Rigging нет; встроенный OnAnimatorIK у Humanoid — не
+  проверялся) или правка WeaponPoint под каждую позу.
+К8. Удар босса по герою и «один удар за тик». ApplyDamage оставляет герою
+  только сильнейшее событие тика — вихрь, убывающий с расстоянием, и
+  контакт толпы не сложатся. Это свойство, а не баг, но его надо помнить
+  при балансе.
+К9. LiveCap / rate «понижен при живом боссе» — механизма нет (§4.3).
+К10. Рост босса как у человека (голова 1.5 м). «Массивность» — масштаб
+  вьюхи, а значит, и пересчёт BodyRadius/BodyHeight, и запекание поз,
+  если оно понадобится, — под новый масштаб.
+
+Предлагаемое место новых систем (группы ARCHITECTURE.md §10 = RunSystems.cs):
+  4 AI      — BossDecideSystem (выбор способности, кулдауны) после
+              ChaseTargetSystem, по образцу HoldForRangedAttack: обнуляет
+              MoveIntent на windup, замедляет на вихре.
+  5 Movement — ApplyChargeVelocitySystem рядом с ApplyDashVelocitySystem
+              (Velocity из зафиксированного направления, Exc в
+              ApplyMoveSpeed / FaceVelocity / ResolveBodyOverlap на время
+              рывка); обрезка рывка по арене — здесь же, до MoveSystem.
+              Поворот в windup — по образцу FaceRangedTargetSystem.
+  6 Weapons — StartChargeSystem / StartSpinSystem (переход в фазы),
+              рядом со StartRangedAttackSystem.
+  7 AttackLifetime — AdvanceChargeSystem (тики фаз, свип отрезок-отрезок по
+              RangedTarget.SweptHit, урон один раз), AdvanceSpinSystem
+              (импульсы урона по кольцу с убыванием), рядом с
+              AdvanceProjectilesSystem.
+  10 Death  — FinishRunOnBossDeathSystem рядом с FinishRunOnPlayerDeathSystem
+              (RunOutcome с причиной); отдельное время смерти босса —
+              в ReapDeadEnemiesSystem или отдельной жатве.
+  12 ViewSync — SyncBossViewSystem (фаза → IView: windup / rush / spin),
+              PublishBossVitalsSystem рядом с PublishPlayerVitalsSystem.
+  3 Spawn   — модификатор темпа в SpawnWaveSystem при живом боссе (Р2/К9).
+  Перед кодом: правки данных префаба (ViewInterpolator на корень, root
+  motion off, параметры контроллера, выходы из состояний, нарезка клипов) —
+  отдельным коммитом, до систем.
+
+=====================================================================
+12. Что делать в следующей сессии
+=====================================================================
+
+1. Разработчик решает Р1–Р4 и границу «экрана итогов» с GDD §11.
+2. Решить судьбу Р-а (_maxHealth 1000) и Р-б (каталог в recons).
+3. План блока 1 шага 8: данные префаба и контроллера (без кода) + спавн
+   босса как врага, ходьба и смерть с победой — первая приёмочная точка.
+   Таран и вихрь — следующими блоками.
