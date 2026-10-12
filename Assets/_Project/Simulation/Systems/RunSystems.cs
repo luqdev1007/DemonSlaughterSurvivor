@@ -80,6 +80,7 @@ namespace Game.Simulation.Systems
             systems.Add(new TickPendingFinishSystem());
             systems.Add(new FinishRunOnPlayerDeathSystem());
             systems.Add(new FinishRunOnBossDeathSystem());
+            systems.Add(new GrantLifeStealSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
             systems.Add(new TriggerCounterStrikeSystem());

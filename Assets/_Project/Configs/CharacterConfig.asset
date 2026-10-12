@@ -19,6 +19,8 @@ MonoBehaviour:
   _bodyRadius: 0.4
   _maxHealth: 1000
   _hitInvulnerabilitySeconds: 0.5
+  _lifeOnKill: 0.02
+  _lifeOnHit: 0
   _pickupRadius: 3
   _experience: {fileID: 11400000, guid: 810d3fda96e086643898af6c4dfed372, type: 2}
   _dash: {fileID: 11400000, guid: d2efaaaa1138d70458b56e9d8f4d6515, type: 2}

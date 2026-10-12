@@ -44,6 +44,7 @@ namespace Game.Simulation.Components
 
     public struct KillingBlow
     {
+        public EcsPackedEntity Source;
         public Vector3 SourcePosition;
         public bool IsSlash;
         public bool IsEmpowered;
@@ -57,6 +58,14 @@ namespace Game.Simulation.Components
     {
         public EcsPackedEntity Target;
         public float Amount;
+    }
+
+    public struct LifeSteal
+    {
+        public float OnKill;
+        public float OnKillBase;
+        public float OnHit;
+        public float OnHitBase;
     }
 
     public struct PendingFinish { public int RemainingTicks; }

@@ -93,6 +93,28 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void LifeStealFollowsItsModifiers()
+        {
+            int hero = CreateHero(5f, 100f);
+
+            ref LifeSteal lifeSteal = ref _world.GetPool<LifeSteal>().Add(hero);
+            lifeSteal.OnKillBase = 0.02f;
+            lifeSteal.OnKill = 0.02f;
+
+            _modifiers.Add(hero, StatId.LifeOnHit, StatOp.Flat, 0.01f, "ult.berserk");
+            _modifiers.Add(hero, StatId.LifeOnKill, StatOp.Increased, 0.5f, "perk.bloodthirst");
+            _systems.Run();
+
+            Assert.AreEqual(0.03f, _world.GetPool<LifeSteal>().Get(hero).OnKill, Tolerance, "0.02 x 1.5");
+            Assert.AreEqual(0.01f, _world.GetPool<LifeSteal>().Get(hero).OnHit, Tolerance, "0 + 0.01");
+
+            _modifiers.RemoveBySource(hero, "ult.berserk");
+            _systems.Run();
+
+            Assert.AreEqual(0f, _world.GetPool<LifeSteal>().Get(hero).OnHit, Tolerance, "on-hit is back to its zero base when the mode ends");
+        }
+
+        [Test]
         public void ResultDoesNotDependOnInsertionOrderBitForBit()
         {
             float[] firstOrder = { 0.13f, 0.76f, 0.69f, 0.24f };

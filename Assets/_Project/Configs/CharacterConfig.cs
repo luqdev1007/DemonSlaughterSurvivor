@@ -18,6 +18,10 @@ namespace Game.Configs
         [SerializeField] private float _maxHealth = 100f;
         [SerializeField] private float _hitInvulnerabilitySeconds = 0.5f;
 
+        [Header("Life Steal")]
+        [SerializeField, Min(0f)] private float _lifeOnKill;
+        [SerializeField, Min(0f)] private float _lifeOnHit;
+
         [Header("Experience")]
         [SerializeField] private float _pickupRadius = 1.5f;
         [SerializeField] private ExperienceConfig _experience;
@@ -39,6 +43,10 @@ namespace Game.Configs
         public float MaxHealth => _maxHealth;
 
         public float HitInvulnerabilitySeconds => _hitInvulnerabilitySeconds;
+
+        public float LifeOnKill => _lifeOnKill;
+
+        public float LifeOnHit => _lifeOnHit;
 
         public float PickupRadius => _pickupRadius;
 

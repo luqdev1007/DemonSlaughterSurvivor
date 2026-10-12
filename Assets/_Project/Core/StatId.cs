@@ -10,6 +10,8 @@ namespace Game.Core
         WeaponCooldown = 6,
         AttackSpeed = 7,
         DamageTaken = 8,
-        PickupRadius = 9
+        PickupRadius = 9,
+        LifeOnKill = 10,
+        LifeOnHit = 11
     }
 }

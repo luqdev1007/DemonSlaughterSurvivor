@@ -33,6 +33,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
         private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
+        private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -240,6 +241,13 @@ namespace Game.Simulation.Systems
                 ref PickupRadius pickupRadius = ref _pickupRadii.Value.Get(target);
                 pickupRadius.Value = StatFormula.Evaluate(pickupRadius.Base, Total(StatId.PickupRadius));
             }
+
+            if (_lifeSteals.Value.Has(target))
+            {
+                ref LifeSteal lifeSteal = ref _lifeSteals.Value.Get(target);
+                lifeSteal.OnKill = StatFormula.Evaluate(lifeSteal.OnKillBase, Total(StatId.LifeOnKill));
+                lifeSteal.OnHit = StatFormula.Evaluate(lifeSteal.OnHitBase, Total(StatId.LifeOnHit));
+            }
         }
 
         private void GuardPositive(int target, StatId stat, float value, float baseValue, string reason)
@@ -321,6 +329,9 @@ namespace Game.Simulation.Systems
                     return _damageTakens.Value.Has(target);
                 case StatId.PickupRadius:
                     return _pickupRadii.Value.Has(target);
+                case StatId.LifeOnKill:
+                case StatId.LifeOnHit:
+                    return _lifeSteals.Value.Has(target);
                 default:
                     return false;
             }

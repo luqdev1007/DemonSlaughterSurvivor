@@ -110,6 +110,7 @@ namespace Game.Simulation.Systems
             if (wasAlive && health.Current <= 0f && _killingBlows.Value.Has(target) == false)
             {
                 ref KillingBlow killingBlow = ref _killingBlows.Value.Add(target);
+                killingBlow.Source = damageEvent.Source;
                 killingBlow.SourcePosition = damageEvent.SourcePosition;
                 killingBlow.IsSlash = damageEvent.IsSlash;
                 killingBlow.IsEmpowered = IsEmpowered(damageEvent.Source);

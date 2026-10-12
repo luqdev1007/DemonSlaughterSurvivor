@@ -21,6 +21,8 @@ namespace Game.Simulation.Tests
                 { "AttackSpeed", 7 },
                 { "DamageTaken", 8 },
                 { "PickupRadius", 9 },
+                { "LifeOnKill", 10 },
+                { "LifeOnHit", 11 },
             });
         }
 

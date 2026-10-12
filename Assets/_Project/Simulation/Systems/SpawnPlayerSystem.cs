@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<TurnSpeed> _turnSpeeds = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
+        private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
         private readonly EcsPoolInject<Experience> _experiences = default;
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
@@ -94,6 +95,12 @@ namespace Game.Simulation.Systems
 
             ref Health health = ref _healths.Value.Add(entity);
             health.Current = character.MaxHealth;
+
+            ref LifeSteal lifeSteal = ref _lifeSteals.Value.Add(entity);
+            lifeSteal.OnKillBase = character.LifeOnKill;
+            lifeSteal.OnKill = character.LifeOnKill;
+            lifeSteal.OnHitBase = character.LifeOnHit;
+            lifeSteal.OnHit = character.LifeOnHit;
 
             ref HitInvulnerability hitInvulnerability = ref _hitInvulnerabilities.Value.Add(entity);
             hitInvulnerability.Seconds = character.HitInvulnerabilitySeconds;
