@@ -245,6 +245,9 @@ namespace Game.View
 
             _isRunning = value;
 
+            if (_actionView != null)
+                _actionView.SetMoving(value);
+
             _animator.SetBool(IsRunningId, value);
         }
 

@@ -10,6 +10,7 @@ namespace Game.View
         private static readonly int ShapeId = Shader.PropertyToID("_Shape");
         private static readonly int PulseId = Shader.PropertyToID("_Pulse");
         private static readonly int PulseRingId = Shader.PropertyToID("_PulseRing");
+        private const string LegsLayerName = "Legs";
 
         [SerializeField] private Animator _animator;
         [SerializeField] private Transform _halberd;
@@ -24,6 +25,7 @@ namespace Game.View
 
         [Header("Spin")]
         [SerializeField, Min(0.01f)] private float _halberdReturnSeconds = 0.2f;
+        [SerializeField, Min(0.01f)] private float _legsBlendSeconds = 0.2f;
 
         private ActionCue _cue;
         private MaterialPropertyBlock _block;
@@ -40,6 +42,10 @@ namespace Game.View
         private Quaternion _rightArmBase;
         private Quaternion _leftArmWritten;
         private Quaternion _rightArmWritten;
+
+        private int _legsLayer = -1;
+        private float _legsWeight;
+        private bool _isMoving;
 
         private Vector3 _halberdRestPosition;
         private Quaternion _halberdRestRotation;
@@ -68,9 +74,19 @@ namespace Game.View
             ApplyMarkers();
         }
 
+        public void SetMoving(bool value)
+        {
+            _isMoving = value;
+        }
+
         public void ResetImmediate()
         {
             _cue = default;
+            _isMoving = false;
+            _legsWeight = 0f;
+
+            if (_legsLayer >= 0)
+                _animator.SetLayerWeight(_legsLayer, 0f);
 
             if (_isSpinning || _isReturning)
                 RestoreHalberd();
@@ -118,6 +134,23 @@ namespace Game.View
 
             if (_isReturning)
                 AdvanceReturn(deltaTime);
+
+            AdvanceLegs(deltaTime);
+        }
+
+        private void AdvanceLegs(float deltaTime)
+        {
+            if (_legsLayer < 0)
+                return;
+
+            float target = _cue.Pose == ActionPose.Spinning && _isMoving ? 1f : 0f;
+            float weight = Mathf.MoveTowards(_legsWeight, target, deltaTime / _legsBlendSeconds);
+
+            if (weight == _legsWeight)
+                return;
+
+            _legsWeight = weight;
+            _animator.SetLayerWeight(_legsLayer, weight);
         }
 
         private void EnsureBuilt()
@@ -133,6 +166,7 @@ namespace Game.View
                 _rightHand = _animator.GetBoneTransform(HumanBodyBones.RightHand);
                 _leftArm = _animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
                 _rightArm = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+                _legsLayer = _animator.GetLayerIndex(LegsLayerName);
             }
 
             if (_halberd != null)

@@ -18,7 +18,7 @@ MonoBehaviour:
   _raiseSeconds: 0.8
   _spinSeconds: 4
   _recoverSeconds: 0.8
-  _moveSpeedMultiplier: 0.6
+  _moveSpeedMultiplier: 1.2
   _radius: 4
   _damageAtCenter: 15
   _damageAtEdge: 4
