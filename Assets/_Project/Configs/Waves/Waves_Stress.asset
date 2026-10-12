@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b9255eb8c30a0342887482b49ee4c30, type: 3}
+  m_Name: Waves_Stress
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.WaveTimelineConfig
+  _id: waves.stress
+  _spawnRadius: 30
+  _waves:
+  - _durationSeconds: 45
+    _spawnRatePerSecond: 40
+    _liveCap: 150
+    _liveFloor: 150
+    _refillRatePerSecond: 40
+    _enemies:
+    - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
+      _weight: 1
+    - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
+      _weight: 0.5
+    - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
+      _weight: 0.25
+    - _enemy: {fileID: 11400000, guid: 5c4d8ad96055c5140913d77e93b29e29, type: 2}
+      _weight: 0.25
+    _guaranteed: []
+  - _durationSeconds: 45
+    _spawnRatePerSecond: 40
+    _liveCap: 300
+    _liveFloor: 300
+    _refillRatePerSecond: 40
+    _enemies:
+    - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
+      _weight: 1
+    - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
+      _weight: 0.5
+    - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
+      _weight: 0.25
+    - _enemy: {fileID: 11400000, guid: 5c4d8ad96055c5140913d77e93b29e29, type: 2}
+      _weight: 0.25
+    _guaranteed: []
+  - _durationSeconds: 600
+    _spawnRatePerSecond: 40
+    _liveCap: 600
+    _liveFloor: 600
+    _refillRatePerSecond: 40
+    _enemies:
+    - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
+      _weight: 1
+    - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
+      _weight: 0.5
+    - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
+      _weight: 0.25
+    - _enemy: {fileID: 11400000, guid: 5c4d8ad96055c5140913d77e93b29e29, type: 2}
+      _weight: 0.25
+    _guaranteed: []
