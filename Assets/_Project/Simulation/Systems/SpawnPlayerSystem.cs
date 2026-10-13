@@ -119,6 +119,9 @@ namespace Game.Simulation.Systems
             dashStats.InvulnerabilitySeconds = dash.InvulnerabilitySeconds;
             dashStats.PushSpeed = dash.PushSpeed;
             dashStats.PushSeconds = dash.PushSeconds;
+            dashStats.PushArcHeight = dash.PushArcHeight;
+            dashStats.PushReach = dash.PushReach;
+            dashStats.PushEdgeScale = dash.PushEdgeScale;
 
             ref UltimateCharge charge = ref _charges.Value.Add(entity);
             charge.Value = 0f;

@@ -20,7 +20,10 @@ namespace Game.Simulation.Components
         public Vector3 Velocity;
         public int RemainingTicks;
         public int TotalTicks;
+        public float ArcHeight;
     }
+
+    public struct Lifted { public int SettleTicks; }
 
     public enum DamageKind
     {

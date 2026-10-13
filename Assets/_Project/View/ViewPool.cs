@@ -290,6 +290,7 @@ namespace Game.View
 
             corpse.View.SetPosition(source.position);
             corpse.View.SetRotation(source.rotation);
+            corpse.View.InheritLift(entry.View);
 
             CopyPose(entry, corpse);
 

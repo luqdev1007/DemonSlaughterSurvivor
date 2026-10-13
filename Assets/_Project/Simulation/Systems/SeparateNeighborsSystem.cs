@@ -120,7 +120,9 @@ namespace Game.Simulation.Systems
             if (pushLength <= MinimumPushLength)
                 return Vector3.zero;
 
-            return new Vector3(pushX / pushLength, 0f, pushZ / pushLength);
+            float clamp = pushLength > 1f ? 1f / pushLength : 1f;
+
+            return new Vector3(pushX * clamp, 0f, pushZ * clamp);
         }
 
         private Vector3 Blend(Vector3 intent, Vector3 push, float strength)

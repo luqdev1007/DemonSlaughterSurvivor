@@ -101,7 +101,9 @@ namespace Game.Simulation.Tests
             LevelConfig level = AssetDatabase.LoadAssetAtPath<LevelConfig>("Assets/_Project/Configs/Levels/Level_Gameplay.asset");
             HeroicLeapConfig leap = Object.Instantiate(AssetDatabase.LoadAssetAtPath<HeroicLeapConfig>("Assets/_Project/Configs/Perks/HeroicLeap_Berserk.asset"));
             _assets.Add(leap);
-            SetField(leap, "_pushSpeed", 7f);
+
+            float faster = character.Dash.PushSpeed + 2f;
+            SetField(leap, "_pushSpeed", faster);
 
             PerkConfig perk = ScriptableObject.CreateInstance<PerkConfig>();
             _assets.Add(perk);
@@ -111,7 +113,7 @@ namespace Game.Simulation.Tests
             float withLeap = EnemyMotionBounds.From(character, level.Waves, new[] { perk }).PushSpeed;
 
             Assert.AreEqual(character.Dash.PushSpeed, dashOnly);
-            Assert.AreEqual(7f, withLeap);
+            Assert.AreEqual(faster, withLeap);
 
             SetField(leap, "_pushSpeed", 1f);
 

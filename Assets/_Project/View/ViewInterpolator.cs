@@ -340,6 +340,14 @@ namespace Game.View
             ApplyBlock();
         }
 
+        internal void InheritLift(ViewInterpolator source)
+        {
+            float lift = source.ResolveLift();
+
+            _previousLift = lift;
+            _currentLift = lift;
+        }
+
         internal void BeginRetire(float seconds, Vector3 knockbackVelocity, float gravity, float friction)
         {
             _isRetiring = true;
@@ -347,13 +355,18 @@ namespace Game.View
 
             PlayDeath();
 
-            if (knockbackVelocity == Vector3.zero)
+            float lift = ResolveLift();
+
+            _previousLift = 0f;
+            _currentLift = 0f;
+
+            if (knockbackVelocity == Vector3.zero && lift <= 0f)
                 return;
 
             _isKnockedBack = true;
-            _isAirborne = knockbackVelocity.y > 0f;
+            _isAirborne = knockbackVelocity.y > 0f || lift > 0f;
             _knockbackVelocity = knockbackVelocity;
-            _knockbackOffset = Vector3.zero;
+            _knockbackOffset = Vector3.up * lift;
             _knockbackGravity = gravity;
             _knockbackFriction = friction;
         }

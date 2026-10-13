@@ -36,6 +36,7 @@ namespace Game.Simulation.Services
             pushed.Velocity = direction * speed;
             pushed.RemainingTicks = ticks;
             pushed.TotalTicks = ticks;
+            pushed.ArcHeight = 0f;
         }
     }
 }

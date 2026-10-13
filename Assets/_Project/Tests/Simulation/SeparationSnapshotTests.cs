@@ -43,7 +43,7 @@ namespace Game.Simulation.Tests
         [TestCase(987654321, 600, 10f, 300)]
         [TestCase(12345, 600, 4f, 300)]
         [TestCase(777, 150, 25f, 10)]
-        public void StaggeredSeparationMatchesTheLivePositionAlgorithmBitForBit(int seed, int count, float side, int minimumChanged)
+        public void StaggeredSeparationMatchesTheReferenceAlgorithmBitForBit(int seed, int count, float side, int minimumChanged)
         {
             Build();
 
@@ -221,7 +221,8 @@ namespace Game.Simulation.Tests
                 if (pushLength <= 1e-5f)
                     continue;
 
-                Vector3 push = new Vector3(pushX / pushLength, 0f, pushZ / pushLength);
+                float clamp = pushLength > 1f ? 1f / pushLength : 1f;
+                Vector3 push = new Vector3(pushX * clamp, 0f, pushZ * clamp);
                 Vector3 blended = intent + push * separation.Strength;
 
                 result[slot] = blended.normalized * intent.magnitude;

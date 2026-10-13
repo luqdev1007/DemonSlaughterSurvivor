@@ -37,5 +37,8 @@ namespace Game.Simulation.Components
         public float InvulnerabilitySeconds;
         public float PushSpeed;
         public float PushSeconds;
+        public float PushArcHeight;
+        public float PushReach;
+        public float PushEdgeScale;
     }
 }

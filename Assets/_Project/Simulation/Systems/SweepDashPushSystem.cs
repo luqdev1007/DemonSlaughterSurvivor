@@ -49,6 +49,21 @@ namespace Game.Simulation.Systems
                     $"{nameof(DashAbilityConfig)} '{dash.Id}' has a negative {nameof(DashAbilityConfig.PushSpeed)} " +
                     $"of {dash.PushSpeed}. A negative push would pull enemies into the player instead of clearing them.");
 
+            if (float.IsNaN(dash.PushArcHeight) || dash.PushArcHeight < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(DashAbilityConfig)} '{dash.Id}' has a {nameof(DashAbilityConfig.PushArcHeight)} " +
+                    $"of {dash.PushArcHeight}. Use 0 for a flat push; a negative arc would sink enemies into the floor.");
+
+            if (float.IsNaN(dash.PushReach) || dash.PushReach < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(DashAbilityConfig)} '{dash.Id}' has a {nameof(DashAbilityConfig.PushReach)} of {dash.PushReach}. " +
+                    "Use 0 to push only the enemies the body touches.");
+
+            if (float.IsNaN(dash.PushEdgeScale) || dash.PushEdgeScale < 0f || dash.PushEdgeScale > 1f)
+                throw new InvalidOperationException(
+                    $"{nameof(DashAbilityConfig)} '{dash.Id}' has a {nameof(DashAbilityConfig.PushEdgeScale)} of {dash.PushEdgeScale}. " +
+                    "It is the share of the push left at the edge of the reach and must be in [0, 1].");
+
             WaveTimelineConfig waves = _level.Value.Waves;
 
             _pushedThisDash = new HashSet<int>(WaveTimelineValidator.ResolveMaxLiveCap(waves) + CapacityReserve);
@@ -76,13 +91,13 @@ namespace Game.Simulation.Systems
 
                 int ticks = Mathf.Max(1, Mathf.RoundToInt(stats.PushSeconds / _clock.Value.Delta));
 
-                Sweep(dasher, previous.Value, position.Value, dasherRadius.Value, stats.PushSpeed, ticks);
+                Sweep(dasher, previous.Value, position.Value, dasherRadius.Value, ticks, in stats);
             }
 
             _wasDashing = dashing;
         }
 
-        private void Sweep(int dasher, Vector3 from, Vector3 to, float dasherRadius, float pushSpeed, int ticks)
+        private void Sweep(int dasher, Vector3 from, Vector3 to, float dasherRadius, int ticks, in DashStats stats)
         {
             foreach (int target in _targets.Value)
             {
@@ -107,10 +122,13 @@ namespace Game.Simulation.Systems
 
                 float squared = deltaX * deltaX + deltaZ * deltaZ;
 
-                if (squared >= contact * contact)
+                float reach = contact + stats.PushReach;
+
+                if (squared >= reach * reach)
                     continue;
 
                 Vector3 direction;
+                float scale = 1f;
 
                 if (squared <= CoincidenceEpsilonSquared)
                 {
@@ -123,15 +141,26 @@ namespace Game.Simulation.Systems
                     float distance = Mathf.Sqrt(squared);
 
                     direction = new Vector3(deltaX / distance, 0f, deltaZ / distance);
+
+                    scale = ResolvePushScale(distance, contact, stats.PushReach, stats.PushEdgeScale);
                 }
 
                 ref Pushed pushed = ref _pushes.Value.Add(target);
-                pushed.Velocity = direction * pushSpeed;
+                pushed.Velocity = direction * (stats.PushSpeed * scale);
                 pushed.RemainingTicks = ticks;
                 pushed.TotalTicks = ticks;
+                pushed.ArcHeight = stats.PushArcHeight * scale;
 
                 _pushedThisDash.Add(target);
             }
+        }
+
+        public static float ResolvePushScale(float distance, float contact, float reach, float edgeScale)
+        {
+            if (distance <= contact || reach <= 0f)
+                return 1f;
+
+            return Mathf.Lerp(1f, edgeScale, (distance - contact) / reach);
         }
 
         private static Vector3 ClosestPointOnSegment(Vector3 point, Vector3 from, Vector3 to)

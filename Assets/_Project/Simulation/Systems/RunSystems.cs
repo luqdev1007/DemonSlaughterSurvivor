@@ -101,6 +101,7 @@ namespace Game.Simulation.Systems
             systems.Add(new TickLeapImpactFxSystem());
             systems.Add(new SpawnLeapImpactFxSystem());
             systems.Add(new SyncLeapLiftViewSystem());
+            systems.Add(new SyncPushLiftViewSystem());
             systems.Add(new PlayRangedAttackFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());

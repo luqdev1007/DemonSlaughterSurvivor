@@ -19,5 +19,8 @@ MonoBehaviour:
   _direction: 0
   _accelerationPower: 3
   _invulnerabilitySeconds: 0.33
-  _pushSpeed: 5
+  _pushSpeed: 10
   _pushSeconds: 0.6
+  _pushArcHeight: 1.2
+  _pushReach: 1
+  _pushEdgeScale: 0.5
