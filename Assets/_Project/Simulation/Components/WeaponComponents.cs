@@ -50,6 +50,18 @@ namespace Game.Simulation.Components
         public int ElapsedTicks;
     }
 
+    public struct Execution
+    {
+        public EcsPackedEntity Owner;
+        public EcsPackedEntity Target;
+        public ExecutionConfig Config;
+        public int Level;
+        public int ElapsedTicks;
+        public int NextHit;
+    }
+
+    public struct ExecutionStarted { }
+
     public struct SpecialAttack
     {
         public EcsPackedEntity Attack;

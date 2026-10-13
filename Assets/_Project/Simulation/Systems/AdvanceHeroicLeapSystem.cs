@@ -19,7 +19,6 @@ namespace Game.Simulation.Systems
 
         private readonly EcsPoolInject<HeroicLeap> _leapPool = default;
         private readonly EcsPoolInject<Dead> _dead = default;
-        private readonly EcsPoolInject<Dashing> _dashing = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
@@ -51,7 +50,7 @@ namespace Game.Simulation.Systems
             {
                 ref HeroicLeap leap = ref _leapPool.Value.Get(entity);
 
-                if (leap.Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner) || _dashing.Value.Has(owner))
+                if (leap.Owner.Unpack(world, out int owner) == false)
                 {
                     world.DelEntity(entity);
 

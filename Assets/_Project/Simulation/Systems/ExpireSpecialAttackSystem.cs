@@ -11,6 +11,8 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<SpecialAttack>> _filter = default;
 
         private readonly EcsPoolInject<SpecialAttack> _specials = default;
+        private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<Dashing> _dashing = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -18,8 +20,13 @@ namespace Game.Simulation.Systems
 
             foreach (int entity in _filter.Value)
             {
-                if (_specials.Value.Get(entity).Attack.Unpack(world, out _))
-                    continue;
+                if (_specials.Value.Get(entity).Attack.Unpack(world, out int attack))
+                {
+                    if (_dead.Value.Has(entity) == false && _dashing.Value.Has(entity) == false)
+                        continue;
+
+                    world.DelEntity(attack);
+                }
 
                 _specials.Value.Del(entity);
             }

@@ -44,6 +44,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new FaceVelocitySystem());
             systems.Add(new FaceNearestEnemySystem());
+            systems.Add(new FaceExecutionTargetSystem());
             systems.Add(new FaceRangedTargetSystem());
             systems.Add(new FaceEnemyChargeTargetSystem());
             systems.Add(new FaceEnemyHeavyStrikeTargetSystem());
@@ -57,12 +58,15 @@ namespace Game.Simulation.Systems
             systems.Add(new StartHeroicLeapSystem());
             systems.Add(new InterruptSwingSystem());
             systems.Add(new ExpireSpecialAttackSystem());
+            systems.Add(new StartExecutionSystem());
+            systems.Add(new StartCounterStrikeSystem());
             systems.Add(new StartSwingSystem());
             systems.Add(new ReleaseRangedAttackSystem());
             systems.Add(new StartRangedAttackSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
+            systems.Add(new AdvanceExecutionSystem());
             systems.Add(new PulseFireSegmentsSystem());
             systems.Add(new TickFireSegmentsSystem());
             systems.Add(new AdvanceProjectilesSystem());
@@ -101,6 +105,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PlayHitFeedbackSystem());
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayLeapFeedbackSystem());
+            systems.Add(new PlayExecutionFeedbackSystem());
             systems.Add(new TickLeapImpactFxSystem());
             systems.Add(new SpawnLeapImpactFxSystem());
             systems.Add(new SyncLeapLiftViewSystem());

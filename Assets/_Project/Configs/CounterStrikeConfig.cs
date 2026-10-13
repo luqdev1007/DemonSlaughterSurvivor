@@ -8,6 +8,7 @@ namespace Game.Configs
     {
         [SerializeField] private CounterStrikeLevel[] _levels = Array.Empty<CounterStrikeLevel>();
         [SerializeField] private bool _locksMovement;
+        [SerializeField] private float _armedSeconds = 1.5f;
 
         [Header("Swing")]
         [SerializeField] private SwingVariant _swing = new SwingVariant();
@@ -18,6 +19,8 @@ namespace Game.Configs
         public override int LevelCount => _levels.Length;
 
         public bool LocksMovement => _locksMovement;
+
+        public float ArmedSeconds => _armedSeconds;
 
         public SwingVariant Swing => _swing;
 
@@ -51,6 +54,10 @@ namespace Game.Configs
                 if (float.IsNaN(entry.DamageShare) || float.IsInfinity(entry.DamageShare) || entry.DamageShare <= 0f)
                     throw new InvalidOperationException($"{label} level {level} has damage share {entry.DamageShare}; it must be positive.");
             }
+
+            if (float.IsNaN(_armedSeconds) || float.IsInfinity(_armedSeconds) || _armedSeconds <= 0f)
+                throw new InvalidOperationException(
+                    $"{label} has armed window {_armedSeconds} s; it must be positive, otherwise a rolled counter strike expires before it can replace a swing.");
 
             if (_swing == null || _swing.Bake == null)
                 throw new InvalidOperationException($"{label} has no {nameof(SwingBake)} for its swing.");

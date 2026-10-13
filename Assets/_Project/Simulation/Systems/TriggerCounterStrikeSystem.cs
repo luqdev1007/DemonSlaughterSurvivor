@@ -14,21 +14,14 @@ namespace Game.Simulation.Systems
 
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Player, Position, Facing>, Exc<Dead, Dashing, SpecialAttack>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Player>, Exc<Dead, Dashing, SpecialAttack, CounterStrikeArmed>> _heroes = default;
         private readonly EcsFilterInject<Inc<DamageEvent, DamageApplied>> _applied = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
-        private readonly EcsFilterInject<Inc<Weapon, OwnerLink>> _weapons = default;
 
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
-        private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
         private readonly EcsPoolInject<CounterStrikeRandom> _randoms = default;
-        private readonly EcsPoolInject<Position> _positions = default;
-        private readonly EcsPoolInject<Facing> _facings = default;
-        private readonly EcsPoolInject<Swing> _swings = default;
-        private readonly EcsPoolInject<SpecialSwing> _specialSwings = default;
-        private readonly EcsPoolInject<SwingStarted> _started = default;
-        private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
+        private readonly EcsPoolInject<CounterStrikeArmed> _armed = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -46,15 +39,14 @@ namespace Game.Simulation.Systems
                 if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out CounterStrikeConfig counter, out int level) == false)
                     continue;
 
-                if (TryFindWeapon(world, hero, out int weapon) == false)
-                    continue;
-
                 CounterStrikeLevel entry = counter.Level(level);
 
                 if (SimulationRandom.NextUnit(ref ResolveRandom(hero).State) >= entry.Chance)
                     continue;
 
-                Strike(world, hero, weapon, counter, entry);
+                ref CounterStrikeArmed armed = ref _armed.Value.Add(hero);
+                armed.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(counter.ArmedSeconds / _clock.Value.Delta));
+                armed.Level = level;
             }
         }
 
@@ -69,23 +61,6 @@ namespace Game.Simulation.Systems
             return false;
         }
 
-        private bool TryFindWeapon(EcsWorld world, int hero, out int weapon)
-        {
-            foreach (int entity in _weapons.Value)
-            {
-                if (_ownerLinks.Value.Get(entity).Owner.Unpack(world, out int owner) == false || owner != hero)
-                    continue;
-
-                weapon = entity;
-
-                return true;
-            }
-
-            weapon = -1;
-
-            return false;
-        }
-
         private ref CounterStrikeRandom ResolveRandom(int hero)
         {
             if (_randoms.Value.Has(hero))
@@ -95,41 +70,6 @@ namespace Game.Simulation.Systems
             random.State = SimulationRandom.StreamState(_context.Value.Seed, RandomStreamId);
 
             return ref random;
-        }
-
-        private void Strike(EcsWorld world, int hero, int weapon, CounterStrikeConfig counter, CounterStrikeLevel entry)
-        {
-            SwingVariant variant = counter.Swing;
-            SwingBake bake = variant.Bake;
-
-            float delta = _clock.Value.Delta;
-            int ticks = Mathf.Max(1, Mathf.RoundToInt(bake.ClipLength / variant.PlaybackSpeed / delta));
-
-            SwingPose pose = new SwingPose(_positions.Value.Get(hero).Value, _facings.Value.Get(hero).Value);
-
-            int entity = world.NewEntity();
-
-            ref Swing swing = ref _swings.Value.Add(entity);
-            swing.Weapon = world.PackEntity(weapon);
-            swing.Owner = world.PackEntity(hero);
-            swing.Variant = variant;
-            swing.DamageScale = entry.DamageShare;
-            swing.Kind = DamageKind.Perk;
-            swing.ClipTime = 0f;
-            swing.PlaybackSpeed = bake.ClipLength / (ticks * delta);
-            swing.RemainingTicks = ticks;
-
-            bake.SampleAt(0f, out Vector3 hand, out Vector3 tip);
-
-            swing.PreviousHand = pose.ToWorld(hand);
-            swing.PreviousTip = pose.ToWorld(tip);
-
-            _specialSwings.Value.Add(entity);
-            _started.Value.Add(entity);
-
-            ref SpecialAttack special = ref _specialAttacks.Value.Add(hero);
-            special.Attack = world.PackEntity(entity);
-            special.LocksMovement = counter.LocksMovement;
         }
     }
 }

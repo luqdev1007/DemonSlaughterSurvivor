@@ -22,7 +22,8 @@ namespace Game.Simulation.Tests
         private const string PerkId = "perk.counter-strike.test";
         private const string CounterPath = "Assets/_Project/Configs/Perks/CounterStrike_Berserk.asset";
         private const float WeaponDamage = 20f;
-        private const int SpinTicks = 42;
+        private const int SpinTicks = 60;
+        private const int ArmedTicks = 90;
 
         private readonly List<Object> _assets = new List<Object>();
         private readonly List<int> _hits = new List<int>();
@@ -65,10 +66,10 @@ namespace Game.Simulation.Tests
                 HitHero();
                 Step();
 
-                if (_world.GetPool<SpecialAttack>().Has(_hero))
+                if (_world.GetPool<CounterStrikeArmed>().Has(_hero))
                 {
                     strikes++;
-                    DropSpin();
+                    _world.GetPool<CounterStrikeArmed>().Del(_hero);
                 }
             }
 
@@ -86,7 +87,7 @@ namespace Game.Simulation.Tests
             HitHero();
             Step();
 
-            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero));
+            Assert.IsFalse(_world.GetPool<CounterStrikeArmed>().Has(_hero));
             Assert.IsFalse(_world.GetPool<CounterStrikeRandom>().Has(_hero), "no perk, no stream");
         }
 
@@ -209,6 +210,77 @@ namespace Game.Simulation.Tests
             Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero), "the marker goes with the Spin");
         }
 
+        [Test]
+        public void AnArmedStrikeWaitsForTheSwingAndReplacesTheNextOne()
+        {
+            Build(triggerOnly: true);
+            TakePerk(5);
+            MakeWeaponReady();
+
+            _world.GetPool<Swinging>().Add(_weapon);
+
+            ArmOnce();
+
+            for (int tick = 0; tick < 20; tick++)
+                Step();
+
+            Assert.IsTrue(_world.GetPool<CounterStrikeArmed>().Has(_hero), "a normal swing in progress is not cut");
+            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero));
+
+            _world.GetPool<Swinging>().Del(_weapon);
+            Step();
+
+            Assert.IsTrue(_world.GetPool<SpecialAttack>().Has(_hero), "the Spin takes the next swing");
+            Assert.IsFalse(_world.GetPool<CounterStrikeArmed>().Has(_hero));
+            Assert.Greater(_world.GetPool<WeaponReady>().Get(_weapon).Remaining, 0f, "the Spin spends the weapon's swing like a normal one");
+        }
+
+        [Test]
+        public void AnArmedStrikeExpiresAfterItsWindow()
+        {
+            Build(triggerOnly: true);
+            TakePerk(5);
+            MakeWeaponReady();
+
+            _world.GetPool<Swinging>().Add(_weapon);
+
+            ArmOnce();
+
+            for (int tick = 0; tick < ArmedTicks - 1; tick++)
+                Step();
+
+            Assert.IsTrue(_world.GetPool<CounterStrikeArmed>().Has(_hero));
+
+            Step();
+
+            Assert.IsFalse(_world.GetPool<CounterStrikeArmed>().Has(_hero), "1.5 s without a free swing burns the charge");
+
+            _world.GetPool<Swinging>().Del(_weapon);
+            Step();
+
+            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero));
+        }
+
+        private void ArmOnce()
+        {
+            for (int attempt = 0; attempt < 500; attempt++)
+            {
+                HitHero();
+                Step();
+
+                if (_world.GetPool<CounterStrikeArmed>().Has(_hero))
+                    return;
+            }
+
+            Assert.Fail("no counter strike armed in 500 hits");
+        }
+
+        private void MakeWeaponReady()
+        {
+            _world.GetPool<WeaponReady>().Add(_weapon).Remaining = 0f;
+            _world.GetPool<WeaponCooldown>().Add(_weapon).Value = 0.25f;
+        }
+
         private int StrikeOnce()
         {
             for (int attempt = 0; attempt < 500; attempt++)
@@ -227,13 +299,6 @@ namespace Game.Simulation.Tests
             Assert.Fail("no counter strike in 500 hits");
 
             return -1;
-        }
-
-        private void DropSpin()
-        {
-            _world.GetPool<SpecialAttack>().Get(_hero).Attack.Unpack(_world, out int spin);
-            _world.DelEntity(spin);
-            _world.GetPool<SpecialAttack>().Del(_hero);
         }
 
         private void HitHero()
@@ -325,6 +390,7 @@ namespace Game.Simulation.Tests
                 _systems.Add(new AdvanceSwingSystem());
             }
 
+            _systems.Add(new StartCounterStrikeSystem());
             _systems.Add(new TriggerCounterStrikeSystem());
 
             if (triggerOnly == false)
