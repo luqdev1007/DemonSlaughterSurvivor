@@ -833,6 +833,10 @@ namespace Game.Simulation.Tests
             {
             }
 
+            public void PlayPushReaction(float seconds)
+            {
+            }
+
             public void PlayAttack(string trigger, float speed)
             {
             }

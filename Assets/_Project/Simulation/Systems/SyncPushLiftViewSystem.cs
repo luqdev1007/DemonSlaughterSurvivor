@@ -1,4 +1,5 @@
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
@@ -15,18 +16,22 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Lifted> _liftedPool = default;
         private readonly EcsPoolInject<View> _views = default;
 
+        private readonly EcsCustomInject<SimulationClock> _clock = default;
+
         public void Run(IEcsSystems systems)
         {
             foreach (int entity in _pushed.Value)
             {
                 ref Pushed pushed = ref _pushes.Value.Get(entity);
-
-                if (pushed.ArcHeight <= 0f)
-                    continue;
-
                 ref View view = ref _views.Value.Get(entity);
 
                 if (view.Value == null)
+                    continue;
+
+                if (pushed.RemainingTicks == pushed.TotalTicks)
+                    view.Value.PlayPushReaction(pushed.TotalTicks * _clock.Value.Delta);
+
+                if (pushed.ArcHeight <= 0f)
                     continue;
 
                 view.Value.SetLift(SyncLeapLiftViewSystem.Arc(pushed.ArcHeight, pushed.TotalTicks - pushed.RemainingTicks, pushed.TotalTicks));

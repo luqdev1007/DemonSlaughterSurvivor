@@ -20,6 +20,8 @@ namespace Game.View
         private static readonly int IsPoweringUpId = Animator.StringToHash("IsPoweringUp");
         private static readonly int PowerUpTimeId = Animator.StringToHash("PowerUpTime");
         private static readonly int ActionPhaseId = Animator.StringToHash("ActionPhase");
+        private static readonly int PushReactionTriggerId = Animator.StringToHash("PushReaction");
+        private static readonly int PushReactionSpeedId = Animator.StringToHash("PushReactionSpeed");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -52,6 +54,7 @@ namespace Game.View
         private bool _isDead;
         private bool _hasAttackSpeedParameter;
         private bool _hasActionPhaseParameter;
+        private bool _hasPushReactionParameters;
         private int _actionPhase;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
@@ -106,6 +109,8 @@ namespace Game.View
             _hasSpecialParameter = HasParameter(animator, IsSpecialId, AnimatorControllerParameterType.Bool);
             _hasPowerUpParameters = HasParameter(animator, IsPoweringUpId, AnimatorControllerParameterType.Bool)
                 && HasParameter(animator, PowerUpTimeId, AnimatorControllerParameterType.Float);
+            _hasPushReactionParameters = HasParameter(animator, PushReactionTriggerId, AnimatorControllerParameterType.Trigger)
+                && HasParameter(animator, PushReactionSpeedId, AnimatorControllerParameterType.Float);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -138,6 +143,15 @@ namespace Game.View
         {
             _previousLift = _currentLift;
             _currentLift = height;
+        }
+
+        public void PlayPushReaction(float seconds)
+        {
+            if (_isDead || _hasPushReactionParameters == false || seconds <= 0f)
+                return;
+
+            _animator.SetFloat(PushReactionSpeedId, 1f / seconds);
+            _animator.SetTrigger(PushReactionTriggerId);
         }
 
         public void ResetInterpolation()
@@ -307,6 +321,9 @@ namespace Game.View
 
             if (_hasPowerUpParameters)
                 _animator.SetBool(IsPoweringUpId, false);
+
+            if (_hasPushReactionParameters)
+                _animator.ResetTrigger(PushReactionTriggerId);
 
             _isRunning = false;
             _isDashing = false;

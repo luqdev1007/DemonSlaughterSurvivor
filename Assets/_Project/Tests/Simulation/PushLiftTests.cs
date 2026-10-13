@@ -26,7 +26,7 @@ namespace Game.Simulation.Tests
             _systems = new EcsSystems(_world);
             _systems.Add(new ApplyPushSystem());
             _systems.Add(new SyncPushLiftViewSystem());
-            _systems.Inject();
+            _systems.Inject(Clock());
             _systems.Init();
         }
 
@@ -127,6 +127,55 @@ namespace Game.Simulation.Tests
             facing.Destroy();
         }
 
+        [Test]
+        public void PushReactionPlaysOnceForTheWholePushInSeconds()
+        {
+            RecordingView view = new RecordingView();
+            int enemy = SpawnEnemy(view);
+
+            Push(enemy, ArcHeight);
+            Assert.AreEqual(0, view.PushReactions.Count, "nothing plays before the view systems run");
+
+            ShowPushStart();
+
+            for (int tick = 0; tick < PushTicks + 4; tick++)
+                _systems.Run();
+
+            Assert.AreEqual(1, view.PushReactions.Count, "one reaction per push, not per airborne tick");
+            Assert.AreEqual(PushTicks / 60f, view.PushReactions[0], Tolerance, "the reaction lasts exactly as long as the push");
+        }
+
+        [Test]
+        public void FlatPushPlaysTheReactionToo()
+        {
+            RecordingView view = new RecordingView();
+            int enemy = SpawnEnemy(view);
+
+            Push(enemy, 0f);
+            ShowPushStart();
+
+            Assert.AreEqual(1, view.PushReactions.Count, "a push from a point (heroic leap) has no arc but still shoves the body");
+            Assert.AreEqual(0, view.Lifts.Count);
+        }
+
+        [Test]
+        public void ANewPushMidFlightRestartsTheReaction()
+        {
+            RecordingView view = new RecordingView();
+            int enemy = SpawnEnemy(view);
+
+            Push(enemy, ArcHeight);
+            ShowPushStart();
+
+            for (int tick = 0; tick < 10; tick++)
+                _systems.Run();
+
+            PushFromPoint.Apply(_world.GetPool<Pushed>(), enemy, Vector3.forward, 5f, PushTicks);
+            ShowPushStart();
+
+            Assert.AreEqual(2, view.PushReactions.Count);
+        }
+
         [TestCase(0.3f, 1f)]
         [TestCase(0.8f, 1f)]
         [TestCase(1.3f, 0.75f)]
@@ -140,6 +189,24 @@ namespace Game.Simulation.Tests
         public void ZeroReachPushesOnlyAtContactWithFullForce()
         {
             Assert.AreEqual(1f, SweepDashPushSystem.ResolvePushScale(0.5f, 0.8f, 0f, 0.5f), Tolerance);
+        }
+
+        private void ShowPushStart()
+        {
+            EcsSystems sync = new EcsSystems(_world);
+            sync.Add(new SyncPushLiftViewSystem());
+            sync.Inject(Clock());
+            sync.Init();
+            sync.Run();
+            sync.Destroy();
+        }
+
+        private static SimulationClock Clock()
+        {
+            SimulationClock clock = new SimulationClock();
+            clock.Advance(1f / 60f);
+
+            return clock;
         }
 
         private int SpawnEnemy(IView view)
@@ -165,6 +232,7 @@ namespace Game.Simulation.Tests
         private sealed class RecordingView : IView
         {
             public readonly List<float> Lifts = new List<float>();
+            public readonly List<float> PushReactions = new List<float>();
 
             public Transform Transform => null;
 
@@ -211,6 +279,11 @@ namespace Game.Simulation.Tests
             public void SetLift(float height)
             {
                 Lifts.Add(height);
+            }
+
+            public void PlayPushReaction(float seconds)
+            {
+                PushReactions.Add(seconds);
             }
 
             public void PlayAttack(string trigger, float speed)

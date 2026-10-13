@@ -28,6 +28,8 @@ namespace Game.Core
 
         void SetLift(float height);
 
+        void PlayPushReaction(float seconds);
+
         void PlayAttack(string trigger, float speed);
 
         void SetAction(in ActionCue cue);
