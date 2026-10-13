@@ -41,6 +41,7 @@ namespace Game.View
         private readonly Dictionary<GameObject, Dismemberment> _dismemberments = new Dictionary<GameObject, Dismemberment>();
         private readonly HashSet<GameObject> _gemPrefabs = new HashSet<GameObject>();
         private readonly HashSet<GameObject> _breakablePrefabs = new HashSet<GameObject>();
+        private readonly Dictionary<GameObject, GameObject> _templates = new Dictionary<GameObject, GameObject>();
         private readonly GoreDirector _gore;
         private readonly CombatAudio _audio;
 
@@ -61,6 +62,7 @@ namespace Game.View
         private readonly float _knockbackGravity;
         private readonly float _knockbackFriction;
 
+        private GameObject _templateRoot;
         private bool _disposed;
 
         public ViewPool(LevelConfig level, IContentRegistry content, GoreDirector gore, CombatAudio audio)
@@ -211,6 +213,12 @@ namespace Game.View
             }
 
             _dissolveCopies.Clear();
+
+            if (_templateRoot != null)
+                UnityEngine.Object.Destroy(_templateRoot);
+
+            _templateRoot = null;
+            _templates.Clear();
         }
 
         private void CompleteRetire(ViewInterpolator view)
@@ -446,7 +454,7 @@ namespace Game.View
                 return pooled;
             }
 
-            GameObject instance = UnityEngine.Object.Instantiate(prefab);
+            GameObject instance = UnityEngine.Object.Instantiate(SourceFor(prefab));
 
             if (instance.TryGetComponent(out ViewInterpolator view) == false)
             {
@@ -473,6 +481,59 @@ namespace Game.View
             _all.Add(entry);
 
             return entry;
+        }
+
+        private GameObject SourceFor(GameObject prefab)
+        {
+            if (prefab.TryGetComponent(out OptimizedRig rig) == false)
+                return prefab;
+
+            if (_templates.TryGetValue(prefab, out GameObject template))
+                return template;
+
+            if (_templateRoot == null)
+            {
+                _templateRoot = new GameObject("View Templates");
+                _templateRoot.SetActive(false);
+            }
+
+            Animator source = prefab.GetComponentInChildren<Animator>(true);
+
+            if (source == null || source.avatar == null)
+                throw new InvalidOperationException(
+                    $"Prefab '{prefab.name}' has an {nameof(OptimizedRig)}, but no {nameof(Animator)} with an avatar under it. " +
+                    "Only an avatar-driven hierarchy can be optimized.");
+
+            RequireExposed(prefab, source.transform, rig.ExposedTransforms);
+
+            template = UnityEngine.Object.Instantiate(prefab, _templateRoot.transform);
+            template.name = prefab.name;
+
+            Animator animator = template.GetComponentInChildren<Animator>(true);
+
+            AnimatorUtility.OptimizeTransformHierarchy(animator.gameObject, rig.ExposedTransforms);
+
+            _templates.Add(prefab, template);
+
+            return template;
+        }
+
+        private static void RequireExposed(GameObject prefab, Transform root, string[] exposed)
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+
+            for (int index = 0; index < exposed.Length; index++)
+            {
+                bool found = false;
+
+                for (int candidate = 0; candidate < transforms.Length && found == false; candidate++)
+                    found = transforms[candidate].name == exposed[index];
+
+                if (found == false)
+                    throw new InvalidOperationException(
+                        $"Prefab '{prefab.name}' exposes '{exposed[index]}' in its {nameof(OptimizedRig)}, " +
+                        $"but no transform under its {nameof(Animator)} has that name. A misspelled bone would vanish with the rest of the rig.");
+            }
         }
 
         private Vector3 ResolveKnockbackVelocity(Vector3 direction)
