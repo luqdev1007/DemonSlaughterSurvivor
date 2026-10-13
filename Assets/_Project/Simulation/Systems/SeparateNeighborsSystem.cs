@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<LevelConfig> _level = default;
 
         private List<GridHit> _neighbors;
+        private int _tick;
 
         public void Init(IEcsSystems systems)
         {
@@ -38,6 +39,10 @@ namespace Game.Simulation.Systems
         {
             SpatialGrid grid = _grid.Value;
 
+            _tick++;
+
+            int parity = _tick & 1;
+
             foreach (int entity in _filter.Value)
             {
                 ref Separation separation = ref _separations.Value.Get(entity);
@@ -48,65 +53,74 @@ namespace Game.Simulation.Systems
                 if (separation.Strength <= 0f)
                     continue;
 
-                ref Position position = ref _positions.Value.Get(entity);
+                if ((entity & 1) == parity)
+                    separation.Push = ResolvePush(grid, entity, separation.Radius);
 
-                grid.QuerySnapshot(position.Value, separation.Radius, _neighbors);
-
-                float pushX = 0f;
-                float pushZ = 0f;
-
-                for (int index = 0; index < _neighbors.Count; index++)
-                {
-                    GridHit hit = _neighbors[index];
-                    int neighbor = hit.Entity;
-
-                    if (neighbor == entity)
-                        continue;
-
-                    if (_enemies.Value.Has(neighbor) == false)
-                        continue;
-
-                    float deltaX = -hit.DeltaX;
-                    float deltaZ = -hit.DeltaZ;
-
-                    float squared = hit.SquaredDistance;
-
-                    if (squared <= CoincidenceEpsilonSquared)
-                    {
-                        float angle = ResolveTieBreakAngle(entity, neighbor);
-
-                        float sign = entity < neighbor ? 1f : -1f;
-
-                        pushX += Mathf.Cos(angle) * sign;
-                        pushZ += Mathf.Sin(angle) * sign;
-
-                        continue;
-                    }
-
-                    float distance = Mathf.Sqrt(squared);
-
-                    float weight = 1f - distance / separation.Radius;
-
-                    if (weight <= 0f)
-                        continue;
-
-                    float scale = weight / distance;
-
-                    pushX += deltaX * scale;
-                    pushZ += deltaZ * scale;
-                }
-
-                float pushLength = Mathf.Sqrt(pushX * pushX + pushZ * pushZ);
-
-                if (pushLength <= MinimumPushLength)
+                if (separation.Push == Vector3.zero)
                     continue;
-
-                Vector3 push = new Vector3(pushX / pushLength, 0f, pushZ / pushLength);
 
                 ref MoveIntent intent = ref _intents.Value.Get(entity);
 
-                intent.Value = Blend(intent.Value, push, separation.Strength);
+                intent.Value = Blend(intent.Value, separation.Push, separation.Strength);
             }
+        }
+
+        private Vector3 ResolvePush(SpatialGrid grid, int entity, float radius)
+        {
+            ref Position position = ref _positions.Value.Get(entity);
+
+            grid.QuerySnapshot(position.Value, radius, _neighbors);
+
+            float pushX = 0f;
+            float pushZ = 0f;
+
+            for (int index = 0; index < _neighbors.Count; index++)
+            {
+                GridHit hit = _neighbors[index];
+                int neighbor = hit.Entity;
+
+                if (neighbor == entity)
+                    continue;
+
+                if (_enemies.Value.Has(neighbor) == false)
+                    continue;
+
+                float deltaX = -hit.DeltaX;
+                float deltaZ = -hit.DeltaZ;
+
+                float squared = hit.SquaredDistance;
+
+                if (squared <= CoincidenceEpsilonSquared)
+                {
+                    float angle = ResolveTieBreakAngle(entity, neighbor);
+
+                    float sign = entity < neighbor ? 1f : -1f;
+
+                    pushX += Mathf.Cos(angle) * sign;
+                    pushZ += Mathf.Sin(angle) * sign;
+
+                    continue;
+                }
+
+                float distance = Mathf.Sqrt(squared);
+
+                float weight = 1f - distance / radius;
+
+                if (weight <= 0f)
+                    continue;
+
+                float scale = weight / distance;
+
+                pushX += deltaX * scale;
+                pushZ += deltaZ * scale;
+            }
+
+            float pushLength = Mathf.Sqrt(pushX * pushX + pushZ * pushZ);
+
+            if (pushLength <= MinimumPushLength)
+                return Vector3.zero;
+
+            return new Vector3(pushX / pushLength, 0f, pushZ / pushLength);
         }
 
         private Vector3 Blend(Vector3 intent, Vector3 push, float strength)

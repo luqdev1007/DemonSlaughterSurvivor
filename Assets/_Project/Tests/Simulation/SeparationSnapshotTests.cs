@@ -43,7 +43,7 @@ namespace Game.Simulation.Tests
         [TestCase(987654321, 600, 10f, 300)]
         [TestCase(12345, 600, 4f, 300)]
         [TestCase(777, 150, 25f, 10)]
-        public void SeparationMatchesTheLivePositionAlgorithmBitForBit(int seed, int count, float side, int minimumChanged)
+        public void StaggeredSeparationMatchesTheLivePositionAlgorithmBitForBit(int seed, int count, float side, int minimumChanged)
         {
             Build();
 
@@ -70,25 +70,50 @@ namespace Game.Simulation.Tests
 
             _systems.Run();
 
-            int mismatches = 0;
-            int changed = 0;
+            int firstTickMismatches = 0;
+            int firstTickWaiting = 0;
 
             for (int index = 0; index < enemies.Count; index++)
             {
                 Vector3 actual = _world.GetPool<MoveIntent>().Get(enemies[index]).Value;
 
-                if (BitEquals(actual, expected[index]) == false)
-                    mismatches++;
+                if ((enemies[index] & 1) == 1)
+                {
+                    if (BitEquals(actual, expected[index]) == false)
+                        firstTickMismatches++;
+                }
+                else if (BitEquals(actual, _initial[index]) == false)
+                {
+                    firstTickWaiting++;
+                }
             }
+
+            Assert.AreEqual(0, firstTickMismatches, "odd ids recompute on the first tick and must match the live-position algorithm bit for bit");
+            Assert.AreEqual(0, firstTickWaiting, "even ids have no push yet on the first tick and must keep their intent");
+
+            ResetIntents(enemies);
+            _systems.Run();
+
+            int mismatches = 0;
+            int changed = 0;
 
             for (int index = 0; index < enemies.Count; index++)
             {
+                if (BitEquals(_world.GetPool<MoveIntent>().Get(enemies[index]).Value, expected[index]) == false)
+                    mismatches++;
+
                 if (BitEquals(expected[index], _initial[index]) == false)
                     changed++;
             }
 
-            Assert.AreEqual(0, mismatches, "separation must give the same intents as the live-position query, bit for bit");
+            Assert.AreEqual(0, mismatches, "on the second tick even ids recompute and odd ids reuse their push; both must match bit for bit");
             Assert.GreaterOrEqual(changed, minimumChanged, "too few intents changed for the comparison to mean anything");
+        }
+
+        private void ResetIntents(List<int> enemies)
+        {
+            for (int index = 0; index < enemies.Count; index++)
+                _world.GetPool<MoveIntent>().Get(enemies[index]).Value = _initial[index];
         }
 
         private void Build()
