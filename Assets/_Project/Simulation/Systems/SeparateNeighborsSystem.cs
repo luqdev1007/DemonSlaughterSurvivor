@@ -14,7 +14,6 @@ namespace Game.Simulation.Systems
         private const float CoincidenceEpsilonSquared = 1e-6f;
         private const float MinimumPushLength = 1e-5f;
         private const float TieBreakAngleScale = 6.2831855f / 4294967296f;
-        private const float CandidateSlack = 0f;
 
         private readonly EcsFilterInject<Inc<Enemy, Position, MoveIntent, Separation>> _filter = default;
 
@@ -26,13 +25,13 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
 
-        private List<int> _neighbors;
+        private List<GridHit> _neighbors;
 
         public void Init(IEcsSystems systems)
         {
             int capacity = WaveTimelineValidator.ResolveMaxLiveCap(_level.Value.Waves) + NonEnemyCapacityReserve;
 
-            _neighbors = new List<int>(capacity);
+            _neighbors = new List<GridHit>(capacity);
         }
 
         public void Run(IEcsSystems systems)
@@ -51,14 +50,15 @@ namespace Game.Simulation.Systems
 
                 ref Position position = ref _positions.Value.Get(entity);
 
-                grid.Query(position.Value, separation.Radius, CandidateSlack, _neighbors);
+                grid.QuerySnapshot(position.Value, separation.Radius, _neighbors);
 
                 float pushX = 0f;
                 float pushZ = 0f;
 
                 for (int index = 0; index < _neighbors.Count; index++)
                 {
-                    int neighbor = _neighbors[index];
+                    GridHit hit = _neighbors[index];
+                    int neighbor = hit.Entity;
 
                     if (neighbor == entity)
                         continue;
@@ -66,12 +66,10 @@ namespace Game.Simulation.Systems
                     if (_enemies.Value.Has(neighbor) == false)
                         continue;
 
-                    ref Position neighborPosition = ref _positions.Value.Get(neighbor);
+                    float deltaX = -hit.DeltaX;
+                    float deltaZ = -hit.DeltaZ;
 
-                    float deltaX = position.Value.x - neighborPosition.Value.x;
-                    float deltaZ = position.Value.z - neighborPosition.Value.z;
-
-                    float squared = deltaX * deltaX + deltaZ * deltaZ;
+                    float squared = hit.SquaredDistance;
 
                     if (squared <= CoincidenceEpsilonSquared)
                     {
