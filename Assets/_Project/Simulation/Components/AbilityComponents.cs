@@ -40,5 +40,7 @@ namespace Game.Simulation.Components
         public float PushArcHeight;
         public float PushReach;
         public float PushEdgeScale;
+        public float PushForwardTiltDegrees;
+        public float PushSpreadDegrees;
     }
 }

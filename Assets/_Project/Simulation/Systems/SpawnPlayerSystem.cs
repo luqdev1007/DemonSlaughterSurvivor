@@ -122,6 +122,8 @@ namespace Game.Simulation.Systems
             dashStats.PushArcHeight = dash.PushArcHeight;
             dashStats.PushReach = dash.PushReach;
             dashStats.PushEdgeScale = dash.PushEdgeScale;
+            dashStats.PushForwardTiltDegrees = dash.PushForwardTiltDegrees;
+            dashStats.PushSpreadDegrees = dash.PushSpreadDegrees;
 
             ref UltimateCharge charge = ref _charges.Value.Add(entity);
             charge.Value = 0f;

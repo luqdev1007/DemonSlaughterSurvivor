@@ -21,6 +21,8 @@ namespace Game.Configs
         [SerializeField] private float _pushArcHeight = 1.2f;
         [SerializeField] private float _pushReach = 1f;
         [SerializeField] private float _pushEdgeScale = 0.5f;
+        [SerializeField] private float _pushForwardTiltDegrees = 30f;
+        [SerializeField] private float _pushSpreadDegrees = 15f;
 
         public float Distance => _distance;
         public float Duration => _duration;
@@ -39,5 +41,9 @@ namespace Game.Configs
         public float PushReach => _pushReach;
 
         public float PushEdgeScale => _pushEdgeScale;
+
+        public float PushForwardTiltDegrees => _pushForwardTiltDegrees;
+
+        public float PushSpreadDegrees => _pushSpreadDegrees;
     }
 }

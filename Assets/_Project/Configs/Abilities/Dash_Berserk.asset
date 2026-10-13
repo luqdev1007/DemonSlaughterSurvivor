@@ -24,3 +24,5 @@ MonoBehaviour:
   _pushArcHeight: 1.2
   _pushReach: 1
   _pushEdgeScale: 0.5
+  _pushForwardTiltDegrees: 30
+  _pushSpreadDegrees: 15

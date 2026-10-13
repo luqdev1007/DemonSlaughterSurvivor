@@ -14,7 +14,7 @@ namespace Game.Simulation.Systems
     {
         private const int CapacityReserve = 16;
         private const float CoincidenceEpsilonSquared = 1e-6f;
-        private const float TieBreakAngleScale = 6.2831855f / 4294967296f;
+        private const float SpreadUnitScale = 1f / 2147483648f;
 
         private readonly EcsFilterInject<Inc<Player, Dashing, DashStats, Position, PreviousPosition, BodyRadius>> _dashers = default;
         private readonly EcsFilterInject<Inc<Enemy, Position, BodyRadius, Velocity>, Exc<NotPushable>> _targets = default;
@@ -23,6 +23,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
+        private readonly EcsPoolInject<Dashing> _dashes = default;
         private readonly EcsPoolInject<Pushed> _pushes = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -64,6 +65,21 @@ namespace Game.Simulation.Systems
                     $"{nameof(DashAbilityConfig)} '{dash.Id}' has a {nameof(DashAbilityConfig.PushEdgeScale)} of {dash.PushEdgeScale}. " +
                     "It is the share of the push left at the edge of the reach and must be in [0, 1].");
 
+            if (float.IsNaN(dash.PushForwardTiltDegrees) || dash.PushForwardTiltDegrees < 0f || dash.PushForwardTiltDegrees > 90f)
+                throw new InvalidOperationException(
+                    $"{nameof(DashAbilityConfig)} '{dash.Id}' has a {nameof(DashAbilityConfig.PushForwardTiltDegrees)} of {dash.PushForwardTiltDegrees}. " +
+                    "It tilts the sideways push towards the dash direction and must be in [0, 90]: 0 is straight aside, 90 is straight ahead.");
+
+            if (float.IsNaN(dash.PushSpreadDegrees) || dash.PushSpreadDegrees < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(DashAbilityConfig)} '{dash.Id}' has a {nameof(DashAbilityConfig.PushSpreadDegrees)} of {dash.PushSpreadDegrees}. " +
+                    "Use 0 for every enemy on one side to fly at the same angle.");
+
+            if (dash.PushForwardTiltDegrees + dash.PushSpreadDegrees >= 90f)
+                throw new InvalidOperationException(
+                    $"{nameof(DashAbilityConfig)} '{dash.Id}' has a forward tilt of {dash.PushForwardTiltDegrees} and a spread of {dash.PushSpreadDegrees}. " +
+                    "Together they must stay below 90 degrees, otherwise an enemy beside the path could be thrown across it to the other side.");
+
             WaveTimelineConfig waves = _level.Value.Waves;
 
             _pushedThisDash = new HashSet<int>(WaveTimelineValidator.ResolveMaxLiveCap(waves) + CapacityReserve);
@@ -85,19 +101,20 @@ namespace Game.Simulation.Systems
                 ref PreviousPosition previous = ref _previousPositions.Value.Get(dasher);
                 ref BodyRadius dasherRadius = ref _bodyRadii.Value.Get(dasher);
                 ref DashStats stats = ref _dashStats.Value.Get(dasher);
+                ref Dashing dash = ref _dashes.Value.Get(dasher);
 
                 if (stats.PushSpeed <= 0f || stats.PushSeconds <= 0f)
                     continue;
 
                 int ticks = Mathf.Max(1, Mathf.RoundToInt(stats.PushSeconds / _clock.Value.Delta));
 
-                Sweep(dasher, previous.Value, position.Value, dasherRadius.Value, ticks, in stats);
+                Sweep(dasher, previous.Value, position.Value, dash.Direction, dasherRadius.Value, ticks, in stats);
             }
 
             _wasDashing = dashing;
         }
 
-        private void Sweep(int dasher, Vector3 from, Vector3 to, float dasherRadius, int ticks, in DashStats stats)
+        private void Sweep(int dasher, Vector3 from, Vector3 to, Vector3 dashDirection, float dasherRadius, int ticks, in DashStats stats)
         {
             foreach (int target in _targets.Value)
             {
@@ -127,23 +144,16 @@ namespace Game.Simulation.Systems
                 if (squared >= reach * reach)
                     continue;
 
-                Vector3 direction;
-                float scale = 1f;
+                Vector3 direction = ResolvePushDirection(
+                    dashDirection,
+                    to - from,
+                    targetPosition.Value - from,
+                    ResolvePairHash(dasher, target),
+                    stats.PushForwardTiltDegrees,
+                    stats.PushSpreadDegrees,
+                    out float lateral);
 
-                if (squared <= CoincidenceEpsilonSquared)
-                {
-                    float angle = ResolveTieBreakAngle(dasher, target);
-
-                    direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-                }
-                else
-                {
-                    float distance = Mathf.Sqrt(squared);
-
-                    direction = new Vector3(deltaX / distance, 0f, deltaZ / distance);
-
-                    scale = ResolvePushScale(distance, contact, stats.PushReach, stats.PushEdgeScale);
-                }
+                float scale = ResolvePushScale(lateral, contact, stats.PushReach, stats.PushEdgeScale);
 
                 ref Pushed pushed = ref _pushes.Value.Add(target);
                 pushed.Velocity = direction * (stats.PushSpeed * scale);
@@ -161,6 +171,65 @@ namespace Game.Simulation.Systems
                 return 1f;
 
             return Mathf.Lerp(1f, edgeScale, (distance - contact) / reach);
+        }
+
+        public static Vector3 ResolvePushDirection(
+            Vector3 dashDirection,
+            Vector3 step,
+            Vector3 offset,
+            uint hash,
+            float forwardTiltDegrees,
+            float spreadDegrees,
+            out float lateral)
+        {
+            Vector3 forward = Flatten(dashDirection);
+
+            if (forward.sqrMagnitude <= CoincidenceEpsilonSquared)
+                forward = Flatten(step);
+
+            if (forward.sqrMagnitude <= CoincidenceEpsilonSquared)
+                forward = Vector3.forward;
+
+            forward.Normalize();
+
+            Vector3 right = new Vector3(forward.z, 0f, -forward.x);
+
+            float signedLateral = offset.x * right.x + offset.z * right.z;
+
+            lateral = Mathf.Abs(signedLateral);
+
+            float side;
+
+            if (signedLateral * signedLateral > CoincidenceEpsilonSquared)
+                side = signedLateral > 0f ? 1f : -1f;
+            else
+                side = (hash & 0x80000000u) != 0u ? 1f : -1f;
+
+            float unit = (hash & 0x7FFFFFFFu) * SpreadUnitScale;
+            float angle = (90f - forwardTiltDegrees + spreadDegrees * (2f * unit - 1f)) * Mathf.Deg2Rad;
+
+            return forward * Mathf.Cos(angle) + right * (side * Mathf.Sin(angle));
+        }
+
+        public static uint ResolvePairHash(int dasher, int target)
+        {
+            int low = dasher < target ? dasher : target;
+            int high = dasher < target ? target : dasher;
+
+            uint hash = unchecked((uint)low * 2654435761u) ^ unchecked((uint)high * 2246822519u);
+
+            hash ^= hash >> 15;
+            hash = unchecked(hash * 2246822519u);
+            hash ^= hash >> 13;
+            hash = unchecked(hash * 3266489917u);
+            hash ^= hash >> 16;
+
+            return hash;
+        }
+
+        private static Vector3 Flatten(Vector3 vector)
+        {
+            return new Vector3(vector.x, 0f, vector.z);
         }
 
         private static Vector3 ClosestPointOnSegment(Vector3 point, Vector3 from, Vector3 to)
@@ -188,22 +257,6 @@ namespace Game.Simulation.Systems
             closest.y = 0f;
 
             return closest;
-        }
-
-        private static float ResolveTieBreakAngle(int dasher, int target)
-        {
-            int low = dasher < target ? dasher : target;
-            int high = dasher < target ? target : dasher;
-
-            uint hash = unchecked((uint)low * 2654435761u) ^ unchecked((uint)high * 2246822519u);
-
-            hash ^= hash >> 15;
-            hash = unchecked(hash * 2246822519u);
-            hash ^= hash >> 13;
-            hash = unchecked(hash * 3266489917u);
-            hash ^= hash >> 16;
-
-            return hash * TieBreakAngleScale;
         }
     }
 }
