@@ -16,10 +16,10 @@ MonoBehaviour:
   _spawnRadius: 30
   _waves:
   - _durationSeconds: 30
-    _spawnRatePerSecond: 1
-    _liveCap: 30
-    _liveFloor: 0
-    _refillRatePerSecond: 0
+    _spawnRatePerSecond: 4
+    _liveCap: 50
+    _liveFloor: 15
+    _refillRatePerSecond: 2
     _enemies:
     - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
       _weight: 0.5
@@ -28,11 +28,11 @@ MonoBehaviour:
     - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
       _weight: 0.25
     _guaranteed: []
-  - _durationSeconds: 60
-    _spawnRatePerSecond: 2
-    _liveCap: 60
-    _liveFloor: 15
-    _refillRatePerSecond: 1
+  - _durationSeconds: 45
+    _spawnRatePerSecond: 6
+    _liveCap: 100
+    _liveFloor: 45
+    _refillRatePerSecond: 3
     _enemies:
     - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
       _weight: 1
