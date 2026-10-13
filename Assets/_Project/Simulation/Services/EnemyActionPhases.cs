@@ -45,6 +45,13 @@ namespace Game.Simulation.Services
                 || phase == EnemyActionPhase.SpinRecover;
         }
 
+        public static bool IsHeavyStrike(EnemyActionPhase phase)
+        {
+            return phase == EnemyActionPhase.StrikeWindup
+                || phase == EnemyActionPhase.StrikeLock
+                || phase == EnemyActionPhase.StrikeRecover;
+        }
+
         public static bool HoldsPosition(EnemyActionPhase phase)
         {
             return phase != EnemyActionPhase.None && phase != EnemyActionPhase.Spinning;

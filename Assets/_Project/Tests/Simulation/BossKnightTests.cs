@@ -28,6 +28,7 @@ namespace Game.Simulation.Tests
         private BossConfig _boss;
         private ChargeAbilityConfig _charge;
         private SpinAbilityConfig _spin;
+        private HeavyStrikeAbilityConfig _heavyStrike;
         private EnemyConfig _enemy;
         private int _hero;
         private int _knight;
@@ -41,6 +42,7 @@ namespace Game.Simulation.Tests
             _world = null;
             _abilityHits.Clear();
             CountAbilityEvents = 0;
+            _heavyStrike = null;
 
             foreach (Object asset in _assets)
                 Object.DestroyImmediate(asset);
@@ -218,6 +220,100 @@ namespace Game.Simulation.Tests
             Run(240);
             Assert.AreEqual(EnemyActionPhase.SpinRecover, Phase());
             Assert.AreEqual(0, CountModifiers(_spin.Id));
+        }
+
+        [Test]
+        public void TheHeavyStrikeWalksWindupLockRecoverAndHitsOnceAtTheImpact()
+        {
+            BuildConfigs();
+            AddHeavyStrike();
+            BuildWorld(heroAt: new Vector3(0f, 0f, 3f), seed: Seed);
+
+            Run(1);
+            Assert.AreEqual(EnemyActionPhase.StrikeWindup, Phase());
+
+            AssertPhaseFrom(tick: 109, EnemyActionPhase.StrikeLock, previousFor: 108);
+            Assert.AreEqual(0, _abilityHits.Count, "nothing lands while the marker grows");
+
+            AssertPhaseFrom(tick: 139, EnemyActionPhase.StrikeRecover, previousFor: 30);
+            Assert.AreEqual(1, _abilityHits.Count, "the impact lands on the tick the lock ends");
+            Assert.AreEqual(45f, _abilityHits[0]);
+
+            AssertPhaseFrom(tick: 259, EnemyActionPhase.None, previousFor: 120);
+            Assert.AreEqual(1, _abilityHits.Count, "one impact per strike");
+        }
+
+        [Test]
+        public void TheWindupTurnsToTheHeroAndTheImpactLandsWhereItLocked()
+        {
+            BuildConfigs();
+            AddHeavyStrike();
+            BuildWorld(heroAt: new Vector3(3f, 0f, 0f), seed: Seed);
+
+            Run(109);
+            Assert.AreEqual(EnemyActionPhase.StrikeLock, Phase());
+
+            Vector3 locked = _world.GetPool<EnemyHeavyStrike>().Get(_knight).Direction;
+            Assert.AreEqual(0f, Vector3.Angle(Vector3.right, locked), 0.5f, "90 deg/s for 1.8 s turns the boss fully onto the hero at 90 deg");
+
+            Position(_hero) = new Vector3(0f, 0f, 3f);
+            Run(30);
+
+            Assert.AreEqual(EnemyActionPhase.StrikeRecover, Phase());
+            Assert.AreEqual(0, CountAbilityEvents, "stepping out of the locked marker dodges the impact");
+        }
+
+        [TestCase(3f, 90f)]
+        [TestCase(-3f, -90f)]
+        public void TheWindupReportsItsSignedTurnRateAndZeroOnceItFacesTheHero(float heroX, float expectedRate)
+        {
+            BuildConfigs();
+            AddHeavyStrike();
+            BuildWorld(heroAt: new Vector3(heroX, 0f, 0f), seed: Seed);
+
+            Run(1);
+            Assert.AreEqual(expectedRate, _world.GetPool<EnemyHeavyStrike>().Get(_knight).TurnDegreesPerSecond, 0.5f, "positive turns right, negative turns left");
+
+            Run(70);
+            Assert.AreEqual(EnemyActionPhase.StrikeWindup, Phase());
+            Assert.AreEqual(0f, _world.GetPool<EnemyHeavyStrike>().Get(_knight).TurnDegreesPerSecond, 1e-3f, "90 deg take 60 ticks; after that the boss faces the hero and stands");
+
+            Run(40);
+            Assert.AreEqual(EnemyActionPhase.StrikeLock, Phase());
+            Assert.AreEqual(0f, _world.GetPool<EnemyHeavyStrike>().Get(_knight).TurnDegreesPerSecond, "no turning while locked");
+        }
+
+        [TestCase(5.3f, 1)]
+        [TestCase(5.5f, 0)]
+        public void TheImpactReachesTheRadiusPlusTheHeroRim(float heroZ, int expectedHits)
+        {
+            BuildConfigs();
+            AddHeavyStrike();
+            BuildWorld(heroAt: new Vector3(0f, 0f, 3f), seed: Seed);
+
+            Run(109);
+            Position(_hero) = new Vector3(0f, 0f, heroZ);
+            Run(30);
+
+            Assert.AreEqual(expectedHits, CountAbilityEvents, "impact at 3 m, radius 2 plus the hero's 0.4: 5.3 m is in, 5.5 m is out");
+        }
+
+        [Test]
+        public void AZeroWeightHeavyStrikeIsNeverChosen()
+        {
+            for (int seed = 1; seed <= 16; seed++)
+            {
+                TearDown();
+                BuildConfigs();
+                AddHeavyStrike();
+                SetField(_boss, "_spinWeight", 1f);
+                SetField(_boss, "_heavyStrikeWeight", 0f);
+                BuildWorld(heroAt: new Vector3(0f, 0f, 3f), seed: seed);
+
+                Run(1);
+
+                Assert.AreEqual(EnemyActionPhase.SpinRaise, Phase(), $"seed {seed}");
+            }
         }
 
         [Test]
@@ -501,6 +597,16 @@ namespace Game.Simulation.Tests
             SetField(_enemy, "_spin", _spin);
         }
 
+        private void AddHeavyStrike()
+        {
+            _heavyStrike = Create<HeavyStrikeAbilityConfig>();
+            SetField(_heavyStrike, "_id", "ability.heavy_strike.test");
+            SetField(_enemy, "_heavyStrike", _heavyStrike);
+            SetField(_boss, "_chargeWeight", 0f);
+            SetField(_boss, "_spinWeight", 0f);
+            SetField(_boss, "_heavyStrikeWeight", 1f);
+        }
+
         private void BuildWorld(Vector3 heroAt, int seed, float heroRadius = 0.4f)
         {
             _world = new EcsWorld();
@@ -521,6 +627,10 @@ namespace Game.Simulation.Tests
             _world.GetPool<EnemyAction>().Add(_knight);
             _world.GetPool<EnemyCharge>().Add(_knight).Config = _charge;
             _world.GetPool<EnemySpin>().Add(_knight).Config = _spin;
+
+            if (_heavyStrike != null)
+                _world.GetPool<EnemyHeavyStrike>().Add(_knight).Config = _heavyStrike;
+
             _world.GetPool<Position>().Add(_knight).Value = Vector3.zero;
             _world.GetPool<PreviousPosition>().Add(_knight).Value = Vector3.zero;
             _world.GetPool<Facing>().Add(_knight).Value = Vector3.forward;
@@ -537,14 +647,17 @@ namespace Game.Simulation.Tests
             _systems.Add(new ChaseTargetSystem());
             _systems.Add(new AdvanceEnemyChargeSystem());
             _systems.Add(new AdvanceEnemySpinSystem());
+            _systems.Add(new AdvanceEnemyHeavyStrikeSystem());
             _systems.Add(new BossDecideSystem());
             _systems.Add(new HoldForEnemyActionSystem());
             _systems.Add(new StorePreviousPositionSystem());
             _systems.Add(new ApplyEnemyChargeVelocitySystem());
             _systems.Add(new ApplyMoveSpeedSystem());
             _systems.Add(new FaceEnemyChargeTargetSystem());
+            _systems.Add(new FaceEnemyHeavyStrikeTargetSystem());
             _systems.Add(new MoveSystem());
             _systems.Add(new PulseEnemySpinSystem());
+            _systems.Add(new ImpactEnemyHeavyStrikeSystem());
             _systems.Add(new SweepEnemyChargeSystem());
             _systems.Add(new TickInvulnerabilitySystem());
             _systems.Add(new ApplyDamageSystem());

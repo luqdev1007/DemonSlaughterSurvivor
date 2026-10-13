@@ -12,7 +12,10 @@ namespace Game.Simulation.Components
         ChargeRecover = 4,
         SpinRaise = 5,
         Spinning = 6,
-        SpinRecover = 7
+        SpinRecover = 7,
+        StrikeWindup = 8,
+        StrikeLock = 9,
+        StrikeRecover = 10
     }
 
     public struct Boss { public BossConfig Config; }
@@ -38,6 +41,15 @@ namespace Game.Simulation.Components
     }
 
     public struct Rushing { }
+
+    public struct EnemyHeavyStrike
+    {
+        public HeavyStrikeAbilityConfig Config;
+        public int CooldownTicks;
+        public Vector3 Direction;
+        public bool ImpactPending;
+        public float TurnDegreesPerSecond;
+    }
 
     public struct EnemySpin
     {

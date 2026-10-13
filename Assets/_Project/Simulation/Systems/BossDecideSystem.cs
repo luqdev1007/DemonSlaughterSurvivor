@@ -21,6 +21,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<EnemyAction> _actions = default;
         private readonly EcsPoolInject<EnemyCharge> _charges = default;
         private readonly EcsPoolInject<EnemySpin> _spins = default;
+        private readonly EcsPoolInject<EnemyHeavyStrike> _heavyStrikes = default;
         private readonly EcsPoolInject<BossRandom> _randoms = default;
         private readonly EcsPoolInject<ChaseTarget> _chaseTargets = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -49,6 +50,9 @@ namespace Game.Simulation.Systems
 
                 if (enemy.Spin != null)
                     enemy.Spin.Validate(enemy);
+
+                if (enemy.HeavyStrike != null)
+                    enemy.HeavyStrike.Validate(enemy);
             }
         }
 
@@ -79,7 +83,8 @@ namespace Game.Simulation.Systems
 
                 float chargeWeight = CanCharge(entity, distance) ? boss.ChargeWeight : 0f;
                 float spinWeight = CanSpin(entity, distance) ? boss.SpinWeight : 0f;
-                float total = chargeWeight + spinWeight;
+                float strikeWeight = CanHeavyStrike(entity, distance) ? boss.HeavyStrikeWeight : 0f;
+                float total = chargeWeight + spinWeight + strikeWeight;
 
                 if (total <= 0f)
                     continue;
@@ -88,8 +93,10 @@ namespace Game.Simulation.Systems
 
                 if (roll < chargeWeight)
                     StartCharge(entity, ref action, delta);
-                else
+                else if (roll < chargeWeight + spinWeight)
                     StartSpin(entity, ref action, delta);
+                else
+                    StartHeavyStrike(entity, ref action, delta);
             }
         }
 
@@ -110,6 +117,26 @@ namespace Game.Simulation.Systems
             spin.CooldownTicks = EnemyActionPhases.ToCooldownTicks(spin.Config.CooldownSeconds, delta);
 
             EnemyActionPhases.Enter(ref action, EnemyActionPhase.SpinRaise, spin.Config.RaiseSeconds, delta);
+        }
+
+        private bool CanHeavyStrike(int entity, float distance)
+        {
+            if (_heavyStrikes.Value.Has(entity) == false)
+                return false;
+
+            ref EnemyHeavyStrike strike = ref _heavyStrikes.Value.Get(entity);
+
+            return strike.CooldownTicks <= 0 && distance <= strike.Config.TriggerRange;
+        }
+
+        private void StartHeavyStrike(int entity, ref EnemyAction action, float delta)
+        {
+            ref EnemyHeavyStrike strike = ref _heavyStrikes.Value.Get(entity);
+
+            strike.CooldownTicks = EnemyActionPhases.ToCooldownTicks(strike.Config.CooldownSeconds, delta);
+            strike.ImpactPending = false;
+
+            EnemyActionPhases.Enter(ref action, EnemyActionPhase.StrikeWindup, strike.Config.WindupSeconds, delta);
         }
 
         private bool CanCharge(int entity, float distance)

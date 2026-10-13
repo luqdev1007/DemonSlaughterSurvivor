@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48e04be1abcd5dc4aafdc8738c1259c3, type: 3}
+  m_Name: HeavyStrike_BossKnight
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.HeavyStrikeAbilityConfig
+  _id: ability.heavy_strike.boss_knight
+  _triggerRange: 5
+  _cooldownSeconds: 8
+  _windupSeconds: 1.8
+  _lockSeconds: 0.5
+  _recoverSeconds: 2
+  _windupTurnSpeedDegrees: 90
+  _strikeDistance: 3
+  _radius: 2
+  _damage: 45
+  _impactClipSeconds: 2.35
+  _clipSeconds: 4.8
+  _markerStartScale: 0.25

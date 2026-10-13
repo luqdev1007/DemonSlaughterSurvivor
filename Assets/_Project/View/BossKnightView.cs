@@ -11,6 +11,10 @@ namespace Game.View
         private static readonly int PulseId = Shader.PropertyToID("_Pulse");
         private static readonly int PulseRingId = Shader.PropertyToID("_PulseRing");
         private const string LegsLayerName = "Legs";
+        private static readonly int LegsSpeedId = Animator.StringToHash("LegsSpeed");
+        private static readonly int LegsWalkState = Animator.StringToHash("Walk");
+        private static readonly int LegsTurnLeftState = Animator.StringToHash("TurnLeft");
+        private static readonly int LegsTurnRightState = Animator.StringToHash("TurnRight");
 
         [SerializeField] private Animator _animator;
         [SerializeField] private Transform _halberd;
@@ -22,10 +26,15 @@ namespace Game.View
         [SerializeField] private Color _chargeLockedColor = new Color(1f, 0.1f, 0.05f, 0.75f);
         [SerializeField] private Color _spinWarningColor = new Color(1f, 0.45f, 0.1f, 0.25f);
         [SerializeField] private Color _spinActiveColor = new Color(1f, 0.15f, 0.05f, 0.6f);
+        [SerializeField] private Color _strikeAimColor = new Color(1f, 0.25f, 0.1f, 0.35f);
+        [SerializeField] private Color _strikeLockedColor = new Color(1f, 0.1f, 0.05f, 0.85f);
 
         [Header("Spin")]
         [SerializeField, Min(0.01f)] private float _halberdReturnSeconds = 0.2f;
         [SerializeField, Min(0.01f)] private float _legsBlendSeconds = 0.2f;
+        [SerializeField, Min(0f)] private float _legsCrossFadeSeconds = 0.15f;
+        [SerializeField, Min(1f)] private float _turnClipDegreesPerSecond = 132f;
+        [SerializeField, Min(0f)] private float _turnStepThresholdDegreesPerSecond = 10f;
 
         private ActionCue _cue;
         private MaterialPropertyBlock _block;
@@ -33,6 +42,7 @@ namespace Game.View
         private Mesh _discMesh;
         private MeshRenderer _chargeMarker;
         private MeshRenderer _spinMarker;
+        private MeshRenderer _strikeMarker;
 
         private Transform _leftHand;
         private Transform _rightHand;
@@ -45,6 +55,7 @@ namespace Game.View
 
         private int _legsLayer = -1;
         private float _legsWeight;
+        private int _legsState;
         private bool _isMoving;
 
         private Vector3 _halberdRestPosition;
@@ -84,6 +95,7 @@ namespace Game.View
             _cue = default;
             _isMoving = false;
             _legsWeight = 0f;
+            _legsState = 0;
 
             if (_legsLayer >= 0)
                 _animator.SetLayerWeight(_legsLayer, 0f);
@@ -100,6 +112,9 @@ namespace Game.View
 
             if (_spinMarker != null)
                 _spinMarker.enabled = false;
+
+            if (_strikeMarker != null)
+                _strikeMarker.enabled = false;
         }
 
         private void Awake()
@@ -143,14 +158,45 @@ namespace Game.View
             if (_legsLayer < 0)
                 return;
 
-            float target = _cue.Pose == ActionPose.Spinning && _isMoving ? 1f : 0f;
+            int state = ResolveLegsState();
+
+            if (state != 0 && state != _legsState)
+            {
+                _animator.CrossFadeInFixedTime(state, _legsState == 0 ? 0f : _legsCrossFadeSeconds, _legsLayer);
+                _legsState = state;
+            }
+
+            if (state == LegsTurnLeftState || state == LegsTurnRightState)
+                _animator.SetFloat(LegsSpeedId, Mathf.Abs(_cue.TurnDegreesPerSecond) / _turnClipDegreesPerSecond);
+
+            float target = state != 0 ? 1f : 0f;
             float weight = Mathf.MoveTowards(_legsWeight, target, deltaTime / _legsBlendSeconds);
+
+            if (target == 0f && weight <= 0f)
+                _legsState = 0;
 
             if (weight == _legsWeight)
                 return;
 
             _legsWeight = weight;
             _animator.SetLayerWeight(_legsLayer, weight);
+        }
+
+        private int ResolveLegsState()
+        {
+            if (_cue.Pose == ActionPose.Spinning && _isMoving)
+                return LegsWalkState;
+
+            if (_cue.Pose != ActionPose.StrikeWindup)
+                return 0;
+
+            if (_cue.TurnDegreesPerSecond > _turnStepThresholdDegreesPerSecond)
+                return LegsTurnRightState;
+
+            if (_cue.TurnDegreesPerSecond < -_turnStepThresholdDegreesPerSecond)
+                return LegsTurnLeftState;
+
+            return 0;
         }
 
         private void EnsureBuilt()
@@ -180,6 +226,7 @@ namespace Game.View
 
             _chargeMarker = BuildMarker("ChargeMarker", _stripMesh);
             _spinMarker = BuildMarker("SpinMarker", _discMesh);
+            _strikeMarker = BuildMarker("StrikeMarker", _discMesh);
         }
 
         private MeshRenderer BuildMarker(string markerName, Mesh mesh)
@@ -228,9 +275,24 @@ namespace Game.View
         {
             bool isCharge = _cue.Marker == GroundMarker.ChargeAim || _cue.Marker == GroundMarker.ChargeLocked;
             bool isSpin = _cue.Marker == GroundMarker.SpinWarning || _cue.Marker == GroundMarker.SpinActive;
+            bool isStrike = _cue.Marker == GroundMarker.StrikeAim || _cue.Marker == GroundMarker.StrikeLocked;
 
             _chargeMarker.enabled = isCharge && _markerMaterial != null;
             _spinMarker.enabled = isSpin && _markerMaterial != null;
+            _strikeMarker.enabled = isStrike && _markerMaterial != null;
+
+            if (isStrike)
+            {
+                Transform marker = _strikeMarker.transform;
+                float diameter = _cue.MarkerRadius * 2f;
+                marker.localPosition = new Vector3(0f, _markerHeight, _cue.MarkerOffset);
+                marker.localRotation = Quaternion.identity;
+                marker.localScale = new Vector3(diameter, 1f, diameter);
+
+                bool locked = _cue.Marker == GroundMarker.StrikeLocked;
+
+                SetBlock(_strikeMarker, locked ? _strikeLockedColor : _strikeAimColor, 1f, locked ? 1f : 0f, 0f);
+            }
 
             if (isCharge)
             {

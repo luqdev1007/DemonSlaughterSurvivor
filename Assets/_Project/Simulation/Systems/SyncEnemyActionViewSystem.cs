@@ -1,8 +1,10 @@
+using Game.Configs;
 using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
@@ -13,6 +15,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<EnemyAction> _actions = default;
         private readonly EcsPoolInject<EnemyCharge> _charges = default;
         private readonly EcsPoolInject<EnemySpin> _spins = default;
+        private readonly EcsPoolInject<EnemyHeavyStrike> _heavyStrikes = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<View> _views = default;
 
@@ -37,6 +40,8 @@ namespace Game.Simulation.Systems
                     DescribeCharge(entity, ref action, delta, ref cue);
                 else if (EnemyActionPhases.IsSpin(action.Phase) && _spins.Value.Has(entity))
                     DescribeSpin(entity, ref action, delta, ref cue);
+                else if (EnemyActionPhases.IsHeavyStrike(action.Phase) && _heavyStrikes.Value.Has(entity))
+                    DescribeHeavyStrike(entity, ref action, delta, ref cue);
 
                 view.Value.SetAction(cue);
             }
@@ -64,6 +69,39 @@ namespace Game.Simulation.Systems
                     break;
                 default:
                     cue.Pose = ActionPose.Recover;
+                    break;
+            }
+        }
+
+        private void DescribeHeavyStrike(int entity, ref EnemyAction action, float delta, ref ActionCue cue)
+        {
+            ref EnemyHeavyStrike strike = ref _heavyStrikes.Value.Get(entity);
+            HeavyStrikeAbilityConfig config = strike.Config;
+
+            float castSeconds = config.WindupSeconds + config.LockSeconds;
+            float castSpeed = config.ImpactClipSeconds / castSeconds;
+
+            cue.MarkerOffset = config.StrikeDistance;
+
+            switch (action.Phase)
+            {
+                case EnemyActionPhase.StrikeWindup:
+                    float progress = action.PhaseTotalTicks > 0 ? 1f - (float)action.PhaseTicks / action.PhaseTotalTicks : 1f;
+                    cue.Pose = ActionPose.StrikeWindup;
+                    cue.PlaybackSpeed = castSpeed;
+                    cue.Marker = GroundMarker.StrikeAim;
+                    cue.MarkerRadius = config.Radius * Mathf.Lerp(config.MarkerStartScale, 1f, progress);
+                    cue.TurnDegreesPerSecond = strike.TurnDegreesPerSecond;
+                    break;
+                case EnemyActionPhase.StrikeLock:
+                    cue.Pose = ActionPose.StrikeLock;
+                    cue.PlaybackSpeed = castSpeed;
+                    cue.Marker = GroundMarker.StrikeLocked;
+                    cue.MarkerRadius = config.Radius;
+                    break;
+                default:
+                    cue.Pose = ActionPose.StrikeRecover;
+                    cue.PlaybackSpeed = (config.ClipSeconds - config.ImpactClipSeconds) / config.RecoverSeconds;
                     break;
             }
         }

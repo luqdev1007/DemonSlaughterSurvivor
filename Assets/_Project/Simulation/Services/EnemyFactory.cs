@@ -35,6 +35,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<EnemyAction> _actions;
         private readonly EcsPool<EnemyCharge> _charges;
         private readonly EcsPool<EnemySpin> _spins;
+        private readonly EcsPool<EnemyHeavyStrike> _heavyStrikes;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
@@ -65,6 +66,7 @@ namespace Game.Simulation.Services
             _actions = world.GetPool<EnemyAction>();
             _charges = world.GetPool<EnemyCharge>();
             _spins = world.GetPool<EnemySpin>();
+            _heavyStrikes = world.GetPool<EnemyHeavyStrike>();
         }
 
         public int Create(EnemyConfig config, Vector3 position)
@@ -128,6 +130,9 @@ namespace Game.Simulation.Services
 
             if (config.Spin != null)
                 _spins.Add(entity).Config = config.Spin;
+
+            if (config.HeavyStrike != null)
+                _heavyStrikes.Add(entity).Config = config.HeavyStrike;
 
             _statModifiers.MarkDirty(entity);
 

@@ -17,5 +17,6 @@ MonoBehaviour:
   _globalAbilityCooldownSeconds: 3
   _chargeWeight: 1
   _spinWeight: 1
+  _heavyStrikeWeight: 1
   _minSpawnDistanceToHero: 12
   _deathSeconds: 4.5
