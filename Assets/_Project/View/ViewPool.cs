@@ -62,7 +62,10 @@ namespace Game.View
         private readonly float _knockbackGravity;
         private readonly float _knockbackFriction;
 
+        private readonly List<ViewInterpolator> _active = new List<ViewInterpolator>();
+
         private GameObject _templateRoot;
+        private ViewPoolTicker _ticker;
         private bool _disposed;
 
         public ViewPool(LevelConfig level, IContentRegistry content, GoreDirector gore, CombatAudio audio)
@@ -201,6 +204,7 @@ namespace Game.View
             }
 
             _all.Clear();
+            _active.Clear();
             _known.Clear();
             _issued.Clear();
             _retiring.Clear();
@@ -219,6 +223,47 @@ namespace Game.View
 
             _templateRoot = null;
             _templates.Clear();
+
+            if (_ticker != null)
+                UnityEngine.Object.Destroy(_ticker.gameObject);
+
+            _ticker = null;
+        }
+
+        private void EnsureTicker()
+        {
+            if (_ticker != null)
+                return;
+
+            GameObject host = new GameObject("View Ticker");
+            _ticker = host.AddComponent<ViewPoolTicker>();
+            _ticker.Pool = this;
+        }
+
+        private void Track(ViewInterpolator view)
+        {
+            if (view.ActiveSlot >= 0)
+                return;
+
+            view.ActiveSlot = _active.Count;
+            _active.Add(view);
+        }
+
+        private void Untrack(ViewInterpolator view)
+        {
+            int slot = view.ActiveSlot;
+
+            if (slot < 0)
+                return;
+
+            int last = _active.Count - 1;
+            ViewInterpolator moved = _active[last];
+
+            _active[slot] = moved;
+            moved.ActiveSlot = slot;
+
+            _active.RemoveAt(last);
+            view.ActiveSlot = -1;
         }
 
         private void CompleteRetire(ViewInterpolator view)
@@ -299,8 +344,22 @@ namespace Game.View
             return corpse;
         }
 
+        public void Tick(float time, float deltaTime)
+        {
+            for (int index = _active.Count - 1; index >= 0; index--)
+            {
+                if (index >= _active.Count)
+                    continue;
+
+                _active[index].Tick(time, deltaTime);
+            }
+        }
+
         private void Activate(Entry entry, Vector3 position, Quaternion rotation)
         {
+            EnsureTicker();
+            Track(entry.View);
+
             entry.View.gameObject.SetActive(true);
             entry.View.transform.SetPositionAndRotation(position, rotation);
             entry.View.ResetInterpolation();
@@ -437,6 +496,8 @@ namespace Game.View
             entry.View.ResetInterpolation();
             entry.View.ResetFeedback();
             entry.View.gameObject.SetActive(false);
+
+            Untrack(entry.View);
 
             Free(entry.Prefab).Push(entry);
         }

@@ -39,6 +39,11 @@ namespace Game.View.Tests
             if (templateRoot != null)
                 Object.DestroyImmediate(templateRoot);
 
+            ViewPoolTicker ticker = (ViewPoolTicker)GetField(_pool, "_ticker");
+
+            if (ticker != null)
+                Object.DestroyImmediate(ticker.gameObject);
+
             for (int index = _owned.Count - 1; index >= 0; index--)
             {
                 if (_owned[index] != null)

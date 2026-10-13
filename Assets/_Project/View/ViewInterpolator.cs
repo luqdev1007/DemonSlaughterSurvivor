@@ -409,12 +409,12 @@ namespace Game.View
             SetRenderersVisible(true);
         }
 
-        private void Update()
-        {
-            float time = Time.time;
+        internal int ActiveSlot { get; set; } = -1;
 
+        internal void Tick(float time, float deltaTime)
+        {
             if (_isKnockedBack)
-                AdvanceKnockback(Time.deltaTime);
+                AdvanceKnockback(deltaTime);
 
             if (_hasPosition)
                 transform.position = ResolvePosition() + Vector3.up * ResolveLift() + _knockbackOffset;
