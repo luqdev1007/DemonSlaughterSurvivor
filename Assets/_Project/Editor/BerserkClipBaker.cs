@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace Game.Editor
@@ -13,6 +14,8 @@ namespace Game.Editor
 
         private const string MenuPath = "Game/Bake Berserk Clips";
         private const string HipsPath = "mixamorig:Hips";
+        private const string ControllerPath = "Assets/_Project/Art/Animations/Berserk/Berserk.controller";
+        private const string RestStateName = "Idle";
         private const string LeftToePath = "mixamorig:LeftToeBase";
         private const string RightToePath = "mixamorig:RightToeBase";
         private const string HeroPrefabPath = "Assets/_Project/Prefabs/Heroes/Berserk.prefab";
@@ -27,7 +30,8 @@ namespace Game.Editor
             InPlace = 1,
             RemoveYaw = 2,
             Mirror = 4,
-            Loop = 8
+            Loop = 8,
+            Recenter = 16
         }
 
         public readonly struct Entry
@@ -51,10 +55,10 @@ namespace Game.Editor
         public static readonly Entry[] Entries =
         {
             new Entry("Berserk_Charge", "Charge_FinalSlash_Blend.fbx", 0, 18, Options.InPlace),
-            new Entry("Berserk_DashMove", "Charge_FinalSlash_Blend.fbx", 18, 27, Options.InPlace),
-            new Entry("Berserk_FinalSlash", "Charge_FinalSlash_Blend.fbx", 71, 91, Options.InPlace),
+            new Entry("Berserk_DashMove", "Charge_FinalSlash_Blend.fbx", 18, 27, Options.InPlace | Options.Recenter),
+            new Entry("Berserk_FinalSlash", "Charge_FinalSlash_Blend.fbx", 71, 91, Options.InPlace | Options.Recenter),
             new Entry("Berserk_ChargeRun", "ChareRun_Blend.fbx", 0, 18, Options.InPlace | Options.Loop),
-            new Entry("Berserk_DashFinalAttack", "Dash_FinalAttack_Archers_PERK.fbx", 26, 56, Options.InPlace),
+            new Entry("Berserk_DashFinalAttack", "Dash_FinalAttack_Archers_PERK.fbx", 26, 56, Options.InPlace | Options.Recenter),
             new Entry("Berserk_ExecutionExtra", "ExecutionExtraAnim.fbx", 0, 65, Options.InPlace),
             new Entry("Berserk_HitReact", "Hit_React_v1.fbx", 0, 23, Options.None),
             new Entry("Berserk_SlashDownUp", "SlashFromDownToUp.fbx", 0, 35, Options.InPlace),
@@ -105,6 +109,9 @@ namespace Game.Editor
 
             if ((entry.Options & Options.InPlace) != 0)
                 RemovePlanarDrift(tracks);
+
+            if ((entry.Options & Options.Recenter) != 0)
+                Recenter(tracks);
 
             if ((entry.Options & Options.RemoveYaw) != 0)
                 RemoveYawDrift(tracks, frameCount);
@@ -223,6 +230,53 @@ namespace Game.Editor
 
             Detrend(hips, "m_LocalPosition.x");
             Detrend(hips, "m_LocalPosition.z");
+        }
+
+        private static void Recenter(Dictionary<string, Dictionary<string, float[]>> tracks)
+        {
+            Dictionary<string, float[]> hips = tracks[HipsPath];
+            AnimationClip rest = LoadRestClip();
+
+            Shift(hips, "m_LocalPosition.x", RestHips(rest, "m_LocalPosition.x"));
+            Shift(hips, "m_LocalPosition.z", RestHips(rest, "m_LocalPosition.z"));
+        }
+
+        private static void Shift(Dictionary<string, float[]> properties, string property, float target)
+        {
+            if (properties.TryGetValue(property, out float[] values) == false)
+                return;
+
+            float offset = values[0] - target;
+
+            for (int frame = 0; frame < values.Length; frame++)
+                values[frame] -= offset;
+        }
+
+        private static AnimationClip LoadRestClip()
+        {
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
+
+            if (controller == null)
+                throw new InvalidOperationException($"{ControllerPath} is missing; the rest pose to recenter on comes from its {RestStateName} state.");
+
+            foreach (ChildAnimatorState child in controller.layers[0].stateMachine.states)
+            {
+                if (child.state.name == RestStateName && child.state.motion is AnimationClip clip)
+                    return clip;
+            }
+
+            throw new InvalidOperationException($"{ControllerPath} has no {RestStateName} state with a clip.");
+        }
+
+        private static float RestHips(AnimationClip rest, string property)
+        {
+            foreach (EditorCurveBinding binding in AnimationUtility.GetCurveBindings(rest))
+            {
+                if (binding.propertyName == property && binding.path.EndsWith(HipsPath))
+                    return AnimationUtility.GetEditorCurve(rest, binding).Evaluate(0f);
+            }
+
+            throw new InvalidOperationException($"Rest clip '{rest.name}' has no hips {property} curve.");
         }
 
         private static void Detrend(Dictionary<string, float[]> properties, string property)

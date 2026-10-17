@@ -30,7 +30,7 @@ MonoBehaviour:
   _finalTrigger: DashFinalSlash
   _finalPlaybackSpeed: 1.4
   _finalImpactClipSeconds: 0.3
-  _finalClipSeconds: 0.6666667
+  _finalClipSeconds: 0.5
   _finalLocksMovement: 1
   _finalReach: 2.6
   _finalHalfAngleDegrees: 70

@@ -25,7 +25,7 @@ MonoBehaviour:
   _trigger: DashFinalAttack
   _playbackSpeed: 1.5
   _impactClipSeconds: 0.4333333
-  _clipSeconds: 1
+  _clipSeconds: 0.7
   _locksMovement: 1
   _reach: 3.2
   _halfAngleDegrees: 180
