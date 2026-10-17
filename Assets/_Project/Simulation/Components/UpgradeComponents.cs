@@ -11,7 +11,7 @@ namespace Game.Simulation.Components
 
     public struct UpgradeRandom { public uint State; }
 
-    public struct CounterStrikeRandom { public uint State; }
+    public struct CounterStrikeCooldown { public int RemainingTicks; }
 
     public struct PunishingLeapRandom { public uint State; }
 

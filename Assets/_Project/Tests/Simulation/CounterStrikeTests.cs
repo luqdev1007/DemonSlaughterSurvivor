@@ -50,73 +50,70 @@ namespace Game.Simulation.Tests
             _assets.Clear();
         }
 
-        [TestCase(1, 0.15f)]
-        [TestCase(5, 0.35f)]
-        public void ChanceOver10000HitsMatchesTheLevel(int level, float chance)
+        [Test]
+        public void ThreeEnemiesNearbyArmTheWhirlAndStartTheCooldown()
         {
-            const int Draws = 10000;
-
             Build(triggerOnly: true);
-            TakePerk(level);
+            TakePerk(1);
+            SurroundHero(3);
 
-            int strikes = 0;
+            Step();
+            Step();
 
-            for (int draw = 0; draw < Draws; draw++)
-            {
-                HitHero();
+            Assert.IsTrue(_world.GetPool<CounterStrikeArmed>().Has(_hero), "three enemies within reach fire the whirl on their own");
+
+            int cooldown = Mathf.RoundToInt(_counter.Level(1).CooldownSeconds / Tick);
+            Assert.AreEqual(cooldown, _world.GetPool<CounterStrikeCooldown>().Get(_hero).RemainingTicks);
+        }
+
+        [Test]
+        public void TwoEnemiesOrFarEnemiesDoNotArm()
+        {
+            Build(triggerOnly: true);
+            TakePerk(5);
+            SurroundHero(2);
+            SpawnEnemy(new Vector3(0f, 0f, _counter.TriggerRadius + 1f));
+
+            for (int tick = 0; tick < 10; tick++)
                 Step();
 
-                if (_world.GetPool<CounterStrikeArmed>().Has(_hero))
-                {
-                    strikes++;
-                    _world.GetPool<CounterStrikeArmed>().Del(_hero);
-                }
-            }
-
-            float share = strikes / (float)Draws;
-            float tolerance = 4f * Mathf.Sqrt(chance * (1f - chance) / Draws);
-
-            Assert.AreEqual(chance, share, tolerance, $"{strikes} strikes in {Draws} hits at level {level}");
+            Assert.IsFalse(_world.GetPool<CounterStrikeArmed>().Has(_hero));
         }
 
         [Test]
-        public void WithoutThePerkAHitDoesNothing()
+        public void WithoutThePerkNothingArms()
         {
             Build(triggerOnly: true);
+            SurroundHero(5);
 
-            HitHero();
-            Step();
+            for (int tick = 0; tick < 10; tick++)
+                Step();
 
             Assert.IsFalse(_world.GetPool<CounterStrikeArmed>().Has(_hero));
-            Assert.IsFalse(_world.GetPool<CounterStrikeRandom>().Has(_hero), "no perk, no stream");
         }
 
         [Test]
-        public void WithoutAHitThereIsNoRoll()
+        public void TheCooldownHoldsTheNextWhirl()
         {
             Build(triggerOnly: true);
             TakePerk(5);
+            SurroundHero(3);
 
             Step();
-
-            Assert.IsFalse(_world.GetPool<CounterStrikeRandom>().Has(_hero));
-        }
-
-        [Test]
-        public void HitDuringASpecialAttackIsLostWithoutARoll()
-        {
-            Build(triggerOnly: true);
-            TakePerk(5);
-
-            int busy = _world.NewEntity();
-            _world.GetPool<SpecialSwing>().Add(busy);
-            _world.GetPool<SpecialAttack>().Add(_hero).Attack = _world.PackEntity(busy);
-
-            HitHero();
             Step();
+            Assert.IsTrue(_world.GetPool<CounterStrikeArmed>().Has(_hero));
+            _world.GetPool<CounterStrikeArmed>().Del(_hero);
 
-            Assert.IsFalse(_world.GetPool<CounterStrikeRandom>().Has(_hero), "the chance must be lost, not rolled");
-            Assert.AreEqual(0, _world.Filter<Swing>().End().GetEntitiesCount());
+            int cooldown = Mathf.RoundToInt(_counter.Level(5).CooldownSeconds / Tick);
+
+            for (int tick = 0; tick < cooldown - 1; tick++)
+            {
+                Step();
+                Assert.IsFalse(_world.GetPool<CounterStrikeArmed>().Has(_hero), $"tick {tick} is still on cooldown");
+            }
+
+            Step();
+            Assert.IsTrue(_world.GetPool<CounterStrikeArmed>().Has(_hero), "the whirl fires again once the cooldown is over");
         }
 
         [TestCase(true)]
@@ -125,6 +122,7 @@ namespace Game.Simulation.Tests
         {
             Build(triggerOnly: true);
             TakePerk(5);
+            SurroundHero(3);
 
             if (dead)
                 _world.GetPool<Dead>().Add(_hero);
@@ -132,13 +130,10 @@ namespace Game.Simulation.Tests
                 _world.GetPool<Dashing>().Add(_hero);
 
             for (int tick = 0; tick < 50; tick++)
-            {
-                HitHero();
                 Step();
-            }
 
             Assert.AreEqual(0, _world.Filter<Swing>().End().GetEntitiesCount());
-            Assert.IsFalse(_world.GetPool<CounterStrikeRandom>().Has(_hero));
+            Assert.IsFalse(_world.GetPool<CounterStrikeArmed>().Has(_hero));
         }
 
         [Test]
@@ -264,16 +259,17 @@ namespace Game.Simulation.Tests
 
         private void ArmOnce()
         {
+            EnsureSurrounded();
+
             for (int attempt = 0; attempt < 500; attempt++)
             {
-                HitHero();
                 Step();
 
                 if (_world.GetPool<CounterStrikeArmed>().Has(_hero))
                     return;
             }
 
-            Assert.Fail("no counter strike armed in 500 hits");
+            Assert.Fail("no whirl armed in 500 ticks");
         }
 
         private void MakeWeaponReady()
@@ -284,9 +280,10 @@ namespace Game.Simulation.Tests
 
         private int StrikeOnce()
         {
+            EnsureSurrounded();
+
             for (int attempt = 0; attempt < 500; attempt++)
             {
-                HitHero();
                 Step();
 
                 if (_world.GetPool<SpecialAttack>().Has(_hero) == false)
@@ -297,23 +294,25 @@ namespace Game.Simulation.Tests
                 return spin;
             }
 
-            Assert.Fail("no counter strike in 500 hits");
+            Assert.Fail("no whirl in 500 ticks");
 
             return -1;
         }
 
-        private void HitHero()
+        private void EnsureSurrounded()
         {
-            int entity = _world.NewEntity();
+            if (_world.Filter<Enemy>().End().GetEntitiesCount() < _counter.MinEnemies)
+                SurroundHero(_counter.MinEnemies);
+        }
 
-            ref DamageEvent damageEvent = ref _world.GetPool<DamageEvent>().Add(entity);
-            damageEvent.Target = _world.PackEntity(_hero);
-            damageEvent.Amount = 10f;
-            damageEvent.Kind = DamageKind.Contact;
+        private void SurroundHero(int count)
+        {
+            for (int index = 0; index < count; index++)
+            {
+                float radians = (index * 360f / count + 10f) * Mathf.Deg2Rad;
 
-            _world.GetPool<DamageApplied>().Add(entity).Amount = 10f;
-
-            _hits.Add(entity);
+                SpawnEnemy(new Vector3(Mathf.Sin(radians), 0f, Mathf.Cos(radians)) * 1.2f);
+            }
         }
 
         private void Step()
@@ -394,8 +393,7 @@ namespace Game.Simulation.Tests
             _systems.Add(new StartCounterStrikeSystem());
             _systems.Add(new TriggerCounterStrikeSystem());
 
-            if (triggerOnly == false)
-                _systems.Add(new RebuildSpatialGridSystem());
+            _systems.Add(new RebuildSpatialGridSystem());
 
             _systems.Inject(level, grid, _clock, registry, context, new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f));
             _systems.Init();

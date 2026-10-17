@@ -10,6 +10,10 @@ namespace Game.Configs
         [SerializeField] private bool _locksMovement;
         [SerializeField] private float _armedSeconds = 1.5f;
 
+        [Header("Trigger")]
+        [SerializeField] private float _triggerRadius = 3f;
+        [SerializeField] private int _minEnemies = 3;
+
         [Header("Swing")]
         [SerializeField] private SwingVariant _swing = new SwingVariant();
 
@@ -21,6 +25,10 @@ namespace Game.Configs
         public bool LocksMovement => _locksMovement;
 
         public float ArmedSeconds => _armedSeconds;
+
+        public float TriggerRadius => _triggerRadius;
+
+        public int MinEnemies => _minEnemies;
 
         public SwingVariant Swing => _swing;
 
@@ -48,12 +56,18 @@ namespace Game.Configs
                 if (entry == null)
                     throw new InvalidOperationException($"{label} level {level} is empty.");
 
-                if (float.IsNaN(entry.Chance) || entry.Chance <= 0f || entry.Chance > 1f)
-                    throw new InvalidOperationException($"{label} level {level} has chance {entry.Chance}; it must be in (0, 1].");
+                if (float.IsNaN(entry.CooldownSeconds) || float.IsInfinity(entry.CooldownSeconds) || entry.CooldownSeconds <= 0f)
+                    throw new InvalidOperationException($"{label} level {level} has cooldown {entry.CooldownSeconds} s; it must be positive, otherwise the whirl fires every tick.");
 
                 if (float.IsNaN(entry.DamageShare) || float.IsInfinity(entry.DamageShare) || entry.DamageShare <= 0f)
                     throw new InvalidOperationException($"{label} level {level} has damage share {entry.DamageShare}; it must be positive.");
             }
+
+            if (float.IsNaN(_triggerRadius) || float.IsInfinity(_triggerRadius) || _triggerRadius <= 0f)
+                throw new InvalidOperationException($"{label} has trigger radius {_triggerRadius}; it must be positive.");
+
+            if (_minEnemies < 1)
+                throw new InvalidOperationException($"{label} has {nameof(_minEnemies)} {_minEnemies}; at least one enemy must be near.");
 
             if (float.IsNaN(_armedSeconds) || float.IsInfinity(_armedSeconds) || _armedSeconds <= 0f)
                 throw new InvalidOperationException(
@@ -71,10 +85,10 @@ namespace Game.Configs
     [Serializable]
     public sealed class CounterStrikeLevel
     {
-        [SerializeField, Range(0f, 1f)] private float _chance;
+        [SerializeField] private float _cooldownSeconds = 8f;
         [SerializeField] private float _damageShare = 1f;
 
-        public float Chance => _chance;
+        public float CooldownSeconds => _cooldownSeconds;
 
         public float DamageShare => _damageShare;
     }

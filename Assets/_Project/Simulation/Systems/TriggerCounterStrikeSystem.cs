@@ -4,72 +4,109 @@ using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
-    public sealed class TriggerCounterStrikeSystem : IEcsRunSystem
+    public sealed class TriggerCounterStrikeSystem : IEcsInitSystem, IEcsRunSystem
     {
-        public const string RandomStreamId = "stream.counter-strike";
+        private const int CandidateCapacityReserve = 16;
 
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Player>, Exc<Dead, Dashing, SpecialAttack, CounterStrikeArmed>> _heroes = default;
-        private readonly EcsFilterInject<Inc<DamageEvent, DamageApplied>> _applied = default;
+        private readonly EcsFilterInject<Inc<CounterStrikeCooldown>> _cooldowns = default;
+        private readonly EcsFilterInject<Inc<Player, Position>, Exc<Dead, Dashing, SpecialAttack, CounterStrikeArmed>> _heroes = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
-        private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
+        private readonly EcsPoolInject<CounterStrikeCooldown> _cooldownPool = default;
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
-        private readonly EcsPoolInject<CounterStrikeRandom> _randoms = default;
         private readonly EcsPoolInject<CounterStrikeArmed> _armed = default;
+        private readonly EcsPoolInject<Position> _positions = default;
+        private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<Dead> _dead = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
-        private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
+        private readonly EcsCustomInject<SpatialGrid> _grid = default;
+        private readonly EcsCustomInject<EnemyMotionBounds> _motionBounds = default;
+        private readonly EcsCustomInject<LevelConfig> _level = default;
+
+        private List<int> _candidates;
+
+        public void Init(IEcsSystems systems)
+        {
+            _candidates = new List<int>(WaveTimelineValidator.ResolveMaxLiveCap(_level.Value.Waves) + CandidateCapacityReserve);
+        }
 
         public void Run(IEcsSystems systems)
         {
+            foreach (int entity in _cooldowns.Value)
+            {
+                ref CounterStrikeCooldown cooldown = ref _cooldownPool.Value.Get(entity);
+
+                if (cooldown.RemainingTicks > 0)
+                    cooldown.RemainingTicks--;
+            }
+
             EcsWorld world = _world.Value;
 
             foreach (int hero in _heroes.Value)
             {
-                if (WasHit(world, hero) == false)
-                    continue;
-
                 if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out CounterStrikeConfig counter, out int level) == false)
                     continue;
 
-                CounterStrikeLevel entry = counter.Level(level);
+                if (_cooldownPool.Value.Has(hero) == false)
+                    _cooldownPool.Value.Add(hero);
 
-                if (SimulationRandom.NextUnit(ref ResolveRandom(hero).State) >= entry.Chance)
+                ref CounterStrikeCooldown heroCooldown = ref _cooldownPool.Value.Get(hero);
+
+                if (heroCooldown.RemainingTicks > 0)
                     continue;
 
+                if (IsSurrounded(hero, counter) == false)
+                    continue;
+
+                float delta = _clock.Value.Delta;
+
                 ref CounterStrikeArmed armed = ref _armed.Value.Add(hero);
-                armed.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(counter.ArmedSeconds / _clock.Value.Delta));
+                armed.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(counter.ArmedSeconds / delta));
                 armed.Level = level;
+
+                heroCooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(counter.Level(level).CooldownSeconds / delta));
             }
         }
 
-        private bool WasHit(EcsWorld world, int hero)
+        private bool IsSurrounded(int hero, CounterStrikeConfig config)
         {
-            foreach (int entity in _applied.Value)
+            Vector3 origin = _positions.Value.Get(hero).Value;
+            float squaredRadius = config.TriggerRadius * config.TriggerRadius;
+
+            _grid.Value.Query(origin, config.TriggerRadius, _motionBounds.Value.CandidateSlack(_clock.Value.Delta), _candidates);
+
+            int count = 0;
+
+            for (int index = 0; index < _candidates.Count; index++)
             {
-                if (_damageEvents.Value.Get(entity).Target.Unpack(world, out int target) && target == hero)
+                int candidate = _candidates[index];
+
+                if (_enemies.Value.Has(candidate) == false || _dead.Value.Has(candidate))
+                    continue;
+
+                Vector3 position = _positions.Value.Get(candidate).Value;
+                float x = position.x - origin.x;
+                float z = position.z - origin.z;
+
+                if (x * x + z * z > squaredRadius)
+                    continue;
+
+                count++;
+
+                if (count >= config.MinEnemies)
                     return true;
             }
 
             return false;
-        }
-
-        private ref CounterStrikeRandom ResolveRandom(int hero)
-        {
-            if (_randoms.Value.Has(hero))
-                return ref _randoms.Value.Get(hero);
-
-            ref CounterStrikeRandom random = ref _randoms.Value.Add(hero);
-            random.State = SimulationRandom.StreamState(_context.Value.Seed, RandomStreamId);
-
-            return ref random;
         }
     }
 }

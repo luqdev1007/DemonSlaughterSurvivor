@@ -57,11 +57,11 @@ namespace Game.Simulation.Tests
         }
 
         [TestCase(0f, 1f)]
-        [TestCase(1.5f, 1f)]
-        [TestCase(0.2f, 0f)]
-        public void CounterStrikeRejectsAZeroChanceOrShare(float chance, float share)
+        [TestCase(-1f, 1f)]
+        [TestCase(5f, 0f)]
+        public void CounterStrikeRejectsANonPositiveCooldownOrShare(float cooldown, float share)
         {
-            PerkConfig perk = CreatePerk(levels: 1, CreateCounter(new[] { chance }, new[] { share }));
+            PerkConfig perk = CreatePerk(levels: 1, CreateCounter(new[] { cooldown }, new[] { share }));
 
             Assert.Throws<InvalidOperationException>(() => PerkConfigValidator.Validate(perk));
         }
@@ -148,7 +148,7 @@ namespace Game.Simulation.Tests
             return perk;
         }
 
-        private CounterStrikeConfig CreateCounter(float[] chances, float[] shares)
+        private CounterStrikeConfig CreateCounter(float[] cooldowns, float[] shares)
         {
             SwingBake bake = ScriptableObject.CreateInstance<SwingBake>();
             _assets.Add(bake);
@@ -156,12 +156,12 @@ namespace Game.Simulation.Tests
             CounterStrikeConfig counter = ScriptableObject.CreateInstance<CounterStrikeConfig>();
             _assets.Add(counter);
 
-            CounterStrikeLevel[] levels = new CounterStrikeLevel[chances.Length];
+            CounterStrikeLevel[] levels = new CounterStrikeLevel[cooldowns.Length];
 
             for (int index = 0; index < levels.Length; index++)
             {
                 levels[index] = new CounterStrikeLevel();
-                SetField(levels[index], "_chance", chances[index]);
+                SetField(levels[index], "_cooldownSeconds", cooldowns[index]);
                 SetField(levels[index], "_damageShare", shares[index]);
             }
 
