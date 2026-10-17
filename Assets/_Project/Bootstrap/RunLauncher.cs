@@ -3,6 +3,7 @@ using Game.Configs;
 using Game.Core;
 using System;
 using System.Threading;
+using UnityEngine;
 using VContainer;
 
 namespace Game.Bootstrap
@@ -10,6 +11,7 @@ namespace Game.Bootstrap
     public sealed class RunLauncher : IRunLauncher, IDisposable
     {
         private const string RunScopeName = "RunLifetimeScope";
+        private const string DestroyBarrierName = "RunDestroyBarrier";
 
         private readonly ProjectLifetimeScope _projectScope;
         private readonly ISceneLoader _sceneLoader;
@@ -49,7 +51,7 @@ namespace Game.Bootstrap
 
             try
             {
-                Stop();
+                await StopAndSettleAsync();
 
                 RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next(), Array.Empty<StatModifierSpec>());
 
@@ -85,15 +87,9 @@ namespace Game.Bootstrap
             {
                 await UniTask.NextFrame();
 
-                UnityEngine.Debug.Log($"[RunEndTrace] FinishAsync: stopping run scope, frame {UnityEngine.Time.frameCount}");
-
-                Stop();
-
-                UnityEngine.Debug.Log($"[RunEndTrace] FinishAsync: run scope stopped, loading menu, frame {UnityEngine.Time.frameCount}");
+                await StopAndSettleAsync();
 
                 await _sceneLoader.LoadAsync(_scenes.MainMenuScene, CancellationToken.None);
-
-                UnityEngine.Debug.Log($"[RunEndTrace] FinishAsync: menu loaded, frame {UnityEngine.Time.frameCount}");
             }
             finally
             {
@@ -105,6 +101,22 @@ namespace Game.Bootstrap
         {
             _runScope?.Dispose();
             _runScope = null;
+        }
+
+        private async UniTask StopAndSettleAsync()
+        {
+            if (_runScope == null)
+                return;
+
+            Stop();
+
+            GameObject barrier = new GameObject(DestroyBarrierName);
+            UnityEngine.Object.Destroy(barrier);
+
+            while (barrier != null)
+            {
+                await UniTask.NextFrame();
+            }
         }
 
         public void Dispose()

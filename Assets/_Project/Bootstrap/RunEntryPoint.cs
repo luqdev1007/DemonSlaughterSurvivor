@@ -225,8 +225,6 @@ namespace Game.Bootstrap
             if (_isFinishing == false)
                 return;
 
-            Debug.Log($"[RunEndTrace] run finished: {_outcome.Reason}, frame {Time.frameCount}, timeScale {Time.timeScale}");
-
             if (_outcome.Reason == RunEndReason.Victory)
             {
                 FinishWithVictoryAsync().Forget();
@@ -239,8 +237,6 @@ namespace Game.Bootstrap
 
         public void Dispose()
         {
-            Debug.Log($"[RunEndTrace] RunEntryPoint.Dispose, frame {Time.frameCount}");
-
             if (_isMenuPaused)
                 ReleaseMenuPause();
 

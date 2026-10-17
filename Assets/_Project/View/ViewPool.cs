@@ -188,8 +188,6 @@ namespace Game.View
 
         public void Dispose()
         {
-            UnityEngine.Debug.Log($"[RunEndTrace] ViewPool.Dispose, frame {UnityEngine.Time.frameCount}");
-
             if (_disposed)
                 return;
 

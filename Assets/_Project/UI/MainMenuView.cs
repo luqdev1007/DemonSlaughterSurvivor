@@ -44,8 +44,6 @@ namespace Game.UI
             _playButton.onClick.AddListener(OnPlayClicked);
             _settingsButton.onClick.AddListener(_settings.Open);
             _quitButton.onClick.AddListener(OnQuitClicked);
-
-            Debug.Log($"[RunEndTrace] MainMenuView started, frame {Time.frameCount}");
         }
 
         private void OnDestroy()
