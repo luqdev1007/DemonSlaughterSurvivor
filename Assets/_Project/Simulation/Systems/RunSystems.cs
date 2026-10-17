@@ -87,6 +87,7 @@ namespace Game.Simulation.Systems
             systems.Add(new InterruptCastSystem());
             systems.Add(new PunishLeapLandingSystem());
             systems.Add(new DetectContactDamageSystem());
+            systems.Add(new ApplyBossBlindZoneSystem());
             systems.Add(new StartGemFlightSystem());
             // 9.  Damage
             systems.Add(new TickInvulnerabilitySystem());

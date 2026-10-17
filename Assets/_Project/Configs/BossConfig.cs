@@ -17,6 +17,12 @@ namespace Game.Configs
         [Header("Spawn")]
         [SerializeField] private float _minSpawnDistanceToHero = 12f;
 
+        [Header("Blind zone while casting")]
+        [SerializeField, Range(0f, 180f)] private float _blindSideFromDegrees = 60f;
+        [SerializeField, Range(0f, 180f)] private float _blindBackFromDegrees = 120f;
+        [SerializeField, Range(0f, 1f)] private float _blindSideDamage = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float _blindBackDamage = 0f;
+
         [Header("Death")]
         [SerializeField] private float _deathSeconds = 4.5f;
 
@@ -34,6 +40,25 @@ namespace Game.Configs
 
         public float DeathSeconds => _deathSeconds;
 
+        public float BlindSideFromDegrees => _blindSideFromDegrees;
+
+        public float BlindBackFromDegrees => _blindBackFromDegrees;
+
+        public float BlindSideDamage => _blindSideDamage;
+
+        public float BlindBackDamage => _blindBackDamage;
+
+        public float BlindZoneDamageScale(float angleFromFacing)
+        {
+            if (angleFromFacing >= _blindBackFromDegrees)
+                return _blindBackDamage;
+
+            if (angleFromFacing >= _blindSideFromDegrees)
+                return _blindSideDamage;
+
+            return 1f;
+        }
+
         public void Validate(EnemyConfig owner)
         {
             string label = $"{nameof(EnemyConfig)} '{(owner == null ? "<none>" : owner.Id)}' boss '{Id}'";
@@ -46,6 +71,10 @@ namespace Game.Configs
             RequireNonNegative(label, nameof(_spinWeight), _spinWeight);
             RequireNonNegative(label, nameof(_heavyStrikeWeight), _heavyStrikeWeight);
             RequireNonNegative(label, nameof(_minSpawnDistanceToHero), _minSpawnDistanceToHero);
+
+            if (_blindBackFromDegrees < _blindSideFromDegrees)
+                throw new InvalidOperationException(
+                    $"{label} starts the blind back at {_blindBackFromDegrees} deg, before the blind side at {_blindSideFromDegrees} deg; the side zone would vanish.");
 
             if (float.IsNaN(_deathSeconds) || float.IsInfinity(_deathSeconds) || _deathSeconds <= 0f)
                 throw new InvalidOperationException(
