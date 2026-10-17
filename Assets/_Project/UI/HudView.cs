@@ -26,6 +26,9 @@ namespace Game.UI
         [Header("Victory")]
         [SerializeField] private GameObject _victoryBanner;
 
+        [Header("Pause")]
+        [SerializeField] private PauseMenuView _pauseMenu;
+
         [Header("Berserk vignette")]
         [SerializeField] private Image _vignette;
         [SerializeField] private Color _vignetteColor = new Color(0.55f, 0f, 0f, 0.85f);
@@ -41,9 +44,12 @@ namespace Game.UI
         public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
             && _upgradeChoice != null && _upgradeChoice.IsWired
             && _experienceFill != null && _levelText != null
-            && _bossBar != null && _bossFill != null && _bossName != null && _victoryBanner != null;
+            && _bossBar != null && _bossFill != null && _bossName != null && _victoryBanner != null
+            && _pauseMenu != null && _pauseMenu.IsWired;
 
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
+
+        public PauseMenuView PauseMenu => _pauseMenu;
 
         public float ExperienceFill => _experienceFill.anchorMax.x;
 

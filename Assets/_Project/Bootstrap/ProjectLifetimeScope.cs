@@ -34,7 +34,9 @@ namespace Game.Bootstrap
 
             builder.Register<RunLauncher>(Lifetime.Singleton).As<IRunLauncher>();
 
-            builder.Register<InputService>(Lifetime.Singleton).As<IInputService>();
+            builder.Register<InputService>(Lifetime.Singleton).As<IInputService>().As<IPauseInput>();
+
+            builder.Register<SoundSettings>(Lifetime.Singleton).As<ISoundSettings>();
 
             builder.RegisterInstance(new ContentRegistry(_contentDatabase.Entries)).As<IContentRegistry>();
 

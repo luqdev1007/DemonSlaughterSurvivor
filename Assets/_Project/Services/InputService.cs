@@ -6,18 +6,20 @@ using UnityEngine.InputSystem;
 
 namespace Game.Services
 {
-    public sealed class InputService : IInputService, IDisposable
+    public sealed class InputService : IInputService, IPauseInput, IDisposable
     {
         private readonly GameControls _input;
 
         private bool _dashPressed;
         private bool _ultimatePressed;
+        private bool _pausePressed;
 
         public InputService()
         {
             _input = new GameControls();
             _input.Gameplay.Dash.performed += OnDashPerformed;
             _input.Gameplay.Ultimate.performed += OnUltimatePerformed;
+            _input.Gameplay.Pause.performed += OnPausePerformed;
             _input.Enable();
         }
 
@@ -43,16 +45,28 @@ namespace Game.Services
             return true;
         }
 
+        public bool ConsumePausePressed()
+        {
+            if (_pausePressed == false)
+                return false;
+
+            _pausePressed = false;
+
+            return true;
+        }
+
         public void ResetLatches()
         {
             _dashPressed = false;
             _ultimatePressed = false;
+            _pausePressed = false;
         }
 
         public void Dispose()
         {
             _input.Gameplay.Dash.performed -= OnDashPerformed;
             _input.Gameplay.Ultimate.performed -= OnUltimatePerformed;
+            _input.Gameplay.Pause.performed -= OnPausePerformed;
             _input.Dispose();
         }
 
@@ -64,6 +78,11 @@ namespace Game.Services
         private void OnUltimatePerformed(InputAction.CallbackContext context)
         {
             _ultimatePressed = true;
+        }
+
+        private void OnPausePerformed(InputAction.CallbackContext context)
+        {
+            _pausePressed = true;
         }
     }
 }

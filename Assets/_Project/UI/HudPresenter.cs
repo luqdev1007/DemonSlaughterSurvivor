@@ -18,15 +18,20 @@ namespace Game.UI
         private readonly PlayerExperience _experience;
         private readonly BossVitals _bossVitals;
         private readonly RunResult _result;
+        private readonly PauseMenu _pauseMenu;
+        private readonly ISoundSettings _soundSettings;
 
         private GameObject _instance;
         private HudView _view;
         private IDisposable _subscription;
         private Tween _experienceTween;
         private int _shownLevel;
+        private SettingsPopupPresenter _settingsPopup;
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings)
         {
+            _pauseMenu = pauseMenu;
+            _soundSettings = soundSettings;
             _level = level;
             _vitals = vitals;
             _choice = choice;
@@ -50,10 +55,15 @@ namespace Game.UI
                 throw new InvalidOperationException(
                     $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
                     $"an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} buttons, titles and descriptions, " +
-                    "the experience fill and level text, the boss bar with its fill and name, and the victory banner assigned.");
+                    "the experience fill and level text, the boss bar with its fill and name, the victory banner, " +
+                    $"and a {nameof(PauseMenuView)} with its fade, resume and settings buttons and a wired {nameof(SettingsPopupView)} assigned.");
 
             _view.UpgradeChoice.Bind(_submit.Submit);
             RefreshChoice();
+
+            _settingsPopup = new SettingsPopupPresenter(_view.PauseMenu.SettingsPopup, _soundSettings);
+            _view.PauseMenu.Bind(_pauseMenu.RequestResume, _settingsPopup.Open);
+            _view.PauseMenu.HideImmediate();
 
             _subscription = Disposable.Combine(
                 _vitals.Health.Subscribe(this, (_, presenter) => presenter.Refresh()),
@@ -61,6 +71,7 @@ namespace Game.UI
                 _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()),
+                _pauseMenu.Changed.Subscribe(this, (_, presenter) => presenter.RefreshPause()),
                 _experience.Changed.Subscribe(this, (_, presenter) => presenter.RefreshExperience()),
                 _bossVitals.Visible.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
                 _bossVitals.Health.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
@@ -76,8 +87,14 @@ namespace Game.UI
 
             KillExperienceTween();
 
+            _settingsPopup?.Dispose();
+            _settingsPopup = null;
+
             if (_view != null)
+            {
                 _view.UpgradeChoice.Unbind();
+                _view.PauseMenu.Unbind();
+            }
 
             if (_instance != null)
                 UnityEngine.Object.Destroy(_instance);
@@ -158,6 +175,14 @@ namespace Game.UI
                 _experienceTween.Kill();
 
             _experienceTween = null;
+        }
+
+        private void RefreshPause()
+        {
+            _view.PauseMenu.SetOpen(_pauseMenu.IsOpen);
+
+            if (_pauseMenu.IsOpen == false)
+                _settingsPopup.Close();
         }
 
         private void RefreshChoice()

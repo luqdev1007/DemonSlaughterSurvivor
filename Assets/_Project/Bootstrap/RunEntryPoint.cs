@@ -31,6 +31,9 @@ namespace Game.Bootstrap
         private readonly IExperienceSink _experienceSink;
         private readonly IBossVitalsSink _bossVitalsSink;
         private readonly IRunResultSink _resultSink;
+        private readonly IPauseInput _pauseInput;
+        private readonly IPauseMenuSink _pauseMenuSink;
+        private readonly IPauseMenuInput _pauseMenuInput;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
@@ -48,6 +51,8 @@ namespace Game.Bootstrap
         private float _timeScaleBeforePause;
         private bool _isVictoryFrozen;
         private float _timeScaleBeforeVictory;
+        private bool _isMenuPaused;
+        private float _timeScaleBeforeMenu;
 
         public RunEntryPoint(
             RunContext context,
@@ -65,9 +70,15 @@ namespace Game.Bootstrap
             IExperienceSink experienceSink,
             IBossVitalsSink bossVitalsSink,
             IRunResultSink resultSink,
+            IPauseInput pauseInput,
+            IPauseMenuSink pauseMenuSink,
+            IPauseMenuInput pauseMenuInput,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
+            _pauseInput = pauseInput;
+            _pauseMenuSink = pauseMenuSink;
+            _pauseMenuInput = pauseMenuInput;
             _context = context;
             _clock = clock;
             _outcome = outcome;
@@ -143,6 +154,23 @@ namespace Game.Bootstrap
             if (_isFinishing)
                 return;
 
+            if (_isMenuPaused)
+            {
+                bool resume = _pauseInput.ConsumePausePressed() | _pauseMenuInput.ConsumeResumeRequested();
+
+                if (resume)
+                    ResumeFromMenu();
+
+                return;
+            }
+
+            if (_pauseInput.ConsumePausePressed())
+            {
+                PauseForMenu();
+
+                return;
+            }
+
             if (_isPaused)
             {
                 _choiceSystems.Run();
@@ -197,6 +225,9 @@ namespace Game.Bootstrap
 
         public void Dispose()
         {
+            if (_isMenuPaused)
+                ReleaseMenuPause();
+
             if (_isPaused)
                 Resume();
 
@@ -261,6 +292,41 @@ namespace Game.Bootstrap
             Time.timeScale = _timeScaleBeforePause;
 
             _inputService.ResetLatches();
+        }
+
+        private void PauseForMenu()
+        {
+            _isMenuPaused = true;
+            _accumulator = 0f;
+
+            _timeScaleBeforeMenu = Time.timeScale;
+            Time.timeScale = 0f;
+
+            AudioListener.pause = true;
+
+            _pauseMenuSink.Show();
+        }
+
+        private void ResumeFromMenu()
+        {
+            ReleaseMenuPause();
+
+            _pauseMenuSink.Hide();
+
+            _inputService.ResetLatches();
+
+            if (_isPaused)
+                _choiceInput.Clear();
+        }
+
+        private void ReleaseMenuPause()
+        {
+            _isMenuPaused = false;
+            _accumulator = 0f;
+
+            Time.timeScale = _timeScaleBeforeMenu;
+
+            AudioListener.pause = false;
         }
     }
 }

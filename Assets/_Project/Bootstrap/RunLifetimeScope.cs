@@ -36,6 +36,8 @@ namespace Game.Bootstrap
 
             builder.Register<PlayerExperience>(Lifetime.Scoped).AsSelf().As<IExperienceSink>();
 
+            builder.Register<PauseMenu>(Lifetime.Scoped).AsSelf().As<IPauseMenuSink>().As<IPauseMenuInput>();
+
             builder.Register<UpgradeChoiceInput>(Lifetime.Scoped).As<IUpgradeChoiceInput>().As<IUpgradeChoiceSubmit>();
 
             builder.Register<DebugLevelUpInput>(Lifetime.Scoped).As<IDebugLevelUpInput>();
