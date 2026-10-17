@@ -82,6 +82,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SweepSlicingDashSystem());
             systems.Add(new SweepEnemyChargeSystem());
             systems.Add(new InterruptCastSystem());
+            systems.Add(new PunishLeapLandingSystem());
             systems.Add(new DetectContactDamageSystem());
             systems.Add(new StartGemFlightSystem());
             // 9.  Damage

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee9fdb9a5c3447d45a64d3b153d349a7, type: 3}
+  m_Name: PunishingLeap_Berserk
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.PunishingLeapConfig
+  _levels:
+  - _chance: 0.4
+  - _chance: 0.6
+  - _chance: 0.8
+  _healthThreshold: 0.25
+  _impactFxPrefab: {fileID: 4960327967821986495, guid: 5edc20135226b3d4bb370e085832a0d0, type: 3}
+  _impactFxSeconds: 1.1
