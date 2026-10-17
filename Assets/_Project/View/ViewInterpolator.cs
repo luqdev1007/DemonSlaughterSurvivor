@@ -96,7 +96,6 @@ namespace Game.View
         private float _decaySeconds;
         private float _sinkDepth;
         private float _sinkOffset;
-        private float _lastKickTime = float.NegativeInfinity;
 
         private bool _isBerserkSuppressed;
 
@@ -477,6 +476,12 @@ namespace Game.View
             _decaySeconds = Mathf.Min(decaySeconds, seconds);
             _sinkDepth = sinkDepth;
             _sinkOffset = 0f;
+
+            if (_activeEliteFx != null)
+            {
+                _activeEliteFx.SetActive(false);
+                _activeEliteFx = null;
+            }
             _knockbackGravity = gravity;
             _knockbackFriction = friction;
 
@@ -502,18 +507,6 @@ namespace Game.View
                 _retireTime = time + _decaySeconds;
         }
 
-        internal bool TryKick(Vector3 velocity, float time, float cooldown)
-        {
-            if (_isRetiring == false || time - _lastKickTime < cooldown || time >= _retireTime - _decaySeconds)
-                return false;
-
-            _lastKickTime = time;
-            _isKnockedBack = true;
-            _isAirborne = _isAirborne || velocity.y > 0f;
-            _knockbackVelocity = new Vector3(velocity.x, Mathf.Max(velocity.y, _knockbackVelocity.y), velocity.z);
-
-            return true;
-        }
 
         internal void ResetFeedback()
         {
@@ -521,7 +514,6 @@ namespace Game.View
                 _animator.enabled = true;
 
             _sinkOffset = 0f;
-            _lastKickTime = float.NegativeInfinity;
 
             if (_hasBaseScale)
                 transform.localScale = _baseScale;

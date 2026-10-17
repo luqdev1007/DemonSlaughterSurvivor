@@ -435,7 +435,7 @@ namespace Game.View
 
         public void Tick(float time, float deltaTime)
         {
-            TickCorpses(time);
+            TickCorpses();
 
             for (int index = _active.Count - 1; index >= 0; index--)
             {
@@ -461,7 +461,7 @@ namespace Game.View
             _strikes.Add(new CorpseStrike(origin, forward, reach, halfAngleDegrees));
         }
 
-        private void TickCorpses(float time)
+        private void TickCorpses()
         {
             if (_disposed)
                 return;
@@ -476,33 +476,9 @@ namespace Game.View
                     continue;
 
                 ViewInterpolator corpse = _corpses[index];
-                Vector3 position = corpse.transform.position;
 
-                if (IsOffscreen(position))
-                {
+                if (IsOffscreen(corpse.transform.position))
                     CompleteRetire(corpse);
-
-                    continue;
-                }
-
-                if (_hasHero)
-                {
-                    Vector3 offset = position - _heroPosition;
-                    offset.y = 0f;
-
-                    if (offset.sqrMagnitude < radius * radius)
-                    {
-                        Vector3 direction = offset.sqrMagnitude > 1e-6f ? offset.normalized : (heroSpeed > 1e-3f ? _heroVelocity / heroSpeed : Vector3.forward);
-
-                        corpse.TryKick(direction * push + Vector3.up * _feedback.KickUpSpeed, time, _feedback.KickCooldownSeconds);
-                    }
-                }
-
-                for (int strike = 0; strike < _strikes.Count; strike++)
-                {
-                    if (_strikes[strike].TryDirection(position, out Vector3 direction))
-                        corpse.TryKick(direction * _feedback.StrikeKickSpeed + Vector3.up * _feedback.StrikeKickUpSpeed, time, 0.1f);
-                }
             }
 
             if (_gore != null)
@@ -535,8 +511,6 @@ namespace Game.View
 
         private readonly struct CorpseStrike
         {
-            private const float BodyAllowance = 0.5f;
-
             public CorpseStrike(Vector3 origin, Vector3 forward, float reach, float halfAngleDegrees)
             {
                 forward.y = 0f;
@@ -554,20 +528,6 @@ namespace Game.View
             public float Reach { get; }
 
             public float HalfAngleDegrees { get; }
-
-            public bool TryDirection(Vector3 position, out Vector3 direction)
-            {
-                Vector3 offset = position - Origin;
-                offset.y = 0f;
-
-                float distance = offset.magnitude;
-                direction = distance > 1e-4f ? offset / distance : Forward;
-
-                if (distance > Reach + BodyAllowance)
-                    return false;
-
-                return distance <= BodyAllowance || Vector3.Angle(Forward, direction) <= HalfAngleDegrees;
-            }
         }
 
         private void Activate(Entry entry, Vector3 position, Quaternion rotation)

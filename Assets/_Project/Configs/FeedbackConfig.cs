@@ -32,12 +32,11 @@ namespace Game.Configs
         [SerializeField] private int _maxCorpses = 60;
         [SerializeField] private float _offscreenMargin = 0.08f;
 
-        [Header("Corpse kicks")]
+        [Header("Gib kicks")]
         [SerializeField] private float _kickRadius = 1f;
         [SerializeField] private float _kickSpeed = 3.5f;
         [SerializeField] private float _kickHeroSpeedShare = 0.6f;
         [SerializeField] private float _kickUpSpeed = 2f;
-        [SerializeField] private float _kickCooldownSeconds = 0.3f;
         [SerializeField] private float _strikeKickSpeed = 7f;
         [SerializeField] private float _strikeKickUpSpeed = 3.5f;
 
@@ -98,8 +97,6 @@ namespace Game.Configs
         public float KickHeroSpeedShare => _kickHeroSpeedShare;
 
         public float KickUpSpeed => _kickUpSpeed;
-
-        public float KickCooldownSeconds => _kickCooldownSeconds;
 
         public float StrikeKickSpeed => _strikeKickSpeed;
 
