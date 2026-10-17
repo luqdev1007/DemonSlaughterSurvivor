@@ -10,12 +10,24 @@ namespace Game.Simulation.Systems
 
         private readonly EcsFilterInject<Inc<DashFinisher, DashFinisherStarted>> _started = default;
 
+        private readonly EcsFilterInject<Inc<UpperSlashCue, View>> _cues = default;
+
         private readonly EcsPoolInject<DashFinisher> _finishers = default;
+        private readonly EcsPoolInject<UpperSlashCue> _cuePool = default;
         private readonly EcsPoolInject<View> _views = default;
 
         public void Run(IEcsSystems systems)
         {
             EcsWorld world = _world.Value;
+
+            foreach (int entity in _cues.Value)
+            {
+                ref View cueView = ref _views.Value.Get(entity);
+                ref UpperSlashCue cue = ref _cuePool.Value.Get(entity);
+
+                if (cueView.Value != null)
+                    cueView.Value.PlayAttack(cue.Trigger, cue.PlaybackSpeed);
+            }
 
             foreach (int entity in _started.Value)
             {

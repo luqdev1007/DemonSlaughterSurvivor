@@ -141,20 +141,6 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void WithBothPerksAndNoEnemyNearTheFinalSlashPlays()
-        {
-            Build();
-            Take(AgileId);
-            Take(SlicingId);
-
-            Dash();
-            StepUntilDashEnds();
-
-            Assert.IsTrue(_world.GetPool<SpecialAttack>().Has(_hero));
-            Assert.IsFalse(_world.GetPool<ProjectilePassThrough>().Has(_hero), "the final slash gives no dodge window");
-        }
-
-        [Test]
         public void ProjectilesPassThroughTheHeroDuringTheWindow()
         {
             _world = new EcsWorld();

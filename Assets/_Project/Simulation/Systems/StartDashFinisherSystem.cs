@@ -63,22 +63,13 @@ namespace Game.Simulation.Systems
 
             foreach (int hero in _heroes.Value)
             {
-                bool slicing = _slicingRolls.Value.Has(hero);
-
-                _slicingRolls.Value.Del(hero);
-
                 ref DashEndedEvent ended = ref _endedEvents.Value.Get(hero);
 
-                if (TryStartAgile(world, hero, in ended))
-                    continue;
+                if (TryStartAgile(world, hero, in ended) && _slicingRolls.Value.Has(hero)
+                    && _slicingRolls.Value.Get(hero).Strike.Unpack(world, out int pendingStrike))
+                    world.DelEntity(pendingStrike);
 
-                if (slicing == false)
-                    continue;
-
-                if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out SlicingDashConfig config, out int level) == false)
-                    continue;
-
-                StartFinalSlash(world, hero, config, config.Level(level), in ended);
+                _slicingRolls.Value.Del(hero);
             }
         }
 
@@ -124,19 +115,6 @@ namespace Game.Simulation.Systems
             strike.PushArcHeight = config.PushArcHeight;
 
             return true;
-        }
-
-        private void StartFinalSlash(EcsWorld world, int hero, SlicingDashConfig config, SlicingDashLevel entry, in DashEndedEvent ended)
-        {
-            int finisher = StartFinisher(world, hero, config.FinalTrigger, config.FinalPlaybackSpeed, config.FinalClipSeconds, config.FinalLocksMovement);
-
-            ref AreaStrike strike = ref AddStrike(world, hero, finisher, config.FinalImpactClipSeconds / config.FinalPlaybackSpeed);
-            strike.Reach = config.FinalReach * DashChargeRules.Scale(config.ReachAtFullCharge, ended.Strength);
-            strike.HalfAngleDegrees = config.FinalHalfAngleDegrees;
-            strike.Damage = ResolveWeaponDamage(world, hero) * entry.FinalDamageShare * DamageMultiplier(in ended);
-            strike.PushSpeed = config.FinalPushSpeed;
-            strike.PushSeconds = config.FinalPushSeconds;
-            strike.PushArcHeight = config.FinalPushArcHeight;
         }
 
         private int StartFinisher(EcsWorld world, int hero, string trigger, float speed, float clipSeconds, bool locksMovement)

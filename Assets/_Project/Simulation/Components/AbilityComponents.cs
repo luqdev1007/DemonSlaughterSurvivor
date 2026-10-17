@@ -19,7 +19,18 @@ namespace Game.Simulation.Components
 
     public struct DashCooldown { public float Remaining; }
 
-    public struct SlicingDashRoll { public int Level; }
+    public struct SlicingDashRoll
+    {
+        public int Level;
+        public EcsPackedEntity Strike;
+        public bool Cued;
+    }
+
+    public struct UpperSlashCue
+    {
+        public string Trigger;
+        public float PlaybackSpeed;
+    }
 
     public struct SlicingDashRandom { public uint State; }
 

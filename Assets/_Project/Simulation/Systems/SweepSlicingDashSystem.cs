@@ -36,6 +36,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
         private readonly EcsPoolInject<SlicingDashRoll> _rolls = default;
         private readonly EcsPoolInject<SlicingDashRandom> _randoms = default;
+        private readonly EcsPoolInject<AreaStrike> _strikes = default;
+        private readonly EcsPoolInject<UpperSlashCue> _cues = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -62,7 +64,7 @@ namespace Game.Simulation.Systems
                 ref Dashing dashing = ref _dashes.Value.Get(hero);
 
                 if (dashing.RemainingTicks == dashing.TotalTicks)
-                    Roll(world, hero);
+                    Roll(world, hero, in dashing);
 
                 if (_rolls.Value.Has(hero) == false)
                     continue;
@@ -70,11 +72,52 @@ namespace Game.Simulation.Systems
                 if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out SlicingDashConfig config, out int level) == false)
                     continue;
 
+                Cue(hero, config, in dashing);
+
                 Sweep(world, hero, config, config.Level(level), in dashing);
             }
         }
 
-        private void Roll(EcsWorld world, int hero)
+        private void Cue(int hero, SlicingDashConfig config, in Dashing dashing)
+        {
+            ref SlicingDashRoll roll = ref _rolls.Value.Get(hero);
+
+            if (roll.Cued)
+                return;
+
+            int lead = Mathf.RoundToInt(config.FinalImpactClipSeconds / config.FinalPlaybackSpeed / _clock.Value.Delta);
+
+            if (dashing.RemainingTicks > lead)
+                return;
+
+            roll.Cued = true;
+
+            ref UpperSlashCue cue = ref _cues.Value.Has(hero) ? ref _cues.Value.Get(hero) : ref _cues.Value.Add(hero);
+            cue.Trigger = config.FinalTrigger;
+            cue.PlaybackSpeed = config.FinalPlaybackSpeed;
+        }
+
+        private void ScheduleFinalStrike(EcsWorld world, int hero, SlicingDashConfig config, SlicingDashLevel entry, in Dashing dashing, ref SlicingDashRoll roll)
+        {
+            int entity = world.NewEntity();
+
+            ref AreaStrike strike = ref _strikes.Value.Add(entity);
+            strike.Owner = world.PackEntity(hero);
+            strike.DelayTicks = Mathf.Max(0, dashing.TotalTicks - 1);
+            strike.FollowOwner = true;
+            strike.Reach = config.FinalReach * DashChargeRules.Scale(config.ReachAtFullCharge, dashing.Strength);
+            strike.HalfAngleDegrees = config.FinalHalfAngleDegrees;
+            strike.Damage = ResolveWeaponDamage(world, hero) * entry.FinalDamageShare * DashChargeRules.DamageMultiplier(in dashing);
+            strike.Kind = DamageKind.Perk;
+            strike.IsSlash = true;
+            strike.PushSpeed = config.FinalPushSpeed;
+            strike.PushSeconds = config.FinalPushSeconds;
+            strike.PushArcHeight = config.FinalPushArcHeight;
+
+            roll.Strike = world.PackEntity(entity);
+        }
+
+        private void Roll(EcsWorld world, int hero, in Dashing dashing)
         {
             _hitThisDash.Clear();
             _rolls.Value.Del(hero);
@@ -85,7 +128,11 @@ namespace Game.Simulation.Systems
             if (SimulationRandom.NextUnit(ref ResolveRandom(hero).State) >= config.Level(level).Chance)
                 return;
 
-            _rolls.Value.Add(hero).Level = level;
+            ref SlicingDashRoll roll = ref _rolls.Value.Add(hero);
+            roll.Level = level;
+            roll.Cued = false;
+
+            ScheduleFinalStrike(world, hero, config, config.Level(level), in dashing, ref roll);
         }
 
         private void Sweep(EcsWorld world, int hero, SlicingDashConfig config, SlicingDashLevel entry, in Dashing dashing)

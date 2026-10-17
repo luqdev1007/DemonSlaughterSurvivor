@@ -67,55 +67,6 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void FinalSlashLandsOnTheImpactTickAndHoldsTheHero()
-        {
-            Build(chance: 1f);
-            TakePerk();
-
-            Dash(0f);
-            int endTick = StepUntilDashEnds();
-
-            int target = SpawnEnemy(_world.GetPool<Position>().Get(_hero).Value + new Vector3(0f, 0f, 1.8f));
-            int impactTicks = Mathf.RoundToInt(_config.FinalImpactClipSeconds / _config.FinalPlaybackSpeed / Tick);
-            int finishTicks = Mathf.RoundToInt(_config.FinalClipSeconds / _config.FinalPlaybackSpeed / Tick);
-
-            Assert.IsTrue(_world.GetPool<SpecialAttack>().Has(_hero), "the final slash is a special attack");
-
-            int landed = -1;
-
-            for (int tick = 1; tick <= finishTicks + 2; tick++)
-            {
-                Step();
-
-                if (landed < 0 && Damage(target).Count > 0)
-                    landed = tick;
-            }
-
-            Assert.AreEqual(impactTicks, landed, $"dash ended on tick {endTick}");
-            Assert.AreEqual(new[] { SwordDamage * 1.5f }, Damage(target).ToArray());
-            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero), "the hold ends with the clip");
-        }
-
-        [Test]
-        public void FullChargeDoublesBothStrikes()
-        {
-            Build(chance: 1f);
-            TakePerk();
-
-            int swordSide = SpawnEnemy(new Vector3(0.9f, 0f, 3f));
-
-            Dash(1f);
-            StepUntilDashEnds();
-
-            int target = SpawnEnemy(_world.GetPool<Position>().Get(_hero).Value + new Vector3(0f, 0f, 1.8f));
-
-            Step(80);
-
-            Assert.AreEqual(new[] { SwordDamage * 0.5f * 2f }, Damage(swordSide).ToArray());
-            Assert.AreEqual(new[] { SwordDamage * 1.5f * 2f }, Damage(target).ToArray());
-        }
-
-        [Test]
         public void WithoutThePerkTheDashNeitherCutsNorFinishes()
         {
             Build(chance: 1f);
@@ -145,31 +96,6 @@ namespace Game.Simulation.Tests
 
             Assert.AreEqual(0, Damage(swordSide).Count);
             Assert.AreEqual(0, _world.Filter<DashFinisher>().End().GetEntitiesCount());
-        }
-
-        [Test]
-        public void ANewDashCancelsTheFinalSlashBeforeImpact()
-        {
-            Build(chance: 1f);
-            TakePerk();
-
-            Dash(0f);
-            StepUntilDashEnds();
-
-            int target = SpawnEnemy(_world.GetPool<Position>().Get(_hero).Value + new Vector3(0f, 0f, 1.8f));
-
-            Step(5);
-
-            _world.GetPool<DashCooldown>().Del(_hero);
-
-            ref Dashing dashing = ref _world.GetPool<Dashing>().Add(_hero);
-            dashing.Direction = Vector3.back;
-            dashing.RemainingTicks = 3;
-            dashing.TotalTicks = 3;
-
-            Step(80);
-
-            Assert.AreEqual(0, CountAmount(target, SwordDamage * 1.5f));
         }
 
         private void Build(float chance)

@@ -21,12 +21,12 @@ MonoBehaviour:
     _cooldownSeconds: 5
   _triggerRadius: 3
   _minEnemies: 1
-  _windowSeconds: 0.35
+  _windowSeconds: 0.25
   _trigger: DashFinalAttack
-  _playbackSpeed: 1.5
+  _playbackSpeed: 2
   _impactClipSeconds: 0.4333333
   _clipSeconds: 0.7
-  _locksMovement: 1
+  _locksMovement: 0
   _reach: 3.2
   _halfAngleDegrees: 180
   _pushSpeed: 5

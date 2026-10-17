@@ -22,11 +22,9 @@ namespace Game.Configs
         [SerializeField] private float _corridorPushArcHeight = 0.2f;
 
         [Header("Final slash")]
-        [SerializeField] private string _finalTrigger = "DashFinalSlash";
+        [SerializeField] private string _finalTrigger = "DashUpperSlash";
         [SerializeField] private float _finalPlaybackSpeed = 1.2f;
         [SerializeField] private float _finalImpactClipSeconds = 0.5f;
-        [SerializeField] private float _finalClipSeconds = 1.433f;
-        [SerializeField] private bool _finalLocksMovement = true;
         [SerializeField] private float _finalReach = 2.6f;
         [SerializeField] private float _finalHalfAngleDegrees = 70f;
         [SerializeField] private float _finalPushSpeed = 5f;
@@ -55,10 +53,6 @@ namespace Game.Configs
         public float FinalPlaybackSpeed => _finalPlaybackSpeed;
 
         public float FinalImpactClipSeconds => _finalImpactClipSeconds;
-
-        public float FinalClipSeconds => _finalClipSeconds;
-
-        public bool FinalLocksMovement => _finalLocksMovement;
 
         public float FinalReach => _finalReach;
 
@@ -109,10 +103,9 @@ namespace Game.Configs
             if (_finalHalfAngleDegrees <= 0f || _finalHalfAngleDegrees > 180f)
                 throw new InvalidOperationException($"{label} has a final half angle of {_finalHalfAngleDegrees}°; it must be in (0, 180].");
 
-            if (_finalPlaybackSpeed <= 0f || _finalClipSeconds <= 0f || _finalImpactClipSeconds < 0f || _finalImpactClipSeconds > _finalClipSeconds)
+            if (_finalPlaybackSpeed <= 0f || _finalImpactClipSeconds < 0f)
                 throw new InvalidOperationException(
-                    $"{label} has playback {_finalPlaybackSpeed}, impact {_finalImpactClipSeconds} s of a {_finalClipSeconds} s clip; " +
-                    "the speed and clip must be positive and the impact inside the clip.");
+                    $"{label} has playback {_finalPlaybackSpeed} and impact {_finalImpactClipSeconds} s; the speed must be positive and the impact not negative.");
 
             if (string.IsNullOrEmpty(_finalTrigger))
                 throw new InvalidOperationException($"{label} has no final slash animator trigger.");
