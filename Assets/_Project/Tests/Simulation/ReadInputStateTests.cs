@@ -154,14 +154,6 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(_aim.Point, State().AimPoint);
         }
 
-        [Test]
-        public void MouseHoldIsNotImplementedYet()
-        {
-            Build(ControlScheme.MouseHold);
-
-            Assert.Throws<NotImplementedException>(Tick);
-        }
-
         private void Build(ControlScheme scheme)
         {
             InputConfig inputConfig = ScriptableObject.CreateInstance<InputConfig>();
@@ -251,6 +243,8 @@ namespace Game.Simulation.Tests
             public Vector2 PointerPosition => Vector2.zero;
 
             public bool IsStandHeld => StandHeld;
+
+            public bool IsMoveHeld => false;
         }
 
         private sealed class FakeAim : IAimInput

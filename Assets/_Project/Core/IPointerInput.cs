@@ -7,5 +7,7 @@ namespace Game.Core
         Vector2 PointerPosition { get; }
 
         bool IsStandHeld { get; }
+
+        bool IsMoveHeld { get; }
     }
 }

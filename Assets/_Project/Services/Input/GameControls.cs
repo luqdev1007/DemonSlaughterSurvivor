@@ -165,6 +165,15 @@ namespace Game.Services.Input
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MoveHold"",
+                    ""type"": ""Button"",
+                    ""id"": ""6a1f3c2e-9b47-4d8a-b5e0-2c7d9e4f1a83"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -299,6 +308,17 @@ namespace Game.Services.Input
                     ""action"": ""ChargeDash"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d7c4e1b9-3a62-4f05-8e9b-1f6a2d8c5e74"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MoveHold"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -315,6 +335,7 @@ namespace Game.Services.Input
             m_Gameplay_StandStill = m_Gameplay.FindAction("StandStill", throwIfNotFound: true);
             m_Gameplay_AutoTarget = m_Gameplay.FindAction("AutoTarget", throwIfNotFound: true);
             m_Gameplay_ChargeDash = m_Gameplay.FindAction("ChargeDash", throwIfNotFound: true);
+            m_Gameplay_MoveHold = m_Gameplay.FindAction("MoveHold", throwIfNotFound: true);
         }
 
         ~@GameControls()
@@ -403,6 +424,7 @@ namespace Game.Services.Input
         private readonly InputAction m_Gameplay_StandStill;
         private readonly InputAction m_Gameplay_AutoTarget;
         private readonly InputAction m_Gameplay_ChargeDash;
+        private readonly InputAction m_Gameplay_MoveHold;
         /// <summary>
         /// Provides access to input actions defined in input action map "Gameplay".
         /// </summary>
@@ -446,6 +468,10 @@ namespace Game.Services.Input
             /// Provides access to the underlying input action "Gameplay/ChargeDash".
             /// </summary>
             public InputAction @ChargeDash => m_Wrapper.m_Gameplay_ChargeDash;
+            /// <summary>
+            /// Provides access to the underlying input action "Gameplay/MoveHold".
+            /// </summary>
+            public InputAction @MoveHold => m_Wrapper.m_Gameplay_MoveHold;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -496,6 +522,9 @@ namespace Game.Services.Input
                 @ChargeDash.started += instance.OnChargeDash;
                 @ChargeDash.performed += instance.OnChargeDash;
                 @ChargeDash.canceled += instance.OnChargeDash;
+                @MoveHold.started += instance.OnMoveHold;
+                @MoveHold.performed += instance.OnMoveHold;
+                @MoveHold.canceled += instance.OnMoveHold;
             }
 
             /// <summary>
@@ -531,6 +560,9 @@ namespace Game.Services.Input
                 @ChargeDash.started -= instance.OnChargeDash;
                 @ChargeDash.performed -= instance.OnChargeDash;
                 @ChargeDash.canceled -= instance.OnChargeDash;
+                @MoveHold.started -= instance.OnMoveHold;
+                @MoveHold.performed -= instance.OnMoveHold;
+                @MoveHold.canceled -= instance.OnMoveHold;
             }
 
             /// <summary>
@@ -627,6 +659,13 @@ namespace Game.Services.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnChargeDash(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "MoveHold" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnMoveHold(InputAction.CallbackContext context);
         }
     }
 }

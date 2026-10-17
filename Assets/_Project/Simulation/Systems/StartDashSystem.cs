@@ -18,6 +18,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Dashing> _dashes = default;
         private readonly EcsPoolInject<Invulnerable> _invulnerables = default;
+        private readonly EcsPoolInject<InputState> _inputStates = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
@@ -25,6 +26,9 @@ namespace Game.Simulation.Systems
         {
             foreach (var entity in _filter.Value)
             {
+                if (_inputStates.Value.Has(entity) && _inputStates.Value.Get(entity).AimTurning)
+                    continue;
+
                 ref Dashing dashing = ref _dashes.Value.Add(entity);
 
                 ref Facing facing = ref _facings.Value.Get(entity);

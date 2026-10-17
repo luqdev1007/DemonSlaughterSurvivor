@@ -29,6 +29,7 @@ namespace Game.Simulation.Systems
 
             bool hasAim = _aimInput.Value.TryGetAimPoint(out Vector3 aimPoint);
             bool standHeld = _pointer.Value.IsStandHeld;
+            bool moveHeld = _pointer.Value.IsMoveHeld;
 
             Vector2 axis = _input.Value.MoveAxis;
             Vector3 keyboardDirection = Quaternion.Euler(0f, _level.Value.CameraYaw, 0f) * new Vector3(axis.x, 0f, axis.y).normalized;
@@ -39,6 +40,7 @@ namespace Game.Simulation.Systems
                 state.AimPoint = aimPoint;
                 state.HasAim = hasAim;
                 state.StandHeld = standHeld;
+                state.MoveHeld = moveHeld;
 
                 ref MoveIntent intent = ref _intents.Value.Get(entity);
 
@@ -46,8 +48,7 @@ namespace Game.Simulation.Systems
                 {
                     ControlScheme.Keyboard => keyboardDirection,
                     ControlScheme.MouseRun => ResolveMouseRun(entity, in state),
-                    ControlScheme.MouseHold => throw new NotImplementedException(
-                        $"{nameof(ControlScheme.MouseHold)} is block 1C of recon 060: run only while the stand button is held."),
+                    ControlScheme.MouseHold => state.MoveHeld ? ResolveCursorDirection(entity, in state) : Vector3.zero,
                     _ => throw new InvalidOperationException($"Unknown control scheme {scheme}.")
                 };
             }
@@ -55,7 +56,15 @@ namespace Game.Simulation.Systems
 
         private Vector3 ResolveMouseRun(int entity, in InputState state)
         {
-            if (state.HasAim == false || state.StandHeld)
+            if (state.StandHeld)
+                return Vector3.zero;
+
+            return ResolveCursorDirection(entity, in state);
+        }
+
+        private Vector3 ResolveCursorDirection(int entity, in InputState state)
+        {
+            if (state.HasAim == false)
                 return Vector3.zero;
 
             Vector3 offset = state.AimPoint - _positions.Value.Get(entity).Value;

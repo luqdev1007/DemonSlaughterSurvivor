@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: InputConfig
   m_EditorClassIdentifier: Game.Configs::Game.Configs.InputConfig
   _bufferSeconds: 0.12
-  _defaultScheme: 2
+  _defaultScheme: 1

@@ -48,6 +48,7 @@ namespace Game.Simulation.Systems
             systems.Add(new FaceRangedTargetSystem());
             systems.Add(new FaceEnemyChargeTargetSystem());
             systems.Add(new FaceEnemyHeavyStrikeTargetSystem());
+            systems.Add(new FaceAimSystem());
             systems.Add(new ApplyPushSystem());
             systems.Add(new ApplyGemFlightSystem());
             systems.Add(new ResolveBodyOverlapSystem());

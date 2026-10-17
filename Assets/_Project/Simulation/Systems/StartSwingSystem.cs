@@ -1,4 +1,5 @@
 using Game.Configs;
+using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
@@ -35,6 +36,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Dashing> _dashing = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
         private readonly EcsPoolInject<PoweringUp> _poweringUps = default;
+        private readonly EcsPoolInject<InputState> _inputStates = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -74,12 +76,17 @@ namespace Game.Simulation.Systems
                 SwingPose pose = new SwingPose(_positions.Value.Get(owner).Value, _facings.Value.Get(owner).Value);
                 float attackSpeed = _attackSpeeds.Value.Get(weapon).Value;
 
-                if (HasTarget(config, attackSpeed, pose, out Vector3 target) == false)
-                    continue;
-
                 ref SwingRandom random = ref _randoms.Value.Get(weapon);
+                int variant;
 
-                int variant = PickVariant(config, pose, target, ref random.State);
+                if (HasTarget(config, attackSpeed, pose, out Vector3 target))
+                {
+                    variant = PickVariant(config, pose, target, ref random.State);
+                }
+                else if (TryPredict(owner, config, ref pose, out variant) == false)
+                {
+                    continue;
+                }
 
                 StartSwing(world, weapon, owner, config, variant, attackSpeed, pose);
 
@@ -128,6 +135,64 @@ namespace Game.Simulation.Systems
             }
 
             return false;
+        }
+
+        private bool TryPredict(int owner, WeaponConfig config, ref SwingPose pose, out int variant)
+        {
+            variant = -1;
+
+            if (_inputStates.Value.Has(owner) == false)
+                return false;
+
+            ref InputState state = ref _inputStates.Value.Get(owner);
+
+            if (state.PredictiveLead == 0f)
+                return false;
+
+            Vector3 facing = Quaternion.Euler(0f, state.PredictiveLead, 0f) * _facings.Value.Get(owner).Value;
+            SwingPose predicted = new SwingPose(pose.Position, facing);
+            float stretch = Mathf.Max(1f, state.PredictiveStretch);
+            SwingCoverage coverage = config.TriggerCoverage;
+
+            _grid.Value.Query(pose.Position, coverage.MaxDistance * stretch, _motionBounds.Value.CandidateSlack(_clock.Value.Delta), _candidates);
+
+            for (int index = 0; index < _candidates.Count; index++)
+            {
+                int candidate = _candidates[index];
+
+                if (_enemies.Value.Has(candidate) == false && _breakables.Value.Has(candidate) == false)
+                    continue;
+
+                Vector3 local = predicted.ToLocal(_positions.Value.Get(candidate).Value);
+                float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
+                float distance = Mathf.Sqrt(local.x * local.x + local.z * local.z) / stretch;
+
+                if (coverage.Covers(angle, distance) == false)
+                    continue;
+
+                variant = FindVariant(config, state.PredictiveSwing);
+
+                if (variant < 0)
+                    variant = 0;
+
+                pose = predicted;
+                _facings.Value.Get(owner).Value = facing;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static int FindVariant(WeaponConfig config, string trigger)
+        {
+            for (int index = 0; index < config.VariantCount; index++)
+            {
+                if (config.Variant(index).AnimatorTrigger == trigger)
+                    return index;
+            }
+
+            return -1;
         }
 
         private static bool Covers(SwingCoverage coverage, in SwingPose pose, Vector3 position)

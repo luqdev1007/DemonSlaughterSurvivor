@@ -31,6 +31,8 @@ namespace Game.Services
 
         public bool IsStandHeld => _input.Gameplay.StandStill.IsPressed();
 
+        public bool IsMoveHeld => _input.Gameplay.MoveHold.IsPressed();
+
         public bool IsChargeHeld => _input.Gameplay.ChargeDash.IsPressed();
 
         public bool ConsumeChargeReleased()
