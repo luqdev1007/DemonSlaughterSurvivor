@@ -16,6 +16,7 @@ namespace Game.UI
 
         private readonly LevelConfig _level;
         private readonly PlayerVitals _vitals;
+        private readonly AbilityPanel _abilityPanel;
         private readonly UpgradeChoice _choice;
         private readonly IUpgradeChoiceSubmit _submit;
         private readonly IContentRegistry _content;
@@ -36,11 +37,12 @@ namespace Game.UI
         private readonly PerkCardContent[] _cardContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
         private readonly StringBuilder _text = new StringBuilder();
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICameraService camera)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICameraService camera)
         {
             _camera = camera;
             _pauseMenu = pauseMenu;
             _soundSettings = soundSettings;
+            _abilityPanel = abilityPanel;
             _level = level;
             _vitals = vitals;
             _choice = choice;
@@ -91,6 +93,8 @@ namespace Game.UI
 
         public void LateTick()
         {
+            RefreshAbilityPanel();
+
             if (_view == null)
                 return;
 
@@ -228,6 +232,32 @@ namespace Game.UI
 
                 view.ShowSlot(slot, Describe(_cardContents[slot], slot, perk, offer.NextLevel));
             }
+        }
+
+        private void RefreshAbilityPanel()
+        {
+            if (_view == null)
+                return;
+
+            AbilityPanelView view = _view.AbilityPanel;
+
+            for (int index = 0; index < _abilityPanel.Count; index++)
+            {
+                AbilityPanelEntry entry = _abilityPanel.Entry(index);
+
+                if (index >= view.SlotCount)
+                    view.AddSlot(ResolveAbilityIcon(entry.Id, view));
+
+                view.SetSlot(index, entry.Remaining, entry.Fill);
+            }
+        }
+
+        private Sprite ResolveAbilityIcon(string abilityId, AbilityPanelView view)
+        {
+            if (_content.TryGet(abilityId, out PerkConfig perk))
+                return perk.Icon;
+
+            return view.DashIcon;
         }
 
         private PerkCardContent Describe(PerkCardContent content, int slot, PerkConfig perk, int nextLevel)

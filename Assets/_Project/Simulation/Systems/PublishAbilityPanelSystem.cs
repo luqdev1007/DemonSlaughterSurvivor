@@ -1,0 +1,72 @@
+using Game.Configs;
+using Game.Core;
+using Game.Simulation.Components;
+using Game.Simulation.Services;
+using Leopotam.EcsLite;
+using Leopotam.EcsLite.Di;
+using UnityEngine;
+
+namespace Game.Simulation.Systems
+{
+    public sealed class PublishAbilityPanelSystem : IEcsRunSystem
+    {
+        public const string DashId = "ability.dash";
+
+        private readonly EcsWorldInject _world = default;
+
+        private readonly EcsFilterInject<Inc<Player>, Exc<Dead>> _heroes = default;
+        private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
+
+        private readonly EcsPoolInject<TakenPerk> _takenPool = default;
+        private readonly EcsPoolInject<DashCooldown> _dashCooldowns = default;
+        private readonly EcsPoolInject<DashStats> _dashStats = default;
+        private readonly EcsPoolInject<ExecutionCooldown> _executionCooldowns = default;
+        private readonly EcsPoolInject<HeroicLeapCooldown> _leapCooldowns = default;
+        private readonly EcsPoolInject<AgileDashCooldown> _agileCooldowns = default;
+
+        private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
+        private readonly EcsCustomInject<IContentRegistry> _content = default;
+        private readonly EcsCustomInject<SimulationClock> _clock = default;
+
+        public void Run(IEcsSystems systems)
+        {
+            if (_sink.Value == null)
+                return;
+
+            EcsWorld world = _world.Value;
+            float delta = _clock.Value.Delta;
+
+            foreach (int hero in _heroes.Value)
+            {
+                if (_dashStats.Value.Has(hero))
+                    _sink.Value.Publish(DashId, _dashCooldowns.Value.Has(hero) ? Mathf.Max(0f, _dashCooldowns.Value.Get(hero).Remaining) : 0f);
+
+                foreach (int entity in _taken.Value)
+                {
+                    ref TakenPerk taken = ref _takenPool.Value.Get(entity);
+
+                    if (taken.Owner.Unpack(world, out int owner) == false || owner != hero)
+                        continue;
+
+                    PerkConfig perk = _content.Value.Get<PerkConfig>(taken.PerkId);
+
+                    _sink.Value.Publish(taken.PerkId, ResolveRemainingTicks(hero, perk.Behaviour) * delta);
+                }
+            }
+        }
+
+        private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
+        {
+            if (behaviour is ExecutionConfig && _executionCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _executionCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is HeroicLeapConfig && _leapCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _leapCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is AgileDashConfig && _agileCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _agileCooldowns.Value.Get(hero).RemainingTicks);
+
+            return 0;
+        }
+    }
+}

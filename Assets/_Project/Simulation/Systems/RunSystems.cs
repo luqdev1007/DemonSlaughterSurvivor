@@ -138,6 +138,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new SyncEnemyActionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
+            systems.Add(new PublishAbilityPanelSystem());
             systems.Add(new PublishBossVitalsSystem());
             systems.Add(new PublishExperienceSystem());
             systems.Add(new BindCameraTargetSystem());

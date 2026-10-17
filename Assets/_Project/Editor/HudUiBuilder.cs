@@ -6,11 +6,12 @@ using UnityEngine.UI;
 
 namespace Game.Editor
 {
-    public static class UpgradeChoiceUiBuilder
+    public static class HudUiBuilder
     {
         private const string HudPath = "Assets/_Project/Prefabs/UI/Hud.prefab";
         private const string FontPath = "Assets/_Project/Art/Fonts/CormorantSC-Bold SDF.asset";
         private const string Sprites = "Assets/GUI Pro-FantasyRPG/ResourcesData/Sprites/Component/";
+        private const string DashIconPath = "Assets/Blink/Art/Icons/Classes/Assassin/Hunter/Hunter1.png";
         private const int PipCount = 5;
         private const int ComboIconCount = 2;
 
@@ -79,6 +80,99 @@ namespace Game.Editor
             }
 
             Debug.Log("Upgrade choice UI rebuilt in " + HudPath);
+        }
+
+        [MenuItem("Game/Build Ability Panel")]
+        public static void BuildAbilityPanel()
+        {
+            _titleFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+            _bodyFont = TMP_Settings.defaultFontAsset;
+
+            GameObject root = PrefabUtility.LoadPrefabContents(HudPath);
+
+            try
+            {
+                Transform old = root.transform.Find("AbilityPanel");
+
+                if (old != null)
+                    Object.DestroyImmediate(old.gameObject);
+
+                RectTransform panel = Rect("AbilityPanel", root.transform, new Vector2(640f, 84f));
+                panel.anchorMin = new Vector2(0.5f, 0f);
+                panel.anchorMax = new Vector2(0.5f, 0f);
+                panel.pivot = new Vector2(0.5f, 0f);
+                panel.anchoredPosition = new Vector2(0f, 54f);
+
+                HorizontalLayoutGroup layout = panel.gameObject.AddComponent<HorizontalLayoutGroup>();
+                layout.spacing = 10f;
+                layout.childAlignment = TextAnchor.LowerCenter;
+                layout.childControlWidth = false;
+                layout.childControlHeight = false;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+
+                AbilitySlotView template = BuildAbilitySlot(panel);
+                template.gameObject.SetActive(false);
+
+                AbilityPanelView view = panel.gameObject.AddComponent<AbilityPanelView>();
+                SerializedObject serialized = new SerializedObject(view);
+                serialized.FindProperty("_container").objectReferenceValue = panel;
+                serialized.FindProperty("_template").objectReferenceValue = template;
+                serialized.FindProperty("_dashIcon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(DashIconPath);
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                SerializedObject hud = new SerializedObject(root.GetComponent<HudView>());
+                hud.FindProperty("_abilityPanel").objectReferenceValue = view;
+                hud.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(root, HudPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            Debug.Log("Ability panel rebuilt in " + HudPath);
+        }
+
+        private static AbilitySlotView BuildAbilitySlot(Transform parent)
+        {
+            RectTransform slot = Rect("Slot", parent, new Vector2(76f, 76f));
+            AddImage(slot.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.12f, 0.11f, 0.14f, 0.95f), false);
+
+            RectTransform iconRect = Rect("Icon", slot, new Vector2(62f, 62f));
+            Image icon = iconRect.gameObject.AddComponent<Image>();
+            icon.raycastTarget = false;
+            icon.preserveAspect = true;
+
+            RectTransform coolRect = Rect("Cooldown", slot, new Vector2(62f, 62f));
+            Image cooldown = coolRect.gameObject.AddComponent<Image>();
+            cooldown.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            cooldown.color = new Color(0.02f, 0.02f, 0.04f, 0.85f);
+            cooldown.raycastTarget = false;
+            cooldown.type = Image.Type.Filled;
+            cooldown.fillMethod = Image.FillMethod.Radial360;
+            cooldown.fillOrigin = (int)Image.Origin360.Top;
+            cooldown.fillClockwise = false;
+            cooldown.fillAmount = 0f;
+
+            Image frame = AddImage(Stretch("Frame", slot, 0f).gameObject, "Frame/ItemFrame_01_Border_White", Color.white, false);
+
+            TMP_Text timer = Text("Timer", slot, _bodyFont, 22f, Color.white, TextAlignmentOptions.Center);
+            StretchRect(timer.rectTransform, 0f);
+            timer.fontStyle = FontStyles.Bold;
+            timer.outlineWidth = 0.25f;
+            timer.outlineColor = new Color32(0, 0, 0, 255);
+
+            AbilitySlotView view = slot.gameObject.AddComponent<AbilitySlotView>();
+            SerializedObject serialized = new SerializedObject(view);
+            serialized.FindProperty("_icon").objectReferenceValue = icon;
+            serialized.FindProperty("_cooldown").objectReferenceValue = cooldown;
+            serialized.FindProperty("_frame").objectReferenceValue = frame;
+            serialized.FindProperty("_timer").objectReferenceValue = timer;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            return view;
         }
 
         private static PerkCardView BuildCard(Transform parent, int slot)

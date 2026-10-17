@@ -12,6 +12,7 @@ namespace Game.UI
         [SerializeField] private TMP_Text _healthText;
         [SerializeField] private Image _ultimateChargeFill;
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
+        [SerializeField] private AbilityPanelView _abilityPanel;
 
         [Header("Experience")]
         [SerializeField] private RectTransform _experienceFill;
@@ -44,11 +45,14 @@ namespace Game.UI
 
         public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
             && _upgradeChoice != null && _upgradeChoice.IsWired
+            && _abilityPanel != null && _abilityPanel.IsWired
             && _experienceFill != null && _levelText != null
             && _bossBar != null && _bossFill != null && _bossName != null && _bossMarker != null && _bossMarker.IsWired && _victoryBanner != null
             && _pauseMenu != null && _pauseMenu.IsWired;
 
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
+
+        public AbilityPanelView AbilityPanel => _abilityPanel;
 
         public PauseMenuView PauseMenu => _pauseMenu;
 
