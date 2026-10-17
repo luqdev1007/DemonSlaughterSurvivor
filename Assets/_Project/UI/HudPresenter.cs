@@ -27,6 +27,8 @@ namespace Game.UI
         private readonly ISoundSettings _soundSettings;
         private readonly ICombatTextSettings _combatText;
         private readonly DamageNumbers _damageNumbers;
+        private readonly DpsMeter _dpsMeter;
+        private readonly IDpsToggleInput _dpsToggle;
         private readonly ICameraService _camera;
 
         private GameObject _instance;
@@ -39,7 +41,7 @@ namespace Game.UI
         private readonly PerkCardContent[] _cardContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
         private readonly StringBuilder _text = new StringBuilder();
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, ICameraService camera)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ICameraService camera)
         {
             _camera = camera;
             _pauseMenu = pauseMenu;
@@ -47,6 +49,8 @@ namespace Game.UI
             _abilityPanel = abilityPanel;
             _combatText = combatText;
             _damageNumbers = damageNumbers;
+            _dpsMeter = dpsMeter;
+            _dpsToggle = dpsToggle;
             _level = level;
             _vitals = vitals;
             _choice = choice;
@@ -100,7 +104,10 @@ namespace Game.UI
             RefreshAbilityPanel();
 
             if (_view != null)
+            {
                 _damageNumbers.Tick(_view.DamageNumbers, _camera, _combatText, Time.deltaTime);
+                RefreshDps();
+            }
 
             if (_view == null)
                 return;
@@ -239,6 +246,22 @@ namespace Game.UI
 
                 view.ShowSlot(slot, Describe(_cardContents[slot], slot, perk, offer.NextLevel));
             }
+        }
+
+        private void RefreshDps()
+        {
+            if (_dpsToggle.ConsumePressed())
+                _combatText.SetDpsVisible(_combatText.DpsVisible == false);
+
+            DpsView view = _view.Dps;
+
+            view.SetVisible(_combatText.DpsVisible);
+
+            if (_combatText.DpsVisible == false)
+                return;
+
+            _dpsMeter.SetWindow(view.WindowSeconds);
+            view.SetValue(_dpsMeter.Dps());
         }
 
         private void RefreshAbilityPanel()

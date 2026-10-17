@@ -182,6 +182,60 @@ namespace Game.Editor
             Debug.Log("Damage numbers layer and settings rows rebuilt.");
         }
 
+        [MenuItem("Game/Build Dps Meter")]
+        public static void BuildDpsMeter()
+        {
+            _titleFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+            _bodyFont = TMP_Settings.defaultFontAsset;
+
+            GameObject root = PrefabUtility.LoadPrefabContents(HudPath);
+
+            try
+            {
+                Transform old = root.transform.Find("Dps");
+
+                if (old != null)
+                    Object.DestroyImmediate(old.gameObject);
+
+                RectTransform holder = Rect("Dps", root.transform, new Vector2(220f, 46f));
+                holder.anchorMin = Vector2.zero;
+                holder.anchorMax = Vector2.zero;
+                holder.pivot = Vector2.zero;
+                holder.anchoredPosition = new Vector2(40f, 272f);
+
+                RectTransform panel = Stretch("Panel", holder, 0f);
+                AddImage(panel.gameObject, "Popup/Popup_02_White_Bg", new Color(0.07f, 0.06f, 0.09f, 0.8f), false);
+
+                TMP_Text label = Text("Label", panel, _titleFont, 24f, Gold, TextAlignmentOptions.MidlineLeft);
+                Place(label.rectTransform, new Vector2(0f, 0.5f), new Vector2(54f, 0f), new Vector2(80f, 40f));
+                label.SetText("DPS");
+
+                TMP_Text value = Text("Value", panel, _bodyFont, 28f, Color.white, TextAlignmentOptions.MidlineRight);
+                Place(value.rectTransform, new Vector2(1f, 0.5f), new Vector2(-70f, 0f), new Vector2(120f, 40f));
+                value.fontStyle = FontStyles.Bold;
+                value.textWrappingMode = TextWrappingModes.NoWrap;
+                value.SetText("0");
+
+                DpsView view = holder.gameObject.AddComponent<DpsView>();
+                SerializedObject serialized = new SerializedObject(view);
+                serialized.FindProperty("_root").objectReferenceValue = panel.gameObject;
+                serialized.FindProperty("_value").objectReferenceValue = value;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                SerializedObject hud = new SerializedObject(root.GetComponent<HudView>());
+                hud.FindProperty("_dps").objectReferenceValue = view;
+                hud.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(root, HudPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            Debug.Log("Dps meter rebuilt in " + HudPath);
+        }
+
         private static void BuildSettingsRows()
         {
             const string popupPath = "Assets/_Project/Prefabs/UI/SettingsPopup.prefab";

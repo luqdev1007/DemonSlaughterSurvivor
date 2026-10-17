@@ -28,6 +28,7 @@ namespace Game.Bootstrap
         private readonly IPlayerVitalsSink _vitalsSink;
         private readonly IAbilityPanelSink _abilityPanelSink;
         private readonly IDamageNumberSink _damageNumberSink;
+        private readonly IDamageDealtSink _damageDealtSink;
         private readonly IUpgradeChoiceSink _choiceSink;
         private readonly IUpgradeChoiceInput _choiceInput;
         private readonly IDebugLevelUpInput _debugLevelUpInput;
@@ -74,6 +75,7 @@ namespace Game.Bootstrap
             IPlayerVitalsSink vitalsSink,
             IAbilityPanelSink abilityPanelSink,
             IDamageNumberSink damageNumberSink,
+            IDamageDealtSink damageDealtSink,
             IUpgradeChoiceSink choiceSink,
             IUpgradeChoiceInput choiceInput,
             IDebugLevelUpInput debugLevelUpInput,
@@ -108,6 +110,7 @@ namespace Game.Bootstrap
             _vitalsSink = vitalsSink;
             _abilityPanelSink = abilityPanelSink;
             _damageNumberSink = damageNumberSink;
+            _damageDealtSink = damageDealtSink;
             _choiceSink = choiceSink;
             _choiceInput = choiceInput;
             _debugLevelUpInput = debugLevelUpInput;
@@ -168,6 +171,7 @@ namespace Game.Bootstrap
                 _vitalsSink,
                 _abilityPanelSink,
                 _damageNumberSink,
+                _damageDealtSink,
                 _choiceGate,
                 _choiceSink,
                 _choiceInput,

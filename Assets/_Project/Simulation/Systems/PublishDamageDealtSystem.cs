@@ -1,12 +1,13 @@
 using Game.Core;
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
-    public sealed class PlayDamageNumbersSystem : IEcsRunSystem
+    public sealed class PublishDamageDealtSystem : IEcsRunSystem
     {
         private readonly EcsWorldInject _world = default;
 
@@ -19,10 +20,15 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
 
         private readonly EcsCustomInject<IDamageNumberSink> _sink = default;
+        private readonly EcsCustomInject<IDamageDealtSink> _dealt = default;
+        private readonly EcsCustomInject<SimulationClock> _clock = default;
 
         public void Run(IEcsSystems systems)
         {
-            if (_sink.Value == null)
+            if (_dealt.Value != null)
+                _dealt.Value.Advance(_clock.Value.Elapsed);
+
+            if (_sink.Value == null && _dealt.Value == null)
                 return;
 
             EcsWorld world = _world.Value;
@@ -37,6 +43,12 @@ namespace Game.Simulation.Systems
                 ref DamageEvent damage = ref _damageEvents.Value.Get(entity);
 
                 if (damage.Target.Unpack(world, out int target) == false || _enemies.Value.Has(target) == false || _positions.Value.Has(target) == false)
+                    continue;
+
+                if (_dealt.Value != null)
+                    _dealt.Value.Record(amount);
+
+                if (_sink.Value == null)
                     continue;
 
                 float height = _bodyHeights.Value.Has(target) ? _bodyHeights.Value.Get(target).Value : 1.8f;

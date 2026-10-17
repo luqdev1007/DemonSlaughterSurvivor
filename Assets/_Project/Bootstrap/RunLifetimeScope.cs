@@ -34,6 +34,10 @@ namespace Game.Bootstrap
 
             builder.Register<DamageNumbers>(Lifetime.Scoped).AsSelf().As<IDamageNumberSink>();
 
+            builder.Register<DpsMeter>(Lifetime.Scoped).AsSelf().As<IDamageDealtSink>();
+
+            builder.Register<DpsToggleInput>(Lifetime.Scoped).As<IDpsToggleInput>();
+
             builder.Register<BossVitals>(Lifetime.Scoped).AsSelf().As<IBossVitalsSink>();
 
             builder.Register<RunResult>(Lifetime.Scoped).AsSelf().As<IRunResultSink>();

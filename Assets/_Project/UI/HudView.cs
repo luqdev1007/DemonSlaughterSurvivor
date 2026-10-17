@@ -14,6 +14,7 @@ namespace Game.UI
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
         [SerializeField] private AbilityPanelView _abilityPanel;
         [SerializeField] private DamageNumberLayerView _damageNumbers;
+        [SerializeField] private DpsView _dps;
 
         [Header("Experience")]
         [SerializeField] private RectTransform _experienceFill;
@@ -48,6 +49,7 @@ namespace Game.UI
             && _upgradeChoice != null && _upgradeChoice.IsWired
             && _abilityPanel != null && _abilityPanel.IsWired
             && _damageNumbers != null && _damageNumbers.IsWired
+            && _dps != null && _dps.IsWired
             && _experienceFill != null && _levelText != null
             && _bossBar != null && _bossFill != null && _bossName != null && _bossMarker != null && _bossMarker.IsWired && _victoryBanner != null
             && _pauseMenu != null && _pauseMenu.IsWired;
@@ -57,6 +59,8 @@ namespace Game.UI
         public AbilityPanelView AbilityPanel => _abilityPanel;
 
         public DamageNumberLayerView DamageNumbers => _damageNumbers;
+
+        public DpsView Dps => _dps;
 
         public PauseMenuView PauseMenu => _pauseMenu;
 
