@@ -15,6 +15,7 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<ExecutionCooldown>> _cooldowns = default;
         private readonly EcsFilterInject<Inc<Player, Position, Facing>, Exc<Dead, Dashing, SpecialAttack, PoweringUp>> _heroes = default;
         private readonly EcsFilterInject<Inc<Boss, Position, BodyRadius, Health>, Exc<Dead>> _bosses = default;
+        private readonly EcsFilterInject<Inc<Enemy, Position, BodyRadius, Health, MaxHealth>, Exc<Dead, Boss>> _ordinary = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<ExecutionCooldown> _cooldownPool = default;
@@ -22,6 +23,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
+        private readonly EcsPoolInject<Health> _healths = default;
+        private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<Execution> _executions = default;
         private readonly EcsPoolInject<ExecutionStarted> _started = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
@@ -54,17 +57,21 @@ namespace Game.Simulation.Systems
                 if (cooldown.RemainingTicks > 0)
                     continue;
 
-                if (TryFindTarget(hero, config, out int target) == false)
+                if (TryFindTarget(hero, config, out int target, out bool isBoss) == false)
                     continue;
 
                 Start(world, hero, target, config, level);
 
-                cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.Level(level).CooldownSeconds / _clock.Value.Delta));
+                float seconds = config.Level(level).CooldownSeconds * (isBoss ? 1f : config.OrdinaryCooldownMultiplier);
+
+                cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(seconds / _clock.Value.Delta));
             }
         }
 
-        private bool TryFindTarget(int hero, ExecutionConfig config, out int target)
+        private bool TryFindTarget(int hero, ExecutionConfig config, out int target, out bool isBoss)
         {
+            isBoss = false;
+
             Vector3 origin = _positions.Value.Get(hero).Value;
             Vector3 facing = _facings.Value.Get(hero).Value;
             facing.y = 0f;
@@ -81,25 +88,51 @@ namespace Game.Simulation.Systems
 
             foreach (int boss in _bosses.Value)
             {
-                Vector3 offset = _positions.Value.Get(boss).Value - origin;
-                offset.y = 0f;
+                if (IsCloserInSector(boss, origin, facing, config, cosHalfAngle, ref nearest))
+                    target = boss;
+            }
 
-                float distance = offset.magnitude;
+            if (target >= 0)
+            {
+                isBoss = true;
 
-                if (distance > config.Reach + _bodyRadii.Value.Get(boss).Value)
+                return true;
+            }
+
+            if (config.OrdinaryHealthThreshold <= 0f)
+                return false;
+
+            foreach (int enemy in _ordinary.Value)
+            {
+                if (_healths.Value.Get(enemy).Current > config.OrdinaryHealthThreshold * _maxHealths.Value.Get(enemy).Value)
                     continue;
 
-                if (distance > Mathf.Epsilon && Vector3.Dot(offset / distance, facing) < cosHalfAngle - 1e-6f)
-                    continue;
-
-                if (distance >= nearest)
-                    continue;
-
-                nearest = distance;
-                target = boss;
+                if (IsCloserInSector(enemy, origin, facing, config, cosHalfAngle, ref nearest))
+                    target = enemy;
             }
 
             return target >= 0;
+        }
+
+        private bool IsCloserInSector(int candidate, Vector3 origin, Vector3 facing, ExecutionConfig config, float cosHalfAngle, ref float nearest)
+        {
+            Vector3 offset = _positions.Value.Get(candidate).Value - origin;
+            offset.y = 0f;
+
+            float distance = offset.magnitude;
+
+            if (distance > config.Reach + _bodyRadii.Value.Get(candidate).Value)
+                return false;
+
+            if (distance > Mathf.Epsilon && Vector3.Dot(offset / distance, facing) < cosHalfAngle - 1e-6f)
+                return false;
+
+            if (distance >= nearest)
+                return false;
+
+            nearest = distance;
+
+            return true;
         }
 
         private void Start(EcsWorld world, int hero, int target, ExecutionConfig config, int level)

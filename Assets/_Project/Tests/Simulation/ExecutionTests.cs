@@ -115,14 +115,53 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void AnOrdinaryEnemyIsNeverExecuted()
+        public void AHealthyOrdinaryEnemyIsNotExecuted()
         {
             Build(bossAt: new Vector3(0f, 0f, 2f), bossHealth: 1000f, level: 1);
 
             _world.GetPool<Boss>().Del(_boss);
+            _world.GetPool<Health>().Get(_boss).Current = 310f;
             Run(1);
 
-            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero));
+            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero), "31% left is above the 30% threshold of an ordinary enemy");
+        }
+
+        [Test]
+        public void AWoundedOrdinaryEnemyIsExecutedByTheFirstHitWithAHalfCooldown()
+        {
+            Build(bossAt: new Vector3(0f, 0f, 2f), bossHealth: 1000f, level: 1);
+
+            _world.GetPool<Boss>().Del(_boss);
+            _world.GetPool<Health>().Get(_boss).Current = 290f;
+
+            Run(1);
+            Assert.IsTrue(_world.GetPool<SpecialAttack>().Has(_hero));
+
+            Run(AdvanceExecutionSystem.TotalTicks(_execution, Tick) + 2);
+
+            Assert.AreEqual(1, _hits.Count, "the first hit kills, the later ones find a dead target");
+            Assert.AreEqual(290f, _hits[0].Value, 1e-3f, "an ordinary target takes its whole health");
+
+            int cooldown = Mathf.RoundToInt(20f * 0.5f / Tick);
+            Assert.AreEqual(cooldown - (AdvanceExecutionSystem.TotalTicks(_execution, Tick) + 2), _world.GetPool<ExecutionCooldown>().Get(_hero).RemainingTicks);
+        }
+
+        [Test]
+        public void TheBossIsPreferredOverACloserWoundedEnemy()
+        {
+            Build(bossAt: new Vector3(0f, 0f, 2.5f), bossHealth: 1000f, level: 1);
+
+            int wounded = _world.NewEntity();
+            _world.GetPool<Enemy>().Add(wounded);
+            _world.GetPool<Position>().Add(wounded).Value = new Vector3(0f, 0f, 1f);
+            _world.GetPool<BodyRadius>().Add(wounded).Value = 0.4f;
+            _world.GetPool<Health>().Add(wounded).Current = 1f;
+            _world.GetPool<MaxHealth>().Add(wounded).Value = 20f;
+
+            Run(1);
+
+            foreach (int entity in _world.Filter<Execution>().End())
+                Assert.IsTrue(_world.GetPool<Execution>().Get(entity).Target.Unpack(_world, out int target) && target == _boss);
         }
 
         [Test]

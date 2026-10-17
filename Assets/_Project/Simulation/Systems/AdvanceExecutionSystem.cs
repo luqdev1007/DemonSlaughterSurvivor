@@ -18,6 +18,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<Boss> _bosses = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -79,7 +80,7 @@ namespace Game.Simulation.Systems
             damageEvent.Target = world.PackEntity(target);
             damageEvent.Source = world.PackEntity(owner);
             damageEvent.SourcePosition = _positions.Value.Get(owner).Value;
-            damageEvent.Amount = config.HitDamage(config.Level(execution.Level), current, max);
+            damageEvent.Amount = _bosses.Value.Has(target) ? config.HitDamage(config.Level(execution.Level), current, max) : current;
             damageEvent.Kind = DamageKind.Perk;
             damageEvent.IsSlash = true;
             damageEvent.SourcePerk = config;
