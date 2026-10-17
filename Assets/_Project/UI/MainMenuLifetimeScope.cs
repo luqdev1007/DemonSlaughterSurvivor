@@ -7,7 +7,7 @@ namespace Game.UI
     {
         protected override void Configure(IContainerBuilder builder)
         {
-            builder.RegisterComponentInHierarchy<DebugRunStarter>();
+            builder.RegisterComponentInHierarchy<MainMenuView>();
         }
     }
 }
