@@ -115,32 +115,31 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void AHealthyOrdinaryEnemyIsNotExecuted()
+        public void AnOrdinaryEnemyIsNeverExecuted()
         {
             Build(bossAt: new Vector3(0f, 0f, 2f), bossHealth: 1000f, level: 1);
 
             _world.GetPool<Boss>().Del(_boss);
-            _world.GetPool<Health>().Get(_boss).Current = 310f;
+            _world.GetPool<Health>().Get(_boss).Current = 1f;
             Run(1);
 
-            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero), "31% left is above the 30% threshold of an ordinary enemy");
+            Assert.IsFalse(_world.GetPool<SpecialAttack>().Has(_hero), "only bosses and elites are executed");
         }
 
         [Test]
-        public void AWoundedOrdinaryEnemyIsExecutedByTheFirstHitWithAHalfCooldown()
+        public void AnEliteIsExecutedLikeABossWithAHalfCooldown()
         {
-            Build(bossAt: new Vector3(0f, 0f, 2f), bossHealth: 1000f, level: 1);
+            Build(bossAt: new Vector3(0f, 0f, 2f), bossHealth: 100000f, level: 1);
 
             _world.GetPool<Boss>().Del(_boss);
-            _world.GetPool<Health>().Get(_boss).Current = 290f;
+            _world.GetPool<Elite>().Add(_boss);
 
             Run(1);
             Assert.IsTrue(_world.GetPool<SpecialAttack>().Has(_hero));
 
             Run(AdvanceExecutionSystem.TotalTicks(_execution, Tick) + 2);
 
-            Assert.AreEqual(1, _hits.Count, "the first hit kills, the later ones find a dead target");
-            Assert.AreEqual(290f, _hits[0].Value, 1e-3f, "an ordinary target takes its whole health");
+            Assert.AreEqual(3, _hits.Count, "an elite takes the whole series, not one killing hit");
 
             int cooldown = Mathf.RoundToInt(20f * 0.5f / Tick);
             Assert.AreEqual(cooldown - (AdvanceExecutionSystem.TotalTicks(_execution, Tick) + 2), _world.GetPool<ExecutionCooldown>().Get(_hero).RemainingTicks);
@@ -153,6 +152,7 @@ namespace Game.Simulation.Tests
 
             int wounded = _world.NewEntity();
             _world.GetPool<Enemy>().Add(wounded);
+            _world.GetPool<Elite>().Add(wounded);
             _world.GetPool<Position>().Add(wounded).Value = new Vector3(0f, 0f, 1f);
             _world.GetPool<BodyRadius>().Add(wounded).Value = 0.4f;
             _world.GetPool<Health>().Add(wounded).Current = 1f;

@@ -15,13 +15,19 @@ namespace Game.Configs
         [SerializeField, Range(0.01f, 1f)] private float _angularSmoothing = 0.3f;
 
         [Header("Mouse hold: predictive swing")]
-        [SerializeField] private float _predictiveTurnSpeed = 300f;
+        [SerializeField] private float _predictiveTurnSpeed = 200f;
         [SerializeField] private float _predictiveLeadSeconds = 0.15f;
         [SerializeField] private float _predictiveMaxLeadDegrees = 75f;
         [SerializeField] private float _predictiveReachPerTurnSpeed = 0.0005f;
         [SerializeField] private float _predictiveMaxReachBonus = 0.4f;
         [SerializeField] private string _turnLeftSwing = "AttackLeftSlash";
         [SerializeField] private string _turnRightSwing = "AttackRightSlash";
+
+        [Header("Mouse hold: sharp side swing")]
+        [SerializeField] private float _sharpSwingDamageMultiplier = 1.6f;
+        [SerializeField] private float _sharpSwingSpeedMultiplier = 1.25f;
+        [SerializeField] private float _sharpSwingPushSpeed = 7f;
+        [SerializeField] private float _sharpSwingPushSeconds = 0.2f;
 
         public float BufferSeconds => _bufferSeconds;
 
@@ -46,5 +52,13 @@ namespace Game.Configs
         public string TurnLeftSwing => _turnLeftSwing;
 
         public string TurnRightSwing => _turnRightSwing;
+
+        public float SharpSwingDamageMultiplier => _sharpSwingDamageMultiplier;
+
+        public float SharpSwingSpeedMultiplier => _sharpSwingSpeedMultiplier;
+
+        public float SharpSwingPushSpeed => _sharpSwingPushSpeed;
+
+        public float SharpSwingPushSeconds => _sharpSwingPushSeconds;
     }
 }

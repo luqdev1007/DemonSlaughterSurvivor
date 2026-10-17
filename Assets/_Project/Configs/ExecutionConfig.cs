@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Configs
 {
@@ -18,9 +19,9 @@ namespace Game.Configs
         [SerializeField, Range(0f, 1f)] private float _lowHealthThreshold = 0.3f;
         [SerializeField] private float _lowHealthMultiplier = 2f;
 
-        [Header("Ordinary targets")]
-        [SerializeField, Range(0f, 1f)] private float _ordinaryHealthThreshold = 0.3f;
-        [SerializeField] private float _ordinaryCooldownMultiplier = 0.5f;
+        [Header("Elite targets")]
+        [FormerlySerializedAs("_ordinaryCooldownMultiplier")]
+        [SerializeField] private float _eliteCooldownMultiplier = 0.5f;
 
         [Header("Animation")]
         [SerializeField] private string _animatorTrigger = "AttackFlip";
@@ -42,9 +43,7 @@ namespace Game.Configs
 
         public float LowHealthMultiplier => _lowHealthMultiplier;
 
-        public float OrdinaryHealthThreshold => _ordinaryHealthThreshold;
-
-        public float OrdinaryCooldownMultiplier => _ordinaryCooldownMultiplier;
+        public float EliteCooldownMultiplier => _eliteCooldownMultiplier;
 
         public string AnimatorTrigger => _animatorTrigger;
 
@@ -100,11 +99,8 @@ namespace Game.Configs
             RequirePositive(label, nameof(_sectorHalfAngleDegrees), _sectorHalfAngleDegrees);
             RequireNonNegative(label, nameof(_turnSpeedDegrees), _turnSpeedDegrees);
             RequirePositive(label, nameof(_lowHealthMultiplier), _lowHealthMultiplier);
-            RequirePositive(label, nameof(_ordinaryCooldownMultiplier), _ordinaryCooldownMultiplier);
+            RequirePositive(label, nameof(_eliteCooldownMultiplier), _eliteCooldownMultiplier);
 
-            if (float.IsNaN(_ordinaryHealthThreshold) || _ordinaryHealthThreshold < 0f || _ordinaryHealthThreshold >= 1f)
-                throw new InvalidOperationException(
-                    $"{label} has {nameof(_ordinaryHealthThreshold)} {_ordinaryHealthThreshold}; it must be in [0, 1). Zero leaves the execution to the boss alone.");
             RequirePositive(label, nameof(_clipSeconds), _clipSeconds);
             RequirePositive(label, nameof(_playbackSpeed), _playbackSpeed);
 

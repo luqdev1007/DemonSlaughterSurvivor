@@ -54,6 +54,7 @@ namespace Game.Simulation.Tests
         public void TheChargeWalksWindupLockRushRecoverInWholeTicks()
         {
             BuildConfigs();
+            SetField(_charge, "_homingTurnSpeedDegrees", 0f);
             BuildWorld(heroAt: new Vector3(0f, 0f, 17f), seed: Seed);
 
             Run(1);
@@ -94,6 +95,7 @@ namespace Game.Simulation.Tests
         public void TheWindupTurnIsLimitedAndTheDirectionLocksAtItsEnd()
         {
             BuildConfigs();
+            SetField(_charge, "_homingTurnSpeedDegrees", 0f);
             SetField(_charge, "_windupTurnSpeedDegrees", 30f);
             BuildWorld(heroAt: new Vector3(10f, 0f, 0f), seed: Seed);
 

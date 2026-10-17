@@ -160,7 +160,7 @@ namespace Game.Configs
 
         public static float ResolveMaxRushSpeed(WaveTimelineConfig timeline)
         {
-            return ResolveMax(timeline, enemy => enemy.Charge == null ? 0f : enemy.Charge.RushSpeed);
+            return ResolveMax(timeline, enemy => Math.Max(enemy.Charge == null ? 0f : enemy.Charge.RushSpeed, enemy.Spin == null ? 0f : enemy.Spin.PeakDashSpeed));
         }
 
         private static float ResolveMax(WaveTimelineConfig timeline, Func<EnemyConfig, float> value)

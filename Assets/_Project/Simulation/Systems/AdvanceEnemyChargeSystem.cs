@@ -16,6 +16,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Rushing> _rushing = default;
         private readonly EcsPoolInject<Boss> _bosses = default;
+        private readonly EcsPoolInject<BossRandom> _randoms = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
@@ -50,6 +51,8 @@ namespace Game.Simulation.Systems
                         break;
                     case EnemyActionPhase.ChargeLock:
                         charge.HasHit = false;
+                        charge.LockedDirection = charge.Direction;
+                        charge.HomingBias = RollBias(entity, config.HomingJitterDegrees);
                         _rushing.Value.Add(entity);
                         EnemyActionPhases.Enter(ref action, EnemyActionPhase.ChargeRush, config.RushSeconds, delta);
                         break;
@@ -67,6 +70,14 @@ namespace Game.Simulation.Systems
         private float ResolveGlobalCooldown(int entity)
         {
             return _bosses.Value.Has(entity) ? _bosses.Value.Get(entity).Config.GlobalAbilityCooldownSeconds : 0f;
+        }
+
+        private float RollBias(int entity, float jitterDegrees)
+        {
+            if (_randoms.Value.Has(entity) == false)
+                return 0f;
+
+            return (SimulationRandom.NextUnit(ref _randoms.Value.Get(entity).State) * 2f - 1f) * jitterDegrees;
         }
 
         private static Vector3 ResolveDirection(Vector3 facing)

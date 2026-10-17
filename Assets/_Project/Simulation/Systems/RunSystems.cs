@@ -44,6 +44,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyDashVelocitySystem());
             systems.Add(new ApplyEnemyChargeVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());
+            systems.Add(new SteerEnemySpinSystem());
             systems.Add(new FaceVelocitySystem());
             systems.Add(new FaceNearestEnemySystem());
             systems.Add(new FaceExecutionTargetSystem());

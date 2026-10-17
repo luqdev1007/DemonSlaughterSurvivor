@@ -4,6 +4,7 @@ using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
@@ -14,6 +15,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<EnemyAction> _actions = default;
         private readonly EcsPoolInject<EnemySpin> _spins = default;
         private readonly EcsPoolInject<Boss> _bosses = default;
+        private readonly EcsPoolInject<BossRandom> _randoms = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<StatModifiers> _statModifiers = default;
@@ -46,11 +48,18 @@ namespace Game.Simulation.Systems
                     case EnemyActionPhase.SpinRaise:
                         spin.PulseTicks = 0;
                         spin.PulseTotalTicks = EnemyActionPhases.ToTicks(config.TickSeconds, delta);
+                        spin.WanderAngle = 0f;
+                        spin.WanderTarget = 0f;
+                        spin.WanderTicks = 0;
+                        spin.DashTicks = 0;
+                        spin.DashDelayTicks = RollDashDelay(entity, config, delta);
                         _statModifiers.Value.Add(entity, StatId.MoveSpeed, StatOp.More, config.MoveSpeedMultiplier - 1f, config.Id);
                         EnemyActionPhases.Enter(ref action, EnemyActionPhase.Spinning, config.SpinSeconds, delta);
                         break;
                     case EnemyActionPhase.Spinning:
                         _statModifiers.Value.RemoveBySource(entity, config.Id);
+                        spin.DashTicks = 0;
+                        spin.DashDelayTicks = 0;
                         EnemyActionPhases.Enter(ref action, EnemyActionPhase.SpinRecover, config.RecoverSeconds, delta);
                         break;
                     default:
@@ -58,6 +67,21 @@ namespace Game.Simulation.Systems
                         break;
                 }
             }
+        }
+
+        private int RollDashDelay(int entity, SpinAbilityConfig config, float delta)
+        {
+            if (config.DashChance <= 0f || _randoms.Value.Has(entity) == false)
+                return 0;
+
+            ref BossRandom random = ref _randoms.Value.Get(entity);
+
+            if (SimulationRandom.NextUnit(ref random.State) >= config.DashChance)
+                return 0;
+
+            float fraction = Mathf.Lerp(config.DashEarliestFraction, config.DashLatestFraction, SimulationRandom.NextUnit(ref random.State));
+
+            return EnemyActionPhases.ToTicks(config.SpinSeconds * fraction, delta);
         }
 
         private float ResolveGlobalCooldown(int entity)

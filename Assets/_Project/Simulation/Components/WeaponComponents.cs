@@ -85,6 +85,8 @@ namespace Game.Simulation.Components
         public float DamageScale;
         public DamageKind Kind;
         public PerkBehaviourConfig SourcePerk;
+        public float PushSpeed;
+        public int PushTicks;
         public float ClipTime;
         public float PlaybackSpeed;
         public int RemainingTicks;
@@ -105,6 +107,8 @@ namespace Game.Simulation.Components
             c.DamageScale = 0f;
             c.Kind = DamageKind.Unmarked;
             c.SourcePerk = null;
+            c.PushSpeed = 0f;
+            c.PushTicks = 0;
             c.ClipTime = 0f;
             c.PlaybackSpeed = 0f;
             c.RemainingTicks = 0;

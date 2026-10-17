@@ -42,6 +42,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<EnemyMotionBounds> _motionBounds = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
+        private readonly EcsCustomInject<InputConfig> _input = default;
 
         private List<int> _candidates;
 
@@ -78,17 +79,22 @@ namespace Game.Simulation.Systems
 
                 ref SwingRandom random = ref _randoms.Value.Get(weapon);
                 int variant;
+                bool sharp = false;
 
                 if (HasTarget(config, attackSpeed, pose, out Vector3 target))
                 {
                     variant = PickVariant(config, pose, target, ref random.State);
                 }
-                else if (TryPredict(owner, config, ref pose, out variant) == false)
+                else if (TryPredict(owner, config, ref pose, out variant))
+                {
+                    sharp = true;
+                }
+                else
                 {
                     continue;
                 }
 
-                StartSwing(world, weapon, owner, config, variant, attackSpeed, pose);
+                StartSwing(world, weapon, owner, config, variant, attackSpeed, pose, sharp ? _input.Value : null);
 
                 ready.Remaining = _cooldowns.Value.Get(weapon).Value / attackSpeed;
             }
@@ -256,13 +262,13 @@ namespace Game.Simulation.Systems
             return variant.DefinesTrigger || Covers(variant.Coverage, pose, target);
         }
 
-        private void StartSwing(EcsWorld world, int weapon, int owner, WeaponConfig config, int variant, float attackSpeed, in SwingPose pose)
+        private void StartSwing(EcsWorld world, int weapon, int owner, WeaponConfig config, int variant, float attackSpeed, in SwingPose pose, InputConfig sharp)
         {
             SwingVariant chosen = config.Variant(variant);
             SwingBake bake = chosen.Bake;
 
             float delta = _clock.Value.Delta;
-            float requestedSpeed = chosen.PlaybackSpeed * attackSpeed;
+            float requestedSpeed = chosen.PlaybackSpeed * attackSpeed * (sharp != null ? sharp.SharpSwingSpeedMultiplier : 1f);
             int ticks = Mathf.Max(1, Mathf.RoundToInt(bake.ClipLength / requestedSpeed / delta));
 
             int entity = world.NewEntity();
@@ -271,8 +277,14 @@ namespace Game.Simulation.Systems
             swing.Weapon = world.PackEntity(weapon);
             swing.Owner = world.PackEntity(owner);
             swing.Variant = chosen;
-            swing.DamageScale = 1f;
+            swing.DamageScale = sharp != null ? sharp.SharpSwingDamageMultiplier : 1f;
             swing.Kind = DamageKind.Weapon;
+
+            if (sharp != null)
+            {
+                swing.PushSpeed = sharp.SharpSwingPushSpeed;
+                swing.PushTicks = Mathf.Max(1, Mathf.RoundToInt(sharp.SharpSwingPushSeconds / delta));
+            }
             swing.ClipTime = 0f;
             swing.PlaybackSpeed = bake.ClipLength / (ticks * delta);
             swing.RemainingTicks = ticks;

@@ -30,6 +30,9 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<SwingEndedEvent> _endedEvents = default;
+        private readonly EcsPoolInject<Velocity> _velocities = default;
+        private readonly EcsPoolInject<Pushed> _pushes = default;
+        private readonly EcsPoolInject<NotPushable> _notPushables = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -160,6 +163,13 @@ namespace Game.Simulation.Systems
                 damageEvent.Kind = swing.Kind;
                 damageEvent.IsSlash = true;
                 damageEvent.SourcePerk = swing.SourcePerk;
+
+                if (swing.PushTicks > 0 && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)
+                {
+                    Vector3 direction = PushFromPoint.Direction(ownerPosition, targetPosition, pose.Forward);
+
+                    PushFromPoint.Apply(_pushes.Value, candidate, direction, swing.PushSpeed, swing.PushTicks);
+                }
             }
         }
 

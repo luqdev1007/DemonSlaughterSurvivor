@@ -28,8 +28,7 @@ MonoBehaviour:
   _turnSpeedDegrees: 540
   _lowHealthThreshold: 0.3
   _lowHealthMultiplier: 2
-  _ordinaryHealthThreshold: 0.3
-  _ordinaryCooldownMultiplier: 0.5
+  _eliteCooldownMultiplier: 0.5
   _animatorTrigger: AttackFlip
   _clipSeconds: 1.45
   _playbackSpeed: 1.4

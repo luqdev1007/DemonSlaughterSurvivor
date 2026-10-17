@@ -24,14 +24,14 @@ namespace Game.Simulation.Systems
             {
                 ref RangedAttack attack = ref _attacks.Value.Get(entity);
 
+                ref Staggered staggered = ref _staggered.Value.Has(entity) ? ref _staggered.Value.Get(entity) : ref _staggered.Value.Add(entity);
+                staggered.RemainingTicks = Mathf.Max(staggered.RemainingTicks, Mathf.Max(1, Mathf.RoundToInt(attack.Config.StaggerSeconds / delta)));
+
                 if (attack.WindupTicks <= 0)
                     continue;
 
                 attack.WindupTicks = 0;
                 attack.IsHolding = false;
-
-                ref Staggered staggered = ref _staggered.Value.Has(entity) ? ref _staggered.Value.Get(entity) : ref _staggered.Value.Add(entity);
-                staggered.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(attack.Config.StaggerSeconds / delta));
 
                 if (_interrupted.Value.Has(entity) == false)
                     _interrupted.Value.Add(entity);

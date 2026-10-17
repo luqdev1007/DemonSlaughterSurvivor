@@ -37,6 +37,8 @@ namespace Game.Simulation.Components
         public ChargeAbilityConfig Config;
         public int CooldownTicks;
         public Vector3 Direction;
+        public Vector3 LockedDirection;
+        public float HomingBias;
         public bool HasHit;
     }
 
@@ -57,5 +59,11 @@ namespace Game.Simulation.Components
         public int CooldownTicks;
         public int PulseTicks;
         public int PulseTotalTicks;
+        public float WanderAngle;
+        public float WanderTarget;
+        public int WanderTicks;
+        public int DashDelayTicks;
+        public int DashTicks;
+        public Vector3 DashVelocity;
     }
 }

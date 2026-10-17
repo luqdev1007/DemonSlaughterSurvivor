@@ -23,10 +23,24 @@ namespace Game.Configs
         [SerializeField] private float _hitRadiusExtra = 0.3f;
         [SerializeField] private float _recoverSeconds = 1f;
 
+        [Header("Homing")]
+        [SerializeField, Range(0f, 1f)] private float _homingStartFraction = 0.5f;
+        [SerializeField] private float _homingTurnSpeedDegrees = 120f;
+        [SerializeField] private float _homingMaxDegrees = 30f;
+        [SerializeField] private float _homingJitterDegrees = 12f;
+
         [Header("Animation")]
         [SerializeField] private float _rushClipSeconds = 0.4f;
 
         public float MinRange => _minRange;
+
+        public float HomingStartFraction => _homingStartFraction;
+
+        public float HomingTurnSpeedDegrees => _homingTurnSpeedDegrees;
+
+        public float HomingMaxDegrees => _homingMaxDegrees;
+
+        public float HomingJitterDegrees => _homingJitterDegrees;
 
         public float MaxRange => _maxRange;
 
@@ -71,6 +85,9 @@ namespace Game.Configs
             RequireNonNegative(label, nameof(_hitRadiusExtra), _hitRadiusExtra);
             RequirePositive(label, nameof(_recoverSeconds), _recoverSeconds);
             RequirePositive(label, nameof(_rushClipSeconds), _rushClipSeconds);
+            RequireNonNegative(label, nameof(_homingTurnSpeedDegrees), _homingTurnSpeedDegrees);
+            RequireNonNegative(label, nameof(_homingMaxDegrees), _homingMaxDegrees);
+            RequireNonNegative(label, nameof(_homingJitterDegrees), _homingJitterDegrees);
         }
 
         private static void RequirePositive(string label, string field, float value)

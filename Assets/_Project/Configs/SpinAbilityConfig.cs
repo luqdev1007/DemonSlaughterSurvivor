@@ -16,6 +16,18 @@ namespace Game.Configs
         [SerializeField] private float _recoverSeconds = 0.8f;
         [SerializeField] private float _moveSpeedMultiplier = 0.6f;
 
+        [Header("Wander")]
+        [SerializeField] private float _wanderDegrees = 50f;
+        [SerializeField] private float _wanderRetargetSeconds = 0.6f;
+        [SerializeField] private float _wanderTurnSpeedDegrees = 120f;
+
+        [Header("Dash")]
+        [SerializeField, Range(0f, 1f)] private float _dashChance = 0.4f;
+        [SerializeField] private float _dashMaxDistance = 7f;
+        [SerializeField] private float _dashSeconds = 0.45f;
+        [SerializeField, Range(0f, 1f)] private float _dashEarliestFraction = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float _dashLatestFraction = 0.7f;
+
         [Header("Damage")]
         [SerializeField] private float _radius = 4f;
         [SerializeField] private float _damageAtCenter = 15f;
@@ -28,6 +40,24 @@ namespace Game.Configs
         [SerializeField] private float _armWobbleDegrees = 12f;
 
         public float TriggerRange => _triggerRange;
+
+        public float WanderDegrees => _wanderDegrees;
+
+        public float WanderRetargetSeconds => _wanderRetargetSeconds;
+
+        public float WanderTurnSpeedDegrees => _wanderTurnSpeedDegrees;
+
+        public float DashChance => _dashChance;
+
+        public float DashMaxDistance => _dashMaxDistance;
+
+        public float DashSeconds => _dashSeconds;
+
+        public float DashEarliestFraction => _dashEarliestFraction;
+
+        public float DashLatestFraction => _dashLatestFraction;
+
+        public float PeakDashSpeed => _dashChance > 0f ? _dashMaxDistance / _dashSeconds : 0f;
 
         public float CooldownSeconds => _cooldownSeconds;
 
@@ -72,6 +102,14 @@ namespace Game.Configs
             RequireNonNegative(label, nameof(_damageAtCenter), _damageAtCenter);
             RequireNonNegative(label, nameof(_damageAtEdge), _damageAtEdge);
             RequirePositive(label, nameof(_tickSeconds), _tickSeconds);
+            RequireNonNegative(label, nameof(_wanderDegrees), _wanderDegrees);
+            RequirePositive(label, nameof(_wanderRetargetSeconds), _wanderRetargetSeconds);
+            RequireNonNegative(label, nameof(_wanderTurnSpeedDegrees), _wanderTurnSpeedDegrees);
+            RequireNonNegative(label, nameof(_dashMaxDistance), _dashMaxDistance);
+            RequirePositive(label, nameof(_dashSeconds), _dashSeconds);
+
+            if (_dashLatestFraction < _dashEarliestFraction)
+                throw new InvalidOperationException($"{label} has {nameof(_dashLatestFraction)} {_dashLatestFraction} below {nameof(_dashEarliestFraction)} {_dashEarliestFraction}.");
             RequirePositive(label, nameof(_raiseClipSeconds), _raiseClipSeconds);
             RequireNonNegative(label, nameof(_spinAngularSpeedDegrees), _spinAngularSpeedDegrees);
             RequireNonNegative(label, nameof(_armWobbleDegrees), _armWobbleDegrees);

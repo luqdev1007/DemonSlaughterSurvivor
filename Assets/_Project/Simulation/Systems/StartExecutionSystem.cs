@@ -15,7 +15,7 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<ExecutionCooldown>> _cooldowns = default;
         private readonly EcsFilterInject<Inc<Player, Position, Facing>, Exc<Dead, Dashing, SpecialAttack, PoweringUp>> _heroes = default;
         private readonly EcsFilterInject<Inc<Boss, Position, BodyRadius, Health>, Exc<Dead>> _bosses = default;
-        private readonly EcsFilterInject<Inc<Enemy, Position, BodyRadius, Health, MaxHealth>, Exc<Dead, Boss>> _ordinary = default;
+        private readonly EcsFilterInject<Inc<Elite, Position, BodyRadius, Health>, Exc<Dead, Boss>> _elites = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<ExecutionCooldown> _cooldownPool = default;
@@ -23,8 +23,6 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
-        private readonly EcsPoolInject<Health> _healths = default;
-        private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<Execution> _executions = default;
         private readonly EcsPoolInject<ExecutionStarted> _started = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
@@ -62,7 +60,7 @@ namespace Game.Simulation.Systems
 
                 Start(world, hero, target, config, level);
 
-                float seconds = config.Level(level).CooldownSeconds * (isBoss ? 1f : config.OrdinaryCooldownMultiplier);
+                float seconds = config.Level(level).CooldownSeconds * (isBoss ? 1f : config.EliteCooldownMultiplier);
 
                 cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(seconds / _clock.Value.Delta));
             }
@@ -99,14 +97,8 @@ namespace Game.Simulation.Systems
                 return true;
             }
 
-            if (config.OrdinaryHealthThreshold <= 0f)
-                return false;
-
-            foreach (int enemy in _ordinary.Value)
+            foreach (int enemy in _elites.Value)
             {
-                if (_healths.Value.Get(enemy).Current > config.OrdinaryHealthThreshold * _maxHealths.Value.Get(enemy).Value)
-                    continue;
-
                 if (IsCloserInSector(enemy, origin, facing, config, cosHalfAngle, ref nearest))
                     target = enemy;
             }

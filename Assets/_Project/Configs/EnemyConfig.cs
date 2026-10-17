@@ -21,6 +21,7 @@ namespace Game.Configs
         [Header("Combat")]
         [SerializeField] private float _maxHealth = 20f;
         [SerializeField] private float _contactDamage = 10f;
+        [SerializeField] private bool _isElite;
 
         [Header("Drop")]
         [SerializeField] private GemConfig _gem;
@@ -60,6 +61,8 @@ namespace Game.Configs
         public float MaxHealth => _maxHealth;
 
         public float ContactDamage => _contactDamage;
+
+        public bool IsElite => _isElite;
 
         public GemConfig Gem => _gem;
 

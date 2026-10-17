@@ -385,7 +385,7 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void APushOutsideTheWindupDoesNotStagger()
+        public void APushOutsideTheWindupStaggersWithoutAnInterrupt()
         {
             Build(heroAt: new Vector3(8.5f, 0f, 0f));
             _world.GetPool<Interruptible>().Add(_archer);
@@ -393,7 +393,7 @@ namespace Game.Simulation.Tests
             _world.GetPool<Pushed>().Add(_archer);
             Run(1);
 
-            Assert.IsFalse(_world.GetPool<Staggered>().Has(_archer));
+            Assert.IsTrue(_world.GetPool<Staggered>().Has(_archer), "any knockback locks the next attack");
             Assert.IsFalse(_world.GetPool<CastInterruptedEvent>().Has(_archer));
         }
 
@@ -409,6 +409,10 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(0, Attack().WindupTicks);
 
             _world.GetPool<Pushed>().Del(_archer);
+            Run(StaggerTicks - 1);
+
+            Assert.AreEqual(0, Attack().WindupTicks, "the knockback locks the attack for the stagger after the push ends");
+
             Run(1);
 
             Assert.AreEqual(WindupTicks, Attack().WindupTicks);
@@ -533,6 +537,7 @@ namespace Game.Simulation.Tests
             _assets.Add(_attack);
             SetField(_attack, "_id", AttackId);
             SetField(_attack, "_boltPrefab", prefab);
+            SetField(_attack, "_windupSeconds", 0.4f);
 
             _enemy = ScriptableObject.CreateInstance<EnemyConfig>();
             _assets.Add(_enemy);

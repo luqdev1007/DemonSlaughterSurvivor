@@ -8,7 +8,7 @@ namespace Game.Configs
     {
         [Header("Trigger")]
         [SerializeField] private float _range = 8f;
-        [SerializeField] private float _windupSeconds = 0.4f;
+        [SerializeField] private float _windupSeconds = 0.7f;
         [SerializeField] private float _cooldownSeconds = 2.5f;
 
         [Header("Interrupt")]
