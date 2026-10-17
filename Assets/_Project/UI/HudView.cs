@@ -22,6 +22,7 @@ namespace Game.UI
         [SerializeField] private GameObject _bossBar;
         [SerializeField] private RectTransform _bossFill;
         [SerializeField] private TMP_Text _bossName;
+        [SerializeField] private BossMarkerView _bossMarker;
 
         [Header("Victory")]
         [SerializeField] private GameObject _victoryBanner;
@@ -44,12 +45,14 @@ namespace Game.UI
         public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
             && _upgradeChoice != null && _upgradeChoice.IsWired
             && _experienceFill != null && _levelText != null
-            && _bossBar != null && _bossFill != null && _bossName != null && _victoryBanner != null
+            && _bossBar != null && _bossFill != null && _bossName != null && _bossMarker != null && _bossMarker.IsWired && _victoryBanner != null
             && _pauseMenu != null && _pauseMenu.IsWired;
 
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
 
         public PauseMenuView PauseMenu => _pauseMenu;
+
+        public BossMarkerView BossMarker => _bossMarker;
 
         public float ExperienceFill => _experienceFill.anchorMax.x;
 

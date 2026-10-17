@@ -1,6 +1,7 @@
 using Game.Core;
 using R3;
 using System;
+using UnityEngine;
 
 namespace Game.UI
 {
@@ -19,8 +20,15 @@ namespace Game.UI
 
         public ReadOnlyReactiveProperty<float> MaxHealth => _maxHealth;
 
-        public void Publish(bool visible, string displayName, float health, float maxHealth)
+        public Vector3 Position { get; private set; }
+
+        public float DistanceToHero { get; private set; }
+
+        public void Publish(bool visible, string displayName, float health, float maxHealth, Vector3 position, float distanceToHero)
         {
+            Position = position;
+            DistanceToHero = distanceToHero;
+
             if (visible)
             {
                 _displayName.Value = displayName;

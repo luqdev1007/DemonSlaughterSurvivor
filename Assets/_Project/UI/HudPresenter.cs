@@ -8,8 +8,10 @@ using VContainer.Unity;
 
 namespace Game.UI
 {
-    public sealed class HudPresenter : IInitializable, IDisposable
+    public sealed class HudPresenter : IInitializable, ILateTickable, IDisposable
     {
+        private const float MarkerHeight = 2f;
+
         private readonly LevelConfig _level;
         private readonly PlayerVitals _vitals;
         private readonly UpgradeChoice _choice;
@@ -20,6 +22,7 @@ namespace Game.UI
         private readonly RunResult _result;
         private readonly PauseMenu _pauseMenu;
         private readonly ISoundSettings _soundSettings;
+        private readonly ICameraService _camera;
 
         private GameObject _instance;
         private HudView _view;
@@ -28,8 +31,9 @@ namespace Game.UI
         private int _shownLevel;
         private SettingsPopupPresenter _settingsPopup;
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICameraService camera)
         {
+            _camera = camera;
             _pauseMenu = pauseMenu;
             _soundSettings = soundSettings;
             _level = level;
@@ -55,7 +59,7 @@ namespace Game.UI
                 throw new InvalidOperationException(
                     $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
                     $"an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} buttons, titles and descriptions, " +
-                    "the experience fill and level text, the boss bar with its fill and name, the victory banner, " +
+                    $"the experience fill and level text, the boss bar with its fill and name, a wired {nameof(BossMarkerView)}, the victory banner, " +
                     $"and a {nameof(PauseMenuView)} with its fade, resume and settings buttons and a wired {nameof(SettingsPopupView)} assigned.");
 
             _view.UpgradeChoice.Bind(_submit.Submit);
@@ -78,6 +82,20 @@ namespace Game.UI
                 _bossVitals.MaxHealth.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
                 _bossVitals.DisplayName.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
                 _result.Victory.Subscribe(this, (victory, presenter) => presenter._view.ShowVictory(victory)));
+        }
+
+        public void LateTick()
+        {
+            if (_view == null)
+                return;
+
+            bool alive = _bossVitals.Visible.CurrentValue;
+            Vector3 viewport = default;
+
+            if (alive)
+                alive = _camera.TryWorldToViewport(_bossVitals.Position + Vector3.up * MarkerHeight, out viewport);
+
+            _view.BossMarker.Show(alive, viewport, _bossVitals.DistanceToHero);
         }
 
         public void Dispose()

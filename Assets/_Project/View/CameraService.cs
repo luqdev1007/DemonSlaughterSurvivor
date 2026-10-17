@@ -48,6 +48,20 @@ namespace Game.View
 
         public Camera OutputCamera => _outputCamera;
 
+        public bool TryWorldToViewport(Vector3 world, out Vector3 viewport)
+        {
+            if (_outputCamera == null)
+            {
+                viewport = default;
+
+                return false;
+            }
+
+            viewport = _outputCamera.WorldToViewportPoint(world);
+
+            return true;
+        }
+
         public void SetFollowTarget(Transform target)
         {
             _camera.Target.TrackingTarget = target;
