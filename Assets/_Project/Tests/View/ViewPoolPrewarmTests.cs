@@ -44,7 +44,7 @@ namespace Game.View.Tests
             SetField(level, "_feedback", feedback);
             SetField(level, "_waves", timeline);
 
-            _pool = new ViewPool(level, null, null, null);
+            _pool = new ViewPool(level, null, null, null, null);
         }
 
         [TearDown]

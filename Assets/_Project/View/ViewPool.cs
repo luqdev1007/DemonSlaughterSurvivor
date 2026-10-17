@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewPool : IViewFactory, IViewPrewarm, IDisposable
+    public sealed class ViewPool : IViewFactory, IViewPrewarm, ICorpseKickSink, IDisposable
     {
         private sealed class Entry
         {
@@ -97,14 +97,25 @@ namespace Game.View
         private readonly float _knockbackFriction;
 
         private readonly List<ViewInterpolator> _active = new List<ViewInterpolator>();
+        private readonly List<ViewInterpolator> _corpses = new List<ViewInterpolator>();
+        private readonly List<CorpseStrike> _strikes = new List<CorpseStrike>();
+        private readonly FeedbackConfig _feedback;
+        private readonly ICameraService _camera;
+
+        private Vector3 _heroPosition;
+        private Vector3 _heroVelocity;
+        private bool _hasHero;
 
         private GameObject _templateRoot;
         private ViewPoolTicker _ticker;
         private bool _disposed;
 
-        public ViewPool(LevelConfig level, IContentRegistry content, GoreDirector gore, CombatAudio audio)
+        public ViewPool(LevelConfig level, IContentRegistry content, GoreDirector gore, CombatAudio audio, ICameraService camera)
         {
             FeedbackConfig feedback = level.Feedback;
+
+            _feedback = feedback;
+            _camera = camera;
 
             if (feedback == null)
                 throw new InvalidOperationException(
@@ -228,7 +239,14 @@ namespace Game.View
 
             _retiring.Add(corpse.View.GetInstanceID());
 
-            corpse.View.BeginRetire(seconds, velocity, _knockbackGravity, _knockbackFriction);
+            float linger = Mathf.Max(seconds, Mathf.Lerp(_feedback.CorpseMinSeconds, _feedback.CorpseMaxSeconds, (float)_random.NextDouble()));
+
+            corpse.View.BeginRetire(linger, seconds, _feedback.CorpseDecaySeconds, _feedback.CorpseSinkDepth, velocity, _knockbackGravity, _knockbackFriction);
+
+            _corpses.Add(corpse.View);
+
+            if (_corpses.Count > _feedback.MaxCorpses)
+                _corpses[0].DecayBy(Time.time);
 
             _audio?.PlayEnemyDeath(corpse.View.transform.position);
 
@@ -263,6 +281,8 @@ namespace Game.View
             _known.Clear();
             _issued.Clear();
             _retiring.Clear();
+            _corpses.Clear();
+            _strikes.Clear();
             _free.Clear();
 
             foreach (Material copy in _dissolveCopies.Values)
@@ -337,6 +357,8 @@ namespace Game.View
 
             if (_retiring.Remove(view.GetInstanceID()) == false)
                 return;
+
+            _corpses.Remove(view);
 
             Return(_known[view.GetInstanceID()]);
         }
@@ -413,12 +435,138 @@ namespace Game.View
 
         public void Tick(float time, float deltaTime)
         {
+            TickCorpses(time);
+
             for (int index = _active.Count - 1; index >= 0; index--)
             {
                 if (index >= _active.Count)
                     continue;
 
                 _active[index].Tick(time, deltaTime);
+            }
+        }
+
+        public void HeroMoved(Vector3 position, Vector3 velocity)
+        {
+            _heroPosition = position;
+            _heroVelocity = new Vector3(velocity.x, 0f, velocity.z);
+            _hasHero = true;
+        }
+
+        public void Strike(Vector3 origin, Vector3 forward, float reach, float halfAngleDegrees)
+        {
+            if (_disposed)
+                return;
+
+            _strikes.Add(new CorpseStrike(origin, forward, reach, halfAngleDegrees));
+        }
+
+        private void TickCorpses(float time)
+        {
+            if (_disposed)
+                return;
+
+            float radius = _feedback.KickRadius;
+            float heroSpeed = _heroVelocity.magnitude;
+            float push = _feedback.KickSpeed + heroSpeed * _feedback.KickHeroSpeedShare;
+
+            for (int index = _corpses.Count - 1; index >= 0; index--)
+            {
+                if (index >= _corpses.Count)
+                    continue;
+
+                ViewInterpolator corpse = _corpses[index];
+                Vector3 position = corpse.transform.position;
+
+                if (IsOffscreen(position))
+                {
+                    CompleteRetire(corpse);
+
+                    continue;
+                }
+
+                if (_hasHero)
+                {
+                    Vector3 offset = position - _heroPosition;
+                    offset.y = 0f;
+
+                    if (offset.sqrMagnitude < radius * radius)
+                    {
+                        Vector3 direction = offset.sqrMagnitude > 1e-6f ? offset.normalized : (heroSpeed > 1e-3f ? _heroVelocity / heroSpeed : Vector3.forward);
+
+                        corpse.TryKick(direction * push + Vector3.up * _feedback.KickUpSpeed, time, _feedback.KickCooldownSeconds);
+                    }
+                }
+
+                for (int strike = 0; strike < _strikes.Count; strike++)
+                {
+                    if (_strikes[strike].TryDirection(position, out Vector3 direction))
+                        corpse.TryKick(direction * _feedback.StrikeKickSpeed + Vector3.up * _feedback.StrikeKickUpSpeed, time, 0.1f);
+                }
+            }
+
+            if (_gore != null)
+            {
+                if (_hasHero)
+                    _gore.KickNear(_heroPosition, radius, (heroSpeed > 1e-3f ? _heroVelocity / heroSpeed : Vector3.forward) * push, _feedback.KickUpSpeed);
+
+                for (int strike = 0; strike < _strikes.Count; strike++)
+                {
+                    CorpseStrike data = _strikes[strike];
+
+                    _gore.KickArc(data.Origin, data.Forward, data.Reach, data.HalfAngleDegrees, _feedback.StrikeKickSpeed, _feedback.StrikeKickUpSpeed);
+                }
+            }
+
+            _strikes.Clear();
+        }
+
+        private bool IsOffscreen(Vector3 position)
+        {
+            if (_camera == null || _camera.TryWorldToViewport(position, out Vector3 viewport) == false)
+                return false;
+
+            float margin = _feedback.OffscreenMargin;
+
+            return viewport.z <= 0f
+                || viewport.x < -margin || viewport.x > 1f + margin
+                || viewport.y < -margin || viewport.y > 1f + margin;
+        }
+
+        private readonly struct CorpseStrike
+        {
+            private const float BodyAllowance = 0.5f;
+
+            public CorpseStrike(Vector3 origin, Vector3 forward, float reach, float halfAngleDegrees)
+            {
+                forward.y = 0f;
+
+                Origin = origin;
+                Forward = forward.sqrMagnitude > 1e-6f ? forward.normalized : Vector3.forward;
+                Reach = reach;
+                HalfAngleDegrees = halfAngleDegrees;
+            }
+
+            public Vector3 Origin { get; }
+
+            public Vector3 Forward { get; }
+
+            public float Reach { get; }
+
+            public float HalfAngleDegrees { get; }
+
+            public bool TryDirection(Vector3 position, out Vector3 direction)
+            {
+                Vector3 offset = position - Origin;
+                offset.y = 0f;
+
+                float distance = offset.magnitude;
+                direction = distance > 1e-4f ? offset / distance : Forward;
+
+                if (distance > Reach + BodyAllowance)
+                    return false;
+
+                return distance <= BodyAllowance || Vector3.Angle(Forward, direction) <= HalfAngleDegrees;
             }
         }
 

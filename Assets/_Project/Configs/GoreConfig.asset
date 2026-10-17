@@ -18,7 +18,8 @@ MonoBehaviour:
   _farArmWeight: 0.15
   _frontalBlowThreshold: 0.3
   _maxActiveGibs: 24
-  _gibLifetimeSeconds: 3
+  _gibLifetimeSeconds: 10
+  _gibLifetimeMaxSeconds: 15
   _gibSinkSeconds: 1
   _gibSinkDepth: 0.6
   _gibSpeed: 4
@@ -42,5 +43,6 @@ MonoBehaviour:
   _hitHeight: 1
   _sprayLift: 0.3
   _splatHeight: 0.02
+  _splatScale: 1.5
   _fountainSeconds: 1
   _gibImpactMinSpeed: 1.5

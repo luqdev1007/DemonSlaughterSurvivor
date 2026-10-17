@@ -23,6 +23,7 @@ namespace Game.View
             public bool Sinking;
             public bool Landed;
             public float Age;
+            public float Lifetime;
             public float SpawnTime;
             public float SinkFromY;
             public int Drip;
@@ -55,10 +56,13 @@ namespace Game.View
         private readonly BloodFxPool _drips;
         private readonly BloodFxPool _impactSplats;
 
+        private readonly ICameraService _camera;
+        private readonly float _offscreenMargin;
+
         private int _gibCount;
         private bool _disposed;
 
-        public GoreDirector(LevelConfig level, IDebugGoreInput debug)
+        public GoreDirector(LevelConfig level, IDebugGoreInput debug, ICameraService camera)
         {
             FeedbackConfig feedback = level.Feedback;
 
@@ -68,6 +72,8 @@ namespace Game.View
 
             _config = feedback.Gore;
             _debug = debug;
+            _camera = camera;
+            _offscreenMargin = feedback.OffscreenMargin;
 
             Validate(_config);
 
@@ -308,6 +314,7 @@ namespace Game.View
             gib.Sinking = false;
             gib.Landed = false;
             gib.Age = 0f;
+            gib.Lifetime = Mathf.Lerp(_config.GibLifetimeSeconds, _config.GibLifetimeMaxSeconds, (float)_random.NextDouble());
             gib.SpawnTime = Time.time;
             gib.Drip = -1;
 
@@ -516,9 +523,17 @@ namespace Game.View
 
                 gib.Age += deltaTime;
 
+                if (gib.Sinking == false && IsOffscreen(gib.Transform.position))
+                {
+                    _drips.Stop(gib.Drip, gib.Transform);
+                    Deactivate(gib);
+
+                    continue;
+                }
+
                 if (gib.Sinking == false)
                 {
-                    if (gib.Age < _config.GibLifetimeSeconds)
+                    if (gib.Age < gib.Lifetime)
                         continue;
 
                     gib.Sinking = true;
@@ -529,7 +544,7 @@ namespace Game.View
                     _drips.Stop(gib.Drip, gib.Transform);
                 }
 
-                float sink = _config.GibSinkSeconds > 0f ? (gib.Age - _config.GibLifetimeSeconds) / _config.GibSinkSeconds : 1f;
+                float sink = _config.GibSinkSeconds > 0f ? (gib.Age - gib.Lifetime) / _config.GibSinkSeconds : 1f;
 
                 if (sink >= 1f)
                 {
@@ -542,6 +557,76 @@ namespace Game.View
                 position.y = gib.SinkFromY - _config.GibSinkDepth * sink;
                 gib.Transform.position = position;
             }
+        }
+
+        public void KickNear(Vector3 center, float radius, Vector3 push, float upSpeed)
+        {
+            float squared = radius * radius;
+
+            for (int index = 0; index < _gibCount; index++)
+            {
+                Gib gib = _gibs[index];
+
+                if (gib.Active == false || gib.Sinking)
+                    continue;
+
+                Vector3 offset = gib.Transform.position - center;
+                offset.y = 0f;
+
+                if (offset.sqrMagnitude > squared)
+                    continue;
+
+                Vector3 direction = offset.sqrMagnitude > MinDirectionSqr ? offset.normalized : push.normalized;
+
+                Launch(gib, direction * push.magnitude + Vector3.up * upSpeed);
+            }
+        }
+
+        public void KickArc(Vector3 origin, Vector3 forward, float reach, float halfAngleDegrees, float speed, float upSpeed)
+        {
+            forward.y = 0f;
+            forward = forward.sqrMagnitude > MinDirectionSqr ? forward.normalized : Vector3.forward;
+
+            float cosHalf = Mathf.Cos(Mathf.Min(halfAngleDegrees, 180f) * Mathf.Deg2Rad);
+
+            for (int index = 0; index < _gibCount; index++)
+            {
+                Gib gib = _gibs[index];
+
+                if (gib.Active == false || gib.Sinking)
+                    continue;
+
+                Vector3 offset = gib.Transform.position - origin;
+                offset.y = 0f;
+
+                float distance = offset.magnitude;
+
+                if (distance > reach || (distance > MinDirectionSqr && Vector3.Dot(offset / distance, forward) < cosHalf))
+                    continue;
+
+                Vector3 direction = distance > MinDirectionSqr ? offset / distance : forward;
+
+                Launch(gib, direction * speed + Vector3.up * upSpeed);
+            }
+        }
+
+        private static void Launch(Gib gib, Vector3 velocity)
+        {
+            if (gib.Body.isKinematic)
+                return;
+
+            gib.Body.linearVelocity = velocity;
+            gib.Body.WakeUp();
+        }
+
+        private bool IsOffscreen(Vector3 position)
+        {
+            if (_camera == null || _camera.TryWorldToViewport(position, out Vector3 viewport) == false)
+                return false;
+
+            return viewport.z <= 0f
+                || viewport.x < -_offscreenMargin || viewport.x > 1f + _offscreenMargin
+                || viewport.y < -_offscreenMargin || viewport.y > 1f + _offscreenMargin;
         }
 
         private static void Deactivate(Gib gib)

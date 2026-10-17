@@ -92,6 +92,11 @@ namespace Game.View
 
         private bool _isRetiring;
         private float _retireTime;
+        private float _animatorOffTime;
+        private float _decaySeconds;
+        private float _sinkDepth;
+        private float _sinkOffset;
+        private float _lastKickTime = float.NegativeInfinity;
 
         private bool _isBerserkSuppressed;
 
@@ -460,10 +465,20 @@ namespace Game.View
             _currentLift = lift;
         }
 
-        internal void BeginRetire(float seconds, Vector3 knockbackVelocity, float gravity, float friction)
+        internal bool IsRetiring => _isRetiring;
+
+        internal float RetireTime => _retireTime;
+
+        internal void BeginRetire(float seconds, float deathPoseSeconds, float decaySeconds, float sinkDepth, Vector3 knockbackVelocity, float gravity, float friction)
         {
             _isRetiring = true;
             _retireTime = Time.time + seconds;
+            _animatorOffTime = Time.time + deathPoseSeconds;
+            _decaySeconds = Mathf.Min(decaySeconds, seconds);
+            _sinkDepth = sinkDepth;
+            _sinkOffset = 0f;
+            _knockbackGravity = gravity;
+            _knockbackFriction = friction;
 
             PlayDeath();
 
@@ -479,12 +494,35 @@ namespace Game.View
             _isAirborne = knockbackVelocity.y > 0f || lift > 0f;
             _knockbackVelocity = knockbackVelocity;
             _knockbackOffset = Vector3.up * lift;
-            _knockbackGravity = gravity;
-            _knockbackFriction = friction;
+        }
+
+        internal void DecayBy(float time)
+        {
+            if (_isRetiring && _retireTime > time + _decaySeconds)
+                _retireTime = time + _decaySeconds;
+        }
+
+        internal bool TryKick(Vector3 velocity, float time, float cooldown)
+        {
+            if (_isRetiring == false || time - _lastKickTime < cooldown || time >= _retireTime - _decaySeconds)
+                return false;
+
+            _lastKickTime = time;
+            _isKnockedBack = true;
+            _isAirborne = _isAirborne || velocity.y > 0f;
+            _knockbackVelocity = new Vector3(velocity.x, Mathf.Max(velocity.y, _knockbackVelocity.y), velocity.z);
+
+            return true;
         }
 
         internal void ResetFeedback()
         {
+            if (_animator != null && _animator.enabled == false)
+                _animator.enabled = true;
+
+            _sinkOffset = 0f;
+            _lastKickTime = float.NegativeInfinity;
+
             if (_hasBaseScale)
                 transform.localScale = _baseScale;
 
@@ -544,8 +582,11 @@ namespace Game.View
             if (_isKnockedBack)
                 AdvanceKnockback(deltaTime);
 
+            if (_isRetiring)
+                AdvanceCorpse(time);
+
             if (_hasPosition)
-                transform.position = ResolvePosition() + Vector3.up * ResolveLift() + _knockbackOffset;
+                transform.position = ResolvePosition() + Vector3.up * (ResolveLift() + _sinkOffset) + _knockbackOffset;
 
             if (_isFlashing && time >= _flashEndTime)
             {
@@ -570,6 +611,17 @@ namespace Game.View
 
                 _onRetired?.Invoke(this);
             }
+        }
+
+        private void AdvanceCorpse(float time)
+        {
+            if (_animator != null && _animator.enabled && time >= _animatorOffTime && _isKnockedBack == false)
+                _animator.enabled = false;
+
+            float decayStart = _retireTime - _decaySeconds;
+
+            if (_decaySeconds > 0f && time > decayStart)
+                _sinkOffset = -_sinkDepth * Mathf.Clamp01((time - decayStart) / _decaySeconds);
         }
 
         private void AdvanceKnockback(float deltaTime)

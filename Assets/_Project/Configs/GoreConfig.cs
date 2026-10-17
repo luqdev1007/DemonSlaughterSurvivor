@@ -15,6 +15,7 @@ namespace Game.Configs
         [Header("Gibs")]
         [SerializeField] private int _maxActiveGibs = 24;
         [SerializeField] private float _gibLifetimeSeconds = 3f;
+        [SerializeField] private float _gibLifetimeMaxSeconds = 3f;
         [SerializeField] private float _gibSinkSeconds = 1f;
         [SerializeField] private float _gibSinkDepth = 0.6f;
         [SerializeField] private float _gibSpeed = 4f;
@@ -61,6 +62,8 @@ namespace Game.Configs
         public int MaxActiveGibs => _maxActiveGibs;
 
         public float GibLifetimeSeconds => _gibLifetimeSeconds;
+
+        public float GibLifetimeMaxSeconds => Mathf.Max(_gibLifetimeSeconds, _gibLifetimeMaxSeconds);
 
         public float GibSinkSeconds => _gibSinkSeconds;
 

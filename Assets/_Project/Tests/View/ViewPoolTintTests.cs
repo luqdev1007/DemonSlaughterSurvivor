@@ -34,7 +34,7 @@ namespace Game.View.Tests
 
             _troll = AssetDatabase.LoadAssetAtPath<EnemyConfig>(TrollConfigPath);
 
-            _pool = new ViewPool(level, new ContentRegistry(new IContentEntry[] { _troll }), null, null);
+            _pool = new ViewPool(level, new ContentRegistry(new IContentEntry[] { _troll }), null, null, null);
         }
 
         [TearDown]

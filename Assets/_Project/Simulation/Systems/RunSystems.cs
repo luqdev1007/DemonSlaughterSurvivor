@@ -122,6 +122,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncGemViewSystem());
             systems.Add(new PlayHitFeedbackSystem());
             systems.Add(new PublishDamageDealtSystem());
+            systems.Add(new PublishCorpseKicksSystem());
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayLeapFeedbackSystem());
             systems.Add(new PlayExecutionFeedbackSystem());

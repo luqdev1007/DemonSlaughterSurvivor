@@ -24,11 +24,13 @@ namespace Game.View.Tests
         {
             FeedbackConfig feedback = Own(ScriptableObject.CreateInstance<FeedbackConfig>());
             SetField(feedback, "_dissolveMaterial", Own(new Material(Shader.Find("Hidden/Internal-Colored"))));
+            SetField(feedback, "_corpseMinSeconds", 0f);
+            SetField(feedback, "_corpseMaxSeconds", 0f);
 
             LevelConfig level = Own(ScriptableObject.CreateInstance<LevelConfig>());
             SetField(level, "_feedback", feedback);
 
-            _pool = new ViewPool(level, null, null, null);
+            _pool = new ViewPool(level, null, null, null, null);
 
             ScriptableObject troll = AssetDatabase.LoadAssetAtPath<ScriptableObject>(TrollConfigPath);
             _prefab = (GameObject)new SerializedObject(troll).FindProperty("_viewPrefab").objectReferenceValue;

@@ -22,7 +22,7 @@ namespace Game.Bootstrap
 
             builder.Register<CombatAudio>(Lifetime.Scoped);
 
-            builder.Register<ViewPool>(Lifetime.Scoped).As<IViewFactory>().As<IViewPrewarm>();
+            builder.Register<ViewPool>(Lifetime.Scoped).As<IViewFactory>().As<IViewPrewarm>().As<ICorpseKickSink>();
 
             builder.Register<CameraService>(Lifetime.Scoped).AsSelf().As<ICameraService>();
 

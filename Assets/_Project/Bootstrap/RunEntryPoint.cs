@@ -30,6 +30,7 @@ namespace Game.Bootstrap
         private readonly IDamageNumberSink _damageNumberSink;
         private readonly IDamageDealtSink _damageDealtSink;
         private readonly IItemChoiceSink _itemChoiceSink;
+        private readonly ICorpseKickSink _corpseKickSink;
         private ItemChoiceState _itemChoiceState;
         private readonly IUpgradeChoiceSink _choiceSink;
         private readonly IUpgradeChoiceInput _choiceInput;
@@ -79,6 +80,7 @@ namespace Game.Bootstrap
             IDamageNumberSink damageNumberSink,
             IDamageDealtSink damageDealtSink,
             IItemChoiceSink itemChoiceSink,
+            ICorpseKickSink corpseKickSink,
             IUpgradeChoiceSink choiceSink,
             IUpgradeChoiceInput choiceInput,
             IDebugLevelUpInput debugLevelUpInput,
@@ -115,6 +117,7 @@ namespace Game.Bootstrap
             _damageNumberSink = damageNumberSink;
             _damageDealtSink = damageDealtSink;
             _itemChoiceSink = itemChoiceSink;
+            _corpseKickSink = corpseKickSink;
             _choiceSink = choiceSink;
             _choiceInput = choiceInput;
             _debugLevelUpInput = debugLevelUpInput;
@@ -178,6 +181,7 @@ namespace Game.Bootstrap
                 _damageNumberSink,
                 _damageDealtSink,
                 _itemChoiceSink,
+                _corpseKickSink,
                 _itemChoiceState,
                 _choiceGate,
                 _choiceSink,

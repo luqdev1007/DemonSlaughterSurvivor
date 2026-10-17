@@ -24,6 +24,23 @@ namespace Game.Configs
         [SerializeField] private float _knockbackGravity = 20f;
         [SerializeField] private float _knockbackFriction = 12f;
 
+        [Header("Corpses")]
+        [SerializeField] private float _corpseMinSeconds = 10f;
+        [SerializeField] private float _corpseMaxSeconds = 15f;
+        [SerializeField] private float _corpseDecaySeconds = 1.5f;
+        [SerializeField] private float _corpseSinkDepth = 1.4f;
+        [SerializeField] private int _maxCorpses = 60;
+        [SerializeField] private float _offscreenMargin = 0.08f;
+
+        [Header("Corpse kicks")]
+        [SerializeField] private float _kickRadius = 1f;
+        [SerializeField] private float _kickSpeed = 3.5f;
+        [SerializeField] private float _kickHeroSpeedShare = 0.6f;
+        [SerializeField] private float _kickUpSpeed = 2f;
+        [SerializeField] private float _kickCooldownSeconds = 0.3f;
+        [SerializeField] private float _strikeKickSpeed = 7f;
+        [SerializeField] private float _strikeKickUpSpeed = 3.5f;
+
         [Header("Gore")]
         [SerializeField] private GoreConfig _gore;
 
@@ -61,5 +78,31 @@ namespace Game.Configs
         public GoreConfig Gore => _gore;
 
         public SfxConfig Sfx => _sfx;
+
+        public float CorpseMinSeconds => _corpseMinSeconds;
+
+        public float CorpseMaxSeconds => _corpseMaxSeconds;
+
+        public float CorpseDecaySeconds => _corpseDecaySeconds;
+
+        public float CorpseSinkDepth => _corpseSinkDepth;
+
+        public int MaxCorpses => _maxCorpses;
+
+        public float OffscreenMargin => _offscreenMargin;
+
+        public float KickRadius => _kickRadius;
+
+        public float KickSpeed => _kickSpeed;
+
+        public float KickHeroSpeedShare => _kickHeroSpeedShare;
+
+        public float KickUpSpeed => _kickUpSpeed;
+
+        public float KickCooldownSeconds => _kickCooldownSeconds;
+
+        public float StrikeKickSpeed => _strikeKickSpeed;
+
+        public float StrikeKickUpSpeed => _strikeKickUpSpeed;
     }
 }

@@ -28,7 +28,7 @@ namespace Game.View.Tests
             LevelConfig level = Own(ScriptableObject.CreateInstance<LevelConfig>());
             SetField(level, "_feedback", feedback);
 
-            _pool = new ViewPool(level, null, null, null);
+            _pool = new ViewPool(level, null, null, null, null);
         }
 
         [TearDown]
