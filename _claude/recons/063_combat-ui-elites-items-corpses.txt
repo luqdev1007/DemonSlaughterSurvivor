@@ -1,0 +1,111 @@
+063 · Сессия 2026-10-17: боёвка, UI перков, цифры урона, DPS, панель способностей, элитки, предметы, трупы
+Формат: прямые правки по запросам разработчика (playtest → правка), без разведки, кроме 062. Код пишет агент.
+Все блоки — «код готов, ждёт ручной приёмки» (PROGRESS.md, «Ближайшие шаги»). EditMode: 444/444 зелёные на последнем коммите.
+
+======================================================================
+1. ЧТО СДЕЛАНО (по коммитам, от старых к новым)
+======================================================================
+e23dea25  Правки боёвки: казнь только по боссу и элитке (тег Elite, тролль — элитка); резкий боковой взмах на развороте
+          (урон ×1.6, отброс, клип ×1.25, порог 200 °/с); таран босса доворачивает к герою; вихрь босса блуждает и с шансом
+          40% делает рывок к точке героя ≤ 7 м; арбалетчик: замах 0.7 с, любой толчок — оглушение 0.5 с.
+13d664d3  Ф1 разведки 062 — окно перков: карточки (иконка, рамка редкости, точки уровня, бейдж КОМБО), выезжающий тултип.
+573cc80c  Агрессивный взмах: стат SwingReach (12) ×1.25, дуга +15°, след меча на реальную дальность (золотой у резкого),
+          доворот к цели взмаха (AssistSwingFacingSystem).
+280c6e38  Панель способностей над полосой опыта: иконки, радиальная заливка кулдауна, таймер «0.0s».
+0f67e4fb  Ф2 — цифры урона (4 стиля, слияние, лимит 40) + настройки JSON v1 (GameSettings вместо SoundSettings).
+0a31d20a  Ф3 — DPS за окно 15 с (симуляционное время), клавиша ~.
+c09927f9  «Вихрь клинков» (CounterStrike) — автозапуск: кулдаун готов и ≥ 3 врага в 3 м; шанс-на-удар удалён.
+80e8fc24  Ф4 — элитные аффиксы «Крепкий» (HP ×2.5, масштаб 1.25) и «Быстрый» (×1.4, аура CFXR).
+a54e6906  Цвета нового UI переведены в линейное пространство (канвас HUD читает цвета вершин как линейные).
+18fe3a5c  Ф5 — предметы в забеге: окно «Добыча элиты» (4 карточки), 5 слотов, ранг 1–5, редкость → 0–3 доп. бонуса,
+          стат AbilityCooldown (13).
+cbe19cc6  Рывок дублирован на среднюю кнопку мыши.
+828baf82  Лут: «Молот великана» (дальность удара), «Кольцо крови» сильнее, подпись «вампиризм».
+a7a2c519  Фикс исключений SpatialGrid (регрессия вихря) + панель способностей на GridLayoutGroup ×1.4.
+4dcac272  Трупы лежат 10–15 с, тонут, за кадром исчезают; пинки (позже сужены).
+cfa6fa8d  Трупы не пинаются — только отрубленные куски; аура аффикса гаснет на трупе элитки.
+
+======================================================================
+2. КАРТА БЛОКОВ (путь данных)
+======================================================================
+Казнь по элитке:  EnemyConfig._isElite → EnemyFactory (тег Elite) → StartExecutionSystem (босс, затем Elite) →
+                  AdvanceExecutionSystem (формула HitDamage для всех целей).
+Резкий взмах:     FaceAimSystem (PredictiveLead/Swing) → StartSwingSystem.TryPredict (sharp) → Swing.DamageScale/PushTicks/
+                  IsSharp → AdvanceSwingSystem (урон, PushFromPoint) → PlaySwingFeedbackSystem → ISwingStyleView → SwordTrail.
+Дальность взмаха: WeaponConfig._reach → EquipStartingWeaponSystem (SwingReach) → RecomputeStatsSystem → StartSwingSystem
+                  (покрытие / reach) → AdvanceSwingSystem (SwingSweep.Hits(reach), _arcBonusDegrees).
+Доворот:          StartSwingSystem (Swing.Target) → AssistSwingFacingSystem (после FaceAimSystem).
+Таран / вихрь:    AdvanceEnemyChargeSystem (LockedDirection, HomingBias) → ApplyEnemyChargeVelocitySystem (Home);
+                  AdvanceEnemySpinSystem (DashDelayTicks) → SteerEnemySpinSystem (после ApplyMoveSpeedSystem).
+Окно перков:      OfferUpgradesSystem → IUpgradeChoiceSink → UpgradeChoice → HudPresenter.RefreshChoice/Describe →
+                  UpgradeChoiceView (N карточек) → PerkCardView + PerkTooltipView. Вёрстка: Editor/HudUiBuilder.cs.
+Панель способн.:  PublishAbilityPanelSystem (группа 12; рывок + взятые перки по типу поведения) → IAbilityPanelSink →
+                  AbilityPanel → HudPresenter.RefreshAbilityPanel → AbilityPanelView/AbilitySlotView.
+Цифры / DPS:      PublishDamageDealtSystem (группа 12, Inc<DamageEvent, DamageApplied>, только Enemy) →
+                  IDamageNumberSink → DamageNumbers (UI) → DamageNumberLayerView;  IDamageDealtSink → DpsMeter → DpsView.
+                  Клавиша ~ → DpsToggleInput → HudPresenter → GameSettings.DpsVisible.
+Настройки:        GameSettings (Services, persistentDataPath/settings.json, Version 1) : ISoundSettings, ICombatTextSettings →
+                  SettingsPopupPresenter (меню и пауза).
+Вихрь клинков:    TriggerCounterStrikeSystem (группа 6, сразу после TickWeaponCooldownSystem; кулдаун + IsSurrounded) →
+                  CounterStrikeArmed → StartCounterStrikeSystem.
+Элитки:           WaveTimelineConfig._eliteChance/_eliteAffixes → SpawnWaveSystem.ResolveAffix (поток enemy.elite) →
+                  EnemyFactory.ApplyAffix (Elite, EliteAffix, модификаторы «enemy.elite», BodyRadius × scale) → IEliteView.SetElite.
+                  Пределы: WaveTimelineValidator.ResolveMaxMoveSpeed × MaxEliteSpeedFactor, ResolveMaxBodyRadius × MaxEliteScale.
+Предметы:         QueueItemDropsSystem (после DropGemsSystem, Inc<Enemy, Elite, DiedEvent>) → PendingItemDrops →
+                  OfferItemsSystem (после OfferUpgradesSystem; ждёт закрытия окна перков; ItemRoller, поток stream.item-offers) →
+                  UpgradeChoiceGate.Await + IItemChoiceSink → ItemChoice (UI) → UpgradeChoiceView «ItemChoice» →
+                  ввод 1–4 → ApplyItemChoiceSystem (системы выбора) → EquippedItem + модификаторы «item.<slot>».
+Перезарядка:      StatId.AbilityCooldown → AbilityCooldownScale (герой) → AbilityCooldowns.Scale в AdvanceDashSystem,
+                  StartDashFinisherSystem, StartHeroicLeapSystem, TriggerCounterStrikeSystem, StartExecutionSystem.
+Трупы:            ReapDeadEnemies → IViewFactory.Retire → ViewPool (срок 10–15 с, аниматор выкл. после клипа смерти,
+                  погружение, лимит 60, за кадром — сразу) → ViewInterpolator.BeginRetire/AdvanceCorpse.
+                  Куски: PublishCorpseKicksSystem → ICorpseKickSink (ViewPool) → GoreDirector.KickNear/KickArc; срок 10–15 с,
+                  за кадром — сразу.
+
+======================================================================
+3. РЕШЕНИЯ И РАЗВИЛКИ
+======================================================================
+- Предметы — только внутри забега (решение разработчика); GDD §8/§11 поправлены. Мета-версия — позже.
+- Слоты: оружие, броня, кольцо, сапоги, амулет. Запоминание грейда снятого — не делается. Лут — в WaveTimelineConfig
+  (одна таблица на таймлайн, не на волну).
+- Окно предметов — сразу при убийстве элитки, как лвл-ап; очередь с окном перков.
+- Тролль — элитка + случайный аффикс. DPS — окно 15 с в префабе (DpsView._windowSeconds).
+- Ранг перка = уровень, редкость перка — только визуал (В4 не отвечен, взята рекомендация). Крит — только стиль цифр (В6).
+- Трупы: вариант А (без регдолла), затем — трупы не пинаются вовсе, пинаются только куски.
+- Цвета UI: перевод в линейные только новых элементов; флаг Canvas.vertexColorAlwaysGammaSpace не трогали, чтобы не
+  сдвинуть принятые цвета HUD (отвергнуто: глобальный флаг).
+- Окно предметов переиспользует карточку перка (ранг — точки, редкость — рамка, тултип с RankLabel) вместо отдельной вьюхи.
+
+======================================================================
+4. ПРОВЕРЕНО (с числами)
+======================================================================
+- EditMode 444/444 на cfa6fa8d. Новый тест ItemRollerTests (детерминизм по сиду, число доп. бонусов = редкости, без повторов).
+- Элитки, живой забег ×3, 120 с: 50 врагов, 4 элитки; «Крепкий» 20 → 50 HP, радиус 0.4 → 0.5, масштаб 1.25; «Быстрый»
+  2.30 → 3.48 м/с, аура активна.
+- Предметы, живой забег: окно после окна уровня; «Латы стража» r5 → HP 100 → 130, скорость атаки +3.9%; сравнение
+  «Заменит: Латы стража, ранг 5». Лут из 8 предметов — по ≈12.5% карточек (8000 роллов).
+- DpsMeter: 80 урона/с 20 с → 80, затем 20 с простоя → 0.
+- Трупы: 8 в кадре, у части аниматор выключен; (до сужения) удар сдвигал труп на 2.33 м.
+- Цвет UI: 0.09 на экране выходил как 0.33 = gamma(0.09) — подтверждение гипотезы линейного канваса.
+
+======================================================================
+5. ОТКРЫТО / РИСКИ
+======================================================================
+- Стресс-замер на level.stress для трупов (лежат дольше) и элиток не делался — нужен dev-билд (чеклист §13.1).
+- Частота окна добычи: каждая элитка (6% + тролли + гарантированные) — возможно, нужен шанс или откат.
+- Нет панели надетых предметов в HUD. Таблица лута — одна на таймлайн.
+- Расчленённое тело «Крепкого» — обычного размера. Таймер трупов идёт и в окне перков (Time.time).
+- Регрессия вихря (запрос к индексу после смерти врагов) исправлена; правило: запросы к SpatialGrid — только до группы 10.
+- Иконки перков/предметов/рывка — временные (Blink, GUI Pro).
+- Перк «Руны» (5J разведки 060) — только набросок: метки цветов, цепочка из 3 на прямой (±15°) взрывается; не описаны
+  способ нанесения меток, число цветов, урон, кулдаун, уровни.
+
+======================================================================
+6. СЦЕНАРИИ РУЧНОЙ ПРОВЕРКИ — в журнале PROGRESS.md 2026-10-17, по записи на каждый блок.
+
+======================================================================
+7. СЛЕДУЮЩАЯ СЕССИЯ
+======================================================================
+- Приёмка блоков сессии по сценариям журнала.
+- Стресс-замер dev-билдом на level.stress (трупы, элитки).
+- По желанию разработчика: панель надетых предметов, откат/шанс добычи, перк «Руны» (нужно описание).
