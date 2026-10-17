@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Configs
@@ -31,6 +33,9 @@ namespace Game.Configs
         [SerializeField] private ChargeAbilityConfig _charge;
         [SerializeField] private SpinAbilityConfig _spin;
         [SerializeField] private HeavyStrikeAbilityConfig _heavyStrike;
+
+        [Header("Variation")]
+        [SerializeField] private Color[] _tints = Array.Empty<Color>();
 
         [Header("Gore")]
         [SerializeField] private GameObject _dismemberedViewPrefab;
@@ -69,6 +74,8 @@ namespace Game.Configs
         public HeavyStrikeAbilityConfig HeavyStrike => _heavyStrike;
 
         public float PeakMoveSpeed => (_spin == null ? _moveSpeed : _moveSpeed * Mathf.Max(1f, _spin.MoveSpeedMultiplier)) * (1f + _moveSpeedSpread);
+
+        public IReadOnlyList<Color> Tints => _tints;
 
         public GameObject DismemberedViewPrefab => _dismemberedViewPrefab;
 

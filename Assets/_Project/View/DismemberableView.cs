@@ -129,6 +129,7 @@ namespace Game.View
                 return;
 
             _torso.sharedMaterials = _torsoMaterials;
+            _torsoMaterials = null;
             _torsoChanged = false;
         }
     }

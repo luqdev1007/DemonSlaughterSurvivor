@@ -167,6 +167,8 @@ namespace Game.View
             _animator.SetTrigger(PushReactionTriggerId);
         }
 
+        internal Renderer[] BodyRenderers => _renderers;
+
         public void PlayCastInterrupted()
         {
             if (_isDead || _dazeFx == null)

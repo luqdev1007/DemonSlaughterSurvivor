@@ -23,6 +23,16 @@ MonoBehaviour:
   _contactDamage: 20
   _gem: {fileID: 11400000, guid: 0d7a678348e51c0468c29c307739d73e, type: 2}
   _rangedAttack: {fileID: 0}
+  _boss: {fileID: 0}
+  _charge: {fileID: 0}
+  _spin: {fileID: 0}
+  _heavyStrike: {fileID: 0}
+  _tints:
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1.12, g: 1.12, b: 1.12, a: 1}
+  - {r: 0.88, g: 0.88, b: 0.88, a: 1}
+  - {r: 1.06, g: 1, b: 0.9, a: 1}
+  - {r: 0.9, g: 0.96, b: 1.06, a: 1}
   _dismemberedViewPrefab: {fileID: 5398845736747080846, guid: b989dc3842544ca43828a3d7c095096a, type: 3}
   _dismemberChance: 0.35
   _separationRadius: 1

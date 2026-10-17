@@ -15,6 +15,35 @@ namespace Game.View
             public AnimatorControllerParameter[] Parameters;
             public DismemberableView Dismemberable;
             public GameObject Prefab;
+            public Renderer[] Body;
+            public int Tint = -1;
+        }
+
+        private readonly struct TintKey : IEquatable<TintKey>
+        {
+            public readonly Material Source;
+            public readonly Color Tint;
+
+            public TintKey(Material source, Color tint)
+            {
+                Source = source;
+                Tint = tint;
+            }
+
+            public bool Equals(TintKey other)
+            {
+                return Source == other.Source && Tint == other.Tint;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is TintKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return (Source == null ? 0 : Source.GetHashCode()) * 397 ^ Tint.GetHashCode();
+            }
         }
 
         private readonly struct Dismemberment
@@ -42,6 +71,9 @@ namespace Game.View
         private readonly HashSet<GameObject> _gemPrefabs = new HashSet<GameObject>();
         private readonly HashSet<GameObject> _breakablePrefabs = new HashSet<GameObject>();
         private readonly Dictionary<GameObject, GameObject> _templates = new Dictionary<GameObject, GameObject>();
+        private readonly Dictionary<GameObject, Color[]> _tints = new Dictionary<GameObject, Color[]>();
+        private readonly Dictionary<GameObject, Material[][][]> _tintTables = new Dictionary<GameObject, Material[][][]>();
+        private readonly Dictionary<TintKey, Material> _tintCopies = new Dictionary<TintKey, Material>();
         private readonly Dictionary<GameObject, int> _prewarmPlan = new Dictionary<GameObject, int>();
         private readonly WaveTimelineConfig _waves;
         private readonly GoreDirector _gore;
@@ -123,6 +155,7 @@ namespace Game.View
             _waves = level.Waves;
 
             CollectDismemberments(content);
+            CollectTints(content);
             CollectGemPrefabs(content);
             CollectBreakablePrefabs(content);
         }
@@ -138,6 +171,9 @@ namespace Game.View
             Entry entry = Take(prefab);
 
             Activate(entry, position, Quaternion.identity);
+
+            if (_tintTables.TryGetValue(prefab, out Material[][][] table))
+                ApplyTint(entry, _random.Next(table.Length));
 
             _issued.Add(entry.View.GetInstanceID());
 
@@ -236,6 +272,15 @@ namespace Game.View
             }
 
             _dissolveCopies.Clear();
+
+            foreach (Material copy in _tintCopies.Values)
+            {
+                if (copy != null)
+                    UnityEngine.Object.Destroy(copy);
+            }
+
+            _tintCopies.Clear();
+            _tintTables.Clear();
 
             if (_templateRoot != null)
                 UnityEngine.Object.Destroy(_templateRoot);
@@ -355,6 +400,9 @@ namespace Game.View
             corpse.View.SetPosition(source.position);
             corpse.View.SetRotation(source.rotation);
             corpse.View.InheritLift(entry.View);
+
+            if (entry.Tint >= 0 && _tintTables.ContainsKey(corpse.Prefab))
+                ApplyTint(corpse, entry.Tint);
 
             CopyPose(entry, corpse);
 
@@ -484,6 +532,85 @@ namespace Game.View
             }
         }
 
+        private void CollectTints(IContentRegistry content)
+        {
+            if (content == null)
+                return;
+
+            IReadOnlyList<EnemyConfig> enemies = content.All<EnemyConfig>();
+
+            for (int index = 0; index < enemies.Count; index++)
+            {
+                EnemyConfig enemy = enemies[index];
+
+                if (enemy.ViewPrefab == null || enemy.Tints.Count == 0)
+                    continue;
+
+                Color[] tints = new Color[enemy.Tints.Count];
+
+                for (int tint = 0; tint < tints.Length; tint++)
+                    tints[tint] = enemy.Tints[tint];
+
+                _tints[enemy.ViewPrefab] = tints;
+
+                if (enemy.DismemberedViewPrefab != null)
+                    _tints[enemy.DismemberedViewPrefab] = tints;
+            }
+        }
+
+        private Material[][][] BuildTintTable(Renderer[] body, Color[] tints)
+        {
+            Material[][][] table = new Material[tints.Length][][];
+
+            for (int tint = 0; tint < tints.Length; tint++)
+            {
+                table[tint] = new Material[body.Length][];
+
+                for (int renderer = 0; renderer < body.Length; renderer++)
+                {
+                    Material[] sources = body[renderer].sharedMaterials;
+                    Material[] tinted = new Material[sources.Length];
+
+                    for (int slot = 0; slot < sources.Length; slot++)
+                        tinted[slot] = TintedCopy(sources[slot], tints[tint]);
+
+                    table[tint][renderer] = tinted;
+                }
+            }
+
+            return table;
+        }
+
+        private Material TintedCopy(Material source, Color tint)
+        {
+            if (source == null || tint == Color.white || source.HasProperty(BaseColorId) == false)
+                return source;
+
+            TintKey key = new TintKey(source, tint);
+
+            if (_tintCopies.TryGetValue(key, out Material copy))
+                return copy;
+
+            Color color = source.GetColor(BaseColorId);
+
+            copy = new Material(source) { name = source.name + " (Tint)" };
+            copy.SetColor(BaseColorId, new Color(color.r * tint.r, color.g * tint.g, color.b * tint.b, color.a));
+
+            _tintCopies.Add(key, copy);
+
+            return copy;
+        }
+
+        private void ApplyTint(Entry entry, int tint)
+        {
+            Material[][] materials = _tintTables[entry.Prefab][tint];
+
+            for (int index = 0; index < entry.Body.Length; index++)
+                entry.Body[index].sharedMaterials = materials[index];
+
+            entry.Tint = tint;
+        }
+
         private Entry Withdraw(IView view, string operation)
         {
             if (view is ViewInterpolator instance == false)
@@ -515,6 +642,7 @@ namespace Game.View
             entry.View.ResetInterpolation();
             entry.View.ResetFeedback();
             entry.View.gameObject.SetActive(false);
+            entry.Tint = -1;
 
             Untrack(entry.View);
 
@@ -562,6 +690,11 @@ namespace Game.View
             };
 
             view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired, _onHit, _onCue);
+
+            entry.Body = view.BodyRenderers;
+
+            if (_tints.TryGetValue(prefab, out Color[] tints) && _tintTables.ContainsKey(prefab) == false)
+                _tintTables.Add(prefab, BuildTintTable(entry.Body, tints));
 
             _known.Add(view.GetInstanceID(), entry);
             _all.Add(entry);
