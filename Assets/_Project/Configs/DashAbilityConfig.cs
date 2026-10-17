@@ -14,6 +14,7 @@ namespace Game.Configs
 
         [Header("Charge")]
         [SerializeField, Min(0f)] private float _tapSeconds = 0.18f;
+        [SerializeField] private bool _chargeEnabled;
         [SerializeField, Min(0.01f)] private float _maxChargeSeconds = 1f;
         [SerializeField] private AnimationCurve _chargeCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         [SerializeField, Min(1f)] private float _distanceAtFullCharge = 1.8f;
@@ -35,6 +36,8 @@ namespace Game.Configs
         [SerializeField] private float _pushSpreadDegrees = 15f;
 
         public float TapSeconds => _tapSeconds;
+
+        public bool ChargeEnabled => _chargeEnabled;
 
         public float MaxChargeSeconds => _maxChargeSeconds;
 

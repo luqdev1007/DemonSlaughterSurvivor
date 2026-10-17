@@ -73,6 +73,7 @@ namespace Game.Simulation.Components
         public float PushEdgeScale;
         public float PushForwardTiltDegrees;
         public float PushSpreadDegrees;
+        public bool ChargeEnabled;
         public float TapSeconds;
         public float MaxChargeSeconds;
         public AnimationCurve ChargeCurve;

@@ -54,6 +54,26 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void DisabledChargeIgnoresTheChargeKey()
+        {
+            Build();
+
+            _world.GetPool<DashStats>().Get(_hero).ChargeEnabled = false;
+
+            _input.HoldCharge();
+            Step(30);
+
+            Assert.IsFalse(_world.GetPool<DashCharge>().Has(_hero));
+            Assert.AreEqual(0, SlowCount());
+
+            _input.ReleaseCharge();
+            Step();
+
+            Assert.IsFalse(_world.GetPool<Dashing>().Has(_hero));
+            Assert.IsFalse(_world.GetPool<DashRequest>().Has(_hero));
+        }
+
+        [Test]
         public void ShortChargeTapGivesAnUnchargedDash()
         {
             Build();
@@ -218,6 +238,7 @@ namespace Game.Simulation.Tests
             stats.Direction = DashDirection.Forward;
             stats.AccelerationPower = 1f;
             stats.InvulnerabilitySeconds = BaseDuration;
+            stats.ChargeEnabled = true;
             stats.TapSeconds = TapSeconds;
             stats.MaxChargeSeconds = MaxChargeSeconds;
             stats.DistanceAtFullCharge = DistanceAtFull;

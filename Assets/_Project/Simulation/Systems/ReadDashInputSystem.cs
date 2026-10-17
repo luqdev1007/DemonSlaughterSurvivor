@@ -53,7 +53,7 @@ namespace Game.Simulation.Systems
                     continue;
                 }
 
-                if (held && _dashes.Value.Has(entity) == false && _cooldowns.Value.Has(entity) == false)
+                if (held && _stats.Value.Get(entity).ChargeEnabled && _dashes.Value.Has(entity) == false && _cooldowns.Value.Has(entity) == false)
                     BeginCharge(entity);
             }
 

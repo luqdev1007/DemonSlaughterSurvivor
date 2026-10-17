@@ -132,6 +132,7 @@ namespace Game.Simulation.Systems
             dashStats.PushEdgeScale = dash.PushEdgeScale;
             dashStats.PushForwardTiltDegrees = dash.PushForwardTiltDegrees;
             dashStats.PushSpreadDegrees = dash.PushSpreadDegrees;
+            dashStats.ChargeEnabled = dash.ChargeEnabled;
             dashStats.TapSeconds = dash.TapSeconds;
             dashStats.MaxChargeSeconds = dash.MaxChargeSeconds;
             dashStats.ChargeCurve = dash.ChargeCurve;

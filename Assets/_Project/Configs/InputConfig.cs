@@ -7,7 +7,7 @@ namespace Game.Configs
     public sealed class InputConfig : ScriptableObject
     {
         [SerializeField] private float _bufferSeconds = 0.12f;
-        [SerializeField] private ControlScheme _defaultScheme = ControlScheme.MouseRun;
+        [SerializeField] private ControlScheme _defaultScheme = ControlScheme.Keyboard;
 
         public float BufferSeconds => _bufferSeconds;
 
