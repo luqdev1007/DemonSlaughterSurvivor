@@ -102,6 +102,51 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void AComboIsOfferedOnlyOnceEveryParentIsTaken()
+        {
+            PerkConfig first = Perk("perk.first", 1, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            PerkConfig second = Perk("perk.second", 1, StatId.MaxHealth, StatOp.Flat, 10f);
+            PerkConfig combo = Perk("perk.combo", 1, StatId.AttackSpeed, StatOp.Increased, 0.1f);
+            SetField(combo, "_requires", new[] { first, second });
+
+            Fixture fixture = Build(Seed, first, second, combo);
+
+            fixture.Take("perk.first");
+            fixture.LevelUp();
+
+            Assert.AreEqual(1, fixture.LastOfferCount, "with one parent taken only the other parent may be offered");
+            Assert.AreEqual("perk.second", fixture.LastOffer(0).PerkId);
+
+            fixture.Choose(0);
+            fixture.LevelUp();
+
+            Assert.AreEqual(1, fixture.LastOfferCount);
+            Assert.AreEqual("perk.combo", fixture.LastOffer(0).PerkId, "both parents taken, so the combo joins the pool");
+        }
+
+        [Test]
+        public void RequirementsOutsideThePoolOrInACycleAreRejected()
+        {
+            PerkConfig outsider = Perk("perk.outsider", 1, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            PerkConfig orphan = Perk("perk.orphan", 1, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            SetField(orphan, "_requires", new[] { outsider });
+
+            Assert.Throws<InvalidOperationException>(() => new PerkPool(new[] { orphan }), "a parent missing from the pool");
+
+            PerkConfig self = Perk("perk.self", 1, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            SetField(self, "_requires", new[] { self });
+
+            Assert.Throws<InvalidOperationException>(() => new PerkPool(new[] { self }), "a perk requiring itself");
+
+            PerkConfig a = Perk("perk.a", 1, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            PerkConfig b = Perk("perk.b", 1, StatId.MaxHealth, StatOp.Flat, 10f);
+            SetField(a, "_requires", new[] { b });
+            SetField(b, "_requires", new[] { a });
+
+            Assert.Throws<InvalidOperationException>(() => new PerkPool(new[] { a, b }), "a requirement cycle");
+        }
+
+        [Test]
         public void EmptyPoolSkipsTheChoiceWithoutPausing()
         {
             Fixture fixture = Build(Seed, Perk("perk.once", 1, StatId.MoveSpeed, StatOp.Increased, 0.1f));

@@ -26,6 +26,61 @@ namespace Game.Configs
                 ValidateBehaviour(perk, perk.Behaviour);
         }
 
+        public static void ValidateRequirements(IReadOnlyList<PerkConfig> pool)
+        {
+            HashSet<PerkConfig> members = new HashSet<PerkConfig>();
+
+            for (int index = 0; index < pool.Count; index++)
+                members.Add(pool[index]);
+
+            for (int index = 0; index < pool.Count; index++)
+            {
+                PerkConfig perk = pool[index];
+                IReadOnlyList<PerkConfig> requires = perk.Requires;
+
+                for (int slot = 0; slot < requires.Count; slot++)
+                {
+                    PerkConfig parent = requires[slot];
+
+                    if (parent == null)
+                        throw new InvalidOperationException($"{nameof(PerkConfig)} '{perk.Id}' has an empty required perk slot {slot}.");
+
+                    if (parent == perk)
+                        throw new InvalidOperationException($"{nameof(PerkConfig)} '{perk.Id}' requires itself, so it could never be offered.");
+
+                    if (members.Contains(parent) == false)
+                        throw new InvalidOperationException(
+                            $"{nameof(PerkConfig)} '{perk.Id}' requires '{parent.Id}', which is not in the perk pool, so it could never be offered.");
+                }
+            }
+
+            Dictionary<PerkConfig, int> state = new Dictionary<PerkConfig, int>();
+
+            for (int index = 0; index < pool.Count; index++)
+                RejectCycle(pool[index], state);
+        }
+
+        private static void RejectCycle(PerkConfig perk, Dictionary<PerkConfig, int> state)
+        {
+            state.TryGetValue(perk, out int mark);
+
+            if (mark == 2)
+                return;
+
+            if (mark == 1)
+                throw new InvalidOperationException(
+                    $"{nameof(PerkConfig)} '{perk.Id}' is part of a requirement cycle, so none of the perks in it could ever be offered.");
+
+            state[perk] = 1;
+
+            IReadOnlyList<PerkConfig> requires = perk.Requires;
+
+            for (int slot = 0; slot < requires.Count; slot++)
+                RejectCycle(requires[slot], state);
+
+            state[perk] = 2;
+        }
+
         private static void ValidateBehaviour(PerkConfig perk, PerkBehaviourConfig behaviour)
         {
             if (behaviour.LevelCount != perk.MaxLevel)

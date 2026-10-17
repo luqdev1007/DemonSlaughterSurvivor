@@ -15,11 +15,16 @@ namespace Game.Configs
         [Header("Behaviour")]
         [SerializeField, FormerlySerializedAs("_counterStrike")] private PerkBehaviourConfig _behaviour;
 
+        [Header("Combo")]
+        [SerializeField] private PerkConfig[] _requires = Array.Empty<PerkConfig>();
+
         public string DisplayName => _displayName;
 
         public PerkBehaviourConfig Behaviour => _behaviour;
 
         public bool HasBehaviour => _behaviour != null;
+
+        public IReadOnlyList<PerkConfig> Requires => _requires ?? Array.Empty<PerkConfig>();
 
         public string Description => _description;
 

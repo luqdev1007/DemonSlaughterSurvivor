@@ -25,6 +25,8 @@ namespace Game.Simulation.Services
                 _perks[index] = perks[index];
             }
 
+            PerkConfigValidator.ValidateRequirements(_perks);
+
             Array.Sort(_perks, CompareById);
 
             _candidates = new int[_perks.Length];

@@ -4,6 +4,7 @@ using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using System.Collections.Generic;
 
 namespace Game.Simulation.Systems
 {
@@ -78,6 +79,9 @@ namespace Game.Simulation.Systems
                 if (LevelOf(hero, _pool[index].Id) >= _pool[index].MaxLevel)
                     continue;
 
+                if (HasRequired(hero, _pool[index]) == false)
+                    continue;
+
                 candidates[candidateCount] = index;
                 candidateCount++;
             }
@@ -112,6 +116,19 @@ namespace Game.Simulation.Systems
                 return default;
 
             return new UpgradeOffer(perkId, LevelOf(hero, perkId) + 1);
+        }
+
+        private bool HasRequired(int hero, PerkConfig perk)
+        {
+            IReadOnlyList<PerkConfig> requires = perk.Requires;
+
+            for (int index = 0; index < requires.Count; index++)
+            {
+                if (LevelOf(hero, requires[index].Id) == 0)
+                    return false;
+            }
+
+            return true;
         }
 
         private int LevelOf(int hero, string perkId)
