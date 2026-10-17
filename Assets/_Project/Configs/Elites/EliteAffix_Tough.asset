@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3653ba320bc908f458caa633220ba4ec, type: 3}
+  m_Name: EliteAffix_Tough
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.EliteAffixConfig
+  _id: elite.tough
+  _displayName: "\u041A\u0440\u0435\u043F\u043A\u0438\u0439"
+  _modifiers:
+  - _stat: 2
+    _op: 3
+    _value: 1.5
+  _scale: 1.25
+  _vfxPrefab: {fileID: 0}
+  _vfxOffset: {x: 0, y: 0, z: 0}

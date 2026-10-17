@@ -14,6 +14,16 @@ namespace Game.Configs
             if (timeline == null)
                 return;
 
+            IReadOnlyList<EliteAffixConfig> affixes = timeline.EliteAffixes;
+
+            for (int index = 0; index < affixes.Count; index++)
+            {
+                if (affixes[index] == null)
+                    throw new InvalidOperationException($"{nameof(WaveTimelineConfig)} '{timeline.Id}' has an empty elite affix slot at index {index}.");
+
+                affixes[index].Validate($"{nameof(WaveTimelineConfig)} '{timeline.Id}'");
+            }
+
             IReadOnlyList<Wave> waves = timeline.Waves;
 
             if (waves == null)
@@ -114,7 +124,7 @@ namespace Game.Configs
                 }
             }
 
-            return max;
+            return max * timeline.MaxEliteScale;
         }
 
         public static float ResolveMaxMoveSpeed(WaveTimelineConfig timeline)
@@ -155,7 +165,7 @@ namespace Game.Configs
                 }
             }
 
-            return max;
+            return max * timeline.MaxEliteSpeedFactor;
         }
 
         public static float ResolveMaxRushSpeed(WaveTimelineConfig timeline)

@@ -2,6 +2,7 @@ using Game.Configs;
 using Game.Core;
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Simulation.Services
@@ -31,6 +32,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<RangedAttack> _rangedAttacks;
         private readonly EcsPool<Boss> _bosses;
         private readonly EcsPool<Elite> _elites;
+        private readonly EcsPool<EliteAffix> _eliteAffixes;
         private readonly EcsPool<NotPushable> _notPushables;
         private readonly EcsPool<Interruptible> _interruptibles;
         private readonly EcsPool<PreviousPosition> _previousPositions;
@@ -64,6 +66,7 @@ namespace Game.Simulation.Services
             _rangedAttacks = world.GetPool<RangedAttack>();
             _bosses = world.GetPool<Boss>();
             _elites = world.GetPool<Elite>();
+            _eliteAffixes = world.GetPool<EliteAffix>();
             _notPushables = world.GetPool<NotPushable>();
             _interruptibles = world.GetPool<Interruptible>();
             _previousPositions = world.GetPool<PreviousPosition>();
@@ -74,8 +77,9 @@ namespace Game.Simulation.Services
         }
 
         public const string SpawnModifierSource = "enemy.spawn";
+        public const string EliteModifierSource = "enemy.elite";
 
-        public int Create(EnemyConfig config, Vector3 position, float variationRoll)
+        public int Create(EnemyConfig config, Vector3 position, float variationRoll, EliteAffixConfig affix = null)
         {
             int entity = _world.NewEntity();
 
@@ -95,7 +99,7 @@ namespace Game.Simulation.Services
             turnSpeed.Value = config.TurnSpeed;
 
             ref BodyRadius bodyRadius = ref _bodyRadii.Add(entity);
-            bodyRadius.Value = config.BodyRadius;
+            bodyRadius.Value = config.BodyRadius * (affix == null ? 1f : affix.Scale);
 
             ref BodyHeight bodyHeight = ref _bodyHeights.Add(entity);
             bodyHeight.Value = config.BodyHeight;
@@ -131,9 +135,6 @@ namespace Game.Simulation.Services
             if (config.RangedAttack != null && config.RangedAttack.Interruptible)
                 _interruptibles.Add(entity);
 
-            if (config.IsElite)
-                _elites.Add(entity);
-
             if (config.Boss != null)
                 AddBoss(entity, config.Boss, position);
 
@@ -146,12 +147,34 @@ namespace Game.Simulation.Services
             if (config.HeavyStrike != null)
                 _heavyStrikes.Add(entity).Config = config.HeavyStrike;
 
+            if (config.IsElite || affix != null)
+            {
+                if (_elites.Has(entity) == false)
+                    _elites.Add(entity);
+            }
+
+            if (affix != null)
+                ApplyAffix(entity, affix, view.Value);
+
             if (config.MoveSpeedSpread > 0f)
                 _statModifiers.Add(entity, StatId.MoveSpeed, StatOp.More, (variationRoll * 2f - 1f) * config.MoveSpeedSpread, SpawnModifierSource);
 
             _statModifiers.MarkDirty(entity);
 
             return entity;
+        }
+
+        private void ApplyAffix(int entity, EliteAffixConfig affix, IView view)
+        {
+            _eliteAffixes.Add(entity).Config = affix;
+
+            IReadOnlyList<StatModifierEntry> modifiers = affix.Modifiers;
+
+            for (int index = 0; index < modifiers.Count; index++)
+                _statModifiers.Add(entity, modifiers[index].Stat, modifiers[index].Op, modifiers[index].Value, EliteModifierSource);
+
+            if (view is IEliteView eliteView)
+                eliteView.SetElite(affix.Scale, affix.VfxPrefab, affix.VfxOffset);
         }
 
         private void AddBoss(int entity, BossConfig boss, Vector3 position)

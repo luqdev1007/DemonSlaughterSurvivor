@@ -54,3 +54,8 @@ MonoBehaviour:
     - _offsetSeconds: 0
       _enemy: {fileID: 11400000, guid: 87a1416bceabcb04387ce73a79b44b23, type: 2}
       _count: 1
+  _prewarmCapPerEnemy: 100
+  _eliteChance: 0.06
+  _eliteAffixes:
+  - {fileID: 11400000, guid: 43a974bd51f7d9a469955213584a028f, type: 2}
+  - {fileID: 11400000, guid: d32de3614e14f0f48b0d07df463eef08, type: 2}

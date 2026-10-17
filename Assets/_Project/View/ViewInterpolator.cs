@@ -1,10 +1,11 @@
 using Game.Core;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -32,6 +33,11 @@ namespace Game.View
 
         [SerializeField] private BerserkLightningFx _berserkFx;
         [SerializeField] private SwordTrail _swordTrail;
+
+        private Vector3 _baseScale = Vector3.one;
+        private bool _hasBaseScale;
+        private Dictionary<GameObject, GameObject> _eliteFx;
+        private GameObject _activeEliteFx;
         [SerializeField] private BossKnightView _actionView;
         [SerializeField] private DashChargeIndicator _chargeIndicator;
         [SerializeField] private ParticleSystem _dazeFx;
@@ -224,6 +230,37 @@ namespace Game.View
 
             if (value == false)
                 SetRenderersVisible(true);
+        }
+
+        public void SetElite(float scale, GameObject vfxPrefab, Vector3 vfxOffset)
+        {
+            if (_hasBaseScale == false)
+            {
+                _baseScale = transform.localScale;
+                _hasBaseScale = true;
+            }
+
+            transform.localScale = _baseScale * scale;
+
+            if (vfxPrefab == null)
+                return;
+
+            _eliteFx ??= new Dictionary<GameObject, GameObject>();
+
+            if (_eliteFx.TryGetValue(vfxPrefab, out GameObject fx) == false)
+            {
+                fx = Instantiate(vfxPrefab, transform);
+                fx.transform.localPosition = vfxOffset / Mathf.Max(scale, 1e-3f);
+                fx.transform.localRotation = Quaternion.identity;
+
+                if (fx.GetComponent<NotBody>() == null)
+                    fx.AddComponent<NotBody>();
+
+                _eliteFx.Add(vfxPrefab, fx);
+            }
+
+            fx.SetActive(true);
+            _activeEliteFx = fx;
         }
 
         public void SetSwingStyle(float reach, bool sharp)
@@ -448,6 +485,15 @@ namespace Game.View
 
         internal void ResetFeedback()
         {
+            if (_hasBaseScale)
+                transform.localScale = _baseScale;
+
+            if (_activeEliteFx != null)
+            {
+                _activeEliteFx.SetActive(false);
+                _activeEliteFx = null;
+            }
+
             if (_isDissolving)
                 SwapMaterials(_originalMaterials);
 

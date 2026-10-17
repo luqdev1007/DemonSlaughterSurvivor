@@ -62,7 +62,47 @@ namespace Game.Configs
         [SerializeField] private Wave[] _waves = Array.Empty<Wave>();
         [SerializeField, Min(0)] private int _prewarmCapPerEnemy = 100;
 
+        [Header("Elites")]
+        [SerializeField, Range(0f, 1f)] private float _eliteChance;
+        [SerializeField] private EliteAffixConfig[] _eliteAffixes = Array.Empty<EliteAffixConfig>();
+
         public float SpawnRadius => _spawnRadius;
+
+        public float EliteChance => _eliteChance;
+
+        public IReadOnlyList<EliteAffixConfig> EliteAffixes => _eliteAffixes ?? Array.Empty<EliteAffixConfig>();
+
+        public float MaxEliteSpeedFactor
+        {
+            get
+            {
+                float max = 1f;
+
+                foreach (EliteAffixConfig affix in EliteAffixes)
+                {
+                    if (affix != null)
+                        max = Mathf.Max(max, affix.MoveSpeedFactor);
+                }
+
+                return max;
+            }
+        }
+
+        public float MaxEliteScale
+        {
+            get
+            {
+                float max = 1f;
+
+                foreach (EliteAffixConfig affix in EliteAffixes)
+                {
+                    if (affix != null)
+                        max = Mathf.Max(max, affix.Scale);
+                }
+
+                return max;
+            }
+        }
 
         public int PrewarmCapPerEnemy => _prewarmCapPerEnemy;
 

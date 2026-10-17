@@ -13,6 +13,7 @@ namespace Game.Simulation.Systems
     public sealed class SpawnWaveSystem : IEcsInitSystem, IEcsRunSystem
     {
         private const string VariationStream = "enemy.variation";
+        private const string EliteStream = "enemy.elite";
 
         private readonly EcsFilterInject<Inc<WaveState>> _timelines = default;
         private readonly EcsFilterInject<Inc<Enemy>> _live = default;
@@ -32,6 +33,7 @@ namespace Game.Simulation.Systems
         private WeightedEnemyPicker _picker;
         private SimulationRandom _random;
         private uint _variationState;
+        private uint _eliteState;
         private EnemyFactory _factory;
 
         private WaveTimelineConfig _timeline;
@@ -53,6 +55,7 @@ namespace Game.Simulation.Systems
             _picker = new WeightedEnemyPicker();
             _random = new SimulationRandom(_context.Value.Seed);
             _variationState = SimulationRandom.StreamState(_context.Value.Seed, VariationStream);
+            _eliteState = SimulationRandom.StreamState(_context.Value.Seed, EliteStream);
             _factory = new EnemyFactory(world, _viewFactory.Value, _statModifiers.Value);
 
             _firedGuaranteed = new bool[WaveTimelineValidator.ResolveMaxGuaranteedCount(_timeline)];
@@ -135,7 +138,7 @@ namespace Game.Simulation.Systems
                     _firedGuaranteed[index] = true;
 
                     for (int copy = 0; copy < entry.Count; copy++)
-                        Spawn(entry.Enemy, anchor);
+                        Spawn(entry.Enemy, anchor, true);
                 }
 
                 int live = _live.Value.GetEntitiesCount();
@@ -190,10 +193,10 @@ namespace Game.Simulation.Systems
             if (enemy == null)
                 return;
 
-            Spawn(enemy, anchor);
+            Spawn(enemy, anchor, false);
         }
 
-        private void Spawn(EnemyConfig enemy, Vector3 anchor)
+        private void Spawn(EnemyConfig enemy, Vector3 anchor, bool guaranteed)
         {
             float minDistance = enemy.Boss == null ? 0f : enemy.Boss.MinSpawnDistanceToHero;
 
@@ -204,7 +207,23 @@ namespace Game.Simulation.Systems
                 _random.NextUnit(),
                 minDistance);
 
-            _factory.Create(enemy, spawnPosition, SimulationRandom.NextUnit(ref _variationState));
+            _factory.Create(enemy, spawnPosition, SimulationRandom.NextUnit(ref _variationState), ResolveAffix(enemy, guaranteed));
+        }
+
+        private EliteAffixConfig ResolveAffix(EnemyConfig enemy, bool guaranteed)
+        {
+            IReadOnlyList<EliteAffixConfig> affixes = _timeline.EliteAffixes;
+
+            if (enemy.Boss != null || affixes.Count == 0)
+                return null;
+
+            float roll = SimulationRandom.NextUnit(ref _eliteState);
+            float pick = SimulationRandom.NextUnit(ref _eliteState);
+
+            if (guaranteed == false && enemy.IsElite == false && roll >= _timeline.EliteChance)
+                return null;
+
+            return affixes[Mathf.Min(affixes.Count - 1, (int)(pick * affixes.Count))];
         }
     }
 }
