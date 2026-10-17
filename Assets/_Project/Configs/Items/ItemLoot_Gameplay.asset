@@ -29,6 +29,8 @@ MonoBehaviour:
     _weight: 1
   - _item: {fileID: 11400000, guid: e16efa302d8757940931073df944f516, type: 2}
     _weight: 1
+  - _item: {fileID: 11400000, guid: db7dc2f1c03eb6046a5c97475464c3e5, type: 2}
+    _weight: 1
   _rarityWeights:
   - 60
   - 28

@@ -19,7 +19,7 @@ namespace Game.UI
             { StatId.DamageTaken, "получаемый урон" },
             { StatId.PickupRadius, "радиус сбора" },
             { StatId.LifeOnKill, "здоровья за убийство" },
-            { StatId.LifeOnHit, "здоровья за удар" },
+            { StatId.LifeOnHit, "вампиризм (здоровья за удар)" },
             { StatId.SwingReach, "дальность удара" },
             { StatId.AbilityCooldown, "перезарядка способностей" }
         };
