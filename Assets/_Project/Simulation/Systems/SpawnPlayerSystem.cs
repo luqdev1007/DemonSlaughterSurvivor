@@ -132,6 +132,14 @@ namespace Game.Simulation.Systems
             dashStats.PushEdgeScale = dash.PushEdgeScale;
             dashStats.PushForwardTiltDegrees = dash.PushForwardTiltDegrees;
             dashStats.PushSpreadDegrees = dash.PushSpreadDegrees;
+            dashStats.TapSeconds = dash.TapSeconds;
+            dashStats.MaxChargeSeconds = dash.MaxChargeSeconds;
+            dashStats.ChargeCurve = dash.ChargeCurve;
+            dashStats.DistanceAtFullCharge = dash.DistanceAtFullCharge;
+            dashStats.SpeedAtFullCharge = dash.SpeedAtFullCharge;
+            dashStats.DamageAtFullCharge = dash.DamageAtFullCharge;
+            dashStats.ChargeMoveSpeedMore = dash.ChargeMoveSpeedMore;
+            dashStats.ChargeRunAnimation = dash.ChargeRunAnimation;
 
             ref UltimateCharge charge = ref _charges.Value.Add(entity);
             charge.Value = 0f;

@@ -1,7 +1,6 @@
 using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
-using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
@@ -11,11 +10,12 @@ namespace Game.Simulation.Systems
 {
     public sealed class StartDashSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<DashRequest, DashStats, Facing>, Exc<Dashing, DashCooldown, PoweringUp>> _filter = default;
+        private readonly EcsFilterInject<Inc<DashRequest, DashStats, Facing, Position>, Exc<Dashing, DashCooldown, PoweringUp>> _filter = default;
 
         private readonly EcsPoolInject<DashRequest> _requests = default;
         private readonly EcsPoolInject<DashStats> _stats = default;
         private readonly EcsPoolInject<Facing> _facings = default;
+        private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Dashing> _dashes = default;
         private readonly EcsPoolInject<Invulnerable> _invulnerables = default;
 
@@ -37,13 +37,20 @@ namespace Game.Simulation.Systems
                     _ => throw new NotImplementedException()
                 };
 
-                float delta = _clock.Value.Delta;
-                int ticks = Mathf.Max(1, Mathf.RoundToInt(stats.Duration / delta));
+                float strength = _requests.Value.Get(entity).Strength;
+                float distance = stats.Distance * DashChargeRules.Scale(stats.DistanceAtFullCharge, strength);
+                float duration = stats.Duration * DashChargeRules.Scale(stats.DistanceAtFullCharge, strength) / DashChargeRules.Scale(stats.SpeedAtFullCharge, strength);
 
-                dashing.Speed = stats.Distance / (ticks * delta);
+                float delta = _clock.Value.Delta;
+                int ticks = Mathf.Max(1, Mathf.RoundToInt(duration / delta));
+
+                dashing.Speed = distance / (ticks * delta);
                 dashing.RemainingTicks = ticks;
                 dashing.TotalTicks = ticks;
                 dashing.AccelerationPower = stats.AccelerationPower;
+                dashing.Strength = strength;
+                dashing.DamageMultiplier = DashChargeRules.Scale(stats.DamageAtFullCharge, strength);
+                dashing.Start = _positions.Value.Get(entity).Value;
 
                 int protectedTicks = Mathf.Max(1, Mathf.RoundToInt(stats.InvulnerabilitySeconds / delta));
 

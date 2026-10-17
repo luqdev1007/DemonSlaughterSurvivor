@@ -4,8 +4,12 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView
     {
+        private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
+        private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
+        private static readonly int ChargedDashId = Animator.StringToHash("ChargedDash");
+
         private const float TickSeconds = 1f / 60f;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -29,6 +33,11 @@ namespace Game.View
         [SerializeField] private BerserkLightningFx _berserkFx;
         [SerializeField] private SwordTrail _swordTrail;
         [SerializeField] private BossKnightView _actionView;
+        [SerializeField] private DashChargeIndicator _chargeIndicator;
+
+        private bool _hasChargeParameters;
+        private bool _hasChargedDashParameter;
+        private bool _isCharging;
 
         private Vector3 _previousPosition;
         private Vector3 _currentPosition;
@@ -111,6 +120,9 @@ namespace Game.View
                 && HasParameter(animator, PowerUpTimeId, AnimatorControllerParameterType.Float);
             _hasPushReactionParameters = HasParameter(animator, PushReactionTriggerId, AnimatorControllerParameterType.Trigger)
                 && HasParameter(animator, PushReactionSpeedId, AnimatorControllerParameterType.Float);
+            _hasChargeParameters = HasParameter(animator, IsChargingId, AnimatorControllerParameterType.Bool)
+                && HasParameter(animator, ChargeRunId, AnimatorControllerParameterType.Bool);
+            _hasChargedDashParameter = HasParameter(animator, ChargedDashId, AnimatorControllerParameterType.Bool);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -250,6 +262,31 @@ namespace Game.View
             _isSpecial = value;
 
             _animator.SetBool(IsSpecialId, value);
+        }
+
+        public void SetDashCharge(bool charging, float strength, bool runStyle, float dashStrength)
+        {
+            if (_isDead)
+                charging = false;
+
+            if (_hasChargedDashParameter)
+                _animator.SetBool(ChargedDashId, dashStrength > 0f);
+
+            if (_chargeIndicator != null)
+            {
+                if (charging)
+                    _chargeIndicator.Show(strength);
+                else
+                    _chargeIndicator.Hide();
+            }
+
+            if (_hasChargeParameters == false || _isCharging == charging)
+                return;
+
+            _isCharging = charging;
+
+            _animator.SetBool(ChargeRunId, runStyle);
+            _animator.SetBool(IsChargingId, charging);
         }
 
         public void SetRunning(bool value)
@@ -409,6 +446,10 @@ namespace Game.View
             _knockbackOffset = Vector3.zero;
             _isBerserkSuppressed = false;
             _actionPhase = 0;
+            _isCharging = false;
+
+            if (_chargeIndicator != null)
+                _chargeIndicator.Hide();
 
             if (_actionView != null)
                 _actionView.ResetImmediate();

@@ -557,6 +557,7 @@ namespace Game.Simulation.Tests
             _world.GetPool<MoveIntent>().Add(_hero).Value = Vector3.right;
             _world.GetPool<Velocity>().Add(_hero);
             _world.GetPool<Facing>().Add(_hero).Value = Vector3.forward;
+            _world.GetPool<Position>().Add(_hero);
 
             ref DashStats dashStats = ref _world.GetPool<DashStats>().Add(_hero);
             dashStats.Distance = 4f;

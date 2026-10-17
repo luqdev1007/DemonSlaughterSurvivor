@@ -12,6 +12,16 @@ namespace Game.Configs
         [SerializeField] private DashDirection _direction;
         [SerializeField] private float _accelerationPower = 3f;
 
+        [Header("Charge")]
+        [SerializeField, Min(0f)] private float _tapSeconds = 0.18f;
+        [SerializeField, Min(0.01f)] private float _maxChargeSeconds = 1f;
+        [SerializeField] private AnimationCurve _chargeCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+        [SerializeField, Min(1f)] private float _distanceAtFullCharge = 1.8f;
+        [SerializeField, Min(1f)] private float _speedAtFullCharge = 1.4f;
+        [SerializeField, Min(1f)] private float _damageAtFullCharge = 2f;
+        [SerializeField, Range(-0.95f, 0f)] private float _chargeMoveSpeedMore = -0.4f;
+        [SerializeField] private bool _chargeRunAnimation;
+
         [Header("Invulnerability")]
         [SerializeField] private float _invulnerabilitySeconds = 0.3f;
 
@@ -23,6 +33,22 @@ namespace Game.Configs
         [SerializeField] private float _pushEdgeScale = 0.5f;
         [SerializeField] private float _pushForwardTiltDegrees = 30f;
         [SerializeField] private float _pushSpreadDegrees = 15f;
+
+        public float TapSeconds => _tapSeconds;
+
+        public float MaxChargeSeconds => _maxChargeSeconds;
+
+        public AnimationCurve ChargeCurve => _chargeCurve;
+
+        public float DistanceAtFullCharge => _distanceAtFullCharge;
+
+        public float SpeedAtFullCharge => _speedAtFullCharge;
+
+        public float DamageAtFullCharge => _damageAtFullCharge;
+
+        public float ChargeMoveSpeedMore => _chargeMoveSpeedMore;
+
+        public bool ChargeRunAnimation => _chargeRunAnimation;
 
         public float Distance => _distance;
         public float Duration => _duration;

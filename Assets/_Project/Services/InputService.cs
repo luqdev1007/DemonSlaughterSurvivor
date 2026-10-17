@@ -6,11 +6,12 @@ using UnityEngine.InputSystem;
 
 namespace Game.Services
 {
-    public sealed class InputService : IInputService, IPauseInput, IPointerInput, IDisposable
+    public sealed class InputService : IInputService, IPauseInput, IPointerInput, IDashInput, IDisposable
     {
         private readonly GameControls _input;
 
         private bool _dashPressed;
+        private bool _dashReleased;
         private bool _ultimatePressed;
         private bool _pausePressed;
 
@@ -18,6 +19,7 @@ namespace Game.Services
         {
             _input = new GameControls();
             _input.Gameplay.Dash.performed += OnDashPerformed;
+            _input.Gameplay.Dash.canceled += OnDashCanceled;
             _input.Gameplay.Ultimate.performed += OnUltimatePerformed;
             _input.Gameplay.Pause.performed += OnPausePerformed;
             _input.Enable();
@@ -28,6 +30,18 @@ namespace Game.Services
         public Vector2 PointerPosition => _input.Gameplay.Point.ReadValue<Vector2>();
 
         public bool IsStandHeld => _input.Gameplay.StandStill.IsPressed();
+
+        public bool IsDashHeld => _input.Gameplay.Dash.IsPressed();
+
+        public bool ConsumeDashReleased()
+        {
+            if (_dashReleased == false)
+                return false;
+
+            _dashReleased = false;
+
+            return true;
+        }
 
         public bool ConsumeDashPressed()
         {
@@ -62,6 +76,7 @@ namespace Game.Services
         public void ResetLatches()
         {
             _dashPressed = false;
+            _dashReleased = false;
             _ultimatePressed = false;
             _pausePressed = false;
         }
@@ -69,6 +84,7 @@ namespace Game.Services
         public void Dispose()
         {
             _input.Gameplay.Dash.performed -= OnDashPerformed;
+            _input.Gameplay.Dash.canceled -= OnDashCanceled;
             _input.Gameplay.Ultimate.performed -= OnUltimatePerformed;
             _input.Gameplay.Pause.performed -= OnPausePerformed;
             _input.Disable();
@@ -78,6 +94,11 @@ namespace Game.Services
         private void OnDashPerformed(InputAction.CallbackContext context)
         {
             _dashPressed = true;
+        }
+
+        private void OnDashCanceled(InputAction.CallbackContext context)
+        {
+            _dashReleased = true;
         }
 
         private void OnUltimatePerformed(InputAction.CallbackContext context)

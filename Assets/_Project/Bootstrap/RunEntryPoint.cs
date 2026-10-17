@@ -34,6 +34,7 @@ namespace Game.Bootstrap
         private readonly IRunResultSink _resultSink;
         private readonly IPauseInput _pauseInput;
         private readonly IPointerInput _pointerInput;
+        private readonly IDashInput _dashInput;
         private readonly IAimInput _aimInput;
         private readonly IPauseMenuSink _pauseMenuSink;
         private readonly IPauseMenuInput _pauseMenuInput;
@@ -76,6 +77,7 @@ namespace Game.Bootstrap
             IRunResultSink resultSink,
             IPauseInput pauseInput,
             IPointerInput pointerInput,
+            IDashInput dashInput,
             IAimInput aimInput,
             IPauseMenuSink pauseMenuSink,
             IPauseMenuInput pauseMenuInput,
@@ -84,6 +86,7 @@ namespace Game.Bootstrap
         {
             _pauseInput = pauseInput;
             _pointerInput = pointerInput;
+            _dashInput = dashInput;
             _aimInput = aimInput;
             _pauseMenuSink = pauseMenuSink;
             _pauseMenuInput = pauseMenuInput;
@@ -140,6 +143,7 @@ namespace Game.Bootstrap
                 _clock,
                 _inputService,
                 _pointerInput,
+                _dashInput,
                 _aimInput,
                 _registry,
                 _viewFactory,

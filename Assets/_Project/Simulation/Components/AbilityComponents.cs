@@ -3,7 +3,18 @@ using UnityEngine;
 
 namespace Game.Simulation.Components
 {
-    public struct DashRequest { public float Age; }
+    public struct DashRequest { public float Age; public float Strength; }
+
+    public struct DashCharge { public int Ticks; }
+
+    public struct DashEndedEvent
+    {
+        public Vector3 Start;
+        public Vector3 End;
+        public Vector3 Direction;
+        public float Strength;
+        public float DamageMultiplier;
+    }
 
     public struct DashCooldown { public float Remaining; }
 
@@ -14,6 +25,9 @@ namespace Game.Simulation.Components
         public Vector3 Direction;
         public float Speed;
         public float AccelerationPower;
+        public float Strength;
+        public float DamageMultiplier;
+        public Vector3 Start;
     }
 
     public struct UltimateCharge { public float Value; public float Max; }
@@ -42,5 +56,13 @@ namespace Game.Simulation.Components
         public float PushEdgeScale;
         public float PushForwardTiltDegrees;
         public float PushSpreadDegrees;
+        public float TapSeconds;
+        public float MaxChargeSeconds;
+        public AnimationCurve ChargeCurve;
+        public float DistanceAtFullCharge;
+        public float SpeedAtFullCharge;
+        public float DamageAtFullCharge;
+        public float ChargeMoveSpeedMore;
+        public bool ChargeRunAnimation;
     }
 }
