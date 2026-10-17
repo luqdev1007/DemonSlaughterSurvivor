@@ -37,6 +37,7 @@ namespace Game.Simulation.Components
         public EcsPackedEntity Owner;
         public int RemainingTicks;
         public float DamageScale;
+        public PerkBehaviourConfig SourcePerk;
     }
 
     public struct FireTrail { public float Carried; }
@@ -77,6 +78,7 @@ namespace Game.Simulation.Components
         public SwingVariant Variant;
         public float DamageScale;
         public DamageKind Kind;
+        public PerkBehaviourConfig SourcePerk;
         public float ClipTime;
         public float PlaybackSpeed;
         public int RemainingTicks;
@@ -95,6 +97,7 @@ namespace Game.Simulation.Components
             c.Variant = null;
             c.DamageScale = 0f;
             c.Kind = DamageKind.Unmarked;
+            c.SourcePerk = null;
             c.ClipTime = 0f;
             c.PlaybackSpeed = 0f;
             c.RemainingTicks = 0;

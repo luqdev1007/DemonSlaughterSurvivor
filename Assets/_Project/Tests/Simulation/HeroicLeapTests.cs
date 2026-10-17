@@ -101,6 +101,7 @@ namespace Game.Simulation.Tests
 
             Assert.AreEqual(WeaponDamage * Share, damageEvent.Amount, 1e-4f);
             Assert.AreEqual(DamageKind.Perk, damageEvent.Kind);
+            Assert.AreSame(_config, damageEvent.SourcePerk, "the landing names the perk that dealt it");
             Assert.IsTrue(damageEvent.Source.Unpack(_world, out int source) && source == _hero);
             Assert.AreEqual(Vector3.zero, damageEvent.SourcePosition);
         }

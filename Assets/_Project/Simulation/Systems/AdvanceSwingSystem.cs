@@ -151,6 +151,7 @@ namespace Game.Simulation.Systems
                 damageEvent.Amount = damage;
                 damageEvent.Kind = swing.Kind;
                 damageEvent.IsSlash = true;
+                damageEvent.SourcePerk = swing.SourcePerk;
             }
         }
 

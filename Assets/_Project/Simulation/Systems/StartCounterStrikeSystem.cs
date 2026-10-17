@@ -110,6 +110,7 @@ namespace Game.Simulation.Systems
             swing.Variant = variant;
             swing.DamageScale = entry.DamageShare;
             swing.Kind = DamageKind.Perk;
+            swing.SourcePerk = counter;
             swing.ClipTime = 0f;
             swing.PlaybackSpeed = bake.ClipLength / (ticks * delta);
             swing.RemainingTicks = ticks;

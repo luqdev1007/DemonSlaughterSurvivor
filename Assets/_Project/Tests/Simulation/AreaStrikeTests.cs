@@ -65,6 +65,33 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void TheStrikeHandsItsSourcePerkToEveryDamageEvent()
+        {
+            Build();
+
+            HeroicLeapConfig perk = ScriptableObject.CreateInstance<HeroicLeapConfig>();
+            _assets.Add(perk);
+
+            SpawnEnemy(new Vector3(0f, 0f, 1f));
+            SpawnEnemy(new Vector3(0.5f, 0f, 2f));
+
+            AreaStrike strike = Strike(3f, 45f, 10f);
+            strike.SourcePerk = perk;
+            AddStrike(strike);
+            Step();
+
+            int events = 0;
+
+            foreach (int entity in _world.Filter<DamageEvent>().End())
+            {
+                Assert.AreSame(perk, _world.GetPool<DamageEvent>().Get(entity).SourcePerk);
+                events++;
+            }
+
+            Assert.AreEqual(2, events);
+        }
+
+        [Test]
         public void FullCircleHitsBehindToo()
         {
             Build();

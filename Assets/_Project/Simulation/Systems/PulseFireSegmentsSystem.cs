@@ -109,6 +109,7 @@ namespace Game.Simulation.Systems
                     damageEvent.SourcePosition = origin;
                     damageEvent.Amount = weaponDamage * segment.DamageScale;
                     damageEvent.Kind = DamageKind.Perk;
+                    damageEvent.SourcePerk = segment.SourcePerk;
                 }
             }
         }

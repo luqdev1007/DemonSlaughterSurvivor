@@ -79,6 +79,7 @@ namespace Game.Simulation.Systems
 
             ref FireSegment segment = ref _segmentPool.Value.Add(entity);
             segment.Owner = world.PackEntity(hero);
+            segment.SourcePerk = config;
             segment.RemainingTicks = lifetime;
             segment.DamageScale = entry.DamageShare * DashChargeRules.DamageMultiplier(in _dashes.Value.Get(hero));
 

@@ -1,3 +1,4 @@
+using Game.Configs;
 using Leopotam.EcsLite;
 using UnityEngine;
 
@@ -45,6 +46,7 @@ namespace Game.Simulation.Components
         public float Amount;
         public DamageKind Kind;
         public bool IsSlash;
+        public PerkBehaviourConfig SourcePerk;
     }
 
     public struct KillingBlow
@@ -71,6 +73,7 @@ namespace Game.Simulation.Components
         public float Damage;
         public DamageKind Kind;
         public bool IsSlash;
+        public PerkBehaviourConfig SourcePerk;
         public float PushSpeed;
         public float PushSeconds;
         public float PushArcHeight;

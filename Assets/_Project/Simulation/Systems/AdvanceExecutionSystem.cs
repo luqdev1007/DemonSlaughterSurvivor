@@ -82,6 +82,7 @@ namespace Game.Simulation.Systems
             damageEvent.Amount = config.HitDamage(config.Level(execution.Level), current, max);
             damageEvent.Kind = DamageKind.Perk;
             damageEvent.IsSlash = true;
+            damageEvent.SourcePerk = config;
         }
     }
 }

@@ -109,6 +109,7 @@ namespace Game.Simulation.Systems
             strike.HalfAngleDegrees = config.FinalHalfAngleDegrees;
             strike.Damage = ResolveWeaponDamage(world, hero) * entry.FinalDamageShare * DashChargeRules.DamageMultiplier(in dashing);
             strike.Kind = DamageKind.Perk;
+            strike.SourcePerk = config;
             strike.IsSlash = true;
             strike.PushSpeed = config.FinalPushSpeed;
             strike.PushSeconds = config.FinalPushSeconds;
@@ -188,6 +189,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Amount = damage;
                     damageEvent.Kind = DamageKind.Perk;
                     damageEvent.IsSlash = true;
+                    damageEvent.SourcePerk = config;
                 }
 
                 if (pushes && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)

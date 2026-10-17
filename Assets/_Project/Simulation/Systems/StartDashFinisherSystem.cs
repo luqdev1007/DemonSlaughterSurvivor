@@ -110,6 +110,7 @@ namespace Game.Simulation.Systems
             strike.Reach = config.Reach * DashChargeRules.Scale(config.ReachAtFullCharge, ended.Strength);
             strike.HalfAngleDegrees = config.HalfAngleDegrees;
             strike.Damage = ResolveWeaponDamage(world, hero) * entry.DamageShare * DamageMultiplier(in ended);
+            strike.SourcePerk = config;
             strike.PushSpeed = config.PushSpeed;
             strike.PushSeconds = config.PushSeconds;
             strike.PushArcHeight = config.PushArcHeight;

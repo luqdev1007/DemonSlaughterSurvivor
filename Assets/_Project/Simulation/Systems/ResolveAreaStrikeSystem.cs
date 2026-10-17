@@ -130,6 +130,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Amount = strike.Damage;
                     damageEvent.Kind = strike.Kind;
                     damageEvent.IsSlash = strike.IsSlash;
+                    damageEvent.SourcePerk = strike.SourcePerk;
                 }
 
                 if (pushes && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)

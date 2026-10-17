@@ -153,6 +153,7 @@ namespace Game.Simulation.Tests
             Assert.AreSame(_counter.Swing, swing.Variant);
             Assert.AreEqual(_counter.Level(3).DamageShare, swing.DamageScale);
             Assert.AreEqual(DamageKind.Perk, swing.Kind);
+            Assert.AreSame(_counter, swing.SourcePerk, "the spin names the perk that dealt it");
             Assert.AreEqual(SpinTicks, swing.RemainingTicks);
             Assert.IsTrue(_world.GetPool<SpecialSwing>().Has(spin));
             Assert.IsTrue(_world.GetPool<SwingStarted>().Has(spin));

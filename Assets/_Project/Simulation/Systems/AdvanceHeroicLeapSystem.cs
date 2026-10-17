@@ -115,6 +115,7 @@ namespace Game.Simulation.Systems
                     damageEvent.SourcePosition = origin;
                     damageEvent.Amount = damage;
                     damageEvent.Kind = DamageKind.Perk;
+                    damageEvent.SourcePerk = config;
                 }
 
                 if (pushes && distance <= config.PushRadius && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)
