@@ -82,6 +82,8 @@ namespace Game.UI
 
         public void Dispose()
         {
+            UnityEngine.Debug.Log($"[RunEndTrace] HudPresenter.Dispose, frame {UnityEngine.Time.frameCount}");
+
             _subscription?.Dispose();
             _subscription = null;
 

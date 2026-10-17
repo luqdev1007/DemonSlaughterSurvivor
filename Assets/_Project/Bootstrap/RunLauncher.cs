@@ -85,9 +85,15 @@ namespace Game.Bootstrap
             {
                 await UniTask.NextFrame();
 
+                UnityEngine.Debug.Log($"[RunEndTrace] FinishAsync: stopping run scope, frame {UnityEngine.Time.frameCount}");
+
                 Stop();
 
+                UnityEngine.Debug.Log($"[RunEndTrace] FinishAsync: run scope stopped, loading menu, frame {UnityEngine.Time.frameCount}");
+
                 await _sceneLoader.LoadAsync(_scenes.MainMenuScene, CancellationToken.None);
+
+                UnityEngine.Debug.Log($"[RunEndTrace] FinishAsync: menu loaded, frame {UnityEngine.Time.frameCount}");
             }
             finally
             {

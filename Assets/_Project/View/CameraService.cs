@@ -55,6 +55,8 @@ namespace Game.View
 
         public void Dispose()
         {
+            UnityEngine.Debug.Log($"[RunEndTrace] CameraService.Dispose, frame {UnityEngine.Time.frameCount}");
+
             if (_rig != null)
                 UnityEngine.Object.Destroy(_rig);
         }
