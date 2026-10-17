@@ -67,6 +67,7 @@ namespace Game.Simulation.Systems
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
             systems.Add(new AdvanceExecutionSystem());
+            systems.Add(new ResolveAreaStrikeSystem());
             systems.Add(new PulseFireSegmentsSystem());
             systems.Add(new TickFireSegmentsSystem());
             systems.Add(new AdvanceProjectilesSystem());

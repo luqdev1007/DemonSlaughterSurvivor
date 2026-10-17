@@ -55,6 +55,33 @@ namespace Game.Simulation.Components
 
     public struct DamageApplied { public float Amount; }
 
+    public struct AreaStrike
+    {
+        public EcsPackedEntity Owner;
+        public int DelayTicks;
+        public bool FollowOwner;
+        public Vector3 Origin;
+        public Vector3 Forward;
+        public float Reach;
+        public float HalfAngleDegrees;
+        public float Damage;
+        public DamageKind Kind;
+        public bool IsSlash;
+        public float PushSpeed;
+        public float PushSeconds;
+        public float PushArcHeight;
+    }
+
+    public struct AreaStrikeEvent
+    {
+        public EcsPackedEntity Owner;
+        public Vector3 Origin;
+        public Vector3 Forward;
+        public float Reach;
+        public float HalfAngleDegrees;
+        public int Hits;
+    }
+
     public struct DiedEvent { }
 
     public struct HealEvent

@@ -61,8 +61,8 @@ namespace Game.Simulation.Services
 
             for (int index = 0; index < perks.Count; index++)
             {
-                if (perks[index] != null && perks[index].Behaviour is HeroicLeapConfig leap)
-                    pushSpeed = Math.Max(pushSpeed, leap.PushSpeed);
+                if (perks[index] != null && perks[index].Behaviour != null)
+                    pushSpeed = Math.Max(pushSpeed, perks[index].Behaviour.MaxPushSpeed);
             }
 
             return new EnemyMotionBounds(maxEnemyMoveSpeed, maxOverlapCorrection, pushSpeed, maxEnemyBodyRadius, maxEnemyRushSpeed);

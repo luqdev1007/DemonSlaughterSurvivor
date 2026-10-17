@@ -6,6 +6,8 @@ namespace Game.Configs
     {
         public abstract int LevelCount { get; }
 
+        public virtual float MaxPushSpeed => 0f;
+
         public abstract void Validate(PerkConfig perk);
     }
 }

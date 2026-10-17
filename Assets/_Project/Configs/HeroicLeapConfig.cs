@@ -59,6 +59,8 @@ namespace Game.Configs
 
         public float PushSpeed => _pushSpeed;
 
+        public override float MaxPushSpeed => _pushSpeed;
+
         public float PushSeconds => _pushSeconds;
 
         public float ArcHeight => _arcHeight;
