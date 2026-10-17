@@ -31,6 +31,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
         private readonly EcsPoolInject<WeaponCooldown> _weaponCooldowns = default;
         private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
+        private readonly EcsPoolInject<SwingReach> _swingReaches = default;
         private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
         private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
@@ -226,6 +227,16 @@ namespace Game.Simulation.Systems
                     "a More of -1 or below, or a negative Flat, stops or reverses every swing.");
             }
 
+            if (_swingReaches.Value.Has(target))
+            {
+                ref SwingReach reach = ref _swingReaches.Value.Get(target);
+                reach.Value = StatFormula.Evaluate(reach.Base, Total(StatId.SwingReach));
+
+                GuardPositive(target, StatId.SwingReach, reach.Value, reach.Base,
+                    "Swing reach scales the blade around the hero, so it must stay above zero: " +
+                    "zero or below collapses every swing into the hero.");
+            }
+
             if (_damageTakens.Value.Has(target))
             {
                 ref DamageTaken damageTaken = ref _damageTakens.Value.Get(target);
@@ -325,6 +336,8 @@ namespace Game.Simulation.Systems
                     return _weaponCooldowns.Value.Has(target);
                 case StatId.AttackSpeed:
                     return _attackSpeeds.Value.Has(target);
+                case StatId.SwingReach:
+                    return _swingReaches.Value.Has(target);
                 case StatId.DamageTaken:
                     return _damageTakens.Value.Has(target);
                 case StatId.PickupRadius:

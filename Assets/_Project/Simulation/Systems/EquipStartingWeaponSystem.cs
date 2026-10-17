@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponDamage> _damages = default;
         private readonly EcsPoolInject<WeaponCooldown> _cooldowns = default;
         private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
+        private readonly EcsPoolInject<SwingReach> _reaches = default;
         private readonly EcsPoolInject<WeaponReady> _readies = default;
         private readonly EcsPoolInject<SwingRandom> _randoms = default;
         private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
@@ -58,6 +59,10 @@ namespace Game.Simulation.Systems
                 ref AttackSpeed attackSpeed = ref _attackSpeeds.Value.Add(weapon);
                 attackSpeed.Base = BaseAttackSpeed;
                 attackSpeed.Value = BaseAttackSpeed;
+
+                ref SwingReach reach = ref _reaches.Value.Add(weapon);
+                reach.Base = config.Reach;
+                reach.Value = config.Reach;
 
                 ref WeaponReady ready = ref _readies.Value.Add(weapon);
                 ready.Remaining = 0f;

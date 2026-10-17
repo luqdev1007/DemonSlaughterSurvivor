@@ -21,6 +21,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponReady> _readies = default;
         private readonly EcsPoolInject<WeaponCooldown> _cooldowns = default;
         private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
+        private readonly EcsPoolInject<SwingReach> _reaches = default;
         private readonly EcsPoolInject<SwingRandom> _randoms = default;
         private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
         private readonly EcsPoolInject<Swinging> _swinging = default;
@@ -76,16 +77,18 @@ namespace Game.Simulation.Systems
                 WeaponConfig config = _weaponPool.Value.Get(weapon).Config;
                 SwingPose pose = new SwingPose(_positions.Value.Get(owner).Value, _facings.Value.Get(owner).Value);
                 float attackSpeed = _attackSpeeds.Value.Get(weapon).Value;
+                float reach = _reaches.Value.Has(weapon) ? _reaches.Value.Get(weapon).Value : 1f;
 
                 ref SwingRandom random = ref _randoms.Value.Get(weapon);
                 int variant;
                 bool sharp = false;
+                int targetEntity;
 
-                if (HasTarget(config, attackSpeed, pose, out Vector3 target))
+                if (HasTarget(config, attackSpeed, reach, pose, out Vector3 target, out targetEntity))
                 {
-                    variant = PickVariant(config, pose, target, ref random.State);
+                    variant = PickVariant(config, pose, target, reach, ref random.State);
                 }
-                else if (TryPredict(owner, config, ref pose, out variant))
+                else if (TryPredict(owner, config, reach, ref pose, out variant, out targetEntity))
                 {
                     sharp = true;
                 }
@@ -94,20 +97,21 @@ namespace Game.Simulation.Systems
                     continue;
                 }
 
-                StartSwing(world, weapon, owner, config, variant, attackSpeed, pose, sharp ? _input.Value : null);
+                StartSwing(world, weapon, owner, config, variant, attackSpeed, pose, sharp ? _input.Value : null, reach, targetEntity);
 
                 ready.Remaining = _cooldowns.Value.Get(weapon).Value / attackSpeed;
             }
         }
 
-        private bool HasTarget(WeaponConfig config, float attackSpeed, in SwingPose pose, out Vector3 target)
+        private bool HasTarget(WeaponConfig config, float attackSpeed, float reach, in SwingPose pose, out Vector3 target, out int targetEntity)
         {
             target = default;
+            targetEntity = -1;
 
             SwingCoverage coverage = config.TriggerCoverage;
             float lead = ResolveShortestWindup(config, attackSpeed);
 
-            float radius = coverage.MaxDistance + SwingCoverage.DistanceStep * 0.5f + _motionBounds.Value.MaxEnemyMoveSpeed * lead;
+            float radius = (coverage.MaxDistance + SwingCoverage.DistanceStep * 0.5f) * reach + _motionBounds.Value.MaxEnemyMoveSpeed * lead;
 
             _grid.Value.Query(pose.Position, radius, _motionBounds.Value.CandidateSlack(_clock.Value.Delta), _candidates);
 
@@ -120,9 +124,10 @@ namespace Game.Simulation.Systems
 
                 Vector3 position = _positions.Value.Get(candidate).Value;
 
-                if (Covers(coverage, pose, position))
+                if (Covers(coverage, pose, position, reach))
                 {
                     target = position;
+                    targetEntity = candidate;
 
                     return true;
                 }
@@ -132,9 +137,10 @@ namespace Game.Simulation.Systems
 
                 Vector3 walk = _intents.Value.Get(candidate).Value * _speeds.Value.Get(candidate).Value;
 
-                if (Covers(coverage, pose, position + walk * lead))
+                if (Covers(coverage, pose, position + walk * lead, reach))
                 {
                     target = position + walk * lead;
+                    targetEntity = candidate;
 
                     return true;
                 }
@@ -143,9 +149,10 @@ namespace Game.Simulation.Systems
             return false;
         }
 
-        private bool TryPredict(int owner, WeaponConfig config, ref SwingPose pose, out int variant)
+        private bool TryPredict(int owner, WeaponConfig config, float reach, ref SwingPose pose, out int variant, out int targetEntity)
         {
             variant = -1;
+            targetEntity = -1;
 
             if (_inputStates.Value.Has(owner) == false)
                 return false;
@@ -157,7 +164,7 @@ namespace Game.Simulation.Systems
 
             Vector3 facing = Quaternion.Euler(0f, state.PredictiveLead, 0f) * _facings.Value.Get(owner).Value;
             SwingPose predicted = new SwingPose(pose.Position, facing);
-            float stretch = Mathf.Max(1f, state.PredictiveStretch);
+            float stretch = Mathf.Max(1f, state.PredictiveStretch) * reach;
             SwingCoverage coverage = config.TriggerCoverage;
 
             _grid.Value.Query(pose.Position, coverage.MaxDistance * stretch, _motionBounds.Value.CandidateSlack(_clock.Value.Delta), _candidates);
@@ -177,6 +184,7 @@ namespace Game.Simulation.Systems
                     continue;
 
                 variant = FindVariant(config, state.PredictiveSwing);
+                targetEntity = candidate;
 
                 if (variant < 0)
                     variant = 0;
@@ -201,12 +209,12 @@ namespace Game.Simulation.Systems
             return -1;
         }
 
-        private static bool Covers(SwingCoverage coverage, in SwingPose pose, Vector3 position)
+        private static bool Covers(SwingCoverage coverage, in SwingPose pose, Vector3 position, float reach)
         {
             Vector3 local = pose.ToLocal(position);
 
             float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg;
-            float distance = Mathf.Sqrt(local.x * local.x + local.z * local.z);
+            float distance = Mathf.Sqrt(local.x * local.x + local.z * local.z) / reach;
 
             return coverage.Covers(angle, distance);
         }
@@ -225,7 +233,7 @@ namespace Game.Simulation.Systems
             return shortest;
         }
 
-        private static int PickVariant(WeaponConfig config, in SwingPose pose, Vector3 target, ref uint state)
+        private static int PickVariant(WeaponConfig config, in SwingPose pose, Vector3 target, float reach, ref uint state)
         {
             float roll = SimulationRandom.NextUnit(ref state);
             float total = 0f;
@@ -233,7 +241,7 @@ namespace Game.Simulation.Systems
 
             for (int index = 0; index < config.VariantCount; index++)
             {
-                if (IsEligible(config.Variant(index), pose, target))
+                if (IsEligible(config.Variant(index), pose, target, reach))
                     total += config.Variant(index).Weight;
             }
 
@@ -244,7 +252,7 @@ namespace Game.Simulation.Systems
             {
                 SwingVariant variant = config.Variant(index);
 
-                if (IsEligible(variant, pose, target) == false)
+                if (IsEligible(variant, pose, target, reach) == false)
                     continue;
 
                 cumulative += variant.Weight;
@@ -257,12 +265,12 @@ namespace Game.Simulation.Systems
             return last;
         }
 
-        private static bool IsEligible(SwingVariant variant, in SwingPose pose, Vector3 target)
+        private static bool IsEligible(SwingVariant variant, in SwingPose pose, Vector3 target, float reach)
         {
-            return variant.DefinesTrigger || Covers(variant.Coverage, pose, target);
+            return variant.DefinesTrigger || Covers(variant.Coverage, pose, target, reach);
         }
 
-        private void StartSwing(EcsWorld world, int weapon, int owner, WeaponConfig config, int variant, float attackSpeed, in SwingPose pose, InputConfig sharp)
+        private void StartSwing(EcsWorld world, int weapon, int owner, WeaponConfig config, int variant, float attackSpeed, in SwingPose pose, InputConfig sharp, float reach, int target)
         {
             SwingVariant chosen = config.Variant(variant);
             SwingBake bake = chosen.Bake;
@@ -278,6 +286,12 @@ namespace Game.Simulation.Systems
             swing.Owner = world.PackEntity(owner);
             swing.Variant = chosen;
             swing.DamageScale = sharp != null ? sharp.SharpSwingDamageMultiplier : 1f;
+            swing.Reach = reach;
+            swing.IsSharp = sharp != null;
+            swing.HasTarget = target >= 0;
+
+            if (target >= 0)
+                swing.Target = world.PackEntity(target);
             swing.Kind = DamageKind.Weapon;
 
             if (sharp != null)

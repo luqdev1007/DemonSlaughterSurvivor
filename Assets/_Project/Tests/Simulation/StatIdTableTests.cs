@@ -23,6 +23,7 @@ namespace Game.Simulation.Tests
                 { "PickupRadius", 9 },
                 { "LifeOnKill", 10 },
                 { "LifeOnHit", 11 },
+                { "SwingReach", 12 },
             });
         }
 

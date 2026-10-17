@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -224,6 +224,12 @@ namespace Game.View
 
             if (value == false)
                 SetRenderersVisible(true);
+        }
+
+        public void SetSwingStyle(float reach, bool sharp)
+        {
+            if (_swordTrail != null)
+                _swordTrail.SetStyle(reach, sharp);
         }
 
         public void SetBerserk(bool value)

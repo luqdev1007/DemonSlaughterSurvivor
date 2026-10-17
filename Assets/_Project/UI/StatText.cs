@@ -19,7 +19,8 @@ namespace Game.UI
             { StatId.DamageTaken, "получаемый урон" },
             { StatId.PickupRadius, "радиус сбора" },
             { StatId.LifeOnKill, "здоровье за убийство" },
-            { StatId.LifeOnHit, "вампиризм" }
+            { StatId.LifeOnHit, "вампиризм" },
+            { StatId.SwingReach, "дальность удара" }
         };
 
         public static string Label(StatId stat)

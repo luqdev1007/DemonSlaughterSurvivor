@@ -30,6 +30,8 @@ namespace Game.View
         private int[] _attackStateHashes;
         private bool _wasEmitting;
         private bool _isBerserk;
+        private float _reach = 1f;
+        private bool _isSharp;
         private bool _hasPreviousTip;
         private Vector3 _previousTip;
         private bool _hasBlood;
@@ -38,6 +40,12 @@ namespace Game.View
         public void SetBerserk(bool value)
         {
             _isBerserk = value;
+        }
+
+        public void SetStyle(float reach, bool sharp)
+        {
+            _reach = reach > 0f ? reach : 1f;
+            _isSharp = sharp;
         }
 
         public void PlayBlood()
@@ -53,6 +61,7 @@ namespace Game.View
             _head = 0;
             _wasEmitting = false;
             _hasPreviousTip = false;
+            _isSharp = false;
 
             if (_mesh != null)
                 _mesh.Clear();
@@ -126,7 +135,7 @@ namespace Game.View
         private void LateUpdate()
         {
             float now = Time.time;
-            Vector3 tip = _tip.position;
+            Vector3 tip = ExtendFromBody(_tip.position);
             float deltaTime = Time.deltaTime;
 
             float tipSpeed = _hasPreviousTip && deltaTime > 0f ? (tip - _previousTip).magnitude / deltaTime : 0f;
@@ -137,12 +146,24 @@ namespace Game.View
             bool emitting = IsAttacking() && tipSpeed >= _config.MinTipSpeed;
 
             if (emitting)
-                AddSample(_base.position, tip, now, _wasEmitting, ResolveBloodTint(now));
+                AddSample(ExtendFromBody(_base.position), tip, now, _wasEmitting, ResolveBloodTint(now));
 
             _wasEmitting = emitting;
 
             DropExpired(now);
             Rebuild(now);
+        }
+
+        private Vector3 ExtendFromBody(Vector3 point)
+        {
+            float scale = _reach;
+
+            if (_animator == null || Mathf.Approximately(scale, 1f))
+                return point;
+
+            Vector3 origin = _animator.transform.position;
+
+            return new Vector3(origin.x + (point.x - origin.x) * scale, point.y, origin.z + (point.z - origin.z) * scale);
         }
 
         private bool IsAttacking()
@@ -220,7 +241,7 @@ namespace Game.View
             if (_count < 2)
                 return;
 
-            Gradient gradient = _isBerserk ? _config.BerserkColor : _config.Color;
+            Gradient gradient = _isSharp ? _config.SharpColor : _isBerserk ? _config.BerserkColor : _config.Color;
             Color baseColor = gradient.Evaluate(0f);
             Color tipColor = gradient.Evaluate(1f);
             Color bloodBase = _config.BloodColor.Evaluate(0f);

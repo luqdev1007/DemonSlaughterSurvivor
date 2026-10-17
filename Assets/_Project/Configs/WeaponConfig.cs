@@ -154,6 +154,12 @@ namespace Game.Configs
         [Header("Stats")]
         [SerializeField] private float _damage = 20f;
         [SerializeField] private float _cooldownSeconds = 1f;
+        [SerializeField] private float _reach = 1f;
+        [SerializeField] private float _arcBonusDegrees;
+
+        [Header("Swing assist")]
+        [SerializeField] private float _assistTurnSpeedDegrees = 720f;
+        [SerializeField] private float _assistMaxDegrees = 50f;
 
         [Header("Swings")]
         [SerializeField] private SwingVariant[] _variants = Array.Empty<SwingVariant>();
@@ -172,6 +178,14 @@ namespace Game.Configs
         public float Damage => _damage;
 
         public float CooldownSeconds => _cooldownSeconds;
+
+        public float Reach => _reach;
+
+        public float ArcBonusDegrees => _arcBonusDegrees;
+
+        public float AssistTurnSpeedDegrees => _assistTurnSpeedDegrees;
+
+        public float AssistMaxDegrees => _assistMaxDegrees;
 
         public int VariantCount => _variants.Length;
 

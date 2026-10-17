@@ -65,13 +65,16 @@ namespace Game.Simulation.Services
             float halfAngleDegrees,
             Vector3 targetPosition,
             float targetRadius,
-            float targetHeight)
+            float targetHeight,
+            float reach = 1f)
         {
             if (count <= 0)
                 return false;
 
             Vector3 target = pose.ToLocal(targetPosition);
-            Vector2 center = new Vector2(target.x, target.z);
+            Vector2 center = new Vector2(target.x, target.z) / reach;
+
+            targetRadius /= reach;
 
             bool hasFrom = ClipFromBody(pose.ToLocal(hands[0]), pose.ToLocal(tips[0]), targetHeight, out Vector2 fromA, out Vector2 fromB);
 

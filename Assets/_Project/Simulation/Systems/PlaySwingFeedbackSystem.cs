@@ -1,3 +1,4 @@
+using Game.Core;
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
@@ -31,6 +32,9 @@ namespace Game.Simulation.Systems
 
                 if (view.Value == null)
                     continue;
+
+                if (view.Value is ISwingStyleView styled)
+                    styled.SetSwingStyle(swing.Reach, swing.IsSharp);
 
                 view.Value.PlayAttack(swing.Variant.AnimatorTrigger, swing.PlaybackSpeed);
             }

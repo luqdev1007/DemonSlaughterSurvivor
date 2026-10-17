@@ -12,6 +12,8 @@ namespace Game.Simulation.Components
 
     public struct AttackSpeed { public float Value; public float Base; }
 
+    public struct SwingReach { public float Value; public float Base; }
+
     public struct WeaponReady { public float Remaining; }
 
     public struct SwingRandom { public uint State; }
@@ -87,6 +89,10 @@ namespace Game.Simulation.Components
         public PerkBehaviourConfig SourcePerk;
         public float PushSpeed;
         public int PushTicks;
+        public float Reach;
+        public bool IsSharp;
+        public EcsPackedEntity Target;
+        public bool HasTarget;
         public float ClipTime;
         public float PlaybackSpeed;
         public int RemainingTicks;
@@ -109,6 +115,10 @@ namespace Game.Simulation.Components
             c.SourcePerk = null;
             c.PushSpeed = 0f;
             c.PushTicks = 0;
+            c.Reach = 1f;
+            c.IsSharp = false;
+            c.Target = default;
+            c.HasTarget = false;
             c.ClipTime = 0f;
             c.PlaybackSpeed = 0f;
             c.RemainingTicks = 0;

@@ -22,6 +22,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Swinging> _swinging = default;
         private readonly EcsPoolInject<SpecialSwing> _special = default;
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
+        private readonly EcsPoolInject<Weapon> _weaponPool = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
@@ -112,11 +113,12 @@ namespace Game.Simulation.Systems
                 reach = Math.Max(reach, FlatDistance(_tips[index], ownerPosition));
             }
 
-            float radius = reach + _motionBounds.Value.MaxEnemyBodyRadius;
+            float radius = reach * swing.Reach + _motionBounds.Value.MaxEnemyBodyRadius;
 
             _grid.Value.Query(ownerPosition, radius, _motionBounds.Value.CandidateSlack(delta), _candidates);
 
             float damage = _weaponDamages.Value.Get(weapon).Value * swing.DamageScale;
+            float arcBonus = _weaponPool.Value.Has(weapon) && _weaponPool.Value.Get(weapon).Config != null ? _weaponPool.Value.Get(weapon).Config.ArcBonusDegrees : 0f;
 
             for (int index = 0; index < _candidates.Count; index++)
             {
@@ -140,10 +142,11 @@ namespace Game.Simulation.Systems
                     _tips,
                     count,
                     pose,
-                    variant.HalfAngleDegrees,
+                    variant.HalfAngleDegrees + arcBonus,
                     targetPosition,
                     _bodyRadii.Value.Get(candidate).Value,
-                    _bodyHeights.Value.Get(candidate).Value);
+                    _bodyHeights.Value.Get(candidate).Value,
+                    swing.Reach);
 
                 if (hit == false)
                     continue;

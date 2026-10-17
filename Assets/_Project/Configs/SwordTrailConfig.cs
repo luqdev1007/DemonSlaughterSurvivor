@@ -12,6 +12,7 @@ namespace Game.Configs
         [SerializeField] private int _maxSamples = 64;
         [SerializeField] private Gradient _color = new Gradient();
         [SerializeField] private Gradient _berserkColor = new Gradient();
+        [SerializeField] private Gradient _sharpColor = new Gradient();
         [SerializeField] private Gradient _bloodColor = new Gradient();
         [SerializeField] private float _bloodSeconds = 0.35f;
         [SerializeField] private string[] _attackStates = Array.Empty<string>();
@@ -27,6 +28,8 @@ namespace Game.Configs
         public Gradient Color => _color;
 
         public Gradient BerserkColor => _berserkColor;
+
+        public Gradient SharpColor => _sharpColor;
 
         public Gradient BloodColor => _bloodColor;
 

@@ -12,6 +12,7 @@ namespace Game.Core
         DamageTaken = 8,
         PickupRadius = 9,
         LifeOnKill = 10,
-        LifeOnHit = 11
+        LifeOnHit = 11,
+        SwingReach = 12
     }
 }

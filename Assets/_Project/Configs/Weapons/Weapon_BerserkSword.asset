@@ -15,6 +15,10 @@ MonoBehaviour:
   _id: weapon.berserk_sword
   _damage: 20
   _cooldownSeconds: 0.25
+  _reach: 1.25
+  _arcBonusDegrees: 15
+  _assistTurnSpeedDegrees: 720
+  _assistMaxDegrees: 50
   _variants:
   - _animatorTrigger: AttackLeftSlash
     _playbackSpeed: 1.5
