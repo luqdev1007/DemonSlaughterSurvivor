@@ -48,7 +48,7 @@ namespace Game.Simulation.Systems
                 {
                     ControlScheme.Keyboard => keyboardDirection,
                     ControlScheme.MouseRun => ResolveMouseRun(entity, in state),
-                    ControlScheme.MouseHold => state.MoveHeld ? ResolveCursorDirection(entity, in state) : Vector3.zero,
+                    ControlScheme.MouseHold => state.MoveHeld && state.StandHeld == false ? ResolveCursorDirection(entity, in state) : Vector3.zero,
                     _ => throw new InvalidOperationException($"Unknown control scheme {scheme}.")
                 };
             }
