@@ -28,6 +28,7 @@ namespace Game.Bootstrap
         private readonly IUpgradeChoiceSink _choiceSink;
         private readonly IUpgradeChoiceInput _choiceInput;
         private readonly IDebugLevelUpInput _debugLevelUpInput;
+        private readonly IDebugVictoryInput _debugVictoryInput;
         private readonly IExperienceSink _experienceSink;
         private readonly IBossVitalsSink _bossVitalsSink;
         private readonly IRunResultSink _resultSink;
@@ -67,6 +68,7 @@ namespace Game.Bootstrap
             IUpgradeChoiceSink choiceSink,
             IUpgradeChoiceInput choiceInput,
             IDebugLevelUpInput debugLevelUpInput,
+            IDebugVictoryInput debugVictoryInput,
             IExperienceSink experienceSink,
             IBossVitalsSink bossVitalsSink,
             IRunResultSink resultSink,
@@ -91,6 +93,7 @@ namespace Game.Bootstrap
             _choiceSink = choiceSink;
             _choiceInput = choiceInput;
             _debugLevelUpInput = debugLevelUpInput;
+            _debugVictoryInput = debugVictoryInput;
             _experienceSink = experienceSink;
             _bossVitalsSink = bossVitalsSink;
             _resultSink = resultSink;
@@ -144,6 +147,7 @@ namespace Game.Bootstrap
                 _choiceSink,
                 _choiceInput,
                 _debugLevelUpInput,
+                _debugVictoryInput,
                 _experienceSink,
                 _bossVitalsSink
                 );

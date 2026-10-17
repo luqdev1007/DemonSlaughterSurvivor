@@ -42,6 +42,8 @@ namespace Game.Bootstrap
 
             builder.Register<DebugLevelUpInput>(Lifetime.Scoped).As<IDebugLevelUpInput>();
 
+            builder.Register<DebugVictoryInput>(Lifetime.Scoped).As<IDebugVictoryInput>();
+
             builder.RegisterEntryPoint<HudPresenter>(Lifetime.Scoped);
 
             builder.RegisterEntryPoint<RunEntryPoint>(Lifetime.Scoped);
