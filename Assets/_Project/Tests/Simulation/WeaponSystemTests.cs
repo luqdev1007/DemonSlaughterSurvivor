@@ -100,6 +100,12 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(1, CountEvents(enemy));
             Assert.AreEqual(10f, DamageTo(enemy), 1e-4f);
             Assert.AreEqual(DamageKind.Perk, KindTo(enemy));
+
+            EcsFilter ended = _world.Filter<SwingEndedEvent>().End();
+            Assert.AreEqual(1, ended.GetEntitiesCount(), "the finished swing reports itself once");
+
+            foreach (int entity in ended)
+                Assert.AreEqual(1, _world.GetPool<SwingEndedEvent>().Get(entity).EnemyHits);
         }
 
         [Test]

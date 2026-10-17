@@ -20,6 +20,12 @@ namespace Game.Simulation.Components
 
     public struct SwingStarted { }
 
+    public struct SwingEndedEvent
+    {
+        public EcsPackedEntity Owner;
+        public int EnemyHits;
+    }
+
     public struct SpecialSwing { }
 
     public struct LeapStarted { }
@@ -86,6 +92,7 @@ namespace Game.Simulation.Components
         public Vector3 PreviousTip;
         public EcsPackedEntity[] Hits;
         public int HitCount;
+        public int EnemyHits;
 
         public void AutoReset(ref Swing c)
         {
@@ -104,6 +111,7 @@ namespace Game.Simulation.Components
             c.PreviousHand = default;
             c.PreviousTip = default;
             c.HitCount = 0;
+            c.EnemyHits = 0;
         }
     }
 }

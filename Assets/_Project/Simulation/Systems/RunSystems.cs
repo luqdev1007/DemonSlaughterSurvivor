@@ -70,6 +70,7 @@ namespace Game.Simulation.Systems
             systems.Add(new StartRangedAttackSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
+            systems.Add(new GrantHarvestHealSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
             systems.Add(new AdvanceExecutionSystem());
             systems.Add(new AdvanceDashFinisherSystem());

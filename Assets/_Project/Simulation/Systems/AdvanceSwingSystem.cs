@@ -29,6 +29,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
+        private readonly EcsPoolInject<SwingEndedEvent> _endedEvents = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -90,6 +91,10 @@ namespace Game.Simulation.Systems
                 if (_special.Value.Has(entity) == false && _swinging.Value.Has(weapon))
                     _swinging.Value.Del(weapon);
 
+                ref SwingEndedEvent ended = ref _endedEvents.Value.Add(world.NewEntity());
+                ended.Owner = swing.Owner;
+                ended.EnemyHits = swing.EnemyHits;
+
                 world.DelEntity(entity);
             }
         }
@@ -141,6 +146,9 @@ namespace Game.Simulation.Systems
                     continue;
 
                 RememberHit(ref swing, packed);
+
+                if (_breakables.Value.Has(candidate) == false)
+                    swing.EnemyHits++;
 
                 int eventEntity = world.NewEntity();
 

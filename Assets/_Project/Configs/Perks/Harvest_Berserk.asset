@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 055ea6e60bf18ed4e85c255717f5ed71, type: 3}
+  m_Name: Harvest_Berserk
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.HarvestConfig
+  _levels:
+  - _healPerTarget: 0.004
+    _bonusPerExtraTarget: 0.25
+  - _healPerTarget: 0.006
+    _bonusPerExtraTarget: 0.3
+  - _healPerTarget: 0.008
+    _bonusPerExtraTarget: 0.35
+  _minTargets: 2
