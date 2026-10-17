@@ -3,6 +3,7 @@ using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Systems;
 using Leopotam.EcsLite;
+using Leopotam.EcsLite.Di;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
