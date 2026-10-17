@@ -15,6 +15,8 @@ namespace Game.Simulation.Components
 
     public struct PunishingLeapRandom { public uint State; }
 
+    public struct ExecutionThirstActive { }
+
     public struct CounterStrikeArmed
     {
         public int RemainingTicks;

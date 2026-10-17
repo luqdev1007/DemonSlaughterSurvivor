@@ -62,6 +62,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ExpireSpecialAttackSystem());
             systems.Add(new StartDashFinisherSystem());
             systems.Add(new StartExecutionSystem());
+            systems.Add(new ApplyExecutionThirstSystem());
             systems.Add(new StartCounterStrikeSystem());
             systems.Add(new StartSwingSystem());
             systems.Add(new ReleaseRangedAttackSystem());
