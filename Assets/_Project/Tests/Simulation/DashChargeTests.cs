@@ -36,14 +36,15 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void TapGivesAnUnchargedDash()
+        public void DashKeyDashesOnThePressTick()
         {
             Build();
 
-            _input.Press();
+            _input.PressDash();
             Step();
-            _input.Release();
-            Step();
+
+            Assert.IsTrue(_world.GetPool<Dashing>().Has(_hero), "the plain dash must not wait for a release");
+            Assert.IsFalse(_world.GetPool<DashCharge>().Has(_hero));
 
             DashEndedEvent ended = RunUntilDashEnds();
 
@@ -53,13 +54,65 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void ShortChargeTapGivesAnUnchargedDash()
+        {
+            Build();
+
+            _input.HoldCharge();
+            Step();
+            _input.ReleaseCharge();
+            Step();
+
+            DashEndedEvent ended = RunUntilDashEnds();
+
+            Assert.AreEqual(0f, ended.Strength);
+            Assert.AreEqual(BaseDistance, Vector3.Distance(ended.Start, ended.End), 0.05f);
+        }
+
+        [Test]
+        public void DashKeyDuringAChargeReleasesIt()
+        {
+            Build();
+
+            _input.HoldCharge();
+            Step(Mathf.CeilToInt(MaxChargeSeconds / TickSeconds) + 5);
+            _input.PressDash();
+            Step();
+
+            Assert.IsFalse(_world.GetPool<DashCharge>().Has(_hero));
+
+            DashEndedEvent ended = RunUntilDashEnds();
+
+            Assert.AreEqual(1f, ended.Strength, 1e-5f);
+        }
+
+        [Test]
+        public void ChargeHeldThroughTheCooldownStartsWhenItEnds()
+        {
+            Build();
+
+            _world.GetPool<DashCooldown>().Add(_hero).Remaining = 10f;
+
+            _input.HoldCharge();
+            Step(3);
+
+            Assert.IsFalse(_world.GetPool<DashCharge>().Has(_hero));
+            Assert.AreEqual(0, SlowCount());
+
+            _world.GetPool<DashCooldown>().Del(_hero);
+            Step();
+
+            Assert.IsTrue(_world.GetPool<DashCharge>().Has(_hero));
+        }
+
+        [Test]
         public void FullHoldScalesDistanceAndDamage()
         {
             Build();
 
-            _input.Press();
+            _input.HoldCharge();
             Step(Mathf.CeilToInt(MaxChargeSeconds / TickSeconds) + 5);
-            _input.Release();
+            _input.ReleaseCharge();
             Step();
 
             DashEndedEvent ended = RunUntilDashEnds();
@@ -74,9 +127,9 @@ namespace Game.Simulation.Tests
         {
             Build();
 
-            _input.Press();
+            _input.HoldCharge();
             Step(Mathf.RoundToInt((TapSeconds + (MaxChargeSeconds - TapSeconds) * 0.5f) / TickSeconds));
-            _input.Release();
+            _input.ReleaseCharge();
             Step();
 
             DashEndedEvent ended = RunUntilDashEnds();
@@ -90,13 +143,13 @@ namespace Game.Simulation.Tests
         {
             Build();
 
-            _input.Press();
+            _input.HoldCharge();
             Step(10);
 
             Assert.IsTrue(_world.GetPool<DashCharge>().Has(_hero));
             Assert.AreEqual(ChargeSlow, SlowValue(), 1e-5f);
 
-            _input.Release();
+            _input.ReleaseCharge();
             Step();
 
             Assert.IsFalse(_world.GetPool<DashCharge>().Has(_hero));
@@ -104,13 +157,13 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void PressDuringCooldownBuffersAPlainDashWithoutCharging()
+        public void DashKeyDuringCooldownBuffersAPlainDash()
         {
             Build();
 
             _world.GetPool<DashCooldown>().Add(_hero).Remaining = 10f;
 
-            _input.Press();
+            _input.PressDash();
             Step();
 
             Assert.IsFalse(_world.GetPool<DashCharge>().Has(_hero));
@@ -124,7 +177,7 @@ namespace Game.Simulation.Tests
         {
             Build();
 
-            _input.Press();
+            _input.HoldCharge();
             Step(5);
 
             _world.GetPool<Dead>().Add(_hero);
@@ -242,38 +295,42 @@ namespace Game.Simulation.Tests
 
         private sealed class FakeInput : IInputService, IDashInput
         {
-            private bool _pressed;
-            private bool _released;
-            private bool _held;
+            private bool _dashPressed;
+            private bool _chargeReleased;
+            private bool _chargeHeld;
 
             public Vector2 MoveAxis => Vector2.zero;
 
-            public bool IsDashHeld => _held;
+            public bool IsChargeHeld => _chargeHeld;
 
-            public void Press()
+            public void PressDash()
             {
-                _pressed = true;
-                _held = true;
+                _dashPressed = true;
             }
 
-            public void Release()
+            public void HoldCharge()
             {
-                _released = true;
-                _held = false;
+                _chargeHeld = true;
+            }
+
+            public void ReleaseCharge()
+            {
+                _chargeReleased = true;
+                _chargeHeld = false;
             }
 
             public bool ConsumeDashPressed()
             {
-                bool value = _pressed;
-                _pressed = false;
+                bool value = _dashPressed;
+                _dashPressed = false;
 
                 return value;
             }
 
-            public bool ConsumeDashReleased()
+            public bool ConsumeChargeReleased()
             {
-                bool value = _released;
-                _released = false;
+                bool value = _chargeReleased;
+                _chargeReleased = false;
 
                 return value;
             }

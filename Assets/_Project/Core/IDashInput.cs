@@ -2,8 +2,8 @@ namespace Game.Core
 {
     public interface IDashInput
     {
-        bool IsDashHeld { get; }
+        bool IsChargeHeld { get; }
 
-        bool ConsumeDashReleased();
+        bool ConsumeChargeReleased();
     }
 }

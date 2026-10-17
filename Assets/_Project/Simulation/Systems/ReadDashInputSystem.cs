@@ -25,32 +25,36 @@ namespace Game.Simulation.Systems
         public void Run(IEcsSystems systems)
         {
             bool pressed = _input.Value.ConsumeDashPressed();
-            bool released = _dashInput.Value.ConsumeDashReleased();
-            bool held = _dashInput.Value.IsDashHeld;
+            bool released = _dashInput.Value.ConsumeChargeReleased();
+            bool held = _dashInput.Value.IsChargeHeld;
 
             foreach (int entity in _filter.Value)
             {
-                if (pressed && _charges.Value.Has(entity) == false)
+                if (_charges.Value.Has(entity))
                 {
-                    if (_dashes.Value.Has(entity) || _cooldowns.Value.Has(entity))
-                        Request(entity, 0f);
-                    else
-                        BeginCharge(entity);
-                }
+                    ref DashCharge charge = ref _charges.Value.Get(entity);
 
-                if (_charges.Value.Has(entity) == false)
-                    continue;
+                    if (pressed || released || held == false)
+                    {
+                        Release(entity, charge.Ticks);
 
-                ref DashCharge charge = ref _charges.Value.Get(entity);
+                        continue;
+                    }
 
-                if (released == false && held)
-                {
                     charge.Ticks++;
 
                     continue;
                 }
 
-                Release(entity, charge.Ticks);
+                if (pressed)
+                {
+                    Request(entity, 0f);
+
+                    continue;
+                }
+
+                if (held && _dashes.Value.Has(entity) == false && _cooldowns.Value.Has(entity) == false)
+                    BeginCharge(entity);
             }
 
             foreach (int entity in _deadCharges.Value)

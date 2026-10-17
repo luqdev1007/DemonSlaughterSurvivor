@@ -156,6 +156,15 @@ namespace Game.Services.Input
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ChargeDash"",
+                    ""type"": ""Button"",
+                    ""id"": ""3c9d1e57-a8b2-4f60-9e14-6b7d2c5a8f31"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -279,6 +288,17 @@ namespace Game.Services.Input
                     ""action"": ""AutoTarget"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8e2f4a96-1c7b-4d35-a0e8-5f9b3d6c2e47"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ChargeDash"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -294,6 +314,7 @@ namespace Game.Services.Input
             m_Gameplay_Point = m_Gameplay.FindAction("Point", throwIfNotFound: true);
             m_Gameplay_StandStill = m_Gameplay.FindAction("StandStill", throwIfNotFound: true);
             m_Gameplay_AutoTarget = m_Gameplay.FindAction("AutoTarget", throwIfNotFound: true);
+            m_Gameplay_ChargeDash = m_Gameplay.FindAction("ChargeDash", throwIfNotFound: true);
         }
 
         ~@GameControls()
@@ -381,6 +402,7 @@ namespace Game.Services.Input
         private readonly InputAction m_Gameplay_Point;
         private readonly InputAction m_Gameplay_StandStill;
         private readonly InputAction m_Gameplay_AutoTarget;
+        private readonly InputAction m_Gameplay_ChargeDash;
         /// <summary>
         /// Provides access to input actions defined in input action map "Gameplay".
         /// </summary>
@@ -420,6 +442,10 @@ namespace Game.Services.Input
             /// Provides access to the underlying input action "Gameplay/AutoTarget".
             /// </summary>
             public InputAction @AutoTarget => m_Wrapper.m_Gameplay_AutoTarget;
+            /// <summary>
+            /// Provides access to the underlying input action "Gameplay/ChargeDash".
+            /// </summary>
+            public InputAction @ChargeDash => m_Wrapper.m_Gameplay_ChargeDash;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -467,6 +493,9 @@ namespace Game.Services.Input
                 @AutoTarget.started += instance.OnAutoTarget;
                 @AutoTarget.performed += instance.OnAutoTarget;
                 @AutoTarget.canceled += instance.OnAutoTarget;
+                @ChargeDash.started += instance.OnChargeDash;
+                @ChargeDash.performed += instance.OnChargeDash;
+                @ChargeDash.canceled += instance.OnChargeDash;
             }
 
             /// <summary>
@@ -499,6 +528,9 @@ namespace Game.Services.Input
                 @AutoTarget.started -= instance.OnAutoTarget;
                 @AutoTarget.performed -= instance.OnAutoTarget;
                 @AutoTarget.canceled -= instance.OnAutoTarget;
+                @ChargeDash.started -= instance.OnChargeDash;
+                @ChargeDash.performed -= instance.OnChargeDash;
+                @ChargeDash.canceled -= instance.OnChargeDash;
             }
 
             /// <summary>
@@ -588,6 +620,13 @@ namespace Game.Services.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnAutoTarget(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "ChargeDash" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnChargeDash(InputAction.CallbackContext context);
         }
     }
 }

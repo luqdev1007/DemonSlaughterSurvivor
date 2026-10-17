@@ -52,9 +52,9 @@ namespace Game.Editor
         {
             new Entry("Berserk_Charge", "Charge_FinalSlash_Blend.fbx", 0, 18, Options.InPlace),
             new Entry("Berserk_DashMove", "Charge_FinalSlash_Blend.fbx", 18, 27, Options.InPlace),
-            new Entry("Berserk_FinalSlash", "Charge_FinalSlash_Blend.fbx", 63, 106, Options.InPlace),
+            new Entry("Berserk_FinalSlash", "Charge_FinalSlash_Blend.fbx", 71, 91, Options.InPlace),
             new Entry("Berserk_ChargeRun", "ChareRun_Blend.fbx", 0, 18, Options.InPlace | Options.Loop),
-            new Entry("Berserk_DashFinalAttack", "Dash_FinalAttack_Archers_PERK.fbx", 0, 64, Options.InPlace),
+            new Entry("Berserk_DashFinalAttack", "Dash_FinalAttack_Archers_PERK.fbx", 26, 56, Options.InPlace),
             new Entry("Berserk_ExecutionExtra", "ExecutionExtraAnim.fbx", 0, 65, Options.InPlace),
             new Entry("Berserk_HitReact", "Hit_React_v1.fbx", 0, 23, Options.None),
             new Entry("Berserk_SlashDownUp", "SlashFromDownToUp.fbx", 0, 35, Options.InPlace),

@@ -11,7 +11,7 @@ namespace Game.Services
         private readonly GameControls _input;
 
         private bool _dashPressed;
-        private bool _dashReleased;
+        private bool _chargeReleased;
         private bool _ultimatePressed;
         private bool _pausePressed;
 
@@ -19,7 +19,7 @@ namespace Game.Services
         {
             _input = new GameControls();
             _input.Gameplay.Dash.performed += OnDashPerformed;
-            _input.Gameplay.Dash.canceled += OnDashCanceled;
+            _input.Gameplay.ChargeDash.canceled += OnChargeCanceled;
             _input.Gameplay.Ultimate.performed += OnUltimatePerformed;
             _input.Gameplay.Pause.performed += OnPausePerformed;
             _input.Enable();
@@ -31,14 +31,14 @@ namespace Game.Services
 
         public bool IsStandHeld => _input.Gameplay.StandStill.IsPressed();
 
-        public bool IsDashHeld => _input.Gameplay.Dash.IsPressed();
+        public bool IsChargeHeld => _input.Gameplay.ChargeDash.IsPressed();
 
-        public bool ConsumeDashReleased()
+        public bool ConsumeChargeReleased()
         {
-            if (_dashReleased == false)
+            if (_chargeReleased == false)
                 return false;
 
-            _dashReleased = false;
+            _chargeReleased = false;
 
             return true;
         }
@@ -76,7 +76,7 @@ namespace Game.Services
         public void ResetLatches()
         {
             _dashPressed = false;
-            _dashReleased = false;
+            _chargeReleased = false;
             _ultimatePressed = false;
             _pausePressed = false;
         }
@@ -84,7 +84,7 @@ namespace Game.Services
         public void Dispose()
         {
             _input.Gameplay.Dash.performed -= OnDashPerformed;
-            _input.Gameplay.Dash.canceled -= OnDashCanceled;
+            _input.Gameplay.ChargeDash.canceled -= OnChargeCanceled;
             _input.Gameplay.Ultimate.performed -= OnUltimatePerformed;
             _input.Gameplay.Pause.performed -= OnPausePerformed;
             _input.Disable();
@@ -96,9 +96,9 @@ namespace Game.Services
             _dashPressed = true;
         }
 
-        private void OnDashCanceled(InputAction.CallbackContext context)
+        private void OnChargeCanceled(InputAction.CallbackContext context)
         {
-            _dashReleased = true;
+            _chargeReleased = true;
         }
 
         private void OnUltimatePerformed(InputAction.CallbackContext context)

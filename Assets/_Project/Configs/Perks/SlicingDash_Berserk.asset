@@ -28,9 +28,9 @@ MonoBehaviour:
   _corridorPushSeconds: 0.35
   _corridorPushArcHeight: 0.2
   _finalTrigger: DashFinalSlash
-  _finalPlaybackSpeed: 1.2
-  _finalImpactClipSeconds: 0.5
-  _finalClipSeconds: 1.433
+  _finalPlaybackSpeed: 1.4
+  _finalImpactClipSeconds: 0.3
+  _finalClipSeconds: 0.6666667
   _finalLocksMovement: 1
   _finalReach: 2.6
   _finalHalfAngleDegrees: 70
