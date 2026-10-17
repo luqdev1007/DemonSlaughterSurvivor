@@ -157,6 +157,17 @@
                 },
                 {
                     "name": "",
+                    "id": "b5d8e2f1-7c43-4a96-9e1b-2f4c6a8d0e35",
+                    "path": "<Mouse>/middleButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Dash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "a3e9d0b2-6f41-4c7e-8b25-7d1c9e4f0a63",
                     "path": "<Keyboard>/q",
                     "interactions": "",
