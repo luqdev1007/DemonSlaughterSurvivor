@@ -16,6 +16,6 @@ MonoBehaviour:
   - _chance: 0.4
   - _chance: 0.6
   - _chance: 0.8
-  _healthThreshold: 0.25
+  _healthThreshold: 0.8
   _impactFxPrefab: {fileID: 4960327967821986495, guid: 5edc20135226b3d4bb370e085832a0d0, type: 3}
   _impactFxSeconds: 1.1
