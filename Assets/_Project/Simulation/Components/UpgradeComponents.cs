@@ -17,6 +17,8 @@ namespace Game.Simulation.Components
 
     public struct ExecutionThirstActive { }
 
+    public struct LowHealthFury { public int Step; }
+
     public struct CounterStrikeArmed
     {
         public int RemainingTicks;

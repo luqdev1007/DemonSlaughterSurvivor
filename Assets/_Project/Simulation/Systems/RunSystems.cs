@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SpawnBreakablesSystem());
             systems.Add(new EquipStartingWeaponSystem());
             systems.Add(new SpawnWaveSystem());
+            systems.Add(new ApplyLowHealthFurySystem());
             systems.Add(new RecomputeStatsSystem());
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());

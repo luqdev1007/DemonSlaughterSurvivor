@@ -26,6 +26,9 @@ namespace Game.Configs
         [SerializeField, Min(0f)] private float _lifeOnKill;
         [SerializeField, Min(0f)] private float _lifeOnHit;
 
+        [Header("Low Health Fury")]
+        [SerializeField] private LowHealthFuryConfig _lowHealthFury;
+
         [Header("Experience")]
         [SerializeField] private float _pickupRadius = 1.5f;
         [SerializeField] private ExperienceConfig _experience;
@@ -65,6 +68,8 @@ namespace Game.Configs
         public WeaponConfig StartingWeapon => _startingWeapon;
 
         public RageConfig Rage => _rage;
+
+        public LowHealthFuryConfig LowHealthFury => _lowHealthFury;
 
         public BerserkAbilityConfig Ultimate => _ultimate;
     }
