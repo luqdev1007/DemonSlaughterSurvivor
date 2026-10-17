@@ -13,6 +13,9 @@ namespace Game.Editor
         private const string Sprites = "Assets/GUI Pro-FantasyRPG/ResourcesData/Sprites/Component/";
         private const string DashIconPath = "Assets/Blink/Art/Icons/Classes/Assassin/Hunter/Hunter1.png";
         private const int PipCount = 5;
+        private const float AbilitySlotSize = 106f;
+        private const float AbilityIconSize = 88f;
+        private const float AbilitySlotSpacing = 14f;
         private const int ComboIconCount = 2;
 
         private static readonly Color CardBack = new Color(0.09f, 0.08f, 0.11f, 0.97f).linear;
@@ -142,19 +145,19 @@ namespace Game.Editor
                 if (old != null)
                     Object.DestroyImmediate(old.gameObject);
 
-                RectTransform panel = Rect("AbilityPanel", root.transform, new Vector2(640f, 84f));
+                RectTransform panel = Rect("AbilityPanel", root.transform, new Vector2(960f, AbilitySlotSize));
                 panel.anchorMin = new Vector2(0.5f, 0f);
                 panel.anchorMax = new Vector2(0.5f, 0f);
                 panel.pivot = new Vector2(0.5f, 0f);
-                panel.anchoredPosition = new Vector2(0f, 54f);
+                panel.anchoredPosition = new Vector2(0f, 56f);
 
-                HorizontalLayoutGroup layout = panel.gameObject.AddComponent<HorizontalLayoutGroup>();
-                layout.spacing = 10f;
+                GridLayoutGroup layout = panel.gameObject.AddComponent<GridLayoutGroup>();
+                layout.cellSize = new Vector2(AbilitySlotSize, AbilitySlotSize);
+                layout.spacing = new Vector2(AbilitySlotSpacing, 0f);
+                layout.startAxis = GridLayoutGroup.Axis.Horizontal;
                 layout.childAlignment = TextAnchor.LowerCenter;
-                layout.childControlWidth = false;
-                layout.childControlHeight = false;
-                layout.childForceExpandWidth = false;
-                layout.childForceExpandHeight = false;
+                layout.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+                layout.constraintCount = 1;
 
                 AbilitySlotView template = BuildAbilitySlot(panel);
                 template.gameObject.SetActive(false);
@@ -344,15 +347,15 @@ namespace Game.Editor
 
         private static AbilitySlotView BuildAbilitySlot(Transform parent)
         {
-            RectTransform slot = Rect("Slot", parent, new Vector2(76f, 76f));
+            RectTransform slot = Rect("Slot", parent, new Vector2(AbilitySlotSize, AbilitySlotSize));
             AddImage(slot.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.12f, 0.11f, 0.14f, 0.95f).linear, false);
 
-            RectTransform iconRect = Rect("Icon", slot, new Vector2(62f, 62f));
+            RectTransform iconRect = Rect("Icon", slot, new Vector2(AbilityIconSize, AbilityIconSize));
             Image icon = iconRect.gameObject.AddComponent<Image>();
             icon.raycastTarget = false;
             icon.preserveAspect = true;
 
-            RectTransform coolRect = Rect("Cooldown", slot, new Vector2(62f, 62f));
+            RectTransform coolRect = Rect("Cooldown", slot, new Vector2(AbilityIconSize, AbilityIconSize));
             Image cooldown = coolRect.gameObject.AddComponent<Image>();
             cooldown.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
             cooldown.color = new Color(0.02f, 0.02f, 0.04f, 0.85f).linear;
@@ -365,7 +368,7 @@ namespace Game.Editor
 
             Image frame = AddImage(Stretch("Frame", slot, 0f).gameObject, "Frame/ItemFrame_01_Border_White", Color.white, false);
 
-            TMP_Text timer = Text("Timer", slot, _bodyFont, 22f, Color.white, TextAlignmentOptions.Center);
+            TMP_Text timer = Text("Timer", slot, _bodyFont, 30f, Color.white, TextAlignmentOptions.Center);
             StretchRect(timer.rectTransform, 0f);
             timer.fontStyle = FontStyles.Bold;
             timer.outlineWidth = 0.25f;

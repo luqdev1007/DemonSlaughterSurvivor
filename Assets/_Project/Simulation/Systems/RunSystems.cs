@@ -60,6 +60,7 @@ namespace Game.Simulation.Systems
             // 6.  Weapons
             systems.Add(new SpawnFireTrailSystem());
             systems.Add(new TickWeaponCooldownSystem());
+            systems.Add(new TriggerCounterStrikeSystem());
             systems.Add(new StartHeroicLeapSystem());
             systems.Add(new InterruptSwingSystem());
             systems.Add(new ExpireSpecialAttackSystem());
@@ -107,7 +108,6 @@ namespace Game.Simulation.Systems
             systems.Add(new GrantLifeStealSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
-            systems.Add(new TriggerCounterStrikeSystem());
             systems.Add(new AccumulateRageSystem());
             systems.Add(new DecayRageSystem());
             systems.Add(new DebugLevelUpSystem());
