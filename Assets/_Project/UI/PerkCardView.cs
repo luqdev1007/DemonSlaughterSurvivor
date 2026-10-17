@@ -71,7 +71,7 @@ namespace Game.UI
             for (int index = 0; index < _pips.Length; index++)
             {
                 _pips[index].gameObject.SetActive(index < content.MaxLevel);
-                _pips[index].color = index < content.NextLevel ? color : _emptyPip;
+                _pips[index].color = index < content.NextLevel ? color : _emptyPip.linear;
             }
 
             _combo.SetActive(content.IsCombo);

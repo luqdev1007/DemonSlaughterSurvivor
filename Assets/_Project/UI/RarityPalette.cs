@@ -21,7 +21,7 @@ namespace Game.UI
         {
             int index = (int)rarity;
 
-            return index >= 0 && index < _colors.Length ? _colors[index] : UnityEngine.Color.white;
+            return index >= 0 && index < _colors.Length ? _colors[index].linear : UnityEngine.Color.white;
         }
 
         public string Name(Rarity rarity)

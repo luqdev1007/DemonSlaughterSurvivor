@@ -57,7 +57,7 @@ namespace Game.UI
         {
             int index = (int)style;
 
-            return index < _colors.Length ? _colors[index] : Color.white;
+            return index < _colors.Length ? _colors[index].linear : Color.white;
         }
 
         public float StyleScale(DamageNumberStyle style)

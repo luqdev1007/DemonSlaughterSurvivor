@@ -15,9 +15,9 @@ namespace Game.Editor
         private const int PipCount = 5;
         private const int ComboIconCount = 2;
 
-        private static readonly Color CardBack = new Color(0.09f, 0.08f, 0.11f, 0.97f);
-        private static readonly Color Gold = new Color(0.95f, 0.80f, 0.45f);
-        private static readonly Color Muted = new Color(0.72f, 0.70f, 0.68f);
+        private static readonly Color CardBack = new Color(0.09f, 0.08f, 0.11f, 0.97f).linear;
+        private static readonly Color Gold = new Color(0.95f, 0.80f, 0.45f).linear;
+        private static readonly Color Muted = new Color(0.72f, 0.70f, 0.68f).linear;
 
         private static TMP_FontAsset _titleFont;
         private static TMP_FontAsset _bodyFont;
@@ -204,7 +204,7 @@ namespace Game.Editor
                 holder.anchoredPosition = new Vector2(40f, 272f);
 
                 RectTransform panel = Stretch("Panel", holder, 0f);
-                AddImage(panel.gameObject, "Popup/Popup_02_White_Bg", new Color(0.07f, 0.06f, 0.09f, 0.8f), false);
+                AddImage(panel.gameObject, "Popup/Popup_02_White_Bg", new Color(0.07f, 0.06f, 0.09f, 0.8f).linear, false);
 
                 TMP_Text label = Text("Label", panel, _titleFont, 24f, Gold, TextAlignmentOptions.MidlineLeft);
                 Place(label.rectTransform, new Vector2(0f, 0.5f), new Vector2(54f, 0f), new Vector2(80f, 40f));
@@ -300,7 +300,7 @@ namespace Game.Editor
         private static AbilitySlotView BuildAbilitySlot(Transform parent)
         {
             RectTransform slot = Rect("Slot", parent, new Vector2(76f, 76f));
-            AddImage(slot.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.12f, 0.11f, 0.14f, 0.95f), false);
+            AddImage(slot.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.12f, 0.11f, 0.14f, 0.95f).linear, false);
 
             RectTransform iconRect = Rect("Icon", slot, new Vector2(62f, 62f));
             Image icon = iconRect.gameObject.AddComponent<Image>();
@@ -310,7 +310,7 @@ namespace Game.Editor
             RectTransform coolRect = Rect("Cooldown", slot, new Vector2(62f, 62f));
             Image cooldown = coolRect.gameObject.AddComponent<Image>();
             cooldown.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            cooldown.color = new Color(0.02f, 0.02f, 0.04f, 0.85f);
+            cooldown.color = new Color(0.02f, 0.02f, 0.04f, 0.85f).linear;
             cooldown.raycastTarget = false;
             cooldown.type = Image.Type.Filled;
             cooldown.fillMethod = Image.FillMethod.Radial360;
@@ -346,7 +346,7 @@ namespace Game.Editor
             button.targetGraphic = back;
             ColorBlock colors = button.colors;
             colors.highlightedColor = new Color(1.12f, 1.12f, 1.12f);
-            colors.pressedColor = new Color(0.85f, 0.85f, 0.85f);
+            colors.pressedColor = new Color(0.85f, 0.85f, 0.85f).linear;
             button.colors = colors;
 
             Image glow = AddImage(Stretch("Glow", card, -10f).gameObject, "Frame/BorderFrame_Square02_BgGlow", new Color(1f, 1f, 1f, 0f), false);
@@ -357,7 +357,7 @@ namespace Game.Editor
 
             RectTransform iconSlot = Rect("IconSlot", card, new Vector2(164f, 164f));
             Place(iconSlot, new Vector2(0.5f, 1f), new Vector2(0f, -112f), iconSlot.sizeDelta);
-            AddImage(iconSlot.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.16f, 0.15f, 0.18f), false);
+            AddImage(iconSlot.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.16f, 0.15f, 0.18f).linear, false);
 
             RectTransform iconRect = Rect("Icon", iconSlot, new Vector2(132f, 132f));
             Image icon = iconRect.gameObject.AddComponent<Image>();
@@ -368,7 +368,7 @@ namespace Game.Editor
 
             RectTransform badge = Rect("RankBadge", iconSlot, new Vector2(50f, 50f));
             Place(badge, new Vector2(1f, 0f), new Vector2(-6f, 6f), badge.sizeDelta);
-            AddImage(badge.gameObject, "Frame/BorderFrame_Circle", new Color(0.12f, 0.11f, 0.14f), false);
+            AddImage(badge.gameObject, "Frame/BorderFrame_Circle", new Color(0.12f, 0.11f, 0.14f).linear, false);
             TMP_Text rank = Text("Rank", badge, _titleFont, 26f, Gold, TextAlignmentOptions.Center);
             StretchRect(rank.rectTransform, 0f);
 
@@ -408,7 +408,7 @@ namespace Game.Editor
             {
                 RectTransform frame = Rect("Parent" + (index + 1), combo, new Vector2(56f, 56f));
                 Place(frame, new Vector2(1f, 0.5f), new Vector2(-38f - index * 64f, 0f), frame.sizeDelta);
-                AddImage(frame.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.16f, 0.15f, 0.18f), false);
+                AddImage(frame.gameObject, "Frame/ItemFrame_01_Bg", new Color(0.16f, 0.15f, 0.18f).linear, false);
                 RectTransform inner = Rect("Icon", frame, new Vector2(44f, 44f));
                 comboIcons[index] = inner.gameObject.AddComponent<Image>();
                 comboIcons[index].raycastTarget = false;
@@ -439,7 +439,7 @@ namespace Game.Editor
             RectTransform tooltip = Rect("Tooltip", panel, new Vector2(440f, 200f));
             tooltip.anchorMin = new Vector2(0.5f, 0.5f);
             tooltip.anchorMax = new Vector2(0.5f, 0.5f);
-            AddImage(tooltip.gameObject, "Popup/Popup_02_White_Bg", new Color(0.07f, 0.06f, 0.09f, 0.97f), false);
+            AddImage(tooltip.gameObject, "Popup/Popup_02_White_Bg", new Color(0.07f, 0.06f, 0.09f, 0.97f).linear, false);
 
             CanvasGroup group = tooltip.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
@@ -463,7 +463,7 @@ namespace Game.Editor
             TMP_Text title = Text("Title", tooltip, _titleFont, 34f, Color.white, TextAlignmentOptions.Left);
             TMP_Text subtitle = Text("Subtitle", tooltip, _bodyFont, 19f, Muted, TextAlignmentOptions.Left);
             TMP_Text description = Text("Description", tooltip, _bodyFont, 22f, Color.white, TextAlignmentOptions.Left);
-            TMP_Text stats = Text("Stats", tooltip, _bodyFont, 22f, new Color(0.55f, 0.92f, 0.55f), TextAlignmentOptions.Left);
+            TMP_Text stats = Text("Stats", tooltip, _bodyFont, 22f, new Color(0.55f, 0.92f, 0.55f).linear, TextAlignmentOptions.Left);
             TMP_Text requires = Text("Requires", tooltip, _bodyFont, 20f, Gold, TextAlignmentOptions.Left);
 
             PerkTooltipView view = tooltip.gameObject.AddComponent<PerkTooltipView>();

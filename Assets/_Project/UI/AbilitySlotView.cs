@@ -33,7 +33,7 @@ namespace Game.UI
             bool cooling = remaining > 0f;
 
             _cooldown.fillAmount = cooling ? fill : 0f;
-            _frame.color = cooling ? _coolingFrame : _readyFrame;
+            _frame.color = (cooling ? _coolingFrame : _readyFrame).linear;
 
             float rounded = cooling ? Mathf.Ceil(remaining * 10f) / 10f : 0f;
 
