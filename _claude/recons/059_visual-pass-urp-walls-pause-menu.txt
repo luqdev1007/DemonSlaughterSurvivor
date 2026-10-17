@@ -1,0 +1,223 @@
+059 — Визуальный проход: URP-конвертация, стены CastleLite, пауза, главное меню
+
+Дата: 2026-10-17. Вне нумерации шагов роадмапа: базовый визуальный и UI-проход по брифу разработчика после разведки 058. Четыре блока, каждый — на ручную приёмку.
+Статус: A, B, C приняты разработчиком 2026-10-17 (C — после правки «пауза поверх окна перка»). D — код готов 2026-10-17, ждёт ручной приёмки.
+M.E. Castle Creator не использовался ни в одном блоке (лицензия не подтверждена, отчёт 058 §0).
+
+======================================================================
+1. ЧТО СДЕЛАНО ПО БЛОКАМ
+======================================================================
+
+A — URP-конвертация (принят)
+  Переведены на URP/Lit ровно те .mat, на которые ссылаются 34 префаба списка уровня 1 — 12 файлов,
+  апгрейдером URP (MaterialUpgrader.FetchAllUpgradersForPipeline + Upgrade, тот же набор, что у Render Pipeline Converter), на месте:
+    Polylised: Props/Materials/Wall_0, Wall_1, Wood_0, Water_0; Unique_Buildings/Materials/Wall_0, Wall_1
+    Old Sea Port: Materials/Barrel_Shiny, Bottle, planks, planks_shiny, Rooftiles_Shiny
+    Mountain Terrain: Materials/Rock/rock_set_mat
+  Префабы: dead_tree_a…j, fountain_a/b, castle_wall_* (9), wall_H10m_L50m_destoryed, barrel, crate_1/2, Wood Canopy, bottle, chair,
+  circular_table, workbench, rock_set_01…04. MedievalCastlePackLite не трогался — atlas-1.mat уже URP/Simple Lit.
+
+B — Стены MedievalCastlePackLite (принят, масштаб ×2 выбран разработчиком)
+  Assets/_Project/Prefabs/Environment/CastleLite/: CastleLite_Wall_Straight, _Wall_Corner, _Wall_TJunction, _Wall_Passage,
+  _Gate_Door, _Tower_Square, _Tower_Octagon. Smoke-test: Assets/_Project/Scenes/Test/CastleWallTest.unity (один ряд + герой, дьявол, тролль).
+
+C — Пауза (принят)
+  ESC → пауза (timeScale 0, звук на паузе, затемнение, окно «ПАУЗА»: «ПРОДОЛЖИТЬ», «НАСТРОЙКИ»); ESC/«ПРОДОЛЖИТЬ» — снятие.
+  Поп-ап настроек: громкость + «Без звука» + крестик. Меню паузы — главный поп-ап геймплея: открывается и поверх окна перка.
+
+D — Главное меню (ждёт приёмки)
+  3D-диорама в MainMenu.unity, герой в Idle на поворотном круге, дрейф камеры Cinemachine; кнопки «ИГРАТЬ», «НАСТРОЙКИ», «ВЫХОД».
+  DebugRunStarter удалён, его заменил MainMenuView.
+
+======================================================================
+2. СОЗДАННЫЕ / ИЗМЕНЁННЫЕ ФАЙЛЫ
+======================================================================
+
+Код
+  + Core/IPauseInput.cs, IPauseMenuSink.cs, IPauseMenuInput.cs, ISoundSettings.cs
+  + Services/SoundSettings.cs
+  ~ Services/InputService.cs            (+ IPauseInput, латч Pause, сброс в ResetLatches)
+  ~ Services/Input/GameControls.inputactions, GameControls.cs (сгенерирован)  (+ действие Pause, <Keyboard>/escape)
+  + UI/UiFade.cs, SettingsPopupView.cs, SettingsPopupPresenter.cs, PauseMenu.cs, PauseMenuView.cs, MainMenuView.cs
+  ~ UI/HudView.cs, HudPresenter.cs      (панель паузы, поп-ап, подписка на PauseMenu.Changed)
+  ~ UI/MainMenuLifetimeScope.cs         (MainMenuView вместо DebugRunStarter)
+  - UI/DebugRunStarter.cs
+  + View/Turntable.cs
+  ~ Bootstrap/RunEntryPoint.cs          (третий режим паузы)
+  ~ Bootstrap/ProjectLifetimeScope.cs   (InputService как IPauseInput; SoundSettings)
+  ~ Bootstrap/RunLifetimeScope.cs       (PauseMenu)
+
+Ассеты
+  + Art/Fonts/CormorantSC-Bold.ttf, CormorantSC-OFL.txt, CormorantSC-Bold SDF.asset (статический атлас)
+  + Art/Materials/MainMenu_Ground.mat
+  + Prefabs/Environment/CastleLite/*.prefab (7)
+  + Prefabs/UI/SettingsPopup.prefab
+  ~ Prefabs/UI/Hud.prefab (PauseMenu со своим Canvas, вложенный SettingsPopup)
+  ~ Scenes/MainMenu.unity (диорама, UI)
+  + Scenes/Test/CastleWallTest.unity
+  ~ 12 .mat в Polylised / Old Sea Port / Mountain Terrain (блок A)
+
+Доки
+  ~ docs/PROGRESS.md — журнал 2026-10-17 (решения всех блоков), «Ближайшие шаги»
+  ~ CLAUDE.md §8 — пункт DebugRunStarter сужен
+  ~ docs/recons/058 — раздел «Поправки»
+
+======================================================================
+3. КАРТА БЛОКА (путь данных)
+======================================================================
+
+Пауза
+  Клавиатура ESC
+   → GameControls.Gameplay.Pause (Services/Input/GameControls.inputactions)
+   → InputService.OnPausePerformed → латч _pausePressed (Services/InputService.cs), наружу IPauseInput.ConsumePausePressed
+   → RunEntryPoint.Tick (Bootstrap/RunEntryPoint.cs):
+       _isFinishing → ничего;
+       _isMenuPaused → ESC или IPauseMenuInput.ConsumeResumeRequested → ResumeFromMenu;
+       иначе ESC → PauseForMenu (сохраняет текущий timeScale — 1 или 0 окна перка, timeScale 0, AudioListener.pause, IPauseMenuSink.Show)
+   → PauseMenu (UI/PauseMenu.cs): IsOpen, событие Changed
+   → HudPresenter.RefreshPause (UI/HudPresenter.cs) → PauseMenuView.SetOpen → UiFade.Show/Hide (DOTween, SetUpdate(true))
+  Кнопка «ПРОДОЛЖИТЬ» → PauseMenu.RequestResume → (следующий кадр) RunEntryPoint.ConsumeResumeRequested → ResumeFromMenu
+     (вернуть timeScale, снять AudioListener.pause, Hide, ResetLatches, при открытом окне перка — IUpgradeChoiceInput.Clear)
+  Разбор забега во время паузы → RunEntryPoint.Dispose → ReleaseMenuPause до Resume окна перка.
+
+Настройки
+  SettingsPopupView (UI/SettingsPopupView.cs, префаб Prefabs/UI/SettingsPopup.prefab)
+   ↔ SettingsPopupPresenter (UI/SettingsPopupPresenter.cs; создаёт владелец вьюхи: HudPresenter или MainMenuView)
+   → ISoundSettings → SoundSettings (Services/SoundSettings.cs, синглтон ProjectLifetimeScope) → AudioListener.volume
+
+Главное меню
+  Bootstrap → MainMenu.unity → MainMenuLifetimeScope (UI/MainMenuLifetimeScope.cs) инжектит MainMenuView (UI/MainMenuView.cs)
+   «ИГРАТЬ» → IRunLauncher.StartAsync(RunRequest(levelId, characterId)) → Gameplay
+   «НАСТРОЙКИ» → SettingsPopupPresenter.Open; «ВЫХОД» → Application.Quit
+  Диорама: объект Diorama в сцене; Turntable (View/Turntable.cs) крутит героя; MenuCamera — CinemachineCamera + Perlin.
+
+Стены
+  .obj пака → префаб CastleLite_*: корень = центр клетки на земле, дочерний Mesh (сдвиг вверх 1.0×2 у стен, 2.25×2 у башен, масштаб 2),
+  BoxCollider на корне. Шаг сетки 9 м.
+
+======================================================================
+4. РАЗВИЛКИ
+======================================================================
+
+Решены разработчиком
+  Р1. Стены — декор с коллайдерами «на будущее». Движение в ECS, коллайдер стену непроходимой не делает. Отвергнуто: статические
+      препятствия в симуляции в этом заходе (большой блок + поведение врагов у стены). CLAUDE.md §8 «Границы арены» открыт.
+  Р2. Масштаб стен ×2 — выбран глазами по трём рядам ×1 / ×1.5 / ×2.
+  Р3. Экран загрузки — не делается.
+  Р4. Шрифт — OFL-шрифт Google с кириллицей, статический атлас. Отвергнут LiberationSans (нейтральный, динамический атлас пачкает дерево).
+  Р5. Меню паузы — главный поп-ап геймплея, открывается поверх окна перка (правка после приёмки C; изначально ESC в окне перка поглощался).
+
+Однозначные решения агента (в журнале PROGRESS 2026-10-17)
+  - Конвертация только 12 .mat, а не паков целиком.
+  - Сетка стен выведена из вершин; pivot — центр клетки, меш дочерним объектом.
+  - Pause — действие GameControls (переназначаемое), латч через IPauseInput, не через IInputService.
+  - Владелец timeScale — RunEntryPoint; паузы вкладываются.
+  - Пауза меню на своём Canvas (overrideSorting, 1000).
+  - SettingsPopup — отдельный префаб для переиспользования; настройки только на сессию (сейвов до шага 9 нет).
+  - Кнопки — SpriteSwap, не цветовой переход.
+  - Шрифт — Cormorant SC Bold.
+  - Модель в меню — герой, не оружие. Дым Hovl отвергнут, своя система частиц Mist.
+
+======================================================================
+5. ЗАМЕРЫ
+======================================================================
+
+A: 34 префаба — все рендереры на URP/Lit, неподдерживаемых 0; текстуры/нормали/цвета перенеслись 1:1; вода фонтана Transparent, очередь 3000; превью без magenta.
+B: профили всех 9 торцов прямой, прохода, угла, Т-стыка совпадают с эталоном; лучи сквозь ряд — 2928 при ×2, промахов 0 (проём исключён).
+   Габариты после ×2: стена 9 × 5.28 × 5.6 м, башни 10.28 м, проём 3.43 × 2.79 м (ниже героя 3.03 м).
+C: пауза — timeScale 0, AudioListener.pause, альфа меню 1 при timeScale 0 (твин на unscaled); часы симуляции стоят 12.05 с при 12 с реального времени;
+   громкость 0.3 / мьют / снятие → AudioListener.volume 0.3 / 0 / 0.3; ESC при открытом поп-апе снимает паузу и закрывает оба окна;
+   пауза поверх окна перка — верхний результат RaycastAll в точке кнопки перка = Dim паузы; «1» в меню перк не выбрала;
+   после меню окно перка открыто с timeScale 0, после выбора — 1; Stop() лаунчера посреди паузы → timeScale 1, звук снят с паузы.
+D: дрейф камеры — наклон 4.20° → 2.45° за 10 с; круг — 95° за 10 с; громкость 0.6 из меню сохранилась в забеге;
+   «Играть» → Gameplay; возврат в меню и повторный старт — работают; туман меню в геймплей не протекает.
+Консоль: ошибок и предупреждений нет во всех прогонах.
+
+======================================================================
+6. СЦЕНАРИЙ РУЧНОЙ ПРОВЕРКИ БЛОКА D
+======================================================================
+
+1. Play с Bootstrap. В меню: тёмная дымка, силуэты мёртвых деревьев, угли, тёплый отсвет; герой медленно вращается; кадр слегка плывёт.
+2. «НАСТРОЙКИ» → поп-ап; громкость и «Без звука» работают; крестик закрывает.
+3. «ИГРАТЬ» → забег стартует; громкость из меню сохранена (ESC → «НАСТРОЙКИ» покажет то же значение).
+4. Дождаться конца забега (смерть) → меню снова живое, кнопки нажимаются, повторный «ИГРАТЬ» работает.
+5. «ВЫХОД» в редакторе ничего не делает — проверяется в билде (окно закрывается).
+
+======================================================================
+7. МЕСТА, ГДЕ НЕ ХВАТИЛО АССЕТОВ БЕЗ M.E. CASTLE CREATOR
+======================================================================
+
+В этом заходе ни один элемент не был заблокирован — замены нашлись. Где M.E. был бы лучше:
+  - Освещение двора и меню: жаровни, настенные факелы, фонари, цепи (M.E. Brazier_*, Wall_Torch_*, Lantern_*, Chains_*).
+    В меню заменено точечным светом + углями JMO. Замены на уровень: Polylised fire_cage, street_oil_light; Old Sea Port lamp_1, fireplace —
+    все на Built-in шейдерах, в блок A не входили, нужна конвертация.
+  - Беседка: M.E. колонны + арки + своды. Замена: Old Sea Port Wood Canopy (уже на URP).
+  - Разрушаемые бочки и ящики размером Diablo-бочки: M.E. Barrel_1A/1B, Crate_1A/1B. Замена: Old Sea Port barrel, crate_1/2 (на URP).
+  - Детализированные стены: M.E. Castle_Set_2.0 (текстуры 2K). Замена: CastleLite (лоу-поли, один атлас) — использована.
+  - Флаги и баннеры: M.E. Flag_Hanging_*. Замена: StoneKeep Banner_* (Built-in, не конвертировались).
+
+======================================================================
+8. НЕЗАКРЫТОЕ И РИСКИ
+======================================================================
+
+  - Ручная приёмка блока D.
+  - Стены проходимы (Р1) — непроходимость отдельным блоком.
+  - Наступило условие снятия долга «GameControls.Gameplay.Disable() has not been called» (CLAUDE.md §8: ближайшая правка InputService) —
+    не чинилось по правилу «одно изменение — одна причина». Одна строка.
+  - Экран загрузки не сделан; LoadingScreen.prefab — мёртвый остаток.
+  - Настройки звука не сохраняются между запусками (до шага 9).
+  - Конвертация блока A стирается переимпортом паков — повторяется тем же списком (журнал).
+  - Polylised — Z-up: при расстановке поворот −90° по X.
+  - LiberationSans SDF - Fallback.asset снова пачкается — откатывать перед коммитом (известный долг).
+  - Один раз во время проверки возврата в меню редактор завис (не отвечал, CPU не рос). При повторе под наблюдением путь прошёл чисто.
+    Вероятная причина — параллельные MCP-запросы агента во время асинхронной загрузки сцены; не подтверждена.
+
+======================================================================
+9. СЛЕДУЮЩАЯ СЕССИЯ
+======================================================================
+
+  - Принять блок D.
+  - Расстановка двора уровня 1 из готовых префабов (стены CastleLite ×2, деревья, фонтан, камни, бочки/ящики, Wood Canopy) — с учётом
+    ArenaRadius 45 и того, что стены пока проходимы.
+  - Решить: непроходимые стены в симуляции; экран загрузки; починка Disable() в InputService.
+
+======================================================================
+10. ДОПОЛНЕНИЕ: БЛОК E — ДВОР УРОВНЯ 1 (после приёмки A–D, ждёт ручной приёмки)
+======================================================================
+
+Попутно, отдельным коммитом 9da0c310: InputService.Dispose зовёт _input.Disable() перед Dispose — долг CLAUDE.md §8
+«GameControls.Gameplay.Disable() has not been called» закрыт. Замер в play mode: карта Gameplay включена до Dispose, выключена после;
+после GC.Collect + WaitForPendingFinalizers ассерта финализатора в консоли нет.
+
+Развилки (решены разработчиком)
+  Р6. Декор проходим → объёмный декор только по краям, центр пустой.
+  Р7. Периметр — квадрат 99 м, ArenaRadius 45 не меняется (отвергнут двор 81 м с ArenaRadius 36 — вернул бы прижатый спавн).
+  Р8. Вид ящика с лутом → crate_1 Old Sea Port; столб-заглушка Tower — удалить.
+
+Сделано (сцена Gameplay.unity, общая с Level_Stress)
+  - Tower удалён; Ground — масштаб 11 (110 × 110 м).
+  - Courtyard/Walls: 57 элементов — 4 угла (Wall_Corner, повороты 0/90/180/270), по 10 прямых на сторону, на юге вместо шестой прямой —
+    Wall_Passage + Gate_Door (x = 4.5), 4 квадратные башни на углах, 8 восьмигранных на стыках по сторонам. Стены на ±49.5 м.
+  - Courtyard/Decor: 24 предмета, все за кругом арены (ближайший — 49.5 м от центра):
+      СЗ — fountain_b, камни, мёртвое дерево; СВ — две Wood Canopy (×1.3), стол, два стула, верстак, дерево;
+      ЮВ — три мёртвых дерева, камни; ЮЗ — два дерева, камень, три бочки, два ящика у стены.
+    Polylised — поворот −90° по X; деревья — масштаб 0.4–0.7.
+  - Всему двору — BatchingStatic. Коллайдеров в дворе 81 (стены + пропсы паков) — симуляция их не знает.
+  - Prefabs/Items/Breakable_CrateMock.prefab: Body — меш и материал crate_1 (planks), масштаб под след 0.8 м, низ на y = 0;
+    итог 0.80 × 0.59 × 0.79 м. BreakableConfig не тронут.
+
+Проверено
+  - Play mode: забег стартует, двор на месте (общий план временной камерой), новые ящики в кадре, консоль чистая.
+  - Производительность двора не замерялась: CLAUDE.md §6 п. 9 требует стресс-замер для врагов и эффектов; двор — статика с BatchingStatic,
+    в кадре игровой камеры из центра стен не видно. Если на level.stress просядет — первое подозрение тени 57 модулей стен.
+
+Сценарий ручной проверки блока E
+  1. Забег из меню. Ящики с лутом — деревянные ящики, бьются как раньше, лут выпадает.
+  2. Дойти героем до края в любую сторону: у края арены видна стена с башнями; в углах — фонтан, беседки, деревья, бочки.
+  3. В центре боя ничего объёмного не стоит; враги не проходят сквозь декор на глазах (он за кругом спавна).
+  4. Стены проходимы (известно, Р1) — герой может выйти за периметр.
+
+Незакрытое
+  - Стены и декор проходимы до блока препятствий в симуляции.
+  - Земля — прежний материал (тёмно-синий), под двор не подобрана.
+  - Освещение двора не трогалось (факелы/жаровни — Built-in, не конвертированы; см. §7).
