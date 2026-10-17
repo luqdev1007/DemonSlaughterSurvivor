@@ -135,6 +135,114 @@ namespace Game.Editor
             Debug.Log("Ability panel rebuilt in " + HudPath);
         }
 
+        [MenuItem("Game/Build Damage Numbers")]
+        public static void BuildDamageNumbers()
+        {
+            GameObject root = PrefabUtility.LoadPrefabContents(HudPath);
+
+            try
+            {
+                Transform old = root.transform.Find("DamageNumbers");
+
+                if (old != null)
+                    Object.DestroyImmediate(old.gameObject);
+
+                RectTransform layer = Stretch("DamageNumbers", root.transform, 0f);
+                layer.SetSiblingIndex(0);
+
+                TMP_Text template = Text("Template", layer, TMP_Settings.defaultFontAsset, 34f, Color.white, TextAlignmentOptions.Center);
+                template.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                template.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                template.rectTransform.sizeDelta = new Vector2(220f, 60f);
+                template.fontStyle = FontStyles.Bold;
+                template.textWrappingMode = TextWrappingModes.NoWrap;
+                template.outlineWidth = 0.22f;
+                template.outlineColor = new Color32(0, 0, 0, 230);
+                template.gameObject.SetActive(false);
+
+                DamageNumberLayerView view = layer.gameObject.AddComponent<DamageNumberLayerView>();
+                SerializedObject serialized = new SerializedObject(view);
+                serialized.FindProperty("_layer").objectReferenceValue = layer;
+                serialized.FindProperty("_template").objectReferenceValue = template;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                SerializedObject hud = new SerializedObject(root.GetComponent<HudView>());
+                hud.FindProperty("_damageNumbers").objectReferenceValue = view;
+                hud.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(root, HudPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            BuildSettingsRows();
+
+            Debug.Log("Damage numbers layer and settings rows rebuilt.");
+        }
+
+        private static void BuildSettingsRows()
+        {
+            const string popupPath = "Assets/_Project/Prefabs/UI/SettingsPopup.prefab";
+
+            GameObject root = PrefabUtility.LoadPrefabContents(popupPath);
+
+            try
+            {
+                RectTransform panel = (RectTransform)root.transform.Find("Panel");
+
+                foreach (string name in new[] { "DamageNumbersLabel", "DamageNumbersToggle", "DamageNumberSizeLabel", "DamageNumberSizeSlider" })
+                {
+                    Transform old = panel.Find(name);
+
+                    if (old != null)
+                        Object.DestroyImmediate(old.gameObject);
+                }
+
+                panel.sizeDelta = new Vector2(900f, 640f);
+                Move(panel, "Title", 245f);
+                Move(panel, "CloseButton", 270f);
+                Move(panel, "VolumeLabel", 125f);
+                Move(panel, "VolumeSlider", 125f);
+                Move(panel, "MuteLabel", 35f);
+                Move(panel, "MuteToggle", 35f);
+
+                Toggle toggle = Clone<Toggle>(panel, "MuteToggle", "DamageNumbersToggle", -55f);
+                Clone<TMP_Text>(panel, "MuteLabel", "DamageNumbersLabel", -55f).SetText("Цифры урона");
+                Slider slider = Clone<Slider>(panel, "VolumeSlider", "DamageNumberSizeSlider", -145f);
+                Clone<TMP_Text>(panel, "VolumeLabel", "DamageNumberSizeLabel", -145f).SetText("Размер цифр");
+
+                SerializedObject view = new SerializedObject(root.GetComponent<SettingsPopupView>());
+                view.FindProperty("_damageNumbers").objectReferenceValue = toggle;
+                view.FindProperty("_damageNumberSize").objectReferenceValue = slider;
+                view.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(root, popupPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void Move(Transform panel, string name, float y)
+        {
+            RectTransform rect = (RectTransform)panel.Find(name);
+            rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, y);
+        }
+
+        private static T Clone<T>(Transform panel, string source, string name, float y) where T : Component
+        {
+            GameObject copy = Object.Instantiate(panel.Find(source).gameObject, panel);
+            copy.name = name;
+
+            RectTransform rect = (RectTransform)copy.transform;
+            rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, y);
+
+            return copy.GetComponent<T>();
+        }
+
         private static AbilitySlotView BuildAbilitySlot(Transform parent)
         {
             RectTransform slot = Rect("Slot", parent, new Vector2(76f, 76f));

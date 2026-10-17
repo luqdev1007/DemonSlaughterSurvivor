@@ -32,6 +32,8 @@ namespace Game.Bootstrap
 
             builder.Register<AbilityPanel>(Lifetime.Scoped).AsSelf().As<IAbilityPanelSink>();
 
+            builder.Register<DamageNumbers>(Lifetime.Scoped).AsSelf().As<IDamageNumberSink>();
+
             builder.Register<BossVitals>(Lifetime.Scoped).AsSelf().As<IBossVitalsSink>();
 
             builder.Register<RunResult>(Lifetime.Scoped).AsSelf().As<IRunResultSink>();

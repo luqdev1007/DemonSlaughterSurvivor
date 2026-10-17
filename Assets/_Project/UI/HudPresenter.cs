@@ -25,6 +25,8 @@ namespace Game.UI
         private readonly RunResult _result;
         private readonly PauseMenu _pauseMenu;
         private readonly ISoundSettings _soundSettings;
+        private readonly ICombatTextSettings _combatText;
+        private readonly DamageNumbers _damageNumbers;
         private readonly ICameraService _camera;
 
         private GameObject _instance;
@@ -37,12 +39,14 @@ namespace Game.UI
         private readonly PerkCardContent[] _cardContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
         private readonly StringBuilder _text = new StringBuilder();
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICameraService camera)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, ICameraService camera)
         {
             _camera = camera;
             _pauseMenu = pauseMenu;
             _soundSettings = soundSettings;
             _abilityPanel = abilityPanel;
+            _combatText = combatText;
+            _damageNumbers = damageNumbers;
             _level = level;
             _vitals = vitals;
             _choice = choice;
@@ -72,7 +76,7 @@ namespace Game.UI
             _view.UpgradeChoice.Bind(_submit.Submit);
             RefreshChoice();
 
-            _settingsPopup = new SettingsPopupPresenter(_view.PauseMenu.SettingsPopup, _soundSettings);
+            _settingsPopup = new SettingsPopupPresenter(_view.PauseMenu.SettingsPopup, _soundSettings, _combatText);
             _view.PauseMenu.Bind(_pauseMenu.RequestResume, _settingsPopup.Open);
             _view.PauseMenu.HideImmediate();
 
@@ -94,6 +98,9 @@ namespace Game.UI
         public void LateTick()
         {
             RefreshAbilityPanel();
+
+            if (_view != null)
+                _damageNumbers.Tick(_view.DamageNumbers, _camera, _combatText, Time.deltaTime);
 
             if (_view == null)
                 return;

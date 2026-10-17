@@ -27,6 +27,7 @@ namespace Game.Bootstrap
         private readonly ICameraService _cameraService;
         private readonly IPlayerVitalsSink _vitalsSink;
         private readonly IAbilityPanelSink _abilityPanelSink;
+        private readonly IDamageNumberSink _damageNumberSink;
         private readonly IUpgradeChoiceSink _choiceSink;
         private readonly IUpgradeChoiceInput _choiceInput;
         private readonly IDebugLevelUpInput _debugLevelUpInput;
@@ -72,6 +73,7 @@ namespace Game.Bootstrap
             ICameraService cameraService,
             IPlayerVitalsSink vitalsSink,
             IAbilityPanelSink abilityPanelSink,
+            IDamageNumberSink damageNumberSink,
             IUpgradeChoiceSink choiceSink,
             IUpgradeChoiceInput choiceInput,
             IDebugLevelUpInput debugLevelUpInput,
@@ -105,6 +107,7 @@ namespace Game.Bootstrap
             _cameraService = cameraService;
             _vitalsSink = vitalsSink;
             _abilityPanelSink = abilityPanelSink;
+            _damageNumberSink = damageNumberSink;
             _choiceSink = choiceSink;
             _choiceInput = choiceInput;
             _debugLevelUpInput = debugLevelUpInput;
@@ -164,6 +167,7 @@ namespace Game.Bootstrap
                 _outcome,
                 _vitalsSink,
                 _abilityPanelSink,
+                _damageNumberSink,
                 _choiceGate,
                 _choiceSink,
                 _choiceInput,

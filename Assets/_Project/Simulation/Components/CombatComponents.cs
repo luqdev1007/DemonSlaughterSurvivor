@@ -46,6 +46,8 @@ namespace Game.Simulation.Components
         public float Amount;
         public DamageKind Kind;
         public bool IsSlash;
+        public bool IsCrit;
+        public bool IsMagic;
         public PerkBehaviourConfig SourcePerk;
     }
 

@@ -22,13 +22,15 @@ namespace Game.UI
         private bool _isStarting;
         private IRunLauncher _launcher;
         private ISoundSettings _soundSettings;
+        private ICombatTextSettings _combatText;
         private SettingsPopupPresenter _settings;
 
         [Inject]
-        public void Construct(IRunLauncher runLauncher, ISoundSettings soundSettings)
+        public void Construct(IRunLauncher runLauncher, ISoundSettings soundSettings, ICombatTextSettings combatText)
         {
             _launcher = runLauncher;
             _soundSettings = soundSettings;
+            _combatText = combatText;
         }
 
         private void Start()
@@ -39,7 +41,7 @@ namespace Game.UI
 
             _lifeTime = this.GetCancellationTokenOnDestroy();
 
-            _settings = new SettingsPopupPresenter(_settingsPopup, _soundSettings);
+            _settings = new SettingsPopupPresenter(_settingsPopup, _soundSettings, _combatText);
 
             _playButton.onClick.AddListener(OnPlayClicked);
             _settingsButton.onClick.AddListener(_settings.Open);

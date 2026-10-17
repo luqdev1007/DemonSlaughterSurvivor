@@ -13,6 +13,7 @@ namespace Game.UI
         [SerializeField] private Image _ultimateChargeFill;
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
         [SerializeField] private AbilityPanelView _abilityPanel;
+        [SerializeField] private DamageNumberLayerView _damageNumbers;
 
         [Header("Experience")]
         [SerializeField] private RectTransform _experienceFill;
@@ -46,6 +47,7 @@ namespace Game.UI
         public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
             && _upgradeChoice != null && _upgradeChoice.IsWired
             && _abilityPanel != null && _abilityPanel.IsWired
+            && _damageNumbers != null && _damageNumbers.IsWired
             && _experienceFill != null && _levelText != null
             && _bossBar != null && _bossFill != null && _bossName != null && _bossMarker != null && _bossMarker.IsWired && _victoryBanner != null
             && _pauseMenu != null && _pauseMenu.IsWired;
@@ -53,6 +55,8 @@ namespace Game.UI
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
 
         public AbilityPanelView AbilityPanel => _abilityPanel;
+
+        public DamageNumberLayerView DamageNumbers => _damageNumbers;
 
         public PauseMenuView PauseMenu => _pauseMenu;
 

@@ -7,19 +7,22 @@ namespace Game.UI
     {
         private readonly SettingsPopupView _view;
         private readonly ISoundSettings _settings;
+        private readonly ICombatTextSettings _combatText;
 
-        public SettingsPopupPresenter(SettingsPopupView view, ISoundSettings settings)
+        public SettingsPopupPresenter(SettingsPopupView view, ISoundSettings settings, ICombatTextSettings combatText)
         {
             _view = view;
             _settings = settings;
+            _combatText = combatText;
 
-            _view.Bind(_settings.SetMasterVolume, _settings.SetMuted, Close);
+            _view.Bind(_settings.SetMasterVolume, _settings.SetMuted, _combatText.SetDamageNumbersEnabled, _combatText.SetDamageNumberScale, Close);
             _view.HideImmediate();
         }
 
         public void Open()
         {
-            _view.Show(_settings.MasterVolume, _settings.IsMuted);
+            _view.Show(_settings.MasterVolume, _settings.IsMuted, _combatText.DamageNumbersEnabled, _combatText.DamageNumberScale,
+                CombatTextLimits.MinDamageNumberScale, CombatTextLimits.MaxDamageNumberScale);
         }
 
         public void Close()
