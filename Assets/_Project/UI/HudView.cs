@@ -12,6 +12,7 @@ namespace Game.UI
         [SerializeField] private TMP_Text _healthText;
         [SerializeField] private Image _ultimateChargeFill;
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
+        [SerializeField] private UpgradeChoiceView _itemChoice;
         [SerializeField] private AbilityPanelView _abilityPanel;
         [SerializeField] private DamageNumberLayerView _damageNumbers;
         [SerializeField] private DpsView _dps;
@@ -47,6 +48,7 @@ namespace Game.UI
 
         public bool IsWired => _healthFill != null && _healthText != null && _ultimateChargeFill != null && _vignette != null
             && _upgradeChoice != null && _upgradeChoice.IsWired
+            && _itemChoice != null && _itemChoice.IsWired
             && _abilityPanel != null && _abilityPanel.IsWired
             && _damageNumbers != null && _damageNumbers.IsWired
             && _dps != null && _dps.IsWired
@@ -55,6 +57,8 @@ namespace Game.UI
             && _pauseMenu != null && _pauseMenu.IsWired;
 
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
+
+        public UpgradeChoiceView ItemChoice => _itemChoice;
 
         public AbilityPanelView AbilityPanel => _abilityPanel;
 

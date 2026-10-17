@@ -17,6 +17,7 @@ namespace Game.UI
         public string Description;
         public string Stats;
         public string Requires;
+        public string RankLabel;
 
         public bool IsCombo => ComboIcons.Count > 0;
     }

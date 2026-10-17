@@ -15,7 +15,7 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Player, LevelUpEvent>, Exc<Dead>> _levelUps = default;
-        private readonly EcsFilterInject<Inc<Player, PendingLevelUps>, Exc<Dead, PendingChoice>> _waiting = default;
+        private readonly EcsFilterInject<Inc<Player, PendingLevelUps>, Exc<Dead, PendingChoice, PendingItemChoice>> _waiting = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<LevelUpEvent> _events = default;

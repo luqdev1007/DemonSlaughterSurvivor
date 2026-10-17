@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67fadd3e92890194cb47825c48ef01ee, type: 3}
+  m_Name: ItemLoot_Gameplay
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.ItemLootConfig
+  _id: loot.gameplay
+  _offerCount: 4
+  _items:
+  - _item: {fileID: 11400000, guid: 93c3b4c972e7eba448e7b5230f518a3a, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: d0b74b6c0699cb146a4bc7ad364a11e0, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: 8d9acda28c9e43a4891d4119732e22cb, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: 835e628c395a8304cab9d57849b0023e, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: c708ef6d9de67ed4c92ac2ad95abcdb2, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: c107a3b37e787d94f90bbbe97e75f27e, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: e16efa302d8757940931073df944f516, type: 2}
+    _weight: 1
+  _rarityWeights:
+  - 60
+  - 28
+  - 10
+  - 2
+  _minorBonusesByRarity: 00000000010000000200000003000000
+  _rankWeights:
+  - 35
+  - 30
+  - 20
+  - 10
+  - 5
+  _minorPool:
+  - _stat: 7
+    _op: 2
+    _min: 0.02
+    _max: 0.06
+  - _stat: 1
+    _op: 2
+    _min: 0.02
+    _max: 0.05
+  - _stat: 5
+    _op: 2
+    _min: 0.02
+    _max: 0.06
+  - _stat: 2
+    _op: 2
+    _min: 0.03
+    _max: 0.07
+  - _stat: 9
+    _op: 2
+    _min: 0.05
+    _max: 0.15
+  - _stat: 12
+    _op: 2
+    _min: 0.02
+    _max: 0.05

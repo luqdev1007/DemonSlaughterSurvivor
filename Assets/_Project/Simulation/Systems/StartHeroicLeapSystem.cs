@@ -29,6 +29,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<HeroicLeap> _leaps = default;
         private readonly EcsPoolInject<LeapStarted> _started = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
@@ -78,7 +79,7 @@ namespace Game.Simulation.Systems
 
                 Leap(world, hero, weapon, config, entry);
 
-                cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(entry.CooldownSeconds / _clock.Value.Delta));
+                cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(entry.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero) / _clock.Value.Delta));
             }
         }
 

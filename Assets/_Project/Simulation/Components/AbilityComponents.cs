@@ -19,6 +19,8 @@ namespace Game.Simulation.Components
 
     public struct DashCooldown { public float Remaining; }
 
+    public struct AbilityCooldownScale { public float Value; public float Base; }
+
     public struct SlicingDashRoll
     {
         public int Level;

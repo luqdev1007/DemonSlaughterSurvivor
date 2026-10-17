@@ -19,6 +19,7 @@ namespace Game.Services
                 CreateAction("UpgradeChoice1", "<Keyboard>/1", "<Keyboard>/numpad1"),
                 CreateAction("UpgradeChoice2", "<Keyboard>/2", "<Keyboard>/numpad2"),
                 CreateAction("UpgradeChoice3", "<Keyboard>/3", "<Keyboard>/numpad3"),
+                CreateAction("UpgradeChoice4", "<Keyboard>/4", "<Keyboard>/numpad4"),
             };
 
             for (int index = 0; index < _actions.Length; index++)

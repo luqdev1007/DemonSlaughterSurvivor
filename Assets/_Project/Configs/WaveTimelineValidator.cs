@@ -14,6 +14,9 @@ namespace Game.Configs
             if (timeline == null)
                 return;
 
+            if (timeline.ItemLoot != null)
+                timeline.ItemLoot.Validate($"{nameof(WaveTimelineConfig)} '{timeline.Id}'");
+
             IReadOnlyList<EliteAffixConfig> affixes = timeline.EliteAffixes;
 
             for (int index = 0; index < affixes.Count; index++)

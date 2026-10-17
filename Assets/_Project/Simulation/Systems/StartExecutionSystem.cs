@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Execution> _executions = default;
         private readonly EcsPoolInject<ExecutionStarted> _started = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -60,7 +61,7 @@ namespace Game.Simulation.Systems
 
                 Start(world, hero, target, config, level);
 
-                float seconds = config.Level(level).CooldownSeconds * (isBoss ? 1f : config.EliteCooldownMultiplier);
+                float seconds = config.Level(level).CooldownSeconds * (isBoss ? 1f : config.EliteCooldownMultiplier) * AbilityCooldowns.Scale(_cooldownScales.Value, hero);
 
                 cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(seconds / _clock.Value.Delta));
             }

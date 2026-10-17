@@ -40,6 +40,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<UltimateCharge> _charges = default;
         private readonly EcsPoolInject<RageState> _rageStates = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -103,6 +104,10 @@ namespace Game.Simulation.Systems
 
             ref Health health = ref _healths.Value.Add(entity);
             health.Current = character.MaxHealth;
+
+            ref AbilityCooldownScale cooldownScale = ref _cooldownScales.Value.Add(entity);
+            cooldownScale.Base = 1f;
+            cooldownScale.Value = 1f;
 
             ref LifeSteal lifeSteal = ref _lifeSteals.Value.Add(entity);
             lifeSteal.OnKillBase = character.LifeOnKill;

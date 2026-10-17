@@ -28,6 +28,9 @@ namespace Game.Simulation.Systems
 
         public void Run(IEcsSystems systems)
         {
+            if (_choosing.Value.GetEntitiesCount() == 0)
+                return;
+
             if (_input.Value.TryConsume(out int index) == false)
                 return;
 

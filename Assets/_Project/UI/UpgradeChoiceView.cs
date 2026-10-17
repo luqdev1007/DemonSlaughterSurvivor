@@ -5,22 +5,22 @@ namespace Game.UI
 {
     public sealed class UpgradeChoiceView : MonoBehaviour
     {
-        public const int SlotCount = 3;
-
         [SerializeField] private GameObject _panel;
         [SerializeField] private PerkCardView[] _cards;
         [SerializeField] private PerkTooltipView _tooltip;
         [SerializeField] private RarityPalette _palette = new RarityPalette();
 
-        private readonly PerkCardContent[] _contents = new PerkCardContent[SlotCount];
+        private PerkCardContent[] _contents;
 
         private int _hovered = -1;
+
+        public int SlotCount => _cards == null ? 0 : _cards.Length;
 
         public bool IsWired
         {
             get
             {
-                if (_panel == null || _cards == null || _cards.Length != SlotCount || _tooltip == null || _tooltip.IsWired == false)
+                if (_panel == null || _cards == null || _cards.Length == 0 || _tooltip == null || _tooltip.IsWired == false)
                     return false;
 
                 for (int slot = 0; slot < SlotCount; slot++)
@@ -50,6 +50,8 @@ namespace Game.UI
 
         public void ShowSlot(int slot, PerkCardContent content)
         {
+            _contents ??= new PerkCardContent[SlotCount];
+
             _contents[slot] = content;
             _cards[slot].Show(content, _palette);
             _cards[slot].SetHighlighted(false);
@@ -57,6 +59,8 @@ namespace Game.UI
 
         public void HideSlot(int slot)
         {
+            _contents ??= new PerkCardContent[SlotCount];
+
             _contents[slot] = null;
             _cards[slot].Hide();
 
@@ -74,7 +78,7 @@ namespace Game.UI
 
         private void OnHover(int slot)
         {
-            if (_contents[slot] == null)
+            if (_contents == null || _contents[slot] == null)
                 return;
 
             if (_hovered >= 0)

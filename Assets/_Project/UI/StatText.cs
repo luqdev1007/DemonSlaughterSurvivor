@@ -18,10 +18,16 @@ namespace Game.UI
             { StatId.AttackSpeed, "скорость атаки" },
             { StatId.DamageTaken, "получаемый урон" },
             { StatId.PickupRadius, "радиус сбора" },
-            { StatId.LifeOnKill, "здоровье за убийство" },
-            { StatId.LifeOnHit, "вампиризм" },
-            { StatId.SwingReach, "дальность удара" }
+            { StatId.LifeOnKill, "здоровья за убийство" },
+            { StatId.LifeOnHit, "здоровья за удар" },
+            { StatId.SwingReach, "дальность удара" },
+            { StatId.AbilityCooldown, "перезарядка способностей" }
         };
+
+        private static bool IsHealthShare(StatId stat)
+        {
+            return stat == StatId.LifeOnHit || stat == StatId.LifeOnKill;
+        }
 
         public static string Label(StatId stat)
         {
@@ -36,7 +42,7 @@ namespace Game.UI
             string sign = value >= 0f ? "+" : "−";
             float magnitude = value >= 0f ? value : -value;
 
-            if (op == StatOp.Flat)
+            if (op == StatOp.Flat && IsHealthShare(stat) == false)
                 builder.Append(sign).Append(magnitude.ToString("0.##", CultureInfo.InvariantCulture));
             else
                 builder.Append(sign).Append((magnitude * 100f).ToString("0.#", CultureInfo.InvariantCulture)).Append('%');

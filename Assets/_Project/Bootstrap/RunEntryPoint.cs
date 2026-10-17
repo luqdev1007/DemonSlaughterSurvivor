@@ -29,6 +29,8 @@ namespace Game.Bootstrap
         private readonly IAbilityPanelSink _abilityPanelSink;
         private readonly IDamageNumberSink _damageNumberSink;
         private readonly IDamageDealtSink _damageDealtSink;
+        private readonly IItemChoiceSink _itemChoiceSink;
+        private ItemChoiceState _itemChoiceState;
         private readonly IUpgradeChoiceSink _choiceSink;
         private readonly IUpgradeChoiceInput _choiceInput;
         private readonly IDebugLevelUpInput _debugLevelUpInput;
@@ -76,6 +78,7 @@ namespace Game.Bootstrap
             IAbilityPanelSink abilityPanelSink,
             IDamageNumberSink damageNumberSink,
             IDamageDealtSink damageDealtSink,
+            IItemChoiceSink itemChoiceSink,
             IUpgradeChoiceSink choiceSink,
             IUpgradeChoiceInput choiceInput,
             IDebugLevelUpInput debugLevelUpInput,
@@ -111,6 +114,7 @@ namespace Game.Bootstrap
             _abilityPanelSink = abilityPanelSink;
             _damageNumberSink = damageNumberSink;
             _damageDealtSink = damageDealtSink;
+            _itemChoiceSink = itemChoiceSink;
             _choiceSink = choiceSink;
             _choiceInput = choiceInput;
             _debugLevelUpInput = debugLevelUpInput;
@@ -139,6 +143,7 @@ namespace Game.Bootstrap
             _motionBounds = EnemyMotionBounds.From(character, _levelConfig.Waves, _registry.All<PerkConfig>());
 
             _choiceGate = new UpgradeChoiceGate();
+            _itemChoiceState = new ItemChoiceState();
 
             _systems = RunSystems.Build(_world);
             _choiceSystems = RunSystems.BuildChoice(_world);
@@ -172,6 +177,8 @@ namespace Game.Bootstrap
                 _abilityPanelSink,
                 _damageNumberSink,
                 _damageDealtSink,
+                _itemChoiceSink,
+                _itemChoiceState,
                 _choiceGate,
                 _choiceSink,
                 _choiceInput,
@@ -281,6 +288,7 @@ namespace Game.Bootstrap
             _statModifiers = null;
             _motionBounds = null;
             _choiceGate = null;
+            _itemChoiceState = null;
         }
 
         private async UniTaskVoid FinishWithVictoryAsync()

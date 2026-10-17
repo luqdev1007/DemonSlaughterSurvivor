@@ -24,6 +24,7 @@ namespace Game.Simulation.Tests
                 { "LifeOnKill", 10 },
                 { "LifeOnHit", 11 },
                 { "SwingReach", 12 },
+                { "AbilityCooldown", 13 },
             });
         }
 

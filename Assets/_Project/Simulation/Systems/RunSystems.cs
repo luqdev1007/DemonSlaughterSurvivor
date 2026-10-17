@@ -98,6 +98,7 @@ namespace Game.Simulation.Systems
             // 10. Death
             systems.Add(new MarkDeadSystem());
             systems.Add(new DropGemsSystem());
+            systems.Add(new QueueItemDropsSystem());
             systems.Add(new DropHealOrbsSystem());
             systems.Add(new TickPendingFinishSystem());
             systems.Add(new FinishRunOnPlayerDeathSystem());
@@ -115,6 +116,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyHealSystem());
             systems.Add(new AdvanceLevelSystem());
             systems.Add(new OfferUpgradesSystem());
+            systems.Add(new OfferItemsSystem());
             // 12. ViewSync
             systems.Add(new SyncViewSystem());
             systems.Add(new SyncGemViewSystem());
@@ -159,6 +161,7 @@ namespace Game.Simulation.Systems
 
             // Runs instead of the 13 groups while the upgrade choice holds the world.
             systems.Add(new ApplyUpgradeChoiceSystem());
+            systems.Add(new ApplyItemChoiceSystem());
 
             return systems;
         }

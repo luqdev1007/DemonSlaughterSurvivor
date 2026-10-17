@@ -28,6 +28,7 @@ namespace Game.UI
         private readonly ICombatTextSettings _combatText;
         private readonly DamageNumbers _damageNumbers;
         private readonly DpsMeter _dpsMeter;
+        private readonly ItemChoice _itemChoice;
         private readonly IDpsToggleInput _dpsToggle;
         private readonly ICameraService _camera;
 
@@ -39,9 +40,10 @@ namespace Game.UI
         private SettingsPopupPresenter _settingsPopup;
 
         private readonly PerkCardContent[] _cardContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
+        private readonly PerkCardContent[] _itemContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
         private readonly StringBuilder _text = new StringBuilder();
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ICameraService camera)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ItemChoice itemChoice, ICameraService camera)
         {
             _camera = camera;
             _pauseMenu = pauseMenu;
@@ -50,6 +52,7 @@ namespace Game.UI
             _combatText = combatText;
             _damageNumbers = damageNumbers;
             _dpsMeter = dpsMeter;
+            _itemChoice = itemChoice;
             _dpsToggle = dpsToggle;
             _level = level;
             _vitals = vitals;
@@ -73,12 +76,14 @@ namespace Game.UI
             if (_instance.TryGetComponent(out _view) == false || _view.IsWired == false)
                 throw new InvalidOperationException(
                     $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
-                    $"an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} wired perk cards and a tooltip," +
+                    $"an {nameof(UpgradeChoiceView)} with its panel and {_view.UpgradeChoice.SlotCount} wired perk cards and a tooltip," +
                     $"the experience fill and level text, the boss bar with its fill and name, a wired {nameof(BossMarkerView)}, the victory banner, " +
                     $"and a {nameof(PauseMenuView)} with its fade, resume and settings buttons and a wired {nameof(SettingsPopupView)} assigned.");
 
             _view.UpgradeChoice.Bind(_submit.Submit);
+            _view.ItemChoice.Bind(_submit.Submit);
             RefreshChoice();
+            RefreshItemChoice();
 
             _settingsPopup = new SettingsPopupPresenter(_view.PauseMenu.SettingsPopup, _soundSettings, _combatText);
             _view.PauseMenu.Bind(_pauseMenu.RequestResume, _settingsPopup.Open);
@@ -90,6 +95,7 @@ namespace Game.UI
                 _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()),
+                _itemChoice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshItemChoice()),
                 _pauseMenu.Changed.Subscribe(this, (_, presenter) => presenter.RefreshPause()),
                 _experience.Changed.Subscribe(this, (_, presenter) => presenter.RefreshExperience()),
                 _bossVitals.Visible.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
@@ -134,6 +140,7 @@ namespace Game.UI
             if (_view != null)
             {
                 _view.UpgradeChoice.Unbind();
+                _view.ItemChoice.Unbind();
                 _view.PauseMenu.Unbind();
             }
 
@@ -232,7 +239,7 @@ namespace Game.UI
 
             view.SetOpen(_choice.IsOpen);
 
-            for (int slot = 0; slot < UpgradeChoiceView.SlotCount; slot++)
+            for (int slot = 0; slot < view.SlotCount; slot++)
             {
                 if (slot >= _choice.Count)
                 {
@@ -290,6 +297,67 @@ namespace Game.UI
             return view.DashIcon;
         }
 
+        private void RefreshItemChoice()
+        {
+            UpgradeChoiceView view = _view.ItemChoice;
+            IReadOnlyList<ItemOfferData> offers = _itemChoice.Offers;
+
+            view.SetOpen(_itemChoice.IsOpen);
+
+            for (int slot = 0; slot < view.SlotCount; slot++)
+            {
+                if (slot >= offers.Count || slot >= _itemContents.Length)
+                {
+                    view.HideSlot(slot);
+
+                    continue;
+                }
+
+                view.ShowSlot(slot, DescribeItem(_itemContents[slot], slot, offers[slot]));
+            }
+        }
+
+        private PerkCardContent DescribeItem(PerkCardContent content, int slot, ItemOfferData offer)
+        {
+            ItemConfig item = _content.Get<ItemConfig>(offer.ItemId);
+
+            content.Hotkey = (slot + 1).ToString();
+            content.Title = item.DisplayName;
+            content.Icon = item.Icon;
+            content.Rarity = (Rarity)offer.Rarity;
+            content.NextLevel = offer.Rank;
+            content.MaxLevel = ItemConfig.RankCount;
+            content.RankLabel = $"ранг {offer.Rank} из {ItemConfig.RankCount}";
+            content.ComboIcons.Clear();
+
+            content.Description = DescribeRoll(offer);
+
+            if (offer.Equipped == null)
+            {
+                content.Stats = "Слот пуст";
+            }
+            else
+            {
+                ItemConfig equipped = _content.Get<ItemConfig>(offer.Equipped.ItemId);
+                content.Stats = $"<color=#A89F96>Заменит: {equipped.DisplayName}, ранг {offer.Equipped.Rank}\n{DescribeRoll(offer.Equipped)}</color>";
+            }
+
+            content.Requires = ItemSlotText.Name(item.Slot);
+
+            return content;
+        }
+
+        private string DescribeRoll(ItemOfferData roll)
+        {
+            _text.Clear();
+            StatText.AppendLine(_text, roll.Main.Stat, roll.Main.Op, roll.Main.Value);
+
+            for (int index = 0; index < roll.Minors.Count; index++)
+                StatText.AppendLine(_text, roll.Minors[index].Stat, roll.Minors[index].Op, roll.Minors[index].Value);
+
+            return _text.ToString();
+        }
+
         private PerkCardContent Describe(PerkCardContent content, int slot, PerkConfig perk, int nextLevel)
         {
             content.Hotkey = (slot + 1).ToString();
@@ -299,6 +367,7 @@ namespace Game.UI
             content.NextLevel = nextLevel;
             content.MaxLevel = perk.MaxLevel;
             content.Description = perk.Description;
+            content.RankLabel = null;
 
             _text.Clear();
 

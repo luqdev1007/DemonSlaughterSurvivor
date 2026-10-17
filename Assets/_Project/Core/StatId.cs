@@ -13,6 +13,7 @@ namespace Game.Core
         PickupRadius = 9,
         LifeOnKill = 10,
         LifeOnHit = 11,
-        SwingReach = 12
+        SwingReach = 12,
+        AbilityCooldown = 13
     }
 }

@@ -31,9 +31,7 @@ namespace Game.UI
             _border.color = color;
             _title.SetText(content.Title);
             _title.color = color;
-            _subtitle.SetText(content.NextLevel > 1
-                ? $"{palette.Name(content.Rarity)} · уровень {content.NextLevel - 1} → {content.NextLevel} из {content.MaxLevel}"
-                : $"{palette.Name(content.Rarity)} · уровень 1 из {content.MaxLevel}");
+            _subtitle.SetText($"{palette.Name(content.Rarity)} · {ResolveRankLabel(content)}");
             _description.SetText(content.Description);
             SetOptional(_stats, content.Stats);
             SetOptional(_requires, content.Requires);
@@ -68,6 +66,17 @@ namespace Game.UI
         private void OnDestroy()
         {
             _tween?.Kill();
+        }
+
+        private static string ResolveRankLabel(PerkCardContent content)
+        {
+            if (string.IsNullOrEmpty(content.RankLabel) == false)
+                return content.RankLabel;
+
+            if (content.NextLevel > 1)
+                return $"уровень {content.NextLevel - 1} → {content.NextLevel} из {content.MaxLevel}";
+
+            return $"уровень 1 из {content.MaxLevel}";
         }
 
         private static void SetOptional(TMP_Text text, string value)

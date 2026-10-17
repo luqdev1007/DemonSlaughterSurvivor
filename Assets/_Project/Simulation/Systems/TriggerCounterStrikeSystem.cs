@@ -25,6 +25,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -73,7 +74,7 @@ namespace Game.Simulation.Systems
                 armed.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(counter.ArmedSeconds / delta));
                 armed.Level = level;
 
-                heroCooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(counter.Level(level).CooldownSeconds / delta));
+                heroCooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(counter.Level(level).CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero) / delta));
             }
         }
 

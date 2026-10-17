@@ -35,6 +35,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -92,7 +93,7 @@ namespace Game.Simulation.Systems
             AgileDashLevel entry = config.Level(level);
             float delta = _clock.Value.Delta;
 
-            cooldown.RemainingTicks = Mathf.Max(0, Mathf.RoundToInt(entry.CooldownSeconds / delta));
+            cooldown.RemainingTicks = Mathf.Max(0, Mathf.RoundToInt(entry.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero) / delta));
 
             int finisher = StartFinisher(world, hero, config.Trigger, config.PlaybackSpeed, config.ClipSeconds, config.LocksMovement);
 

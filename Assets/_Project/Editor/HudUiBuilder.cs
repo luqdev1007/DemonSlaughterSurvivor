@@ -32,46 +32,7 @@ namespace Game.Editor
 
             try
             {
-                Transform choice = root.transform.Find("UpgradeChoice");
-                Transform panel = choice.Find("Panel");
-                RectTransform cards = (RectTransform)panel.Find("Cards");
-
-                for (int index = cards.childCount - 1; index >= 0; index--)
-                    Object.DestroyImmediate(cards.GetChild(index).gameObject);
-
-                Transform oldTooltip = panel.Find("Tooltip");
-
-                if (oldTooltip != null)
-                    Object.DestroyImmediate(oldTooltip.gameObject);
-
-                cards.sizeDelta = new Vector2(1240f, 480f);
-                cards.anchoredPosition = new Vector2(0f, -30f);
-
-                HorizontalLayoutGroup layout = cards.GetComponent<HorizontalLayoutGroup>();
-                layout.spacing = 40f;
-                layout.childAlignment = TextAnchor.MiddleCenter;
-                layout.childControlWidth = false;
-                layout.childControlHeight = false;
-                layout.childForceExpandWidth = false;
-                layout.childForceExpandHeight = false;
-
-                PerkCardView[] built = new PerkCardView[UpgradeChoiceView.SlotCount];
-
-                for (int slot = 0; slot < built.Length; slot++)
-                    built[slot] = BuildCard(cards, slot);
-
-                PerkTooltipView tooltip = BuildTooltip(panel);
-
-                SerializedObject view = new SerializedObject(choice.GetComponent<UpgradeChoiceView>());
-                SerializedProperty cardsProperty = view.FindProperty("_cards");
-                cardsProperty.arraySize = built.Length;
-
-                for (int slot = 0; slot < built.Length; slot++)
-                    cardsProperty.GetArrayElementAtIndex(slot).objectReferenceValue = built[slot];
-
-                view.FindProperty("_tooltip").objectReferenceValue = tooltip;
-                view.ApplyModifiedPropertiesWithoutUndo();
-
+                BuildChoice(root.transform.Find("UpgradeChoice"), 3, 40f);
                 PrefabUtility.SaveAsPrefabAsset(root, HudPath);
             }
             finally
@@ -80,6 +41,90 @@ namespace Game.Editor
             }
 
             Debug.Log("Upgrade choice UI rebuilt in " + HudPath);
+        }
+
+        [MenuItem("Game/Build Item Choice UI")]
+        public static void BuildItemChoice()
+        {
+            _titleFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
+            _bodyFont = TMP_Settings.defaultFontAsset;
+
+            GameObject root = PrefabUtility.LoadPrefabContents(HudPath);
+
+            try
+            {
+                Transform old = root.transform.Find("ItemChoice");
+
+                if (old != null)
+                    Object.DestroyImmediate(old.gameObject);
+
+                Transform source = root.transform.Find("UpgradeChoice");
+                GameObject copy = Object.Instantiate(source.gameObject, root.transform);
+                copy.name = "ItemChoice";
+                copy.transform.SetSiblingIndex(source.GetSiblingIndex() + 1);
+
+                copy.transform.Find("Panel/Header").GetComponent<TMP_Text>().SetText("Добыча элиты");
+
+                UpgradeChoiceView view = BuildChoice(copy.transform, 4, 24f);
+
+                SerializedObject hud = new SerializedObject(root.GetComponent<HudView>());
+                hud.FindProperty("_itemChoice").objectReferenceValue = view;
+                hud.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(root, HudPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            Debug.Log("Item choice UI rebuilt in " + HudPath);
+        }
+
+        private static UpgradeChoiceView BuildChoice(Transform choice, int slots, float spacing)
+        {
+            Transform panel = choice.Find("Panel");
+            RectTransform cards = (RectTransform)panel.Find("Cards");
+
+            for (int index = cards.childCount - 1; index >= 0; index--)
+                Object.DestroyImmediate(cards.GetChild(index).gameObject);
+
+            Transform oldTooltip = panel.Find("Tooltip");
+
+            if (oldTooltip != null)
+                Object.DestroyImmediate(oldTooltip.gameObject);
+
+            cards.sizeDelta = new Vector2(slots * 340f + (slots - 1) * spacing, 480f);
+            cards.anchoredPosition = new Vector2(0f, -30f);
+
+            HorizontalLayoutGroup layout = cards.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = spacing;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            PerkCardView[] built = new PerkCardView[slots];
+
+            for (int slot = 0; slot < built.Length; slot++)
+                built[slot] = BuildCard(cards, slot);
+
+            PerkTooltipView tooltip = BuildTooltip(panel);
+
+            UpgradeChoiceView choiceView = choice.GetComponent<UpgradeChoiceView>();
+            SerializedObject view = new SerializedObject(choiceView);
+            SerializedProperty cardsProperty = view.FindProperty("_cards");
+            cardsProperty.arraySize = built.Length;
+
+            for (int slot = 0; slot < built.Length; slot++)
+                cardsProperty.GetArrayElementAtIndex(slot).objectReferenceValue = built[slot];
+
+            view.FindProperty("_panel").objectReferenceValue = panel.gameObject;
+            view.FindProperty("_tooltip").objectReferenceValue = tooltip;
+            view.ApplyModifiedPropertiesWithoutUndo();
+
+            return choiceView;
         }
 
         [MenuItem("Game/Build Ability Panel")]

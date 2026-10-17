@@ -32,6 +32,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<WeaponCooldown> _weaponCooldowns = default;
         private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
         private readonly EcsPoolInject<SwingReach> _swingReaches = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
         private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
         private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
@@ -227,6 +228,16 @@ namespace Game.Simulation.Systems
                     "a More of -1 or below, or a negative Flat, stops or reverses every swing.");
             }
 
+            if (_cooldownScales.Value.Has(target))
+            {
+                ref AbilityCooldownScale scale = ref _cooldownScales.Value.Get(target);
+                scale.Value = StatFormula.Evaluate(scale.Base, Total(StatId.AbilityCooldown));
+
+                GuardPositive(target, StatId.AbilityCooldown, scale.Value, scale.Base,
+                    "Ability cooldown multiplies every ability cooldown, so it must stay above zero: " +
+                    "zero or below fires dash and perk abilities every tick.");
+            }
+
             if (_swingReaches.Value.Has(target))
             {
                 ref SwingReach reach = ref _swingReaches.Value.Get(target);
@@ -338,6 +349,8 @@ namespace Game.Simulation.Systems
                     return _attackSpeeds.Value.Has(target);
                 case StatId.SwingReach:
                     return _swingReaches.Value.Has(target);
+                case StatId.AbilityCooldown:
+                    return _cooldownScales.Value.Has(target);
                 case StatId.DamageTaken:
                     return _damageTakens.Value.Has(target);
                 case StatId.PickupRadius:

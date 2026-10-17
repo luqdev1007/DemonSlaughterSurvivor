@@ -1,4 +1,5 @@
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
@@ -13,6 +14,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DashCooldown> _cooldowns = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<DashEndedEvent> _endedEvents = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -28,7 +30,7 @@ namespace Game.Simulation.Systems
                 ref DashStats stats = ref _stats.Value.Get(entity);
 
                 ref DashCooldown cooldown = ref _cooldowns.Value.Add(entity);
-                cooldown.Remaining = stats.Cooldown;
+                cooldown.Remaining = stats.Cooldown * AbilityCooldowns.Scale(_cooldownScales.Value, entity);
 
                 ref DashEndedEvent ended = ref _endedEvents.Value.Has(entity) ? ref _endedEvents.Value.Get(entity) : ref _endedEvents.Value.Add(entity);
                 ended.Start = dashing.Start;

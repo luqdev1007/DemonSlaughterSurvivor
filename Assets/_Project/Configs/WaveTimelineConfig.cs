@@ -66,9 +66,14 @@ namespace Game.Configs
         [SerializeField, Range(0f, 1f)] private float _eliteChance;
         [SerializeField] private EliteAffixConfig[] _eliteAffixes = Array.Empty<EliteAffixConfig>();
 
+        [Header("Items")]
+        [SerializeField] private ItemLootConfig _itemLoot;
+
         public float SpawnRadius => _spawnRadius;
 
         public float EliteChance => _eliteChance;
+
+        public ItemLootConfig ItemLoot => _itemLoot;
 
         public IReadOnlyList<EliteAffixConfig> EliteAffixes => _eliteAffixes ?? Array.Empty<EliteAffixConfig>();
 
