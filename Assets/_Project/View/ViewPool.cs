@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewPool : IViewFactory, IDisposable
+    public sealed class ViewPool : IViewFactory, IViewPrewarm, IDisposable
     {
         private sealed class Entry
         {
@@ -42,6 +42,8 @@ namespace Game.View
         private readonly HashSet<GameObject> _gemPrefabs = new HashSet<GameObject>();
         private readonly HashSet<GameObject> _breakablePrefabs = new HashSet<GameObject>();
         private readonly Dictionary<GameObject, GameObject> _templates = new Dictionary<GameObject, GameObject>();
+        private readonly Dictionary<GameObject, int> _prewarmPlan = new Dictionary<GameObject, int>();
+        private readonly WaveTimelineConfig _waves;
         private readonly GoreDirector _gore;
         private readonly CombatAudio _audio;
 
@@ -118,6 +120,7 @@ namespace Game.View
 
             _gore = gore;
             _audio = audio;
+            _waves = level.Waves;
 
             CollectDismemberments(content);
             CollectGemPrefabs(content);
@@ -139,6 +142,22 @@ namespace Game.View
             _issued.Add(entry.View.GetInstanceID());
 
             return entry.View;
+        }
+
+        public void Prewarm()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(ViewPool));
+
+            ViewPrewarmPlan.Resolve(_waves, _prewarmPlan);
+
+            foreach (KeyValuePair<GameObject, int> pair in _prewarmPlan)
+            {
+                Stack<Entry> free = Free(pair.Key);
+
+                for (int created = free.Count; created < pair.Value; created++)
+                    Return(Instantiate(pair.Key));
+            }
         }
 
         public void Release(IView view)
@@ -516,6 +535,11 @@ namespace Game.View
                 return pooled;
             }
 
+            return Instantiate(prefab);
+        }
+
+        private Entry Instantiate(GameObject prefab)
+        {
             GameObject instance = UnityEngine.Object.Instantiate(SourceFor(prefab));
 
             if (instance.TryGetComponent(out ViewInterpolator view) == false)

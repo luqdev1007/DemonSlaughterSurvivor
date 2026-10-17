@@ -60,8 +60,11 @@ namespace Game.Configs
     {
         [SerializeField] private float _spawnRadius = 18f;
         [SerializeField] private Wave[] _waves = Array.Empty<Wave>();
+        [SerializeField, Min(0)] private int _prewarmCapPerEnemy = 100;
 
         public float SpawnRadius => _spawnRadius;
+
+        public int PrewarmCapPerEnemy => _prewarmCapPerEnemy;
 
         public IReadOnlyList<Wave> Waves => _waves;
     }

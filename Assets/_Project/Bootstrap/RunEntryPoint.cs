@@ -23,6 +23,7 @@ namespace Game.Bootstrap
         private readonly IInputService _inputService;
         private readonly IContentRegistry _registry;
         private readonly IViewFactory _viewFactory;
+        private readonly IViewPrewarm _viewPrewarm;
         private readonly ICameraService _cameraService;
         private readonly IPlayerVitalsSink _vitalsSink;
         private readonly IUpgradeChoiceSink _choiceSink;
@@ -66,6 +67,7 @@ namespace Game.Bootstrap
             IInputService inputService,
             IContentRegistry registry,
             IViewFactory viewFactory,
+            IViewPrewarm viewPrewarm,
             ICameraService cameraService,
             IPlayerVitalsSink vitalsSink,
             IUpgradeChoiceSink choiceSink,
@@ -97,6 +99,7 @@ namespace Game.Bootstrap
             _inputService = inputService;
             _registry = registry;
             _viewFactory = viewFactory;
+            _viewPrewarm = viewPrewarm;
             _cameraService = cameraService;
             _vitalsSink = vitalsSink;
             _choiceSink = choiceSink;
@@ -113,6 +116,8 @@ namespace Game.Bootstrap
         public void Initialize()
         {
             _inputService.ResetLatches();
+
+            _viewPrewarm.Prewarm();
 
             _world = new EcsWorld();
 
