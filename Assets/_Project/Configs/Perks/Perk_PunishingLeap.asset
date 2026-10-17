@@ -23,6 +23,8 @@ MonoBehaviour:
     \u0411\u043E\u0441\u0441\u0430 \u043D\u0435 \u0434\u043E\u0431\u0438\u0432\u0430\u0435\u0442.
     \u0422\u0440\u0435\u0431\u0443\u0435\u0442 \xAB\u0413\u0435\u0440\u043E\u0438\u0447\u0435\u0441\u043A\u0438\u0439
     \u043F\u0440\u044B\u0436\u043E\u043A\xBB \u0438 \xAB\u041A\u0430\u0437\u043D\u044C\xBB."
+  _icon: {fileID: 21300000, guid: 2bbebcc9ca74c2c47bc5238486432710, type: 3}
+  _rarity: 3
   _levels:
   - _modifiers: []
   - _modifiers: []

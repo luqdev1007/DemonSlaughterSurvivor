@@ -3,6 +3,8 @@ using Game.Configs;
 using Game.Core;
 using R3;
 using System;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -31,6 +33,9 @@ namespace Game.UI
         private int _shownLevel;
         private SettingsPopupPresenter _settingsPopup;
 
+        private readonly PerkCardContent[] _cardContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
+        private readonly StringBuilder _text = new StringBuilder();
+
         public HudPresenter(LevelConfig level, PlayerVitals vitals, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICameraService camera)
         {
             _camera = camera;
@@ -58,7 +63,7 @@ namespace Game.UI
             if (_instance.TryGetComponent(out _view) == false || _view.IsWired == false)
                 throw new InvalidOperationException(
                     $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
-                    $"an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} buttons, titles and descriptions, " +
+                    $"an {nameof(UpgradeChoiceView)} with its panel and {UpgradeChoiceView.SlotCount} wired perk cards and a tooltip," +
                     $"the experience fill and level text, the boss bar with its fill and name, a wired {nameof(BossMarkerView)}, the victory banner, " +
                     $"and a {nameof(PauseMenuView)} with its fade, resume and settings buttons and a wired {nameof(SettingsPopupView)} assigned.");
 
@@ -221,8 +226,49 @@ namespace Game.UI
                 UpgradeOffer offer = _choice.Offer(slot);
                 PerkConfig perk = _content.Get<PerkConfig>(offer.PerkId);
 
-                view.ShowSlot(slot, $"[{slot + 1}] {perk.DisplayName}", $"{perk.Description}\n{offer.NextLevel} / {perk.MaxLevel}");
+                view.ShowSlot(slot, Describe(_cardContents[slot], slot, perk, offer.NextLevel));
             }
+        }
+
+        private PerkCardContent Describe(PerkCardContent content, int slot, PerkConfig perk, int nextLevel)
+        {
+            content.Hotkey = (slot + 1).ToString();
+            content.Title = perk.DisplayName;
+            content.Icon = perk.Icon;
+            content.Rarity = perk.Rarity;
+            content.NextLevel = nextLevel;
+            content.MaxLevel = perk.MaxLevel;
+            content.Description = perk.Description;
+
+            _text.Clear();
+
+            IReadOnlyList<StatModifierEntry> modifiers = perk.Level(nextLevel).Modifiers;
+
+            if (modifiers != null)
+            {
+                for (int index = 0; index < modifiers.Count; index++)
+                    StatText.AppendLine(_text, modifiers[index].Stat, modifiers[index].Op, modifiers[index].Value);
+            }
+
+            content.Stats = _text.ToString();
+
+            content.ComboIcons.Clear();
+            _text.Clear();
+
+            IReadOnlyList<PerkConfig> requires = perk.Requires;
+
+            for (int index = 0; index < requires.Count; index++)
+            {
+                if (requires[index] == null)
+                    continue;
+
+                content.ComboIcons.Add(requires[index].Icon);
+                _text.Append(_text.Length == 0 ? "Комбо: " : " + ").Append(requires[index].DisplayName);
+            }
+
+            content.Requires = _text.ToString();
+
+            return content;
         }
     }
 }

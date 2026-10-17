@@ -10,6 +10,8 @@ namespace Game.Configs
     {
         [SerializeField] private string _displayName;
         [SerializeField, TextArea] private string _description;
+        [SerializeField] private Sprite _icon;
+        [SerializeField] private Rarity _rarity;
         [SerializeField] private PerkLevel[] _levels;
 
         [Header("Behaviour")]
@@ -19,6 +21,10 @@ namespace Game.Configs
         [SerializeField] private PerkConfig[] _requires = Array.Empty<PerkConfig>();
 
         public string DisplayName => _displayName;
+
+        public Sprite Icon => _icon;
+
+        public Rarity Rarity => _rarity;
 
         public PerkBehaviourConfig Behaviour => _behaviour;
 

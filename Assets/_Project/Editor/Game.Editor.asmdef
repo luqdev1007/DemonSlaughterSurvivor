@@ -3,7 +3,14 @@
     "rootNamespace": "Game.Editor",
     "references": [
         "GUID:51709552bb32fed41b5185f03eeaa3e4",
-        "GUID:fe2eb48c0d24d974687db78c2941b844"
+        "GUID:fe2eb48c0d24d974687db78c2941b844",
+        "GUID:ceb3c7199e60cf4498e3bcb367773fe7",
+        "GUID:d8736e7cd172166448a7dce4a1836224",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:77221876cc6b8244180b96e320b1bcd4",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:2bafac87e7f4b9b418d9448d219b01ab",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f"
     ],
     "includePlatforms": [
         "Editor"
