@@ -1,0 +1,189 @@
+using Game.Configs;
+using Game.Core;
+using Game.Simulation.Components;
+using Game.Simulation.Services;
+using Leopotam.EcsLite;
+using Leopotam.EcsLite.Di;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Game.Simulation.Systems
+{
+    public sealed class SweepSlicingDashSystem : IEcsInitSystem, IEcsRunSystem
+    {
+        public const string RandomStreamId = "stream.slicing-dash";
+
+        private const int CandidateCapacityReserve = 16;
+
+        private readonly EcsWorldInject _world = default;
+
+        private readonly EcsFilterInject<Inc<Player, Dashing, Position, PreviousPosition>, Exc<Dead>> _heroes = default;
+        private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
+        private readonly EcsFilterInject<Inc<Weapon, OwnerLink, WeaponDamage>> _weapons = default;
+
+        private readonly EcsPoolInject<TakenPerk> _takenPool = default;
+        private readonly EcsPoolInject<Dashing> _dashes = default;
+        private readonly EcsPoolInject<Position> _positions = default;
+        private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;
+        private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
+        private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<Velocity> _velocities = default;
+        private readonly EcsPoolInject<NotPushable> _notPushables = default;
+        private readonly EcsPoolInject<Pushed> _pushes = default;
+        private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
+        private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
+        private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
+        private readonly EcsPoolInject<SlicingDashRoll> _rolls = default;
+        private readonly EcsPoolInject<SlicingDashRandom> _randoms = default;
+
+        private readonly EcsCustomInject<IContentRegistry> _content = default;
+        private readonly EcsCustomInject<RunContext> _context = default;
+        private readonly EcsCustomInject<SpatialGrid> _grid = default;
+        private readonly EcsCustomInject<SimulationClock> _clock = default;
+        private readonly EcsCustomInject<EnemyMotionBounds> _motionBounds = default;
+        private readonly EcsCustomInject<LevelConfig> _level = default;
+
+        private readonly HashSet<int> _hitThisDash = new HashSet<int>();
+
+        private List<int> _candidates;
+
+        public void Init(IEcsSystems systems)
+        {
+            _candidates = new List<int>(WaveTimelineValidator.ResolveMaxLiveCap(_level.Value.Waves) + CandidateCapacityReserve);
+        }
+
+        public void Run(IEcsSystems systems)
+        {
+            EcsWorld world = _world.Value;
+
+            foreach (int hero in _heroes.Value)
+            {
+                ref Dashing dashing = ref _dashes.Value.Get(hero);
+
+                if (dashing.RemainingTicks == dashing.TotalTicks)
+                    Roll(world, hero);
+
+                if (_rolls.Value.Has(hero) == false)
+                    continue;
+
+                if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out SlicingDashConfig config, out int level) == false)
+                    continue;
+
+                Sweep(world, hero, config, config.Level(level), in dashing);
+            }
+        }
+
+        private void Roll(EcsWorld world, int hero)
+        {
+            _hitThisDash.Clear();
+            _rolls.Value.Del(hero);
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out SlicingDashConfig config, out int level) == false)
+                return;
+
+            if (SimulationRandom.NextUnit(ref ResolveRandom(hero).State) >= config.Level(level).Chance)
+                return;
+
+            _rolls.Value.Add(hero).Level = level;
+        }
+
+        private void Sweep(EcsWorld world, int hero, SlicingDashConfig config, SlicingDashLevel entry, in Dashing dashing)
+        {
+            Vector3 from = _previousPositions.Value.Get(hero).Value;
+            Vector3 to = _positions.Value.Get(hero).Value;
+            Vector3 direction = PushFromPoint.Direction(Vector3.zero, dashing.Direction, Vector3.forward);
+            Vector3 right = Vector3.Cross(Vector3.up, direction);
+            Vector3 side = config.SwordSide == SwordSide.Right ? right : -right;
+
+            float heroRadius = _bodyRadii.Value.Has(hero) ? _bodyRadii.Value.Get(hero).Value : 0f;
+            float width = config.CorridorWidth * DashChargeRules.Scale(config.ReachAtFullCharge, dashing.Strength);
+            float damage = ResolveWeaponDamage(world, hero) * entry.CorridorDamageShare * DashChargeRules.DamageMultiplier(in dashing);
+            int pushTicks = Mathf.Max(1, Mathf.RoundToInt(config.CorridorPushSeconds / _clock.Value.Delta));
+            bool pushes = config.CorridorPushSpeed > 0f && config.CorridorPushSeconds > 0f;
+
+            Vector3 middle = (from + to) * 0.5f;
+            float halfLength = Vector3.Distance(new Vector3(from.x, 0f, from.z), new Vector3(to.x, 0f, to.z)) * 0.5f;
+            float radius = halfLength + width + _motionBounds.Value.MaxEnemyBodyRadius;
+
+            _grid.Value.Query(middle, radius, _motionBounds.Value.CandidateSlack(_clock.Value.Delta), _candidates);
+
+            for (int index = 0; index < _candidates.Count; index++)
+            {
+                int candidate = _candidates[index];
+
+                if (_enemies.Value.Has(candidate) == false || _dead.Value.Has(candidate) || _bodyRadii.Value.Has(candidate) == false)
+                    continue;
+
+                if (_hitThisDash.Contains(candidate))
+                    continue;
+
+                Vector3 position = _positions.Value.Get(candidate).Value;
+                Vector3 offset = position - ClosestPointOnSegment(position, from, to);
+                offset.y = 0f;
+
+                float lateral = Vector3.Dot(offset, side);
+
+                if (lateral < -heroRadius)
+                    continue;
+
+                if (offset.magnitude > width + _bodyRadii.Value.Get(candidate).Value)
+                    continue;
+
+                _hitThisDash.Add(candidate);
+
+                if (damage > 0f)
+                {
+                    ref DamageEvent damageEvent = ref _damageEvents.Value.Add(world.NewEntity());
+                    damageEvent.Target = world.PackEntity(candidate);
+                    damageEvent.Source = world.PackEntity(hero);
+                    damageEvent.SourcePosition = position - offset;
+                    damageEvent.Amount = damage;
+                    damageEvent.Kind = DamageKind.Perk;
+                    damageEvent.IsSlash = true;
+                }
+
+                if (pushes && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)
+                {
+                    PushFromPoint.Apply(_pushes.Value, candidate, side, config.CorridorPushSpeed, pushTicks);
+                    _pushes.Value.Get(candidate).ArcHeight = config.CorridorPushArcHeight;
+                }
+            }
+        }
+
+        private float ResolveWeaponDamage(EcsWorld world, int hero)
+        {
+            foreach (int weapon in _weapons.Value)
+            {
+                if (_ownerLinks.Value.Get(weapon).Owner.Unpack(world, out int owner) && owner == hero)
+                    return _weaponDamages.Value.Get(weapon).Value;
+            }
+
+            return 0f;
+        }
+
+        private ref SlicingDashRandom ResolveRandom(int hero)
+        {
+            if (_randoms.Value.Has(hero))
+                return ref _randoms.Value.Get(hero);
+
+            ref SlicingDashRandom random = ref _randoms.Value.Add(hero);
+            random.State = SimulationRandom.StreamState(_context.Value.Seed, RandomStreamId);
+
+            return ref random;
+        }
+
+        private static Vector3 ClosestPointOnSegment(Vector3 point, Vector3 from, Vector3 to)
+        {
+            Vector3 segment = new Vector3(to.x - from.x, 0f, to.z - from.z);
+            float squared = segment.sqrMagnitude;
+
+            if (squared <= 1e-8f)
+                return new Vector3(from.x, point.y, from.z);
+
+            float t = Mathf.Clamp01(((point.x - from.x) * segment.x + (point.z - from.z) * segment.z) / squared);
+
+            return new Vector3(from.x + segment.x * t, point.y, from.z + segment.z * t);
+        }
+    }
+}

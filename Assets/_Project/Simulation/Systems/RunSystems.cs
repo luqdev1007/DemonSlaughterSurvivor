@@ -58,6 +58,7 @@ namespace Game.Simulation.Systems
             systems.Add(new StartHeroicLeapSystem());
             systems.Add(new InterruptSwingSystem());
             systems.Add(new ExpireSpecialAttackSystem());
+            systems.Add(new StartDashFinisherSystem());
             systems.Add(new StartExecutionSystem());
             systems.Add(new StartCounterStrikeSystem());
             systems.Add(new StartSwingSystem());
@@ -67,6 +68,7 @@ namespace Game.Simulation.Systems
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
             systems.Add(new AdvanceExecutionSystem());
+            systems.Add(new AdvanceDashFinisherSystem());
             systems.Add(new ResolveAreaStrikeSystem());
             systems.Add(new PulseFireSegmentsSystem());
             systems.Add(new TickFireSegmentsSystem());
@@ -75,6 +77,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ImpactEnemyHeavyStrikeSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
+            systems.Add(new SweepSlicingDashSystem());
             systems.Add(new SweepEnemyChargeSystem());
             systems.Add(new DetectContactDamageSystem());
             systems.Add(new StartGemFlightSystem());
@@ -108,6 +111,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayLeapFeedbackSystem());
             systems.Add(new PlayExecutionFeedbackSystem());
+            systems.Add(new PlayDashFinisherFeedbackSystem());
             systems.Add(new TickLeapImpactFxSystem());
             systems.Add(new SpawnLeapImpactFxSystem());
             systems.Add(new SyncLeapLiftViewSystem());

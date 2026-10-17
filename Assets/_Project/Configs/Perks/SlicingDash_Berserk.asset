@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85feccd0c00d4bb45aa489574ec7f14d, type: 3}
+  m_Name: SlicingDash_Berserk
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.SlicingDashConfig
+  _levels:
+  - _chance: 0.3
+    _corridorDamageShare: 0.5
+    _finalDamageShare: 1.5
+  - _chance: 0.45
+    _corridorDamageShare: 0.7
+    _finalDamageShare: 2
+  - _chance: 0.6
+    _corridorDamageShare: 0.9
+    _finalDamageShare: 2.5
+  _swordSide: 0
+  _corridorWidth: 1.6
+  _corridorPushSpeed: 5
+  _corridorPushSeconds: 0.35
+  _corridorPushArcHeight: 0.2
+  _finalTrigger: DashFinalSlash
+  _finalPlaybackSpeed: 1.2
+  _finalImpactClipSeconds: 0.5
+  _finalClipSeconds: 1.433
+  _finalLocksMovement: 1
+  _finalReach: 2.6
+  _finalHalfAngleDegrees: 70
+  _finalPushSpeed: 5
+  _finalPushSeconds: 0.4
+  _finalPushArcHeight: 0.35
+  _reachAtFullCharge: 1.3

@@ -1,4 +1,5 @@
 using Game.Core;
+using Leopotam.EcsLite;
 using UnityEngine;
 
 namespace Game.Simulation.Components
@@ -17,6 +18,20 @@ namespace Game.Simulation.Components
     }
 
     public struct DashCooldown { public float Remaining; }
+
+    public struct SlicingDashRoll { public int Level; }
+
+    public struct SlicingDashRandom { public uint State; }
+
+    public struct DashFinisher
+    {
+        public EcsPackedEntity Owner;
+        public int RemainingTicks;
+        public string Trigger;
+        public float PlaybackSpeed;
+    }
+
+    public struct DashFinisherStarted { }
 
     public struct Dashing
     {

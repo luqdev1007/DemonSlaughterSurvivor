@@ -51,7 +51,8 @@ namespace Game.Simulation.Systems
             {
                 ref AreaStrike strike = ref _strikePool.Value.Get(entity);
 
-                if (strike.Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner))
+                if (strike.Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner)
+                    || (strike.Anchored && strike.Anchor.Unpack(world, out _) == false))
                 {
                     world.DelEntity(entity);
 

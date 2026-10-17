@@ -58,6 +58,8 @@ namespace Game.Simulation.Components
     public struct AreaStrike
     {
         public EcsPackedEntity Owner;
+        public EcsPackedEntity Anchor;
+        public bool Anchored;
         public int DelayTicks;
         public bool FollowOwner;
         public Vector3 Origin;
