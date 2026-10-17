@@ -71,7 +71,9 @@ namespace Game.Simulation.Services
             _heavyStrikes = world.GetPool<EnemyHeavyStrike>();
         }
 
-        public int Create(EnemyConfig config, Vector3 position)
+        public const string SpawnModifierSource = "enemy.spawn";
+
+        public int Create(EnemyConfig config, Vector3 position, float variationRoll)
         {
             int entity = _world.NewEntity();
 
@@ -138,6 +140,9 @@ namespace Game.Simulation.Services
 
             if (config.HeavyStrike != null)
                 _heavyStrikes.Add(entity).Config = config.HeavyStrike;
+
+            if (config.MoveSpeedSpread > 0f)
+                _statModifiers.Add(entity, StatId.MoveSpeed, StatOp.More, (variationRoll * 2f - 1f) * config.MoveSpeedSpread, SpawnModifierSource);
 
             _statModifiers.MarkDirty(entity);
 

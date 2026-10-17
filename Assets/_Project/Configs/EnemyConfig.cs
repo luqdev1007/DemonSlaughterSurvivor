@@ -10,6 +10,7 @@ namespace Game.Configs
         [Header("Movement")]
         [SerializeField] private float _moveSpeed;
         [SerializeField] private float _turnSpeed = 360f;
+        [SerializeField, Range(0f, 0.5f)] private float _moveSpeedSpread;
 
         [Header("Body")]
         [SerializeField] private float _bodyRadius = 0.4f;
@@ -45,6 +46,8 @@ namespace Game.Configs
 
         public float TurnSpeed => _turnSpeed;
 
+        public float MoveSpeedSpread => _moveSpeedSpread;
+
         public float BodyRadius => _bodyRadius;
 
         public float BodyHeight => _bodyHeight;
@@ -65,7 +68,7 @@ namespace Game.Configs
 
         public HeavyStrikeAbilityConfig HeavyStrike => _heavyStrike;
 
-        public float PeakMoveSpeed => _spin == null ? _moveSpeed : _moveSpeed * Mathf.Max(1f, _spin.MoveSpeedMultiplier);
+        public float PeakMoveSpeed => (_spin == null ? _moveSpeed : _moveSpeed * Mathf.Max(1f, _spin.MoveSpeedMultiplier)) * (1f + _moveSpeedSpread);
 
         public GameObject DismemberedViewPrefab => _dismemberedViewPrefab;
 

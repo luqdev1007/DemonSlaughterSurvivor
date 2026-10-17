@@ -12,6 +12,8 @@ namespace Game.Simulation.Systems
 {
     public sealed class SpawnWaveSystem : IEcsInitSystem, IEcsRunSystem
     {
+        private const string VariationStream = "enemy.variation";
+
         private readonly EcsFilterInject<Inc<WaveState>> _timelines = default;
         private readonly EcsFilterInject<Inc<Enemy>> _live = default;
         private readonly EcsFilterInject<Inc<Player, Position>> _anchors = default;
@@ -29,6 +31,7 @@ namespace Game.Simulation.Systems
         private RingSpawnPlacement _placement;
         private WeightedEnemyPicker _picker;
         private SimulationRandom _random;
+        private uint _variationState;
         private EnemyFactory _factory;
 
         private WaveTimelineConfig _timeline;
@@ -49,6 +52,7 @@ namespace Game.Simulation.Systems
             _placement = new RingSpawnPlacement();
             _picker = new WeightedEnemyPicker();
             _random = new SimulationRandom(_context.Value.Seed);
+            _variationState = SimulationRandom.StreamState(_context.Value.Seed, VariationStream);
             _factory = new EnemyFactory(world, _viewFactory.Value, _statModifiers.Value);
 
             _firedGuaranteed = new bool[WaveTimelineValidator.ResolveMaxGuaranteedCount(_timeline)];
@@ -200,7 +204,7 @@ namespace Game.Simulation.Systems
                 _random.NextUnit(),
                 minDistance);
 
-            _factory.Create(enemy, spawnPosition);
+            _factory.Create(enemy, spawnPosition, SimulationRandom.NextUnit(ref _variationState));
         }
     }
 }

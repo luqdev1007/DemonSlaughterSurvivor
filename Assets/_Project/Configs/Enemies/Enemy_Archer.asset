@@ -16,6 +16,7 @@ MonoBehaviour:
   _viewPrefab: {fileID: 7453882988192446395, guid: 831ceae91d6e77049bcddaf7b1e82599, type: 3}
   _moveSpeed: 2.3
   _turnSpeed: 360
+  _moveSpeedSpread: 0.1
   _bodyRadius: 0.4
   _bodyHeight: 1.76
   _maxHealth: 15
