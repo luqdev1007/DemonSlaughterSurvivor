@@ -6,4 +6,5 @@ namespace Game.Simulation.Components
     public struct Dead { }
     public struct NotIndexed { }
     public struct NotPushable { }
+    public struct Interruptible { }
 }

@@ -22,6 +22,7 @@ namespace Game.Simulation.Tests
         private const int WindupTicks = 24;
         private const int CooldownTicks = 150;
         private const int FlightTicks = 84;
+        private const int StaggerTicks = 30;
 
         private readonly List<Object> _assets = new List<Object>();
 
@@ -315,6 +316,119 @@ namespace Game.Simulation.Tests
             StringAssert.Contains("_boltSpeed", error.Message);
         }
 
+        [Test]
+        public void APushDuringTheWindupInterruptsItAndNoBoltLeaves()
+        {
+            Build(heroAt: new Vector3(5f, 0f, 0f));
+            _world.GetPool<Interruptible>().Add(_archer);
+
+            Run(10);
+
+            Assert.Greater(Attack().WindupTicks, 0);
+
+            _world.GetPool<Pushed>().Add(_archer);
+            Run(1);
+
+            Assert.AreEqual(0, Attack().WindupTicks);
+            Assert.IsTrue(_world.GetPool<Staggered>().Has(_archer));
+            Assert.IsTrue(_world.GetPool<CastInterruptedEvent>().Has(_archer));
+
+            _world.GetPool<Pushed>().Del(_archer);
+            Run(WindupTicks);
+
+            Assert.AreEqual(0, Bolts());
+        }
+
+        [Test]
+        public void TheStaggerHoldsTheArcherAndDelaysTheNextWindupByHalfASecond()
+        {
+            Build(heroAt: new Vector3(5f, 0f, 0f));
+            _world.GetPool<Interruptible>().Add(_archer);
+
+            Run(10);
+
+            _world.GetPool<Pushed>().Add(_archer);
+            Run(1);
+            _world.GetPool<Pushed>().Del(_archer);
+
+            MoveHero(new Vector3(9f, 0f, 0f));
+            Run(1);
+
+            Assert.AreEqual(Vector3.zero, Intent(), "a staggered archer stands even with the hero out of range");
+
+            MoveHero(new Vector3(5f, 0f, 0f));
+            Run(StaggerTicks - 2);
+
+            Assert.AreEqual(0, Attack().WindupTicks);
+            Assert.IsTrue(_world.GetPool<Staggered>().Has(_archer));
+
+            Run(1);
+
+            Assert.IsFalse(_world.GetPool<Staggered>().Has(_archer));
+            Assert.AreEqual(WindupTicks, Attack().WindupTicks, "the next windup starts on the tick the stagger ends");
+        }
+
+        [Test]
+        public void WithoutTheTagAPushDoesNotInterrupt()
+        {
+            Build(heroAt: new Vector3(5f, 0f, 0f));
+
+            Run(10);
+
+            int before = Attack().WindupTicks;
+
+            _world.GetPool<Pushed>().Add(_archer);
+            Run(1);
+
+            Assert.AreEqual(before - 1, Attack().WindupTicks);
+            Assert.IsFalse(_world.GetPool<Staggered>().Has(_archer));
+        }
+
+        [Test]
+        public void APushOutsideTheWindupDoesNotStagger()
+        {
+            Build(heroAt: new Vector3(8.5f, 0f, 0f));
+            _world.GetPool<Interruptible>().Add(_archer);
+
+            _world.GetPool<Pushed>().Add(_archer);
+            Run(1);
+
+            Assert.IsFalse(_world.GetPool<Staggered>().Has(_archer));
+            Assert.IsFalse(_world.GetPool<CastInterruptedEvent>().Has(_archer));
+        }
+
+        [Test]
+        public void APushedArcherDoesNotStartAWindup()
+        {
+            Build(heroAt: new Vector3(5f, 0f, 0f));
+            _world.GetPool<Interruptible>().Add(_archer);
+
+            _world.GetPool<Pushed>().Add(_archer);
+            Run(5);
+
+            Assert.AreEqual(0, Attack().WindupTicks);
+
+            _world.GetPool<Pushed>().Del(_archer);
+            Run(1);
+
+            Assert.AreEqual(WindupTicks, Attack().WindupTicks);
+        }
+
+        [Test]
+        public void ADeadArcherIsNotStaggered()
+        {
+            Build(heroAt: new Vector3(5f, 0f, 0f));
+            _world.GetPool<Interruptible>().Add(_archer);
+
+            Run(10);
+
+            _world.GetPool<Dead>().Add(_archer);
+            _world.GetPool<Pushed>().Add(_archer);
+            Run(1);
+
+            Assert.IsFalse(_world.GetPool<Staggered>().Has(_archer));
+        }
+
         private List<int> RecordShots(int ticks)
         {
             List<int> shots = new List<int>();
@@ -456,11 +570,13 @@ namespace Game.Simulation.Tests
             _systems = new EcsSystems(_world);
             _systems.Add(new ChaseTargetSystem());
             _systems.Add(new HoldForRangedAttackSystem());
+            _systems.Add(new HoldStaggeredSystem());
             _systems.Add(new FaceRangedTargetSystem());
             _systems.Add(new MoveSystem());
             _systems.Add(new ReleaseRangedAttackSystem());
             _systems.Add(new StartRangedAttackSystem());
             _systems.Add(new AdvanceProjectilesSystem());
+            _systems.Add(new InterruptCastSystem());
             _systems.Inject(new ContentRegistry(new IContentEntry[] { _enemy, _attack }), (IViewFactory)_views, _clock, level);
             _systems.Init();
         }

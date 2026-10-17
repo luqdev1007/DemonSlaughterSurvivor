@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -34,6 +34,7 @@ namespace Game.View
         [SerializeField] private SwordTrail _swordTrail;
         [SerializeField] private BossKnightView _actionView;
         [SerializeField] private DashChargeIndicator _chargeIndicator;
+        [SerializeField] private ParticleSystem _dazeFx;
 
         private bool _hasChargeParameters;
         private bool _hasChargedDashParameter;
@@ -164,6 +165,15 @@ namespace Game.View
 
             _animator.SetFloat(PushReactionSpeedId, 1f / seconds);
             _animator.SetTrigger(PushReactionTriggerId);
+        }
+
+        public void PlayCastInterrupted()
+        {
+            if (_isDead || _dazeFx == null)
+                return;
+
+            _dazeFx.Clear(true);
+            _dazeFx.Play(true);
         }
 
         public void ResetInterpolation()
@@ -362,6 +372,9 @@ namespace Game.View
             if (_hasPushReactionParameters)
                 _animator.ResetTrigger(PushReactionTriggerId);
 
+            if (_dazeFx != null)
+                _dazeFx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
             _isRunning = false;
             _isDashing = false;
             _isSpecial = false;
@@ -450,6 +463,9 @@ namespace Game.View
 
             if (_chargeIndicator != null)
                 _chargeIndicator.Hide();
+
+            if (_dazeFx != null)
+                _dazeFx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
             if (_actionView != null)
                 _actionView.ResetImmediate();

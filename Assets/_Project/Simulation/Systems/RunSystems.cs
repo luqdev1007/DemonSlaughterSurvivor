@@ -36,6 +36,7 @@ namespace Game.Simulation.Systems
             systems.Add(new BossDecideSystem());
             systems.Add(new HoldForEnemyActionSystem());
             systems.Add(new HoldForRangedAttackSystem());
+            systems.Add(new HoldStaggeredSystem());
             systems.Add(new SeparateNeighborsSystem());
             // 5.  Movement
             systems.Add(new StorePreviousPositionSystem());
@@ -80,6 +81,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SweepDashPushSystem());
             systems.Add(new SweepSlicingDashSystem());
             systems.Add(new SweepEnemyChargeSystem());
+            systems.Add(new InterruptCastSystem());
             systems.Add(new DetectContactDamageSystem());
             systems.Add(new StartGemFlightSystem());
             // 9.  Damage
@@ -119,6 +121,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncLeapLiftViewSystem());
             systems.Add(new SyncPushLiftViewSystem());
             systems.Add(new PlayRangedAttackFeedbackSystem());
+            systems.Add(new PlayCastInterruptFeedbackSystem());
             systems.Add(new PlayDeathFeedbackSystem());
             systems.Add(new SyncInvulnerabilityViewSystem());
             systems.Add(new SyncBerserkViewSystem());

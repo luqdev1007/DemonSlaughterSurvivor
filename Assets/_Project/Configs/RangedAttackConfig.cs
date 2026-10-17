@@ -11,6 +11,10 @@ namespace Game.Configs
         [SerializeField] private float _windupSeconds = 0.4f;
         [SerializeField] private float _cooldownSeconds = 2.5f;
 
+        [Header("Interrupt")]
+        [SerializeField] private bool _interruptible = true;
+        [SerializeField] private float _staggerSeconds = 0.5f;
+
         [Header("Animation")]
         [SerializeField] private string _animatorTrigger = "Shoot";
         [SerializeField] private float _releaseClipSeconds = 0.4f;
@@ -27,6 +31,10 @@ namespace Game.Configs
         public float WindupSeconds => _windupSeconds;
 
         public float CooldownSeconds => _cooldownSeconds;
+
+        public bool Interruptible => _interruptible;
+
+        public float StaggerSeconds => _staggerSeconds;
 
         public string AnimatorTrigger => _animatorTrigger;
 
@@ -53,6 +61,9 @@ namespace Game.Configs
             RequirePositive(label, nameof(_boltRadius), _boltRadius, "the bolt could only hit by touching the hero's centre");
             RequirePositive(label, nameof(_boltRange), _boltRange, "the bolt would vanish on the tick it is shot");
             RequirePositive(label, nameof(_boltDamage), _boltDamage, "ApplyDamageSystem drops events that deal nothing");
+
+            if (_interruptible)
+                RequirePositive(label, nameof(_staggerSeconds), _staggerSeconds, "a knocked archer would start the next windup on the tick it lands");
 
             if (float.IsNaN(_cooldownSeconds) || float.IsInfinity(_cooldownSeconds) || _cooldownSeconds < 0f)
                 throw new InvalidOperationException($"{label} has {nameof(_cooldownSeconds)} {_cooldownSeconds}; it must be zero or positive.");

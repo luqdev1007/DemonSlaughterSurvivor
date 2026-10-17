@@ -16,6 +16,8 @@ MonoBehaviour:
   _range: 8
   _windupSeconds: 0.4
   _cooldownSeconds: 2.5
+  _interruptible: 1
+  _staggerSeconds: 0.5
   _animatorTrigger: Shoot
   _releaseClipSeconds: 0.7333333
   _boltSpeed: 10

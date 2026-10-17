@@ -31,6 +31,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<RangedAttack> _rangedAttacks;
         private readonly EcsPool<Boss> _bosses;
         private readonly EcsPool<NotPushable> _notPushables;
+        private readonly EcsPool<Interruptible> _interruptibles;
         private readonly EcsPool<PreviousPosition> _previousPositions;
         private readonly EcsPool<EnemyAction> _actions;
         private readonly EcsPool<EnemyCharge> _charges;
@@ -62,6 +63,7 @@ namespace Game.Simulation.Services
             _rangedAttacks = world.GetPool<RangedAttack>();
             _bosses = world.GetPool<Boss>();
             _notPushables = world.GetPool<NotPushable>();
+            _interruptibles = world.GetPool<Interruptible>();
             _previousPositions = world.GetPool<PreviousPosition>();
             _actions = world.GetPool<EnemyAction>();
             _charges = world.GetPool<EnemyCharge>();
@@ -121,6 +123,9 @@ namespace Game.Simulation.Services
 
             if (config.RangedAttack != null)
                 _rangedAttacks.Add(entity).Config = config.RangedAttack;
+
+            if (config.RangedAttack != null && config.RangedAttack.Interruptible)
+                _interruptibles.Add(entity);
 
             if (config.Boss != null)
                 AddBoss(entity, config.Boss, position);

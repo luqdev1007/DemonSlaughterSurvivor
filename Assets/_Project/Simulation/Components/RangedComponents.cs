@@ -15,6 +15,13 @@ namespace Game.Simulation.Components
 
     public struct RangedWindupStarted { }
 
+    public struct CastInterruptedEvent { }
+
+    public struct Staggered
+    {
+        public int RemainingTicks;
+    }
+
     public struct Projectile
     {
         public EcsPackedEntity Source;
