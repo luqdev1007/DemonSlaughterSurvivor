@@ -67,6 +67,7 @@ namespace Game.Services
             _input.Gameplay.Dash.performed -= OnDashPerformed;
             _input.Gameplay.Ultimate.performed -= OnUltimatePerformed;
             _input.Gameplay.Pause.performed -= OnPausePerformed;
+            _input.Disable();
             _input.Dispose();
         }
 
