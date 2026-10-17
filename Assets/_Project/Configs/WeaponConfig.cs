@@ -111,6 +111,9 @@ namespace Game.Configs
         [SerializeField] private SwingBake _bake;
         [SerializeField] private float _maxReach;
         [SerializeField] private SwingCoverage _coverage = new SwingCoverage();
+        [SerializeField] private float _weight = 1f;
+        [SerializeField] private bool _definesTrigger = true;
+        [SerializeField] private bool _fullBody;
 
         public string AnimatorTrigger => _animatorTrigger;
 
@@ -127,6 +130,12 @@ namespace Game.Configs
         public float MaxReach => _maxReach;
 
         public SwingCoverage Coverage => _coverage;
+
+        public float Weight => _weight;
+
+        public bool DefinesTrigger => _definesTrigger;
+
+        public bool FullBody => _fullBody;
 
 #if UNITY_EDITOR
         public void OverwriteBakeResults(float windowStart, float windowEnd, float maxReach, SwingCoverage coverage)

@@ -436,6 +436,49 @@ namespace Game.Simulation.Tests
             CollectionAssert.AreEqual(first, second);
         }
 
+        [Test]
+        public void ANonTriggerVariantThatMissesTheTargetNeverPlays()
+        {
+            Build(Front(), 90f, 0.1f, 3);
+            SwingVariant extra = _config.Variant(2);
+            SetField(extra, "_definesTrigger", false);
+            extra.OverwriteBakeResults(extra.WindowStart, extra.WindowEnd, extra.MaxReach, new SwingCoverage());
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            Run(600);
+
+            Assert.Greater(_startedVariants.Count, 10);
+            CollectionAssert.DoesNotContain(_startedVariants, 2);
+            CollectionAssert.Contains(_startedVariants, 0);
+            CollectionAssert.Contains(_startedVariants, 1);
+        }
+
+        [Test]
+        public void ANonTriggerVariantCoveringTheTargetJoinsTheDrawByWeight()
+        {
+            Build(Front(), 90f, 0.1f, 3);
+            SwingVariant extra = _config.Variant(2);
+            SetField(extra, "_definesTrigger", false);
+            SetField(extra, "_weight", 2f);
+            SpawnEnemy(new Vector3(0f, 0f, 1.5f), 1.8f);
+
+            Run(600);
+
+            int extraCount = 0;
+
+            foreach (int variant in _startedVariants)
+            {
+                if (variant == 2)
+                    extraCount++;
+            }
+
+            float share = extraCount / (float)_startedVariants.Count;
+
+            Assert.Greater(_startedVariants.Count, 10);
+            Assert.Greater(share, 0.3f, $"weight 2 of 4 should take about half of {_startedVariants.Count} swings");
+            Assert.Less(share, 0.7f, $"weight 2 of 4 should take about half of {_startedVariants.Count} swings");
+        }
+
         private List<int> SpeedTrace()
         {
             Build(Front(), 90f, 0.1f, 2);

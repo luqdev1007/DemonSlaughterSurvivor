@@ -74,12 +74,12 @@ namespace Game.Simulation.Systems
                 SwingPose pose = new SwingPose(_positions.Value.Get(owner).Value, _facings.Value.Get(owner).Value);
                 float attackSpeed = _attackSpeeds.Value.Get(weapon).Value;
 
-                if (HasTarget(config, attackSpeed, pose) == false)
+                if (HasTarget(config, attackSpeed, pose, out Vector3 target) == false)
                     continue;
 
                 ref SwingRandom random = ref _randoms.Value.Get(weapon);
 
-                int variant = PickVariant(config, ref random.State);
+                int variant = PickVariant(config, pose, target, ref random.State);
 
                 StartSwing(world, weapon, owner, config, variant, attackSpeed, pose);
 
@@ -87,8 +87,10 @@ namespace Game.Simulation.Systems
             }
         }
 
-        private bool HasTarget(WeaponConfig config, float attackSpeed, in SwingPose pose)
+        private bool HasTarget(WeaponConfig config, float attackSpeed, in SwingPose pose, out Vector3 target)
         {
+            target = default;
+
             SwingCoverage coverage = config.TriggerCoverage;
             float lead = ResolveShortestWindup(config, attackSpeed);
 
@@ -106,7 +108,11 @@ namespace Game.Simulation.Systems
                 Vector3 position = _positions.Value.Get(candidate).Value;
 
                 if (Covers(coverage, pose, position))
+                {
+                    target = position;
+
                     return true;
+                }
 
                 if (_intents.Value.Has(candidate) == false || _speeds.Value.Has(candidate) == false)
                     continue;
@@ -114,7 +120,11 @@ namespace Game.Simulation.Systems
                 Vector3 walk = _intents.Value.Get(candidate).Value * _speeds.Value.Get(candidate).Value;
 
                 if (Covers(coverage, pose, position + walk * lead))
+                {
+                    target = position + walk * lead;
+
                     return true;
+                }
             }
 
             return false;
@@ -144,16 +154,41 @@ namespace Game.Simulation.Systems
             return shortest;
         }
 
-        private static int PickVariant(WeaponConfig config, ref uint state)
+        private static int PickVariant(WeaponConfig config, in SwingPose pose, Vector3 target, ref uint state)
         {
             float roll = SimulationRandom.NextUnit(ref state);
+            float total = 0f;
+            int last = 0;
 
-            int variant = (int)(roll * config.VariantCount);
+            for (int index = 0; index < config.VariantCount; index++)
+            {
+                if (IsEligible(config.Variant(index), pose, target))
+                    total += config.Variant(index).Weight;
+            }
 
-            if (variant >= config.VariantCount)
-                variant = config.VariantCount - 1;
+            float pick = roll * total;
+            float cumulative = 0f;
 
-            return variant;
+            for (int index = 0; index < config.VariantCount; index++)
+            {
+                SwingVariant variant = config.Variant(index);
+
+                if (IsEligible(variant, pose, target) == false)
+                    continue;
+
+                cumulative += variant.Weight;
+                last = index;
+
+                if (pick < cumulative)
+                    return index;
+            }
+
+            return last;
+        }
+
+        private static bool IsEligible(SwingVariant variant, in SwingPose pose, Vector3 target)
+        {
+            return variant.DefinesTrigger || Covers(variant.Coverage, pose, target);
         }
 
         private void StartSwing(EcsWorld world, int weapon, int owner, WeaponConfig config, int variant, float attackSpeed, in SwingPose pose)

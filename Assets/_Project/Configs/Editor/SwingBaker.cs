@@ -117,6 +117,9 @@ namespace Game.Configs.Editor
                 {
                     SwingCoverage coverage = BakeVariant(weapon, weapon.Variant(index), $"{nameof(WeaponConfig)} '{weapon.Id}'", animator, hand, blade, report);
 
+                    if (weapon.Variant(index).DefinesTrigger == false)
+                        continue;
+
                     for (int angle = 0; angle < SwingCoverage.AngleBins; angle++)
                     {
                         for (int distance = 0; distance < SwingCoverage.DistanceBins; distance++)

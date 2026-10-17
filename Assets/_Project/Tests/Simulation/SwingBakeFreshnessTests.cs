@@ -61,7 +61,7 @@ namespace Game.Simulation.Tests
                 {
                     SwingVariant variant = weapon.Variant(index);
 
-                    yield return new BakedSwing($"{weapon.Id} / {variant.AnimatorTrigger}", weapon, variant, AttackLayer);
+                    yield return new BakedSwing($"{weapon.Id} / {variant.AnimatorTrigger}", weapon, variant, variant.FullBody ? SpinLayer : AttackLayer);
                 }
             }
 
@@ -96,6 +96,18 @@ namespace Game.Simulation.Tests
             {
                 Assert.Greater(weapon.VariantCount, 0, $"{weapon.Id} has no swing variants.");
                 Assert.IsTrue(weapon.TriggerCoverage.IsBaked && weapon.TriggerCoverage.CoveredCount > 0, $"{weapon.Id}: trigger coverage is empty; the weapon would never swing.");
+
+                bool anyDefinesTrigger = false;
+
+                for (int index = 0; index < weapon.VariantCount; index++)
+                {
+                    Assert.Greater(weapon.Variant(index).Weight, 0f, $"{weapon.Id} / {weapon.Variant(index).AnimatorTrigger}: the weight must be positive.");
+
+                    if (weapon.Variant(index).DefinesTrigger)
+                        anyDefinesTrigger = true;
+                }
+
+                Assert.IsTrue(anyDefinesTrigger, $"{weapon.Id}: no variant defines the trigger; the intersection would cover everything.");
             }
 
             foreach (BakedSwing swing in Swings())
