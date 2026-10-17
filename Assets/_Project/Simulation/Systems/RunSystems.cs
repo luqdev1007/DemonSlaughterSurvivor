@@ -9,7 +9,7 @@ namespace Game.Simulation.Systems
             EcsSystems systems = new EcsSystems(world);
 
             // 1.  Input
-            systems.Add(new ReadMoveInputSystem());
+            systems.Add(new ReadInputStateSystem());
             systems.Add(new ReadDashInputSystem());
             systems.Add(new ReadUltimateInputSystem());
             // 2.  Abilities

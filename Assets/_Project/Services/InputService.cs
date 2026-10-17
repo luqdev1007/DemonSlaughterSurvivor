@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace Game.Services
 {
-    public sealed class InputService : IInputService, IPauseInput, IDisposable
+    public sealed class InputService : IInputService, IPauseInput, IPointerInput, IDisposable
     {
         private readonly GameControls _input;
 
@@ -24,6 +24,10 @@ namespace Game.Services
         }
 
         public Vector2 MoveAxis => _input.Gameplay.Move.ReadValue<Vector2>();
+
+        public Vector2 PointerPosition => _input.Gameplay.Point.ReadValue<Vector2>();
+
+        public bool IsStandHeld => _input.Gameplay.StandStill.IsPressed();
 
         public bool ConsumeDashPressed()
         {

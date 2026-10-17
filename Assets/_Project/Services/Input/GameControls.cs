@@ -129,6 +129,33 @@ namespace Game.Services.Input
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Point"",
+                    ""type"": ""Value"",
+                    ""id"": ""3c6e1a9f-58b2-4d07-9e4a-b1f2c7d80e15"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""StandStill"",
+                    ""type"": ""Button"",
+                    ""id"": ""9a1d4f7e-2c63-4b8a-a5f0-6e3b9d21c784"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""AutoTarget"",
+                    ""type"": ""Button"",
+                    ""id"": ""b5e2c8a1-7f94-4d3e-8c61-0a9f3e7b2d56"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -219,6 +246,39 @@ namespace Game.Services.Input
                     ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d27f9b3e-6a41-4c58-b2e9-81c4a0f5e3d6"",
+                    ""path"": ""<Mouse>/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Point"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e83a5c1d-9f26-4b7e-a4d0-35b8c2f1e967"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""StandStill"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f4b1e7a2-3d58-4c96-b0e3-a7c2d9f8164b"",
+                    ""path"": ""<Keyboard>/tab"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""AutoTarget"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -231,6 +291,9 @@ namespace Game.Services.Input
             m_Gameplay_Dash = m_Gameplay.FindAction("Dash", throwIfNotFound: true);
             m_Gameplay_Ultimate = m_Gameplay.FindAction("Ultimate", throwIfNotFound: true);
             m_Gameplay_Pause = m_Gameplay.FindAction("Pause", throwIfNotFound: true);
+            m_Gameplay_Point = m_Gameplay.FindAction("Point", throwIfNotFound: true);
+            m_Gameplay_StandStill = m_Gameplay.FindAction("StandStill", throwIfNotFound: true);
+            m_Gameplay_AutoTarget = m_Gameplay.FindAction("AutoTarget", throwIfNotFound: true);
         }
 
         ~@GameControls()
@@ -315,6 +378,9 @@ namespace Game.Services.Input
         private readonly InputAction m_Gameplay_Dash;
         private readonly InputAction m_Gameplay_Ultimate;
         private readonly InputAction m_Gameplay_Pause;
+        private readonly InputAction m_Gameplay_Point;
+        private readonly InputAction m_Gameplay_StandStill;
+        private readonly InputAction m_Gameplay_AutoTarget;
         /// <summary>
         /// Provides access to input actions defined in input action map "Gameplay".
         /// </summary>
@@ -342,6 +408,18 @@ namespace Game.Services.Input
             /// Provides access to the underlying input action "Gameplay/Pause".
             /// </summary>
             public InputAction @Pause => m_Wrapper.m_Gameplay_Pause;
+            /// <summary>
+            /// Provides access to the underlying input action "Gameplay/Point".
+            /// </summary>
+            public InputAction @Point => m_Wrapper.m_Gameplay_Point;
+            /// <summary>
+            /// Provides access to the underlying input action "Gameplay/StandStill".
+            /// </summary>
+            public InputAction @StandStill => m_Wrapper.m_Gameplay_StandStill;
+            /// <summary>
+            /// Provides access to the underlying input action "Gameplay/AutoTarget".
+            /// </summary>
+            public InputAction @AutoTarget => m_Wrapper.m_Gameplay_AutoTarget;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -380,6 +458,15 @@ namespace Game.Services.Input
                 @Pause.started += instance.OnPause;
                 @Pause.performed += instance.OnPause;
                 @Pause.canceled += instance.OnPause;
+                @Point.started += instance.OnPoint;
+                @Point.performed += instance.OnPoint;
+                @Point.canceled += instance.OnPoint;
+                @StandStill.started += instance.OnStandStill;
+                @StandStill.performed += instance.OnStandStill;
+                @StandStill.canceled += instance.OnStandStill;
+                @AutoTarget.started += instance.OnAutoTarget;
+                @AutoTarget.performed += instance.OnAutoTarget;
+                @AutoTarget.canceled += instance.OnAutoTarget;
             }
 
             /// <summary>
@@ -403,6 +490,15 @@ namespace Game.Services.Input
                 @Pause.started -= instance.OnPause;
                 @Pause.performed -= instance.OnPause;
                 @Pause.canceled -= instance.OnPause;
+                @Point.started -= instance.OnPoint;
+                @Point.performed -= instance.OnPoint;
+                @Point.canceled -= instance.OnPoint;
+                @StandStill.started -= instance.OnStandStill;
+                @StandStill.performed -= instance.OnStandStill;
+                @StandStill.canceled -= instance.OnStandStill;
+                @AutoTarget.started -= instance.OnAutoTarget;
+                @AutoTarget.performed -= instance.OnAutoTarget;
+                @AutoTarget.canceled -= instance.OnAutoTarget;
             }
 
             /// <summary>
@@ -471,6 +567,27 @@ namespace Game.Services.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnPause(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Point" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnPoint(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "StandStill" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnStandStill(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "AutoTarget" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnAutoTarget(InputAction.CallbackContext context);
         }
     }
 }

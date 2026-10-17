@@ -33,6 +33,8 @@ namespace Game.Bootstrap
         private readonly IBossVitalsSink _bossVitalsSink;
         private readonly IRunResultSink _resultSink;
         private readonly IPauseInput _pauseInput;
+        private readonly IPointerInput _pointerInput;
+        private readonly IAimInput _aimInput;
         private readonly IPauseMenuSink _pauseMenuSink;
         private readonly IPauseMenuInput _pauseMenuInput;
         private readonly LevelConfig _levelConfig;
@@ -73,12 +75,16 @@ namespace Game.Bootstrap
             IBossVitalsSink bossVitalsSink,
             IRunResultSink resultSink,
             IPauseInput pauseInput,
+            IPointerInput pointerInput,
+            IAimInput aimInput,
             IPauseMenuSink pauseMenuSink,
             IPauseMenuInput pauseMenuInput,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
             _pauseInput = pauseInput;
+            _pointerInput = pointerInput;
+            _aimInput = aimInput;
             _pauseMenuSink = pauseMenuSink;
             _pauseMenuInput = pauseMenuInput;
             _context = context;
@@ -133,6 +139,8 @@ namespace Game.Bootstrap
                 _context,
                 _clock,
                 _inputService,
+                _pointerInput,
+                _aimInput,
                 _registry,
                 _viewFactory,
                 _cameraService,

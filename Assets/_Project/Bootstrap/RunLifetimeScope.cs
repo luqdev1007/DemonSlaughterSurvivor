@@ -24,7 +24,9 @@ namespace Game.Bootstrap
 
             builder.Register<ViewPool>(Lifetime.Scoped).As<IViewFactory>();
 
-            builder.Register<CameraService>(Lifetime.Scoped).As<ICameraService>();
+            builder.Register<CameraService>(Lifetime.Scoped).AsSelf().As<ICameraService>();
+
+            builder.Register<CursorAim>(Lifetime.Scoped).As<IAimInput>();
 
             builder.Register<PlayerVitals>(Lifetime.Scoped).AsSelf().As<IPlayerVitalsSink>();
 

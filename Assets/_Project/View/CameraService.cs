@@ -10,6 +10,7 @@ namespace Game.View
     {
         private readonly GameObject _rig;
         private readonly CinemachineCamera _camera;
+        private readonly Camera _outputCamera;
 
         public CameraService(LevelConfig level)
         {
@@ -26,6 +27,12 @@ namespace Game.View
                 throw new InvalidOperationException(
                     $"Camera rig prefab '{level.CameraRigPrefab.name}' has no {nameof(CinemachineCamera)} in its hierarchy.");
 
+            _outputCamera = _rig.GetComponentInChildren<Camera>();
+
+            if (_outputCamera == null)
+                throw new InvalidOperationException(
+                    $"Camera rig prefab '{level.CameraRigPrefab.name}' has no {nameof(Camera)} in its hierarchy to render and aim through.");
+
             if (_camera.TryGetComponent(out CinemachineFollow follow) == false)
                 throw new InvalidOperationException(
                     $"{nameof(CinemachineCamera)} on '{level.CameraRigPrefab.name}' has no {nameof(CinemachineFollow)} component.");
@@ -38,6 +45,8 @@ namespace Game.View
             _camera.transform.SetPositionAndRotation(offset, rotation);
             _camera.PreviousStateIsValid = false;
         }
+
+        public Camera OutputCamera => _outputCamera;
 
         public void SetFollowTarget(Transform target)
         {
