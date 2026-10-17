@@ -23,6 +23,8 @@ namespace Game.Simulation.Components
 
     public struct SlicingDashRandom { public uint State; }
 
+    public struct AgileDashCooldown { public int RemainingTicks; }
+
     public struct DashFinisher
     {
         public EcsPackedEntity Owner;

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10062aeb7a559f944b37d53799dfd4a7, type: 3}
+  m_Name: AgileDash_Berserk
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.AgileDashConfig
+  _levels:
+  - _damageShare: 2
+    _cooldownSeconds: 8
+  - _damageShare: 2.75
+    _cooldownSeconds: 6.5
+  - _damageShare: 3.5
+    _cooldownSeconds: 5
+  _triggerRadius: 3
+  _minEnemies: 1
+  _windowSeconds: 0.75
+  _trigger: DashFinalAttack
+  _playbackSpeed: 1.4
+  _impactClipSeconds: 1.5
+  _clipSeconds: 2.133
+  _locksMovement: 1
+  _reach: 3.2
+  _halfAngleDegrees: 180
+  _pushSpeed: 5
+  _pushSeconds: 0.5
+  _pushArcHeight: 0.5
+  _reachAtFullCharge: 1.3

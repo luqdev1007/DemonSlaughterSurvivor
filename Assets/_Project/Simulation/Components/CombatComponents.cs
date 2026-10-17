@@ -15,6 +15,8 @@ namespace Game.Simulation.Components
 
     public struct Invulnerable { public int RemainingTicks; }
 
+    public struct ProjectilePassThrough { public int RemainingTicks; }
+
     public struct Pushed
     {
         public Vector3 Velocity;

@@ -83,6 +83,7 @@ namespace Game.Simulation.Systems
             systems.Add(new StartGemFlightSystem());
             // 9.  Damage
             systems.Add(new TickInvulnerabilitySystem());
+            systems.Add(new TickProjectilePassThroughSystem());
             systems.Add(new ApplyDamageSystem());
             // 10. Death
             systems.Add(new MarkDeadSystem());
