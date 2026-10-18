@@ -9,6 +9,7 @@ namespace Game.UI
         private const int VignetteSize = 256;
 
         [SerializeField] private Image _healthFill;
+        [SerializeField] private HealthOrbView _healthOrb;
         [SerializeField] private TMP_Text _healthText;
         [SerializeField] private Image _ultimateChargeFill;
         [SerializeField] private RageOrbView _rageOrb;
@@ -81,7 +82,11 @@ namespace Game.UI
         {
             float fraction = maxHealth > 0f ? Mathf.Clamp01(health / maxHealth) : 0f;
 
-            _healthFill.fillAmount = fraction;
+            if (_healthOrb != null)
+                _healthOrb.Show(fraction);
+            else
+                _healthFill.fillAmount = fraction;
+
             _healthText.SetText("{0} / {1}", Mathf.Ceil(health), Mathf.Ceil(maxHealth));
         }
 

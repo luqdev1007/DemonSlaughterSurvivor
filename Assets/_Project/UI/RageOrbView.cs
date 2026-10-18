@@ -28,6 +28,7 @@ namespace Game.UI
         [SerializeField] private float _haloSpinDegrees = 70f;
 
         private Material _material;
+        private Vector3 _pulseBaseScale = Vector3.one;
         private Texture2D _glowTexture;
         private Sprite _glowSprite;
         private float _full;
@@ -52,6 +53,9 @@ namespace Game.UI
 
         private void Awake()
         {
+            if (_pulseRoot != null)
+                _pulseBaseScale = _pulseRoot.localScale;
+
             if (_fill != null && _fillMaterial != null)
             {
                 _material = new Material(_fillMaterial);
@@ -101,7 +105,7 @@ namespace Game.UI
             if (_pulseRoot != null)
             {
                 float scale = 1f + _full * _pulseScale * wave + pop * _popScale;
-                _pulseRoot.localScale = new Vector3(scale, scale, 1f);
+                _pulseRoot.localScale = _pulseBaseScale * scale;
             }
 
             if (_glow != null)
