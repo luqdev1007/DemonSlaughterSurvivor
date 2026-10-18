@@ -54,6 +54,7 @@ namespace Game.Simulation.Systems
             systems.Add(new FaceAimSystem());
             systems.Add(new AssistSwingFacingSystem());
             systems.Add(new ApplyPushSystem());
+            systems.Add(new AdvanceGemScatterSystem());
             systems.Add(new ApplyGemFlightSystem());
             systems.Add(new ResolveBodyOverlapSystem());
             systems.Add(new MoveSystem());

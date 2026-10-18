@@ -13,7 +13,7 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Player, Position, PickupRadius>, Exc<Dead>> _heroes = default;
-        private readonly EcsFilterInject<Inc<Gem, Position>, Exc<GemFlight>> _resting = default;
+        private readonly EcsFilterInject<Inc<Gem, Position>, Exc<GemFlight, GemScatter>> _resting = default;
         private readonly EcsFilterInject<Inc<HealOrb, Position>, Exc<GemFlight>> _restingOrbs = default;
 
         private readonly EcsPoolInject<Position> _positions = default;
@@ -69,6 +69,14 @@ namespace Game.Simulation.Systems
             flight.TotalTicks = ExperienceRules.FlightTicks(_config, _clock.Value.Delta);
             flight.ElapsedTicks = 0;
             flight.Target = world.PackEntity(hero);
+            flight.Side = SideOf(pickup, position);
+        }
+
+        private static float SideOf(int pickup, Vector3 position)
+        {
+            float hash = Mathf.Sin(pickup * 12.9898f + position.x * 78.233f + position.z * 37.719f) * 43758.5453f;
+
+            return (hash - Mathf.Floor(hash)) * 2f - 1f;
         }
 
         private bool IsWounded(int hero)

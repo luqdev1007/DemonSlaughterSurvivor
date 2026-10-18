@@ -186,6 +186,40 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void ADroppedGemFliesOutOnAnArcAndLandsBeforeItCanBePickedUp()
+        {
+            Fixture fixture = Build(withPerks: false, scatter: true);
+
+            fixture.KillEnemy(new Vector3(1f, 0f, 0f), withGem: true);
+            fixture.Step();
+
+            int gem = -1;
+
+            foreach (int entity in fixture.World.Filter<Gem>().End())
+                gem = entity;
+
+            Assert.IsTrue(fixture.World.GetPool<GemScatter>().Has(gem), "a dropped gem scatters first");
+
+            float peak = 0f;
+
+            for (int tick = 0; tick < 60 && fixture.World.GetPool<GemScatter>().Has(gem); tick++)
+            {
+                Assert.IsFalse(fixture.World.GetPool<GemFlight>().Has(gem), "a scattering gem is not picked up");
+
+                fixture.Step();
+                peak = Mathf.Max(peak, fixture.World.GetPool<Position>().Get(gem).Value.y);
+            }
+
+            Vector3 landed = fixture.World.GetPool<Position>().Get(gem).Value;
+            float travelled = new Vector2(landed.x - 1f, landed.z).magnitude;
+
+            Assert.IsFalse(fixture.World.GetPool<GemScatter>().Has(gem), "the scatter ends");
+            Assert.Greater(peak, 0.5f, "the gem flies up on an arc");
+            Assert.AreEqual(0f, landed.y, 0.05f, "and lands on the ground");
+            Assert.That(travelled, Is.InRange(0.6f, 2.1f), "away from the enemy within the config distance");
+        }
+
+        [Test]
         public void EnemyWithoutAGemDropsNothing()
         {
             Fixture fixture = Build(withPerks: false);
@@ -279,7 +313,7 @@ namespace Game.Simulation.Tests
             return drops;
         }
 
-        private Fixture Build(bool withPerks)
+        private Fixture Build(bool withPerks, bool scatter = false)
         {
             ExperienceConfig experience = ScriptableObject.CreateInstance<ExperienceConfig>();
             SetField(experience, "_id", "experience.test");
@@ -301,6 +335,12 @@ namespace Game.Simulation.Tests
             SetField(gem, "_id", "gem.test");
             SetField(gem, "_viewPrefab", gemPrefab);
             SetField(gem, "_experience", 3);
+
+            if (scatter == false)
+            {
+                SetField(gem, "_scatterMinDistance", 0f);
+                SetField(gem, "_scatterMaxDistance", 0f);
+            }
             _assets.Add(gem);
 
             List<IContentEntry> entries = new List<IContentEntry> { character, gem };
@@ -388,6 +428,7 @@ namespace Game.Simulation.Tests
 
                 _systems = new EcsSystems(World);
                 _systems.Add(new RecomputeStatsSystem());
+                _systems.Add(new AdvanceGemScatterSystem());
                 _systems.Add(new ApplyGemFlightSystem());
                 _systems.Add(new MoveSystem());
                 _systems.Add(new StartGemFlightSystem());

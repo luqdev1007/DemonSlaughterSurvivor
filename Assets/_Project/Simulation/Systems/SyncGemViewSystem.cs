@@ -1,3 +1,4 @@
+using Game.Core;
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
@@ -11,14 +12,35 @@ namespace Game.Simulation.Systems
 
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<GemFlight> _flights = default;
 
         public void Run(IEcsSystems systems)
         {
             foreach (int entity in _filter.Value)
-                _views.Value.Get(entity).Value.SetPosition(_positions.Value.Get(entity).Value);
+                Sync(entity);
 
             foreach (int entity in _orbs.Value)
-                _views.Value.Get(entity).Value.SetPosition(_positions.Value.Get(entity).Value);
+                Sync(entity);
+        }
+
+        private void Sync(int entity)
+        {
+            IView view = _views.Value.Get(entity).Value;
+
+            view.SetPosition(_positions.Value.Get(entity).Value);
+
+            if (view is IPickupView pickup == false)
+                return;
+
+            float progress = 0f;
+
+            if (_flights.Value.Has(entity))
+            {
+                ref GemFlight flight = ref _flights.Value.Get(entity);
+                progress = flight.TotalTicks > 0 ? (float)flight.ElapsedTicks / flight.TotalTicks : 1f;
+            }
+
+            pickup.SetPickupFlight(progress);
         }
     }
 }

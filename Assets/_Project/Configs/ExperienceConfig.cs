@@ -12,6 +12,8 @@ namespace Game.Configs
         [Header("Gem flight")]
         [SerializeField] private float _flightSeconds = 0.5f;
         [SerializeField] private float _flightPower = 2f;
+        [SerializeField, Min(0f)] private float _flightAnticipation = 1.6f;
+        [SerializeField, Min(0f)] private float _flightArc = 1.1f;
 
         public int BaseRequired => _baseRequired;
 
@@ -20,6 +22,10 @@ namespace Game.Configs
         public float FlightSeconds => _flightSeconds;
 
         public float FlightPower => _flightPower;
+
+        public float FlightAnticipation => _flightAnticipation;
+
+        public float FlightArc => _flightArc;
 
         public int Required(int level)
         {

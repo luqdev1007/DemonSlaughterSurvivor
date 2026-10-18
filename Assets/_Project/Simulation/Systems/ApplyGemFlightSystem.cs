@@ -23,10 +23,24 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
         private float _power;
+        private float _anticipation;
+        private float _arc;
 
         public void Init(IEcsSystems systems)
         {
-            _power = ExperienceRules.Resolve(_content.Value, _context.Value).FlightPower;
+            Game.Configs.ExperienceConfig config = ExperienceRules.Resolve(_content.Value, _context.Value);
+
+            _power = config.FlightPower;
+            _anticipation = config.FlightAnticipation;
+            _arc = config.FlightArc;
+        }
+
+        public static float Ease(float t, float power, float anticipation)
+        {
+            if (anticipation <= 0f)
+                return Mathf.Pow(t, power);
+
+            return t * t * ((anticipation + 1f) * t - anticipation);
         }
 
         public void Run(IEcsSystems systems)
@@ -49,8 +63,15 @@ namespace Game.Simulation.Systems
                 if (flight.ElapsedTicks < flight.TotalTicks)
                     flight.ElapsedTicks++;
 
-                float progress = Mathf.Pow((float)flight.ElapsedTicks / flight.TotalTicks, _power);
-                Vector3 desired = Vector3.LerpUnclamped(flight.Start, _positions.Value.Get(hero).Value, progress);
+                float t = (float)flight.ElapsedTicks / flight.TotalTicks;
+                float progress = Ease(t, _power, _anticipation);
+                Vector3 target = _positions.Value.Get(hero).Value;
+                Vector3 desired = Vector3.LerpUnclamped(flight.Start, target, progress);
+
+                Vector3 across = Vector3.Cross(Vector3.up, target - flight.Start);
+
+                if (across.sqrMagnitude > 1e-6f)
+                    desired += across.normalized * (flight.Side * _arc * Mathf.Sin(Mathf.PI * t) * (1f - t));
 
                 velocity.Value = (desired - _positions.Value.Get(gem).Value) / delta;
             }

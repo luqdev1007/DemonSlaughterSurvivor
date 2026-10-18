@@ -20,8 +20,18 @@ namespace Game.Simulation.Components
 
     public struct HealOrb { public float Fraction; }
 
+    public struct GemScatter
+    {
+        public Vector3 Start;
+        public Vector3 End;
+        public float Height;
+        public int ElapsedTicks;
+        public int TotalTicks;
+    }
+
     public struct GemFlight
     {
+        public float Side;
         public Vector3 Start;
         public int TotalTicks;
         public int ElapsedTicks;

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -33,6 +33,7 @@ namespace Game.View
 
         [SerializeField] private BerserkLightningFx _berserkFx;
         [SerializeField] private SwordTrail _swordTrail;
+        [SerializeField] private PickupFx _pickupFx;
 
         private Vector3 _baseScale = Vector3.one;
         private bool _hasBaseScale;
@@ -160,6 +161,12 @@ namespace Game.View
             _previousPosition = _currentPosition;
             _currentPosition = position;
             _lastSyncTime = Time.time;
+        }
+
+        public void SetPickupFlight(float progress)
+        {
+            if (_pickupFx != null)
+                _pickupFx.SetFlight(progress);
         }
 
         public void SetLift(float height)
