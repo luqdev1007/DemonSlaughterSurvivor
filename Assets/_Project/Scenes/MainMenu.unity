@@ -924,7 +924,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 734093483}
-  - component: {fileID: 734093484}
   m_Layer: 0
   m_Name: Turntable
   m_TagString: Untagged
@@ -948,19 +947,6 @@ Transform:
   - {fileID: 7309957466014644620}
   m_Father: {fileID: 70102753}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &734093484
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 734093482}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2efd40c9f2605984badc2dc930a1a4b3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.View::Game.View.Turntable
-  _degreesPerSecond: 10
 --- !u!1001 &782639914
 PrefabInstance:
   m_ObjectHideFlags: 0
