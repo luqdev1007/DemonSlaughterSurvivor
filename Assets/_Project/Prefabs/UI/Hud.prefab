@@ -12068,7 +12068,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Game.UI.AbilityPanelView
   _container: {fileID: 8123836806320975895}
   _template: {fileID: 794015398303968664}
-  _dashIcon: {fileID: 21300000, guid: 8d95bcf261f259f4786a397bc66e3705, type: 3}
+  _dashIcon: {fileID: 21300000, guid: bc182f9a261e9a543b16cc551464c40e, type: 3}
 --- !u!1 &4998342217701488257
 GameObject:
   m_ObjectHideFlags: 0
