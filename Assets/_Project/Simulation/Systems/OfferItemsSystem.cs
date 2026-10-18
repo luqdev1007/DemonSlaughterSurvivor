@@ -23,6 +23,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<PendingItemChoice> _choices = default;
         private readonly EcsPoolInject<ItemRandom> _randoms = default;
         private readonly EcsPoolInject<EquippedItem> _equippedPool = default;
+        private readonly EcsPoolInject<ItemProgress> _progress = default;
+        private readonly EcsPoolInject<CombatStats> _combatStats = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -33,6 +35,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<ItemChoiceState> _state = default;
 
         private readonly List<int> _scratch = new List<int>();
+        private readonly ItemFloors _floors = new ItemFloors();
 
         public void Run(IEcsSystems systems)
         {
@@ -61,12 +64,22 @@ namespace Game.Simulation.Systems
                 state.Offers.Clear();
                 state.Slots.Clear();
 
+                if (_progress.Value.Has(hero) == false)
+                    _progress.Value.Add(hero);
+
+                ref ItemProgress progress = ref _progress.Value.Get(hero);
+
+                FillFloors(hero, loot.RankFloor(progress.Windows));
+                progress.Windows++;
+
+                float luck = _combatStats.Value.Has(hero) ? _combatStats.Value.Get(hero).Luck : 0f;
+
                 for (int index = 0; index < loot.OfferCount; index++)
                 {
-                    ItemOfferData offer = ItemRoller.Roll(loot, ref random.State, _scratch);
+                    ItemOfferData offer = ItemRoller.Roll(loot, ref random.State, _scratch, luck, _floors);
 
                     for (int reroll = 0; reroll < DuplicateRerolls && IsOffered(state, offer.ItemId); reroll++)
-                        offer = ItemRoller.Roll(loot, ref random.State, _scratch);
+                        offer = ItemRoller.Roll(loot, ref random.State, _scratch, luck, _floors);
 
                     ItemSlot slot = _content.Value.Get<ItemConfig>(offer.ItemId).Slot;
 
@@ -91,6 +104,24 @@ namespace Game.Simulation.Systems
             }
 
             return false;
+        }
+
+        private void FillFloors(int hero, int minRank)
+        {
+            EcsWorld world = _world.Value;
+
+            _floors.Clear();
+            _floors.MinRank = minRank;
+
+            foreach (int entity in _equipped.Value)
+            {
+                ref EquippedItem item = ref _equippedPool.Value.Get(entity);
+
+                if (item.Roll == null || item.Owner.Unpack(world, out int owner) == false || owner != hero)
+                    continue;
+
+                _floors.SetEquipped(item.Slot, item.Roll.Rank, item.Roll.Rarity);
+            }
         }
 
         private ItemOfferData FindEquipped(int hero, ItemSlot slot)

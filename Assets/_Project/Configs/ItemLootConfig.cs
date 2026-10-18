@@ -20,6 +20,9 @@ namespace Game.Configs
         [Header("Weights: rank 1..5")]
         [SerializeField] private float[] _rankWeights = { 35f, 30f, 20f, 10f, 5f };
 
+        [Header("Progression: the lowest rank rises by one every N loot windows")]
+        [SerializeField, Min(0)] private int _rankFloorEveryWindows = 3;
+
         [Header("Minor bonuses")]
         [SerializeField] private MinorBonus[] _minorPool = Array.Empty<MinorBonus>();
 
@@ -28,6 +31,14 @@ namespace Game.Configs
         public IReadOnlyList<WeightedItem> Items => _items;
 
         public IReadOnlyList<MinorBonus> MinorPool => _minorPool;
+
+        public int RankFloor(int windows)
+        {
+            if (_rankFloorEveryWindows <= 0)
+                return 1;
+
+            return Mathf.Min(ItemConfig.RankCount, 1 + windows / _rankFloorEveryWindows);
+        }
 
         public float RarityWeight(Rarity rarity)
         {

@@ -10,6 +10,8 @@ namespace Game.Simulation.Components
 
     public struct ItemRandom { public uint State; }
 
+    public struct ItemProgress { public int Windows; }
+
     public struct EquippedItem
     {
         public EcsPackedEntity Owner;

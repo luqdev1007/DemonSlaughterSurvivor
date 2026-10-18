@@ -1,5 +1,6 @@
 using Game.Core;
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
@@ -16,6 +17,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Experience> _experiences = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<CombatStats> _combatStats = default;
 
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
 
@@ -33,7 +35,7 @@ namespace Game.Simulation.Systems
                 if (flight.Target.Unpack(world, out int hero) == false || _dead.Value.Has(hero) || _experiences.Value.Has(hero) == false)
                     continue;
 
-                _experiences.Value.Get(hero).Current += _gems.Value.Get(gem).Experience;
+                Grant(hero, _gems.Value.Get(gem).Experience);
 
                 if (_views.Value.Has(gem))
                 {
@@ -46,6 +48,25 @@ namespace Game.Simulation.Systems
 
                 world.DelEntity(gem);
             }
+        }
+
+        private void Grant(int hero, int amount)
+        {
+            ref Experience experience = ref _experiences.Value.Get(hero);
+
+            experience.Current += amount;
+
+            float luck = _combatStats.Value.Has(hero) ? _combatStats.Value.Get(hero).Luck : 0f;
+
+            if (luck <= 0f)
+                return;
+
+            experience.LuckCarry += amount * luck / ItemRoller.LuckScale;
+
+            int bonus = (int)experience.LuckCarry;
+
+            experience.Current += bonus;
+            experience.LuckCarry -= bonus;
         }
     }
 }

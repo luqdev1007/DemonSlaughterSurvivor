@@ -54,6 +54,88 @@ namespace Game.Simulation.Tests
             }
         }
 
+        [Test]
+        public void AnOfferNeverDowngradesTheEquippedItemOfItsSlot()
+        {
+            ItemLootConfig loot = Load();
+            List<int> scratch = new List<int>();
+            uint state = SimulationRandom.SeedState(7);
+
+            ItemFloors floors = new ItemFloors();
+            floors.SetEquipped(ItemSlot.Weapon, 3, (int)Rarity.Rare);
+            floors.SetEquipped(ItemSlot.Armor, 5, (int)Rarity.Common);
+            floors.SetEquipped(ItemSlot.Ring, 1, (int)Rarity.Epic);
+            floors.SetEquipped(ItemSlot.Boots, 5, (int)Rarity.Legendary);
+
+            for (int index = 0; index < Rolls; index++)
+            {
+                ItemOfferData roll = ItemRoller.Roll(loot, ref state, scratch, 0f, floors);
+                ItemSlot slot = Item(loot, roll.ItemId).Slot;
+
+                Assert.AreNotEqual(ItemSlot.Boots, slot, "a maxed slot is never offered while others are open");
+
+                if (floors.HasEquipped(slot) == false)
+                    continue;
+
+                Assert.GreaterOrEqual(roll.Rank, floors.Rank(slot), $"{roll.ItemId} rank");
+                Assert.GreaterOrEqual(roll.Rarity, floors.Rarity(slot), $"{roll.ItemId} rarity");
+                Assert.IsTrue(roll.Rank > floors.Rank(slot) || roll.Rarity > floors.Rarity(slot), $"{roll.ItemId} must be strictly better");
+                Assert.AreEqual(loot.MinorBonuses((Rarity)roll.Rarity), roll.Minors.Count);
+            }
+        }
+
+        [Test]
+        public void TheRankFloorRisesWithLootWindows()
+        {
+            ItemLootConfig loot = Load();
+            List<int> scratch = new List<int>();
+            uint state = SimulationRandom.SeedState(11);
+
+            ItemFloors floors = new ItemFloors();
+            floors.MinRank = loot.RankFloor(6);
+
+            Assert.AreEqual(3, floors.MinRank);
+
+            for (int index = 0; index < Rolls; index++)
+                Assert.GreaterOrEqual(ItemRoller.Roll(loot, ref state, scratch, 0f, floors).Rank, 3);
+        }
+
+        [Test]
+        public void LuckRaisesTheShareOfRareItems()
+        {
+            ItemLootConfig loot = Load();
+            List<int> scratch = new List<int>();
+
+            Assert.Greater(Legendaries(loot, scratch, 100f), Legendaries(loot, scratch, 0f) * 2);
+        }
+
+        private static int Legendaries(ItemLootConfig loot, List<int> scratch, float luck)
+        {
+            uint state = SimulationRandom.SeedState(5);
+            int count = 0;
+
+            for (int index = 0; index < 8000; index++)
+            {
+                if (ItemRoller.Roll(loot, ref state, scratch, luck, null).Rarity == (int)Rarity.Legendary)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static ItemConfig Item(ItemLootConfig loot, string id)
+        {
+            foreach (WeightedItem item in loot.Items)
+            {
+                if (item.Item.Id == id)
+                    return item.Item;
+            }
+
+            Assert.Fail($"{id} is not in the loot table.");
+
+            return null;
+        }
+
         private static ItemLootConfig Load()
         {
             ItemLootConfig loot = AssetDatabase.LoadAssetAtPath<ItemLootConfig>(LootPath);

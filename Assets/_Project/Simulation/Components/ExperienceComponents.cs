@@ -6,7 +6,7 @@ namespace Game.Simulation.Components
 {
     public struct PickupRadius { public float Value; public float Base; }
 
-    public struct Experience { public int Level; public int Current; }
+    public struct Experience { public int Level; public int Current; public float LuckCarry; }
 
     public struct GemDrop { public GemConfig Config; }
 

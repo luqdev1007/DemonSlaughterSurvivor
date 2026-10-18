@@ -31,6 +31,24 @@ MonoBehaviour:
     _weight: 1
   - _item: {fileID: 11400000, guid: db7dc2f1c03eb6046a5c97475464c3e5, type: 2}
     _weight: 1
+  - _item: {fileID: 11400000, guid: 8490a44a840d47d8960de2d915a3e8a0, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: 5db08eb143974692bf9a529c53527bc8, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: 95cab6a23d744a1d879fd239ee0aef87, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: 1b4847a0f128429aac7ebd7048f08861, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: 07350f943c254f4381924b183112c0a7, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: 536832739f7747579ff104a6efdd4d27, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: cdb4450e078f4a9a8b11c4c9f35a9cf3, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: cf1ad02f25b34218985f8c47e2563202, type: 2}
+    _weight: 1
+  - _item: {fileID: 11400000, guid: d19f9113724f4d5288380ec008bae524, type: 2}
+    _weight: 1
   _rarityWeights:
   - 60
   - 28
@@ -68,3 +86,32 @@ MonoBehaviour:
     _op: 2
     _min: 0.02
     _max: 0.05
+  - _stat: 14
+    _op: 1
+    _min: 0.01
+    _max: 0.03
+  - _stat: 15
+    _op: 1
+    _min: 4
+    _max: 10
+  - _stat: 16
+    _op: 1
+    _min: 4
+    _max: 10
+  - _stat: 17
+    _op: 1
+    _min: 3
+    _max: 8
+  - _stat: 18
+    _op: 1
+    _min: 0.01
+    _max: 0.025
+  - _stat: 19
+    _op: 1
+    _min: 3
+    _max: 8
+  - _stat: 20
+    _op: 1
+    _min: 3
+    _max: 8
+  _rankFloorEveryWindows: 3

@@ -7,11 +7,21 @@ namespace Game.Simulation.Services
 {
     public static class ItemRoller
     {
+        public const float LuckScale = 100f;
+
         public static ItemOfferData Roll(ItemLootConfig loot, ref uint state, List<int> scratch)
         {
-            ItemConfig item = PickItem(loot, ref state);
-            Rarity rarity = PickRarity(loot, ref state);
+            return Roll(loot, ref state, scratch, 0f, null);
+        }
+
+        public static ItemOfferData Roll(ItemLootConfig loot, ref uint state, List<int> scratch, float luck, ItemFloors floors)
+        {
+            ItemConfig item = PickItem(loot, ref state, floors);
+            Rarity rarity = PickRarity(loot, ref state, luck);
             int rank = PickRank(loot, ref state);
+
+            if (floors != null)
+                Raise(item.Slot, floors, ref rank, ref rarity);
 
             ItemOfferData roll = new ItemOfferData
             {
@@ -45,19 +55,66 @@ namespace Game.Simulation.Services
             return roll;
         }
 
-        private static ItemConfig PickItem(ItemLootConfig loot, ref uint state)
+        public static void Raise(ItemSlot slot, ItemFloors floors, ref int rank, ref Rarity rarity)
+        {
+            if (rank < floors.MinRank)
+                rank = Mathf.Min(floors.MinRank, ItemConfig.RankCount);
+
+            if (floors.HasEquipped(slot) == false)
+                return;
+
+            int equippedRank = floors.Rank(slot);
+            Rarity equippedRarity = (Rarity)floors.Rarity(slot);
+
+            if (rank < equippedRank)
+                rank = equippedRank;
+
+            if (rarity < equippedRarity)
+                rarity = equippedRarity;
+
+            if (rank > equippedRank || rarity > equippedRarity)
+                return;
+
+            if (rank < ItemConfig.RankCount)
+            {
+                rank++;
+
+                return;
+            }
+
+            if ((int)rarity < ItemLootConfig.RarityCount - 1)
+                rarity++;
+        }
+
+        private static float ItemWeight(WeightedItem item, ItemFloors floors)
+        {
+            if (floors != null && floors.IsMaxed(item.Item.Slot))
+                return 0f;
+
+            return item.Weight;
+        }
+
+        private static ItemConfig PickItem(ItemLootConfig loot, ref uint state, ItemFloors floors)
         {
             IReadOnlyList<WeightedItem> items = loot.Items;
             float total = 0f;
 
             for (int index = 0; index < items.Count; index++)
-                total += items[index].Weight;
+                total += ItemWeight(items[index], floors);
+
+            if (total <= 0f)
+            {
+                floors = null;
+
+                for (int index = 0; index < items.Count; index++)
+                    total += items[index].Weight;
+            }
 
             float pick = SimulationRandom.NextUnit(ref state) * total;
 
             for (int index = 0; index < items.Count; index++)
             {
-                pick -= items[index].Weight;
+                pick -= ItemWeight(items[index], floors);
 
                 if (pick < 0f)
                     return items[index].Item;
@@ -66,18 +123,23 @@ namespace Game.Simulation.Services
             return items[items.Count - 1].Item;
         }
 
-        private static Rarity PickRarity(ItemLootConfig loot, ref uint state)
+        private static float RarityWeight(ItemLootConfig loot, int rarity, float luck)
+        {
+            return loot.RarityWeight((Rarity)rarity) * (1f + Mathf.Max(0f, luck) / LuckScale * rarity);
+        }
+
+        private static Rarity PickRarity(ItemLootConfig loot, ref uint state, float luck)
         {
             float total = 0f;
 
             for (int index = 0; index < ItemLootConfig.RarityCount; index++)
-                total += loot.RarityWeight((Rarity)index);
+                total += RarityWeight(loot, index, luck);
 
             float pick = SimulationRandom.NextUnit(ref state) * total;
 
             for (int index = 0; index < ItemLootConfig.RarityCount; index++)
             {
-                pick -= loot.RarityWeight((Rarity)index);
+                pick -= RarityWeight(loot, index, luck);
 
                 if (pick < 0f)
                     return (Rarity)index;

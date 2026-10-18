@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9518517f9d815af40b4366703c2fe25b, type: 3}
+  m_Name: Item_WardingEye
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.ItemConfig
+  _id: item.warding-eye
+  _displayName: "\u041E\u043A\u043E \u043E\u0431\u0435\u0440\u0435\u0433\u0430"
+  _icon: {fileID: 21300000, guid: 5eab218c44a7a4e6c9bc11bb047d8814, type: 3}
+  _slot: 4
+  _stat: 16
+  _op: 1
+  _rankValues:
+  - 15
+  - 22
+  - 30
+  - 40
+  - 55
