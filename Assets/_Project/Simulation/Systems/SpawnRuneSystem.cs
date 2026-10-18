@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
+        private readonly EcsCustomInject<IAnnouncementSink> _announcements = default;
 
         private RuneTableConfig _table;
         private uint _random;
@@ -90,6 +91,18 @@ namespace Game.Simulation.Systems
             _positions.Value.Add(entity).Value = position;
             _notIndexed.Value.Add(entity);
             _views.Value.Add(entity).Value = _viewFactory.Value.Create(rune.ViewPrefab, position);
+
+            Announce(rune);
+        }
+
+        private void Announce(RuneConfig rune)
+        {
+            if (_announcements.Value == null || string.IsNullOrEmpty(_table.SpawnAnnouncement) || string.IsNullOrEmpty(rune.DisplayName))
+                return;
+
+            string name = char.ToLowerInvariant(rune.DisplayName[0]) + rune.DisplayName.Substring(1);
+
+            _announcements.Value.Announce(string.Format(_table.SpawnAnnouncement, name));
         }
 
         private RuneConfig Pick()

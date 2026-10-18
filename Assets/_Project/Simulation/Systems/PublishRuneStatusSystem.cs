@@ -10,6 +10,10 @@ namespace Game.Simulation.Systems
     public sealed class PublishRuneStatusSystem : IEcsRunSystem
     {
         private readonly EcsFilterInject<Inc<Player>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Rune, Position>> _runes = default;
+
+        private readonly EcsPoolInject<Rune> _runePool = default;
+        private readonly EcsPoolInject<Position> _positions = default;
 
         private readonly EcsPoolInject<ActiveRune> _active = default;
         private readonly EcsPoolInject<View> _views = default;
@@ -20,6 +24,8 @@ namespace Game.Simulation.Systems
         public void Run(IEcsSystems systems)
         {
             float delta = _clock.Value.Delta;
+
+            PublishRune();
 
             foreach (int hero in _heroes.Value)
             {
@@ -49,6 +55,21 @@ namespace Game.Simulation.Systems
 
                 return;
             }
+        }
+
+        private void PublishRune()
+        {
+            if (_sink.Value == null)
+                return;
+
+            foreach (int rune in _runes.Value)
+            {
+                _sink.Value.PublishRune(true, _positions.Value.Get(rune).Value, _runePool.Value.Get(rune).Config.Color);
+
+                return;
+            }
+
+            _sink.Value.PublishRune(false, Vector3.zero, Color.clear);
         }
     }
 }

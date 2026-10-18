@@ -122,6 +122,12 @@ namespace Game.UI
 
                 if (_view.RuneStatus != null && _view.RuneStatus.IsWired)
                     _view.RuneStatus.Show(_runeStatus.Active, _runeStatus.Name, _runeStatus.Color, _runeStatus.Remaining, _runeStatus.Total);
+
+                if (_view.RuneBeacon != null && _view.RuneBeacon.IsWired)
+                {
+                    bool hasViewport = _camera.TryWorldToViewport(_runeStatus.RunePosition + Vector3.up, out Vector3 runeViewport);
+                    _view.RuneBeacon.Show(_runeStatus.RunePresent, hasViewport, runeViewport, _runeStatus.RuneColor);
+                }
                 RefreshDps();
             }
 

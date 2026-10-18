@@ -20,6 +20,7 @@ namespace Game.UI
         [SerializeField] private DpsView _dps;
         [SerializeField] private AnnouncementView _announcement;
         [SerializeField] private RuneStatusView _runeStatus;
+        [SerializeField] private RuneBeaconView _runeBeacon;
 
         [Header("Experience")]
         [SerializeField] private RectTransform _experienceFill;
@@ -74,6 +75,8 @@ namespace Game.UI
         public AnnouncementView Announcement => _announcement;
 
         public RuneStatusView RuneStatus => _runeStatus;
+
+        public RuneBeaconView RuneBeacon => _runeBeacon;
 
         public PauseMenuView PauseMenu => _pauseMenu;
 

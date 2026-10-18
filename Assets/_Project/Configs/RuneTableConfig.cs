@@ -21,7 +21,7 @@ namespace Game.Configs
         [SerializeField] private WeightedRune[] _runes = Array.Empty<WeightedRune>();
 
         [Header("Spawn timing")]
-        [SerializeField, Min(0f)] private float _firstDelaySeconds = 25f;
+        [SerializeField, Min(0f)] private float _firstDelaySeconds = 60f;
         [SerializeField, Min(0f)] private float _minIntervalSeconds = 25f;
         [SerializeField, Min(0f)] private float _maxIntervalSeconds = 45f;
 
@@ -32,6 +32,9 @@ namespace Game.Configs
 
         [Header("Pickup")]
         [SerializeField, Min(0.1f)] private float _pickupRadius = 1.3f;
+
+        [Header("Announcement: {0} is the rune name")]
+        [SerializeField] private string _spawnAnnouncement = "Где-то появилась {0}";
 
         public IReadOnlyList<WeightedRune> Runes => _runes;
 
@@ -48,6 +51,8 @@ namespace Game.Configs
         public float ArenaEdgeMargin => _arenaEdgeMargin;
 
         public float PickupRadius => _pickupRadius;
+
+        public string SpawnAnnouncement => _spawnAnnouncement;
 
         public void Validate(string owner)
         {

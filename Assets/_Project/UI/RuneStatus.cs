@@ -15,6 +15,19 @@ namespace Game.UI
 
         public float Total { get; private set; }
 
+        public bool RunePresent { get; private set; }
+
+        public Vector3 RunePosition { get; private set; }
+
+        public Color RuneColor { get; private set; }
+
+        public void PublishRune(bool present, Vector3 position, Color color)
+        {
+            RunePresent = present;
+            RunePosition = position;
+            RuneColor = color;
+        }
+
         public void Publish(string name, Color color, float remainingSeconds, float totalSeconds)
         {
             Active = true;
