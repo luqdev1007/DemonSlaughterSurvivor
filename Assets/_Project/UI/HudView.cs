@@ -11,6 +11,7 @@ namespace Game.UI
         [SerializeField] private Image _healthFill;
         [SerializeField] private TMP_Text _healthText;
         [SerializeField] private Image _ultimateChargeFill;
+        [SerializeField] private RageOrbView _rageOrb;
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
         [SerializeField] private UpgradeChoiceView _itemChoice;
         [SerializeField] private AbilityPanelView _abilityPanel;
@@ -87,6 +88,9 @@ namespace Game.UI
         public void ShowUltimateCharge(float fraction)
         {
             _ultimateChargeFill.fillAmount = Mathf.Clamp01(fraction);
+
+            if (_rageOrb != null)
+                _rageOrb.Show(fraction);
         }
 
         public void SetExperienceFill(float fraction)
