@@ -53,9 +53,22 @@ namespace Game.Simulation.Systems
 
                     PerkConfig perk = _content.Value.Get<PerkConfig>(taken.PerkId);
 
+                    if (HasCooldown(perk.Behaviour) == false)
+                        continue;
+
                     _sink.Value.Publish(taken.PerkId, ResolveRemainingTicks(hero, perk.Behaviour) * delta);
                 }
             }
+        }
+
+        private static bool HasCooldown(PerkBehaviourConfig behaviour)
+        {
+            return behaviour is ExecutionConfig
+                || behaviour is HeroicLeapConfig
+                || behaviour is AgileDashConfig
+                || behaviour is CounterStrikeConfig
+                || behaviour is SlicingDashConfig
+                || behaviour is PunishingLeapConfig;
         }
 
         private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
