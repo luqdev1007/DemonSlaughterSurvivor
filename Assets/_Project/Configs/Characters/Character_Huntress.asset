@@ -41,5 +41,6 @@ MonoBehaviour:
   _experience: {fileID: 11400000, guid: 810d3fda96e086643898af6c4dfed372, type: 2}
   _dash: {fileID: 0}
   _startingWeapon: {fileID: 0}
+  _bow: {fileID: 11400000, guid: 7e1aa1ebf54aa5748a0081206cc1ae2c, type: 2}
   _rage: {fileID: 0}
   _ultimate: {fileID: 0}

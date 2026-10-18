@@ -6,6 +6,14 @@ namespace Game.Simulation.Components
 {
     public struct Weapon { public WeaponConfig Config; }
 
+    public struct Bow { public BowConfig Config; }
+
+    public struct BowDraw
+    {
+        public int RemainingTicks;
+        public float PlaybackSpeed;
+    }
+
     public struct WeaponDamage { public float Value; public float Base; }
 
     public struct WeaponCooldown { public float Value; public float Base; }

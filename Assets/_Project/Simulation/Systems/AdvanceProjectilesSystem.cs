@@ -11,7 +11,7 @@ namespace Game.Simulation.Systems
     {
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Projectile, Position>> _projectiles = default;
+        private readonly EcsFilterInject<Inc<Projectile, Position>, Exc<Arrow>> _projectiles = default;
         private readonly EcsFilterInject<Inc<Player, Position, PreviousPosition, BodyRadius, Health>, Exc<Dead, ProjectilePassThrough>> _targets = default;
 
         private readonly EcsPoolInject<Projectile> _projectilePool = default;

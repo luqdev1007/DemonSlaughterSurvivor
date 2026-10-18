@@ -1,0 +1,116 @@
+using Game.Configs;
+using Game.Core;
+using Game.Simulation.Components;
+using Game.Simulation.Services;
+using Leopotam.EcsLite;
+using Leopotam.EcsLite.Di;
+using UnityEngine;
+
+namespace Game.Simulation.Systems
+{
+    public sealed class ReleaseBowShotSystem : IEcsRunSystem
+    {
+        private readonly EcsWorldInject _world = default;
+
+        private readonly EcsFilterInject<Inc<Bow, BowDraw, OwnerLink, WeaponDamage>> _draws = default;
+
+        private readonly EcsPoolInject<Bow> _bows = default;
+        private readonly EcsPoolInject<BowDraw> _drawPool = default;
+        private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
+        private readonly EcsPoolInject<WeaponDamage> _damages = default;
+        private readonly EcsPoolInject<TorsoAim> _aims = default;
+        private readonly EcsPoolInject<Position> _positions = default;
+        private readonly EcsPoolInject<Velocity> _velocities = default;
+        private readonly EcsPoolInject<Facing> _facings = default;
+        private readonly EcsPoolInject<Projectile> _projectiles = default;
+        private readonly EcsPoolInject<Arrow> _arrows = default;
+        private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
+        private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<View> _views = default;
+
+        private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
+        private readonly EcsCustomInject<SimulationClock> _clock = default;
+
+        public void Run(IEcsSystems systems)
+        {
+            EcsWorld world = _world.Value;
+            float delta = _clock.Value.Delta;
+
+            foreach (int bow in _draws.Value)
+            {
+                BowConfig config = _bows.Value.Get(bow).Config;
+                bool hasOwner = _ownerLinks.Value.Get(bow).Owner.Unpack(world, out int owner);
+
+                if (hasOwner == false || BowShot.IsBlocked(owner, _dead.Value) || _aims.Value.Has(owner) == false)
+                {
+                    _drawPool.Value.Del(bow);
+
+                    if (hasOwner)
+                        Cue(owner, config.CancelTrigger);
+
+                    continue;
+                }
+
+                ref BowDraw draw = ref _drawPool.Value.Get(bow);
+                draw.RemainingTicks--;
+
+                if (draw.RemainingTicks > 0)
+                    continue;
+
+                _drawPool.Value.Del(bow);
+
+                Vector3 origin = _positions.Value.Get(owner).Value;
+                Vector3 direction = ResolveDirection(world, in _aims.Value.Get(owner), origin);
+
+                Shoot(world, owner, config, origin, direction, _damages.Value.Get(bow).Value, delta);
+                Cue(owner, config.ReleaseTrigger);
+            }
+        }
+
+        private Vector3 ResolveDirection(EcsWorld world, in TorsoAim aim, Vector3 origin)
+        {
+            if (aim.Manual)
+                return aim.Desired;
+
+            if (aim.HasTarget && RangedTarget.TryFindLiving(world, aim.Target, _positions.Value, _dead.Value, out Vector3 target))
+            {
+                Vector3 offset = target - origin;
+                offset.y = 0f;
+
+                if (offset.sqrMagnitude > Mathf.Epsilon)
+                    return offset.normalized;
+            }
+
+            return aim.Direction;
+        }
+
+        private void Shoot(EcsWorld world, int owner, BowConfig config, Vector3 origin, Vector3 direction, float damage, float delta)
+        {
+            Vector3 spawn = origin + direction * config.MuzzleDistance;
+
+            int arrow = world.NewEntity();
+
+            ref Projectile projectile = ref _projectiles.Value.Add(arrow);
+            projectile.Source = world.PackEntity(owner);
+            projectile.LastPosition = spawn;
+            projectile.Damage = damage;
+            projectile.Radius = config.ArrowRadius;
+            projectile.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.ArrowRange / (config.ArrowSpeed * delta)));
+
+            _arrows.Value.Add(arrow);
+            _positions.Value.Add(arrow).Value = spawn;
+            _velocities.Value.Add(arrow).Value = direction * config.ArrowSpeed;
+            _facings.Value.Add(arrow).Value = direction;
+            _notIndexed.Value.Add(arrow);
+            _views.Value.Add(arrow).Value = _viewFactory.Value.Create(config.ArrowPrefab, spawn);
+        }
+
+        private void Cue(int owner, string trigger)
+        {
+            if (_views.Value.Has(owner) == false || _views.Value.Get(owner).Value == null)
+                return;
+
+            _views.Value.Get(owner).Value.PlayAttack(trigger, 1f);
+        }
+    }
+}

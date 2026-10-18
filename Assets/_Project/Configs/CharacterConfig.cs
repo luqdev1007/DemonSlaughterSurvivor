@@ -57,6 +57,7 @@ namespace Game.Configs
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
         [SerializeField] private WeaponConfig _startingWeapon;
+        [SerializeField] private BowConfig _bow;
         [SerializeField] private RageConfig _rage;
         [SerializeField] private BerserkAbilityConfig _ultimate;
 
@@ -113,6 +114,8 @@ namespace Game.Configs
         public DashAbilityConfig Dash => _dash;
 
         public WeaponConfig StartingWeapon => _startingWeapon;
+
+        public BowConfig Bow => _bow;
 
         public RageConfig Rage => _rage;
 

@@ -22,6 +22,8 @@ namespace Game.Simulation.Components
         public int RemainingTicks;
     }
 
+    public struct Arrow { }
+
     public struct Projectile
     {
         public EcsPackedEntity Source;

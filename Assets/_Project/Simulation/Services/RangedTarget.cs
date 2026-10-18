@@ -31,6 +31,11 @@ namespace Game.Simulation.Services
 
         public static bool SweptHit(Vector3 boltFrom, Vector3 boltTo, Vector3 bodyFrom, Vector3 bodyTo, float contact)
         {
+            return SweptHit(boltFrom, boltTo, bodyFrom, bodyTo, contact, out _);
+        }
+
+        public static bool SweptHit(Vector3 boltFrom, Vector3 boltTo, Vector3 bodyFrom, Vector3 bodyTo, float contact, out float time)
+        {
             float offsetX = bodyFrom.x - boltFrom.x;
             float offsetZ = bodyFrom.z - boltFrom.z;
             float driftX = (bodyTo.x - bodyFrom.x) - (boltTo.x - boltFrom.x);
@@ -44,6 +49,8 @@ namespace Game.Simulation.Services
 
             float gapX = offsetX + driftX * closest;
             float gapZ = offsetZ + driftZ * closest;
+
+            time = closest;
 
             return gapX * gapX + gapZ * gapZ <= contact * contact;
         }
