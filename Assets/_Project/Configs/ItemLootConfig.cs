@@ -11,6 +11,11 @@ namespace Game.Configs
         public const int RarityCount = 4;
 
         [SerializeField] private int _offerCount = 4;
+
+        [Header("Drop frequency")]
+        [SerializeField, Range(0f, 1f)] private float _dropChance = 0.35f;
+        [SerializeField, Min(0f)] private float _minDropIntervalSeconds = 40f;
+        [SerializeField, Min(1)] private int _maxPendingDrops = 1;
         [SerializeField] private WeightedItem[] _items = Array.Empty<WeightedItem>();
 
         [Header("Weights: common, rare, epic, legendary")]
@@ -27,6 +32,12 @@ namespace Game.Configs
         [SerializeField] private MinorBonus[] _minorPool = Array.Empty<MinorBonus>();
 
         public int OfferCount => _offerCount;
+
+        public float DropChance => _dropChance;
+
+        public float MinDropIntervalSeconds => _minDropIntervalSeconds;
+
+        public int MaxPendingDrops => _maxPendingDrops;
 
         public IReadOnlyList<WeightedItem> Items => _items;
 
