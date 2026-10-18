@@ -1231,7 +1231,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Game.UI.DamageNumberLayerView
   _layer: {fileID: 3144523412696103994}
   _template: {fileID: 4455850384262946899}
-  _capacity: 40
+  _capacity: 96
   _lifeSeconds: 0.9
   _fadeSeconds: 0.3
   _risePixels: 70
@@ -1244,11 +1244,13 @@ MonoBehaviour:
   - {r: 1, g: 0.22, b: 0.18, a: 1}
   - {r: 0.35, g: 0.62, b: 1, a: 1}
   - {r: 0.78, g: 0.35, b: 1, a: 1}
+  - {r: 0.75, g: 0.95, b: 0.85, a: 1}
   _scales:
   - 1
   - 1.35
   - 1
   - 1.35
+  - 1.1
 --- !u!1 &629765833258915721
 GameObject:
   m_ObjectHideFlags: 0

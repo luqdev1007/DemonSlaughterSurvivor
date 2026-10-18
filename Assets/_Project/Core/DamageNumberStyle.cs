@@ -5,6 +5,7 @@ namespace Game.Core
         Normal = 0,
         Crit = 1,
         Magic = 2,
-        MagicCrit = 3
+        MagicCrit = 3,
+        Evade = 4
     }
 }

@@ -3,21 +3,17 @@ using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
-using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
     public sealed class PublishDamageDealtSystem : IEcsRunSystem
     {
-        private readonly EcsWorldInject _world = default;
-
         private readonly EcsFilterInject<Inc<DamageEvent, DamageApplied>> _events = default;
+        private readonly EcsFilterInject<Inc<DamageEvent, DamageEvaded>> _evasions = default;
 
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<DamageApplied> _applied = default;
-        private readonly EcsPoolInject<Enemy> _enemies = default;
-        private readonly EcsPoolInject<Position> _positions = default;
-        private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
+        private readonly EcsPoolInject<DamageEvaded> _evaded = default;
 
         private readonly EcsCustomInject<IDamageNumberSink> _sink = default;
         private readonly EcsCustomInject<IDamageDealtSink> _dealt = default;
@@ -31,30 +27,32 @@ namespace Game.Simulation.Systems
             if (_sink.Value == null && _dealt.Value == null)
                 return;
 
-            EcsWorld world = _world.Value;
-
             foreach (int entity in _events.Value)
             {
-                float amount = _applied.Value.Get(entity).Amount;
+                ref DamageApplied applied = ref _applied.Value.Get(entity);
 
-                if (amount <= 0f)
-                    continue;
-
-                ref DamageEvent damage = ref _damageEvents.Value.Get(entity);
-
-                if (damage.Target.Unpack(world, out int target) == false || _enemies.Value.Has(target) == false || _positions.Value.Has(target) == false)
+                if (applied.Amount <= 0f || applied.OnEnemy == false)
                     continue;
 
                 if (_dealt.Value != null)
-                    _dealt.Value.Record(amount);
+                    _dealt.Value.Record(applied.Amount);
 
                 if (_sink.Value == null)
                     continue;
 
-                float height = _bodyHeights.Value.Has(target) ? _bodyHeights.Value.Get(target).Value : 1.8f;
-                Vector3 position = _positions.Value.Get(target).Value + Vector3.up * height;
+                ref DamageEvent damage = ref _damageEvents.Value.Get(entity);
 
-                _sink.Value.Show(target, position, amount, ResolveStyle(damage.IsCrit, damage.IsMagic));
+                _sink.Value.Show(applied.TargetKey, applied.Anchor, applied.Amount, ResolveStyle(damage.IsCrit, damage.IsMagic));
+            }
+
+            if (_sink.Value == null)
+                return;
+
+            foreach (int entity in _evasions.Value)
+            {
+                ref DamageEvaded evaded = ref _evaded.Value.Get(entity);
+
+                _sink.Value.Show(evaded.TargetKey, evaded.Anchor, 0f, DamageNumberStyle.Evade);
             }
         }
 

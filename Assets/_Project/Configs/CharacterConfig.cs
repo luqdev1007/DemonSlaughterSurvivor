@@ -22,6 +22,22 @@ namespace Game.Configs
         [SerializeField] private float _maxHealth = 100f;
         [SerializeField] private float _hitInvulnerabilitySeconds = 0.5f;
 
+        [Header("Offense")]
+        [SerializeField, Range(0f, 1f)] private float _critChance = 0.05f;
+        [SerializeField, Min(1f)] private float _critMultiplier = 2f;
+        [SerializeField, Min(0f)] private float _attackPower;
+        [SerializeField, Min(0f)] private float _spellPower;
+
+        [Header("Defense")]
+        [SerializeField, Min(0f)] private float _armor;
+        [SerializeField, Min(0f)] private float _magicResist;
+        [SerializeField, Min(1f)] private float _defenseScale = 100f;
+        [SerializeField, Range(0f, 1f)] private float _evasion;
+        [SerializeField, Range(0f, 1f)] private float _maxEvasion = 0.6f;
+
+        [Header("Fortune")]
+        [SerializeField, Min(0f)] private float _luck;
+
         [Header("Life Steal")]
         [SerializeField, Min(0f)] private float _lifeOnKill;
         [SerializeField, Min(0f)] private float _lifeOnHit;
@@ -54,6 +70,26 @@ namespace Game.Configs
         public float MaxHealth => _maxHealth;
 
         public float HitInvulnerabilitySeconds => _hitInvulnerabilitySeconds;
+
+        public float CritChance => _critChance;
+
+        public float CritMultiplier => _critMultiplier;
+
+        public float AttackPower => _attackPower;
+
+        public float SpellPower => _spellPower;
+
+        public float Armor => _armor;
+
+        public float MagicResist => _magicResist;
+
+        public float DefenseScale => _defenseScale;
+
+        public float Evasion => _evasion;
+
+        public float MaxEvasion => _maxEvasion;
+
+        public float Luck => _luck;
 
         public float LifeOnKill => _lifeOnKill;
 

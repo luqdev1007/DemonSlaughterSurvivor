@@ -36,6 +36,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
         private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
+        private readonly EcsPoolInject<CombatStats> _combatStats = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -270,6 +271,18 @@ namespace Game.Simulation.Systems
                 lifeSteal.OnKill = StatFormula.Evaluate(lifeSteal.OnKillBase, Total(StatId.LifeOnKill));
                 lifeSteal.OnHit = StatFormula.Evaluate(lifeSteal.OnHitBase, Total(StatId.LifeOnHit));
             }
+
+            if (_combatStats.Value.Has(target))
+            {
+                ref CombatStats combat = ref _combatStats.Value.Get(target);
+                combat.CritChance = StatFormula.Evaluate(combat.CritChanceBase, Total(StatId.CritChance));
+                combat.Armor = StatFormula.Evaluate(combat.ArmorBase, Total(StatId.Armor));
+                combat.MagicResist = StatFormula.Evaluate(combat.MagicResistBase, Total(StatId.MagicResist));
+                combat.Luck = StatFormula.Evaluate(combat.LuckBase, Total(StatId.Luck));
+                combat.Evasion = StatFormula.Evaluate(combat.EvasionBase, Total(StatId.Evasion));
+                combat.AttackPower = StatFormula.Evaluate(combat.AttackPowerBase, Total(StatId.AttackPower));
+                combat.SpellPower = StatFormula.Evaluate(combat.SpellPowerBase, Total(StatId.SpellPower));
+            }
         }
 
         private void GuardPositive(int target, StatId stat, float value, float baseValue, string reason)
@@ -358,6 +371,14 @@ namespace Game.Simulation.Systems
                 case StatId.LifeOnKill:
                 case StatId.LifeOnHit:
                     return _lifeSteals.Value.Has(target);
+                case StatId.CritChance:
+                case StatId.Armor:
+                case StatId.MagicResist:
+                case StatId.Luck:
+                case StatId.Evasion:
+                case StatId.AttackPower:
+                case StatId.SpellPower:
+                    return _combatStats.Value.Has(target);
                 default:
                     return false;
             }

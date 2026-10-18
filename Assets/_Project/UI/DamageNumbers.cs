@@ -91,12 +91,11 @@ namespace Game.UI
                 if (existing.Active == false || existing.Key != request.Key || existing.Age > layer.MergeSeconds)
                     continue;
 
+                if (existing.Style != request.Style || IsCrit(request.Style))
+                    continue;
+
                 existing.Amount += request.Amount;
                 existing.World = request.Position;
-
-                if (request.Style > existing.Style)
-                    existing.Style = request.Style;
-
                 existing.PopAge = 0f;
                 Write(layer, existing);
 
@@ -123,12 +122,24 @@ namespace Game.UI
         {
             item.Text.color = layer.StyleColor(item.Style);
 
+            if (item.Style == DamageNumberStyle.Evade)
+            {
+                item.Text.SetText("Уклон");
+
+                return;
+            }
+
             float shown = Mathf.Max(1f, Mathf.Round(item.Amount));
 
-            if (item.Style == DamageNumberStyle.Crit || item.Style == DamageNumberStyle.MagicCrit)
+            if (IsCrit(item.Style))
                 item.Text.SetText("{0:0}!", shown);
             else
                 item.Text.SetText("{0:0}", shown);
+        }
+
+        private static bool IsCrit(DamageNumberStyle style)
+        {
+            return style == DamageNumberStyle.Crit || style == DamageNumberStyle.MagicCrit;
         }
 
         private readonly struct Request

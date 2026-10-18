@@ -41,6 +41,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<RageState> _rageStates = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
+        private readonly EcsPoolInject<CombatStats> _combatStats = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -108,6 +109,25 @@ namespace Game.Simulation.Systems
             ref AbilityCooldownScale cooldownScale = ref _cooldownScales.Value.Add(entity);
             cooldownScale.Base = 1f;
             cooldownScale.Value = 1f;
+
+            ref CombatStats combat = ref _combatStats.Value.Add(entity);
+            combat.CritChanceBase = character.CritChance;
+            combat.CritChance = character.CritChance;
+            combat.CritMultiplier = character.CritMultiplier;
+            combat.AttackPowerBase = character.AttackPower;
+            combat.AttackPower = character.AttackPower;
+            combat.SpellPowerBase = character.SpellPower;
+            combat.SpellPower = character.SpellPower;
+            combat.ArmorBase = character.Armor;
+            combat.Armor = character.Armor;
+            combat.MagicResistBase = character.MagicResist;
+            combat.MagicResist = character.MagicResist;
+            combat.DefenseScale = character.DefenseScale;
+            combat.EvasionBase = character.Evasion;
+            combat.Evasion = character.Evasion;
+            combat.MaxEvasion = character.MaxEvasion;
+            combat.LuckBase = character.Luck;
+            combat.Luck = character.Luck;
 
             ref LifeSteal lifeSteal = ref _lifeSteals.Value.Add(entity);
             lifeSteal.OnKillBase = character.LifeOnKill;

@@ -21,12 +21,19 @@ namespace Game.UI
             { StatId.LifeOnKill, "здоровья за убийство" },
             { StatId.LifeOnHit, "вампиризм (здоровья за удар)" },
             { StatId.SwingReach, "дальность удара" },
-            { StatId.AbilityCooldown, "перезарядка способностей" }
+            { StatId.AbilityCooldown, "перезарядка способностей" },
+            { StatId.CritChance, "шанс крит. удара" },
+            { StatId.Armor, "защита от физ. урона" },
+            { StatId.MagicResist, "защита от маг. урона" },
+            { StatId.Luck, "удача" },
+            { StatId.Evasion, "уклонение" },
+            { StatId.AttackPower, "сила атаки" },
+            { StatId.SpellPower, "сила заклинаний" }
         };
 
-        private static bool IsHealthShare(StatId stat)
+        private static bool IsFraction(StatId stat)
         {
-            return stat == StatId.LifeOnHit || stat == StatId.LifeOnKill;
+            return stat == StatId.LifeOnHit || stat == StatId.LifeOnKill || stat == StatId.CritChance || stat == StatId.Evasion;
         }
 
         public static string Label(StatId stat)
@@ -42,7 +49,7 @@ namespace Game.UI
             string sign = value >= 0f ? "+" : "−";
             float magnitude = value >= 0f ? value : -value;
 
-            if (op == StatOp.Flat && IsHealthShare(stat) == false)
+            if (op == StatOp.Flat && IsFraction(stat) == false)
                 builder.Append(sign).Append(magnitude.ToString("0.##", CultureInfo.InvariantCulture));
             else
                 builder.Append(sign).Append((magnitude * 100f).ToString("0.#", CultureInfo.InvariantCulture)).Append('%');

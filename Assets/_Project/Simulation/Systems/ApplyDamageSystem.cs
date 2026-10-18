@@ -11,6 +11,7 @@ namespace Game.Simulation.Systems
     public sealed class ApplyDamageSystem : IEcsInitSystem, IEcsRunSystem
     {
         private const int TargetCapacityReserve = 16;
+        private const float DefaultBodyHeight = 1.8f;
 
         private readonly EcsWorldInject _world = default;
 
@@ -25,6 +26,9 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<KillingBlow> _killingBlows = default;
         private readonly EcsPoolInject<Player> _players = default;
         private readonly EcsPoolInject<BerserkMode> _berserkModes = default;
+        private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<Position> _positions = default;
+        private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -106,6 +110,14 @@ namespace Game.Simulation.Systems
 
             ref DamageApplied applied = ref _applied.Value.Add(eventEntity);
             applied.Amount = amount;
+            applied.TargetKey = target;
+            applied.OnEnemy = _enemies.Value.Has(target);
+
+            if (_positions.Value.Has(target))
+            {
+                float height = _bodyHeights.Value.Has(target) ? _bodyHeights.Value.Get(target).Value : DefaultBodyHeight;
+                applied.Anchor = _positions.Value.Get(target).Value + Vector3.up * height;
+            }
 
             if (wasAlive && health.Current <= 0f && _killingBlows.Value.Has(target) == false)
             {

@@ -9,7 +9,7 @@ namespace Game.UI
     {
         [SerializeField] private RectTransform _layer;
         [SerializeField] private TMP_Text _template;
-        [SerializeField] private int _capacity = 40;
+        [SerializeField] private int _capacity = 96;
 
         [Header("Motion")]
         [SerializeField] private float _lifeSeconds = 0.9f;
@@ -20,16 +20,17 @@ namespace Game.UI
         [SerializeField] private float _popScale = 1.5f;
         [SerializeField] private float _popSeconds = 0.12f;
 
-        [Header("Styles: normal, crit, magic, magic crit")]
+        [Header("Styles: normal, crit, magic, magic crit, evade")]
         [SerializeField] private Color[] _colors =
         {
             new Color(1f, 1f, 1f),
             new Color(1f, 0.22f, 0.18f),
             new Color(0.35f, 0.62f, 1f),
-            new Color(0.78f, 0.35f, 1f)
+            new Color(0.78f, 0.35f, 1f),
+            new Color(0.75f, 0.95f, 0.85f)
         };
 
-        [SerializeField] private float[] _scales = { 1f, 1.35f, 1f, 1.35f };
+        [SerializeField] private float[] _scales = { 1f, 1.35f, 1f, 1.35f, 1.1f };
 
         private readonly List<DamageNumberItem> _items = new List<DamageNumberItem>();
 

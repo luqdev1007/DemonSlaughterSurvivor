@@ -14,6 +14,13 @@ namespace Game.Core
         LifeOnKill = 10,
         LifeOnHit = 11,
         SwingReach = 12,
-        AbilityCooldown = 13
+        AbilityCooldown = 13,
+        CritChance = 14,
+        Armor = 15,
+        MagicResist = 16,
+        Luck = 17,
+        Evasion = 18,
+        AttackPower = 19,
+        SpellPower = 20
     }
 }

@@ -59,7 +59,42 @@ namespace Game.Simulation.Components
         public bool IsEmpowered;
     }
 
-    public struct DamageApplied { public float Amount; }
+    public struct DamageApplied
+    {
+        public float Amount;
+        public bool OnEnemy;
+        public int TargetKey;
+        public Vector3 Anchor;
+    }
+
+    public struct DamageEvaded
+    {
+        public int TargetKey;
+        public Vector3 Anchor;
+    }
+
+    public struct CombatStats
+    {
+        public float CritChance;
+        public float CritChanceBase;
+        public float CritMultiplier;
+        public float Armor;
+        public float ArmorBase;
+        public float MagicResist;
+        public float MagicResistBase;
+        public float DefenseScale;
+        public float Luck;
+        public float LuckBase;
+        public float Evasion;
+        public float EvasionBase;
+        public float MaxEvasion;
+        public float AttackPower;
+        public float AttackPowerBase;
+        public float SpellPower;
+        public float SpellPowerBase;
+    }
+
+    public struct CombatRandom { public uint State; }
 
     public struct AreaStrike
     {
