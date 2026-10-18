@@ -18,6 +18,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsFilterInject<Inc<DamageEvent>> _events = default;
 
+        private readonly EcsPoolInject<HunterMark> _marks = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<DamageEvaded> _evaded = default;
         private readonly EcsPoolInject<CombatStats> _combatStats = default;
@@ -51,6 +52,13 @@ namespace Game.Simulation.Systems
 
                 if (_healths.Value.Has(target) == false || _invulnerables.Value.Has(target))
                     continue;
+
+                if (_marks.Value.Has(target))
+                {
+                    ref HunterMark mark = ref _marks.Value.Get(target);
+                    damage.Amount *= 1f + mark.DamageTakenBonus;
+                    damage.CritChanceBonus += mark.CritChanceBonus;
+                }
 
                 if (damage.Source.Unpack(world, out int source) && source != target && _combatStats.Value.Has(source))
                     Empower(ref damage, ref _combatStats.Value.Get(source));

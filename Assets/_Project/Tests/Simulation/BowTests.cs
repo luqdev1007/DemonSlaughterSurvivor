@@ -32,6 +32,8 @@ namespace Game.Simulation.Tests
         private int _bow;
         private PerkConfig _powerPerk;
         private PerkConfig _multishotPerk;
+        private PerkConfig _volleyPerk;
+        private PerkConfig _explosivePerk;
 
         [SetUp]
         public void SetUp()
@@ -68,6 +70,19 @@ namespace Game.Simulation.Tests
             Set(multishot, "_spreadDegrees", 8f);
             _multishotPerk = Perk("perk.multishot", multishot);
 
+            PiercingVolleyConfig volley = Asset<PiercingVolleyConfig>();
+            _volleyPerk = Perk("perk.piercing-volley", volley);
+
+            ExplosiveArrowConfig explosive = Asset<ExplosiveArrowConfig>();
+            ExplosiveArrowLevel explosiveLevel = new ExplosiveArrowLevel();
+            Set(explosiveLevel, "_chance", 1f);
+            Set(explosiveLevel, "_damageScale", 0.5f);
+            Set(explosive, "_levels", new[] { explosiveLevel });
+            Set(explosive, "_radius", 2f);
+            Set(explosive, "_pushSpeed", 4f);
+            Set(explosive, "_pushSeconds", 0.3f);
+            _explosivePerk = Perk("perk.explosive-arrow", explosive);
+
             WaveTimelineConfig timeline = Asset<WaveTimelineConfig>();
             LevelConfig level = Asset<LevelConfig>();
             Set(level, "_waves", timeline);
@@ -83,9 +98,11 @@ namespace Game.Simulation.Tests
             _systems.Add(new StartBowDrawSystem());
             _systems.Add(new AdvanceProjectilesSystem());
             _systems.Add(new AdvanceArrowsSystem());
+            _systems.Add(new ResolveAreaStrikeSystem());
             _systems.Add(new RebuildSpatialGridSystem());
-            ContentRegistry registry = new ContentRegistry(new IContentEntry[] { _powerPerk, _multishotPerk });
-            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f), (IViewFactory)_views, (IContentRegistry)registry);
+            ContentRegistry registry = new ContentRegistry(new IContentEntry[] { _powerPerk, _multishotPerk, _volleyPerk, _explosivePerk });
+            RunContext context = new RunContext("level.test", "character.test", RunMode.Story, 7, System.Array.Empty<StatModifierSpec>());
+            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f), (IViewFactory)_views, (IContentRegistry)registry, context);
             _systems.Init();
 
             _heroView = new RecordingView();
@@ -363,7 +380,7 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void APowerShotWithMultishotEmpowersTheWholeVolley()
+        public void WithoutTheComboOnlyTheMiddleArrowOfAVolleyIsEmpowered()
         {
             Take(_powerPerk);
             Take(_multishotPerk);
@@ -372,9 +389,69 @@ namespace Game.Simulation.Tests
             Step(Mathf.RoundToInt(0.45f * 1.6f / Tick) + 1);
 
             Assert.AreEqual(3, Arrows());
+            Assert.AreEqual(1, PiercingArrows());
 
             foreach (int arrow in _world.Filter<Arrow>().End())
-                Assert.IsTrue(_world.GetPool<Arrow>().Get(arrow).Piercing);
+            {
+                if (_world.GetPool<Arrow>().Get(arrow).Piercing)
+                    Assert.AreEqual(0f, Vector3.SignedAngle(Vector3.forward, _world.GetPool<Velocity>().Get(arrow).Value, Vector3.up), 0.01f);
+            }
+        }
+
+        [Test]
+        public void ThePiercingVolleyComboEmpowersTheWholeVolley()
+        {
+            Take(_powerPerk);
+            Take(_multishotPerk);
+            Take(_volleyPerk);
+            Enemy(new Vector3(0f, 0f, 10f));
+
+            Step(Mathf.RoundToInt(0.45f * 1.6f / Tick) + 1);
+
+            Assert.AreEqual(3, Arrows());
+            Assert.AreEqual(3, PiercingArrows());
+        }
+
+        [Test]
+        public void AnExplosiveArrowBlastsAndThrowsTheEnemiesAround()
+        {
+            Take(_explosivePerk);
+            int target = Enemy(new Vector3(0f, 0f, 6f));
+            int neighbour = Enemy(new Vector3(1.2f, 0f, 6.3f));
+            int far = Enemy(new Vector3(6f, 0f, 6f));
+            _world.GetPool<Velocity>().Add(neighbour);
+            _world.GetPool<Velocity>().Add(far);
+
+            Step(DrawTicks + 15);
+
+            List<DamageEvent> hits = Hits();
+            float blast = 0f;
+
+            foreach (DamageEvent hit in hits)
+            {
+                if (hit.Target.Unpack(_world, out int hitTarget) && hitTarget == neighbour)
+                    blast += hit.Amount;
+
+                Assert.IsFalse(hit.Target.Unpack(_world, out int other) && other == far, "the far enemy is outside the blast");
+            }
+
+            Assert.AreEqual(Damage * 0.5f, blast, 1e-4f, "the neighbour takes half the arrow damage from the blast");
+            Assert.IsTrue(_world.GetPool<Pushed>().Has(neighbour), "the blast throws it back");
+            Assert.AreEqual(1, _world.Filter<LeapImpactFx>().End().GetEntitiesCount(), "one explosion effect");
+            Assert.AreNotEqual(-1, target);
+        }
+
+        private int PiercingArrows()
+        {
+            int count = 0;
+
+            foreach (int arrow in _world.Filter<Arrow>().End())
+            {
+                if (_world.GetPool<Arrow>().Get(arrow).Piercing)
+                    count++;
+            }
+
+            return count;
         }
 
         private void Take(PerkConfig perk)

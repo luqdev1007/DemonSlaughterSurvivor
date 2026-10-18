@@ -13,10 +13,14 @@ namespace Game.Simulation.Systems
     public sealed class AdvanceArrowsSystem : IEcsInitSystem, IEcsRunSystem
     {
         private const int CandidateCapacityReserve = 16;
+        private const float FullCircleDegrees = 180f;
+
+        public const string ExplosionStreamId = "stream.explosive-arrow";
 
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Projectile, Arrow, Position>> _arrows = default;
+        private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<Projectile> _projectiles = default;
         private readonly EcsPoolInject<Arrow> _arrowData = default;
@@ -29,6 +33,14 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<TakenPerk> _takenPool = default;
+        private readonly EcsPoolInject<ExplosiveArrowRandom> _explosionRandoms = default;
+        private readonly EcsPoolInject<AreaStrike> _strikes = default;
+        private readonly EcsPoolInject<LeapImpactFx> _impacts = default;
+        private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
+
+        private readonly EcsCustomInject<IContentRegistry> _content = default;
+        private readonly EcsCustomInject<RunContext> _context = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -126,6 +138,44 @@ namespace Game.Simulation.Systems
             damageEvent.Amount = projectile.Damage;
             damageEvent.Kind = DamageKind.Weapon;
             damageEvent.CritChanceBonus = data.CritChanceBonus;
+
+            TryExplode(world, in projectile, at);
+        }
+
+        private void TryExplode(EcsWorld world, in Projectile projectile, Vector3 at)
+        {
+            if (projectile.Source.Unpack(world, out int owner) == false)
+                return;
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out ExplosiveArrowConfig config, out int level) == false)
+                return;
+
+            if (_explosionRandoms.Value.Has(owner) == false)
+                _explosionRandoms.Value.Add(owner).State = SimulationRandom.StreamState(_context.Value.Seed, ExplosionStreamId);
+
+            ExplosiveArrowLevel entry = config.Level(level);
+
+            if (SimulationRandom.NextUnit(ref _explosionRandoms.Value.Get(owner).State) >= entry.Chance)
+                return;
+
+            ref AreaStrike strike = ref _strikes.Value.Add(world.NewEntity());
+            strike.Owner = projectile.Source;
+            strike.Origin = at;
+            strike.Forward = Vector3.forward;
+            strike.Reach = config.Radius;
+            strike.HalfAngleDegrees = FullCircleDegrees;
+            strike.Damage = projectile.Damage * entry.DamageScale;
+            strike.Kind = DamageKind.Perk;
+            strike.SourcePerk = config;
+            strike.PushSpeed = config.PushSpeed;
+            strike.PushSeconds = config.PushSeconds;
+            strike.PushArcHeight = config.PushArcHeight;
+
+            int fx = world.NewEntity();
+            _impacts.Value.Add(fx).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.FxSeconds / _clock.Value.Delta));
+            _positions.Value.Add(fx).Value = at;
+            _notIndexed.Value.Add(fx);
+            _views.Value.Add(fx).Value = _viewFactory.Value.Create(config.FxPrefab, at);
         }
 
         private void Query(in Projectile projectile, Vector3 from, Vector3 to)

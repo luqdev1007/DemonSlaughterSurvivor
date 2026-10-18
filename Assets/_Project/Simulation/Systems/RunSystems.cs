@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ExpireDashRequestSystem());
             systems.Add(new StartBackleapSystem());
             systems.Add(new TickBackleapTimersSystem());
+            systems.Add(new MarkOnBackleapSystem());
             systems.Add(new TickBerserkModeSystem());
             systems.Add(new TickPowerUpSystem());
             systems.Add(new StartBerserkSystem());
@@ -129,6 +130,7 @@ namespace Game.Simulation.Systems
             systems.Add(new CollectGemsSystem());
             systems.Add(new CollectHealOrbsSystem());
             systems.Add(new TickActiveRuneSystem());
+            systems.Add(new TickHunterMarksSystem());
             systems.Add(new ApplyHealSystem());
             systems.Add(new AdvanceLevelSystem());
             systems.Add(new OfferUpgradesSystem());

@@ -94,17 +94,18 @@ namespace Game.Simulation.Systems
 
         private void Volley(EcsWorld world, int owner, BowConfig config, Vector3 origin, Vector3 direction, float damage, bool empowered, float delta)
         {
-            Shot shot = new Shot { Damage = damage, Radius = config.ArrowRadius, Prefab = config.ArrowPrefab };
+            Shot normal = new Shot { Damage = damage, Radius = config.ArrowRadius, Prefab = config.ArrowPrefab };
+            Shot strong = normal;
 
             if (empowered && TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out PowerShotConfig power, out int powerLevel))
             {
                 PowerShotLevel level = power.Level(powerLevel);
 
-                shot.Damage *= level.DamageMultiplier;
-                shot.Radius *= power.WidthMultiplier;
-                shot.Prefab = power.ArrowPrefab;
-                shot.Piercing = true;
-                shot.CritChanceBonus = level.CritChanceBonus;
+                strong.Damage *= level.DamageMultiplier;
+                strong.Radius *= power.WidthMultiplier;
+                strong.Prefab = power.ArrowPrefab;
+                strong.Piercing = true;
+                strong.CritChanceBonus = level.CritChanceBonus;
 
                 ref PowerShotCooldown cooldown = ref _powerCooldowns.Value.Has(owner) ? ref _powerCooldowns.Value.Get(owner) : ref _powerCooldowns.Value.Add(owner);
                 cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(level.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, owner) / delta));
@@ -119,10 +120,20 @@ namespace Game.Simulation.Systems
                 spread = multishot.SpreadDegrees;
             }
 
+            bool wholeVolley = TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out PiercingVolleyConfig _, out _);
+            int center = (count - 1) / 2;
+
             for (int index = 0; index < count; index++)
             {
                 float angle = (index - (count - 1) * 0.5f) * spread;
-                Shoot(world, owner, config, origin, Quaternion.AngleAxis(angle, Vector3.up) * direction, in shot, delta);
+                bool strongArrow = wholeVolley || index == center;
+
+                Vector3 arrowDirection = Quaternion.AngleAxis(angle, Vector3.up) * direction;
+
+                if (strongArrow)
+                    Shoot(world, owner, config, origin, arrowDirection, in strong, delta);
+                else
+                    Shoot(world, owner, config, origin, arrowDirection, in normal, delta);
             }
         }
 
