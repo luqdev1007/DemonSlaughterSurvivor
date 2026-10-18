@@ -16,6 +16,7 @@ MonoBehaviour:
   _displayName: "\u0420\u0443\u043D\u0430 \u043F\u0440\u0438\u0442\u044F\u0436\u0435\u043D\u0438\u044F"
   _viewPrefab: {fileID: 407246236123416420, guid: 14b5def9b7798af4f9a4e09763e3cee5, type: 3}
   _color: {r: 0.72, g: 0.38, b: 1, a: 1}
+  _glyph: {fileID: 2800000, guid: 799c9119bdf0b6f4a922fd47fa9b4df4, type: 3}
   _durationSeconds: 5
   _modifiers:
   - _stat: 9

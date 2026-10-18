@@ -10,6 +10,7 @@ namespace Game.Configs
         [SerializeField] private string _displayName;
         [SerializeField] private GameObject _viewPrefab;
         [SerializeField] private Color _color = Color.white;
+        [SerializeField] private Texture2D _glyph;
         [SerializeField, Min(0.1f)] private float _durationSeconds = 10f;
         [SerializeField] private StatModifierEntry[] _modifiers = Array.Empty<StatModifierEntry>();
 
@@ -22,6 +23,8 @@ namespace Game.Configs
         public GameObject ViewPrefab => _viewPrefab;
 
         public Color Color => _color;
+
+        public Texture2D Glyph => _glyph;
 
         public float DurationSeconds => _durationSeconds;
 

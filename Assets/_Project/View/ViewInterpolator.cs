@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -34,6 +34,7 @@ namespace Game.View
         [SerializeField] private BerserkLightningFx _berserkFx;
         [SerializeField] private SwordTrail _swordTrail;
         [SerializeField] private PickupFx _pickupFx;
+        [SerializeField] private RuneAuraFx _runeAura;
 
         private Vector3 _baseScale = Vector3.one;
         private bool _hasBaseScale;
@@ -161,6 +162,12 @@ namespace Game.View
             _previousPosition = _currentPosition;
             _currentPosition = position;
             _lastSyncTime = Time.time;
+        }
+
+        public void SetRune(bool active, Color color, Texture glyph, float fraction, float remainingSeconds)
+        {
+            if (_runeAura != null)
+                _runeAura.Show(active, color, glyph, fraction, remainingSeconds);
         }
 
         public void SetPickupFlight(float progress)
