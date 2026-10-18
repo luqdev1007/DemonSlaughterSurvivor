@@ -209,3 +209,52 @@ AvatarMask:
     m_Weight: 1
   - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:RightShoulder/mixamorig:RightArm/mixamorig:RightForeArm/mixamorig:RightHand/mixamorig:RightHandThumb1/mixamorig:RightHandThumb2/mixamorig:RightHandThumb3/mixamorig:RightHandThumb4
     m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/Bat
+      Wings
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/L
+      Back Attach Bone
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/L
+      Back Attach Bone/Left Wing Shoulder
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/L
+      Back Attach Bone/Left Wing Shoulder/Left Upper Wing
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/L
+      Back Attach Bone/Left Wing Shoulder/Left Upper Wing/Left Wing Talon
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/L
+      Back Attach Bone/Left Wing Shoulder/Left Upper Wing/Left Wing Talon/Left Wing
+      Tip
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/L
+      Back Attach Bone/Left Wing Shoulder/Left Upper Wing/Left Wing Talon/Left Wing
+      Tip/Left Wing Tip_end
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/R
+      Back Attach Bone
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/R
+      Back Attach Bone/Right Wing Shoulder
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/R
+      Back Attach Bone/Right Wing Shoulder/Right Upper Wing
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/R
+      Back Attach Bone/Right Wing Shoulder/Right Upper Wing/Right Wing Talon
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/R
+      Back Attach Bone/Right Wing Shoulder/Right Upper Wing/Right Wing Talon/Right
+      Wing Tip
+    m_Weight: 1
+  - m_Path: mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/WingsMount/DemonWings/WingRig/R
+      Back Attach Bone/Right Wing Shoulder/Right Upper Wing/Right Wing Talon/Right
+      Wing Tip/Right Wing Tip_end
+    m_Weight: 1

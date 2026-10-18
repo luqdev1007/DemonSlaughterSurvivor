@@ -28,9 +28,8 @@ namespace Game.Simulation.Systems
                 }
 
                 BackleapPhase phase = _backleaps.Value.Get(entity).Phase;
-                bool wings = phase == BackleapPhase.Leap || phase == BackleapPhase.Hover;
 
-                view.SetAir((int)phase, _stats.Value.Get(entity).Config.LeapAnimationSpeed, wings);
+                view.SetAir((int)phase, _stats.Value.Get(entity).Config.LeapAnimationSpeed, true);
             }
         }
     }

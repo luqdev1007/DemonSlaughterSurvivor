@@ -29,6 +29,7 @@ namespace Game.View
         private static readonly int PushReactionSpeedId = Animator.StringToHash("PushReactionSpeed");
         private static readonly int AirPhaseId = Animator.StringToHash("AirPhase");
         private static readonly int AirSpeedId = Animator.StringToHash("AirSpeed");
+        private const string BackleapCue = "Backleap";
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -195,12 +196,18 @@ namespace Game.View
             }
 
             if (_wings != null)
-                _wings.Show(wings);
+                _wings.SetPhase(wings ? phase : 0);
 
-            if (_hasAirParameters == false || _airPhase == phase)
+            if (_airPhase == phase)
                 return;
 
+            if (_airPhase == 0 && phase != 0)
+                _onCue?.Invoke(this, ViewCue.Attack, BackleapCue);
+
             _airPhase = phase;
+
+            if (_hasAirParameters == false)
+                return;
 
             _animator.SetFloat(AirSpeedId, playbackSpeed);
             _animator.SetInteger(AirPhaseId, phase);

@@ -14,7 +14,10 @@ namespace Game.Editor
         private const string MaskPath = "Assets/_Project/Art/Animations/Huntress/Huntress_UpperBody.mask";
         private const string BakedFolder = "Assets/_Project/Art/Animations/Huntress/Baked/";
         private const string PrefabPath = "Assets/_Project/Prefabs/Heroes/Huntress.prefab";
-        private const string WingsMaterialPath = "Assets/_Project/Art/Materials/M_HuntressWingsStub.mat";
+        private const string WingsMaterialPath = "Assets/_Project/Art/Models/DemonWings/M_DemonWings.mat";
+        private const string WingsModelPath = "Assets/_Project/Art/Models/DemonWings/source/Demon Wings/Demon Wings.fbx";
+        private const string WingsTexturePath = "Assets/_Project/Art/Models/DemonWings/textures/Bat Wings Texture.jpeg";
+        private const float WingsScale = 0.065f;
         private const string WingsMountName = "WingsMount";
         private const string WingsBone = "mixamorig:Spine2";
         private const string SpineToken = "mixamorig:Spine";
@@ -316,40 +319,37 @@ namespace Game.Editor
 
             GameObject mount = new GameObject(WingsMountName);
             mount.transform.SetParent(bone, false);
-            mount.transform.position = bone.position - prefabRoot.transform.forward * 0.12f + Vector3.up * 0.05f;
+            mount.transform.position = bone.position - prefabRoot.transform.forward * 0.1f + Vector3.up * 0.02f;
             mount.transform.rotation = prefabRoot.transform.rotation;
             mount.AddComponent<NotBody>();
 
+            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(WingsModelPath), mount.transform);
+            model.name = "DemonWings";
+            model.transform.localRotation = Quaternion.identity;
+            model.transform.localScale = Vector3.one * WingsScale;
+            model.transform.localPosition = Vector3.zero;
+
+            Transform leftAttach = FindDeep(model.transform, "L Back Attach Bone");
+            Transform rightAttach = FindDeep(model.transform, "R Back Attach Bone");
+            Vector3 attach = mount.transform.InverseTransformPoint((leftAttach.position + rightAttach.position) * 0.5f);
+            model.transform.localPosition = -attach;
+
             Material material = WingsMaterial();
-            Transform[] wings = new Transform[2];
 
-            for (int side = 0; side < 2; side++)
+            foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
             {
-                float sign = side == 0 ? 1f : -1f;
-                GameObject wing = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                UnityEngine.Object.DestroyImmediate(wing.GetComponent<Collider>());
-
-                wing.name = side == 0 ? "WingRight" : "WingLeft";
-                wing.transform.SetParent(mount.transform, false);
-                wing.transform.localPosition = new Vector3(0.45f * sign, 0.15f, -0.1f);
-                wing.transform.localRotation = Quaternion.Euler(-15f, 30f * sign, 25f * sign);
-                wing.transform.localScale = new Vector3(0.9f, 0.6f, 1f);
-
-                MeshRenderer renderer = wing.GetComponent<MeshRenderer>();
                 renderer.sharedMaterial = material;
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-                wings[side] = wing.transform;
+                if (renderer is SkinnedMeshRenderer skinned)
+                    skinned.updateWhenOffscreen = true;
             }
 
             WingsFx fx = mount.AddComponent<WingsFx>();
             SerializedObject serializedFx = new SerializedObject(fx);
-            SerializedProperty list = serializedFx.FindProperty("_wings");
-            list.arraySize = wings.Length;
-
-            for (int index = 0; index < wings.Length; index++)
-                list.GetArrayElementAtIndex(index).objectReferenceValue = wings[index];
-
+            serializedFx.FindProperty("_model").objectReferenceValue = model.transform;
+            Chain(serializedFx.FindProperty("_right"), model.transform, "Right Wing Shoulder", "Right Upper Wing", "Right Wing Talon", "Right Wing Tip");
+            Chain(serializedFx.FindProperty("_left"), model.transform, "Left Wing Shoulder", "Left Upper Wing", "Left Wing Talon", "Left Wing Tip");
             serializedFx.ApplyModifiedPropertiesWithoutUndo();
 
             ViewInterpolator view = prefabRoot.GetComponent<ViewInterpolator>();
@@ -358,20 +358,32 @@ namespace Game.Editor
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        private static void Chain(SerializedProperty list, Transform root, params string[] bones)
+        {
+            list.arraySize = bones.Length;
+
+            for (int index = 0; index < bones.Length; index++)
+                list.GetArrayElementAtIndex(index).objectReferenceValue = FindDeep(root, bones[index]);
+        }
+
         private static Material WingsMaterial()
         {
             Material material = AssetDatabase.LoadAssetAtPath<Material>(WingsMaterialPath);
 
-            if (material != null)
-                return material;
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(material, WingsMaterialPath);
+            }
 
-            material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            material.SetColor("_BaseColor", new Color(0.12f, 0.02f, 0.03f, 1f));
-            material.SetColor("_EmissionColor", new Color(0.7f, 0.06f, 0.04f, 1f));
+            material.shader = Shader.Find("Universal Render Pipeline/Lit");
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(WingsTexturePath));
+            material.SetColor("_BaseColor", new Color(0.62f, 0.42f, 0.46f, 1f));
+            material.SetColor("_EmissionColor", new Color(0.18f, 0.02f, 0.03f, 1f));
             material.EnableKeyword("_EMISSION");
             material.SetFloat("_Cull", 0f);
-            material.SetFloat("_Smoothness", 0.2f);
-            AssetDatabase.CreateAsset(material, WingsMaterialPath);
+            material.SetFloat("_Smoothness", 0.25f);
+            EditorUtility.SetDirty(material);
 
             return material;
         }

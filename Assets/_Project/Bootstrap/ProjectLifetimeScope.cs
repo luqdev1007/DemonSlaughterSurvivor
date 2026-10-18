@@ -45,6 +45,8 @@ namespace Game.Bootstrap
             builder.RegisterInstance(_inputConfig);
 
             builder.RegisterEntryPoint<BootstrapEntryPoint>();
+
+            builder.RegisterEntryPoint<GameSpeedHotkeys>();
         }
     }
 }

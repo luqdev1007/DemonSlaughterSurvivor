@@ -117,3 +117,31 @@ MonoBehaviour:
       _delaySeconds: 0
       _maxConcurrent: 1
       _maxPerFrame: 1
+  - _animatorTrigger: Release
+    _cue:
+      _clips:
+      - {fileID: 8300000, guid: 9218fcef158f55f41b7aa447f6bd99b4, type: 3}
+      - {fileID: 8300000, guid: 5cad81f532fb31f468d0ecdb937927ba, type: 3}
+      - {fileID: 8300000, guid: 560380be6e79c024a9197a174fc6fb64, type: 3}
+      - {fileID: 8300000, guid: 81ea32d41088560488d94fd9db482317, type: 3}
+      - {fileID: 8300000, guid: 18dcf47553902ee4692f92e191cb1d33, type: 3}
+      - {fileID: 8300000, guid: 6b187bc2c15b67f469b57f19d2af7ca0, type: 3}
+      - {fileID: 8300000, guid: 163ceaefa59ee4f41b2ad551920f4078, type: 3}
+      _volume: 0.6
+      _minPitch: 0.92
+      _maxPitch: 1.08
+      _delaySeconds: 0
+      _maxConcurrent: 3
+      _maxPerFrame: 1
+  - _animatorTrigger: Backleap
+    _cue:
+      _clips:
+      - {fileID: 8300000, guid: 968a2500c187e234f99489c73ea87524, type: 3}
+      - {fileID: 8300000, guid: d5b671d706633ba40924fb2ac356bec8, type: 3}
+      - {fileID: 8300000, guid: fc16ea36286bfb24181637ad26735d6f, type: 3}
+      _volume: 0.7
+      _minPitch: 1.27
+      _maxPitch: 1.33
+      _delaySeconds: 0
+      _maxConcurrent: 2
+      _maxPerFrame: 1
