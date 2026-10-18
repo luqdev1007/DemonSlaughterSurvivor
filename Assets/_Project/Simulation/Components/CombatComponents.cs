@@ -48,6 +48,7 @@ namespace Game.Simulation.Components
         public bool IsSlash;
         public bool IsCrit;
         public bool IsMagic;
+        public float CritChanceBonus;
         public PerkBehaviourConfig SourcePerk;
     }
 

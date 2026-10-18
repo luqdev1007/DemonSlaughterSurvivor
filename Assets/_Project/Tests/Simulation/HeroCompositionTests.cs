@@ -7,6 +7,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 
 namespace Game.Simulation.Tests
@@ -60,8 +61,14 @@ namespace Game.Simulation.Tests
         {
             ContentRegistry registry = Registry();
 
-            Assert.AreEqual(0, PerkPool.ForCharacter(registry.All<PerkConfig>(), "character.huntress").Count);
-            Assert.AreEqual(registry.All<PerkConfig>().Count, PerkPool.ForCharacter(registry.All<PerkConfig>(), "character.berserk").Count);
+            List<PerkConfig> huntress = PerkPool.ForCharacter(registry.All<PerkConfig>(), "character.huntress");
+            List<PerkConfig> berserk = PerkPool.ForCharacter(registry.All<PerkConfig>(), "character.berserk");
+
+            Assert.Greater(huntress.Count, 0, "the huntress has her own perks");
+            Assert.Greater(berserk.Count, 0);
+
+            foreach (PerkConfig perk in huntress)
+                CollectionAssert.DoesNotContain(berserk, perk, $"'{perk.Id}' is offered to both heroes");
         }
 
         private int Spawn(string characterId)

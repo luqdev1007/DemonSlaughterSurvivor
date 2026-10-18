@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -40,6 +40,7 @@ namespace Game.View
         [SerializeField] private RuneAuraFx _runeAura;
         [SerializeField] private AimRig _aimRig;
         [SerializeField] private WingsFx _wings;
+        [SerializeField] private TrailRenderer _pierceTrail;
 
         private Vector3 _baseScale = Vector3.one;
         private bool _hasBaseScale;
@@ -211,6 +212,12 @@ namespace Game.View
 
             _animator.SetFloat(AirSpeedId, playbackSpeed);
             _animator.SetInteger(AirPhaseId, phase);
+        }
+
+        public void MarkPierced()
+        {
+            if (_pierceTrail != null)
+                _pierceTrail.emitting = true;
         }
 
         public void SetPickupFlight(float progress)
@@ -577,6 +584,12 @@ namespace Game.View
 
             if (_wings != null)
                 _wings.HideImmediate();
+
+            if (_pierceTrail != null)
+            {
+                _pierceTrail.emitting = false;
+                _pierceTrail.Clear();
+            }
 
             _airPhase = 0;
 

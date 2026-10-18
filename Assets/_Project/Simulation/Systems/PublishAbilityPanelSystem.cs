@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<CounterStrikeCooldown> _counterCooldowns = default;
         private readonly EcsPoolInject<SlicingDashCooldown> _slicingCooldowns = default;
         private readonly EcsPoolInject<PunishingLeapCooldown> _punishCooldowns = default;
+        private readonly EcsPoolInject<PowerShotCooldown> _powerShotCooldowns = default;
 
         private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -73,13 +74,17 @@ namespace Game.Simulation.Systems
                 || behaviour is AgileDashConfig
                 || behaviour is CounterStrikeConfig
                 || behaviour is SlicingDashConfig
-                || behaviour is PunishingLeapConfig;
+                || behaviour is PunishingLeapConfig
+                || behaviour is PowerShotConfig;
         }
 
         private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
         {
             if (behaviour is ExecutionConfig && _executionCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _executionCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is PowerShotConfig && _powerShotCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _powerShotCooldowns.Value.Get(hero).RemainingTicks);
 
             if (behaviour is HeroicLeapConfig && _leapCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _leapCooldowns.Value.Get(hero).RemainingTicks);

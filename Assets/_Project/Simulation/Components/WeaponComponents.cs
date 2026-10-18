@@ -12,6 +12,7 @@ namespace Game.Simulation.Components
     {
         public int RemainingTicks;
         public float PlaybackSpeed;
+        public bool Empowered;
     }
 
     public struct WeaponDamage { public float Value; public float Base; }

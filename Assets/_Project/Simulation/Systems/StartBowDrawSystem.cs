@@ -1,4 +1,5 @@
 using Game.Configs;
+using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
@@ -12,6 +13,8 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Bow, WeaponReady, WeaponCooldown, AttackSpeed, OwnerLink>, Exc<BowDraw>> _bows = default;
+        private readonly EcsFilterInject<Inc<PowerShotCooldown>> _powerCooldowns = default;
+        private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<Bow> _bowPool = default;
         private readonly EcsPoolInject<WeaponReady> _readies = default;
@@ -24,6 +27,10 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Backleaping> _backleaps = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<TakenPerk> _takenPool = default;
+        private readonly EcsPoolInject<PowerShotCooldown> _powerCooldownPool = default;
+
+        private readonly EcsCustomInject<IContentRegistry> _content = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
@@ -31,6 +38,14 @@ namespace Game.Simulation.Systems
         {
             EcsWorld world = _world.Value;
             float delta = _clock.Value.Delta;
+
+            foreach (int hero in _powerCooldowns.Value)
+            {
+                ref PowerShotCooldown cooldown = ref _powerCooldownPool.Value.Get(hero);
+
+                if (--cooldown.RemainingTicks <= 0)
+                    _powerCooldownPool.Value.Del(hero);
+            }
 
             foreach (int bow in _bows.Value)
             {
@@ -54,11 +69,14 @@ namespace Game.Simulation.Systems
                 if (Vector3.Angle(aim.Direction, aim.Desired) > config.AimToleranceDegrees)
                     continue;
 
+                bool empowered = IsPowerShotReady(world, owner, out PowerShotConfig power);
+                float drawSeconds = config.DrawSeconds * (empowered ? power.DrawMultiplier : 1f);
                 float attackSpeed = _attackSpeeds.Value.Get(bow).Value;
-                int ticks = Mathf.Max(1, Mathf.RoundToInt(config.DrawSeconds / attackSpeed / delta));
+                int ticks = Mathf.Max(1, Mathf.RoundToInt(drawSeconds / attackSpeed / delta));
 
                 ref BowDraw draw = ref _draws.Value.Add(bow);
                 draw.RemainingTicks = ticks;
+                draw.Empowered = empowered;
                 draw.PlaybackSpeed = config.DrawClipSeconds / (ticks * delta);
 
                 ready.Remaining = _cooldowns.Value.Get(bow).Value / attackSpeed;
@@ -66,6 +84,14 @@ namespace Game.Simulation.Systems
                 if (_views.Value.Has(owner) && _views.Value.Get(owner).Value != null)
                     _views.Value.Get(owner).Value.PlayAttack(config.DrawTrigger, draw.PlaybackSpeed);
             }
+        }
+
+        private bool IsPowerShotReady(EcsWorld world, int owner, out PowerShotConfig power)
+        {
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out power, out _) == false)
+                return false;
+
+            return _powerCooldownPool.Value.Has(owner) == false;
         }
 
         private bool HasShot(EcsWorld world, in TorsoAim aim, Vector3 position, BowConfig config)

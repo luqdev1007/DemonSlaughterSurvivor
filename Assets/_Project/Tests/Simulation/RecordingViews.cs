@@ -32,9 +32,11 @@ namespace Game.Simulation.Tests
         }
     }
 
-    internal sealed class RecordingView : IView
+    internal sealed class RecordingView : IView, IArrowView
     {
         public readonly List<string> Triggers = new List<string>();
+
+        public int Pierced;
 
         public float Lift;
 
@@ -104,6 +106,11 @@ namespace Game.Simulation.Tests
 
         public void Dissolve()
         {
+        }
+
+        public void MarkPierced()
+        {
+            Pierced++;
         }
     }
 }

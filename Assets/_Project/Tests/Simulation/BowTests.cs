@@ -30,6 +30,8 @@ namespace Game.Simulation.Tests
         private RecordingView _heroView;
         private int _hero;
         private int _bow;
+        private PerkConfig _powerPerk;
+        private PerkConfig _multishotPerk;
 
         [SetUp]
         public void SetUp()
@@ -49,6 +51,23 @@ namespace Game.Simulation.Tests
             Set(bow, "_arrowRadius", 0.15f);
             Set(bow, "_muzzleDistance", 0.6f);
 
+            PowerShotConfig power = Asset<PowerShotConfig>();
+            PowerShotLevel powerLevel = new PowerShotLevel();
+            Set(powerLevel, "_cooldownSeconds", 6f);
+            Set(powerLevel, "_damageMultiplier", 1.5f);
+            Set(powerLevel, "_critChanceBonus", 0.25f);
+            Set(power, "_levels", new[] { powerLevel });
+            Set(power, "_drawMultiplier", 1.6f);
+            Set(power, "_widthMultiplier", 2f);
+            _powerPerk = Perk("perk.power-shot", power);
+
+            MultishotConfig multishot = Asset<MultishotConfig>();
+            MultishotLevel multishotLevel = new MultishotLevel();
+            Set(multishotLevel, "_extraArrows", 2);
+            Set(multishot, "_levels", new[] { multishotLevel });
+            Set(multishot, "_spreadDegrees", 8f);
+            _multishotPerk = Perk("perk.multishot", multishot);
+
             WaveTimelineConfig timeline = Asset<WaveTimelineConfig>();
             LevelConfig level = Asset<LevelConfig>();
             Set(level, "_waves", timeline);
@@ -65,7 +84,8 @@ namespace Game.Simulation.Tests
             _systems.Add(new AdvanceProjectilesSystem());
             _systems.Add(new AdvanceArrowsSystem());
             _systems.Add(new RebuildSpatialGridSystem());
-            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f), (IViewFactory)_views);
+            ContentRegistry registry = new ContentRegistry(new IContentEntry[] { _powerPerk, _multishotPerk });
+            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f), (IViewFactory)_views, (IContentRegistry)registry);
             _systems.Init();
 
             _heroView = new RecordingView();
@@ -245,6 +265,147 @@ namespace Game.Simulation.Tests
             Step(DrawTicks);
 
             Assert.AreEqual(0, Arrows());
+        }
+
+        [Test]
+        public void APowerShotDrawsLongerAndPiercesTheWholeLine()
+        {
+            Take(_powerPerk);
+            int first = Enemy(new Vector3(0f, 0f, 5f));
+            int second = Enemy(new Vector3(0f, 0f, 6.5f));
+            int third = Enemy(new Vector3(0f, 0f, 8f));
+
+            Step(1);
+
+            int powerTicks = Mathf.RoundToInt(0.45f * 1.6f / Tick);
+            Assert.IsTrue(_world.GetPool<BowDraw>().Get(_bow).Empowered);
+            Assert.AreEqual(powerTicks, _world.GetPool<BowDraw>().Get(_bow).RemainingTicks);
+
+            Step(powerTicks + 20);
+
+            List<DamageEvent> hits = Hits();
+            Assert.AreEqual(3, hits.Count, "the empowered arrow pierces every enemy on its line");
+
+            foreach (DamageEvent hit in hits)
+            {
+                Assert.AreEqual(Damage * 1.5f, hit.Amount, 1e-4f);
+                Assert.AreEqual(0.25f, hit.CritChanceBonus, 1e-6f);
+            }
+
+            CollectionAssert.AreEquivalent(new[] { first, second, third }, Targets(hits));
+            Assert.IsTrue(_world.GetPool<PowerShotCooldown>().Has(_hero), "the power shot goes on cooldown");
+        }
+
+        [Test]
+        public void APowerShotArrowIsTwiceAsWideAndMarksItsFirstPierceOnce()
+        {
+            Take(_powerPerk);
+            Enemy(new Vector3(0f, 0f, 5f));
+            Enemy(new Vector3(0f, 0f, 6.5f));
+
+            Step(Mathf.RoundToInt(0.45f * 1.6f / Tick) + 1);
+
+            Assert.AreEqual(1, Arrows());
+
+            RecordingView view = null;
+
+            foreach (int arrow in _world.Filter<Arrow>().End())
+            {
+                Assert.AreEqual(0.3f, _world.GetPool<Projectile>().Get(arrow).Radius, 1e-6f);
+                view = (RecordingView)_world.GetPool<View>().Get(arrow).Value;
+            }
+
+            Step(20);
+
+            Assert.AreEqual(1, view.Pierced, "the trail starts on the first pierce only");
+        }
+
+        [Test]
+        public void AfterThePowerShotTheNextShotIsNormalUntilTheCooldownEnds()
+        {
+            Take(_powerPerk);
+            Enemy(new Vector3(0f, 0f, 10f));
+
+            Step(1);
+
+            int guard = 0;
+
+            while (_world.GetPool<BowDraw>().Has(_bow) && guard++ < 120)
+                Step(1);
+
+            while (_world.GetPool<BowDraw>().Has(_bow) == false && guard++ < 240)
+                Step(1);
+
+            Assert.IsTrue(_world.GetPool<BowDraw>().Has(_bow), "a second draw starts after the bow cooldown");
+            Assert.IsFalse(_world.GetPool<BowDraw>().Get(_bow).Empowered, "the power shot is on cooldown");
+            Assert.AreEqual(DrawTicks, _world.GetPool<BowDraw>().Get(_bow).RemainingTicks);
+        }
+
+        [Test]
+        public void MultishotFansTheExtraArrowsAroundTheAim()
+        {
+            Take(_multishotPerk);
+            Enemy(new Vector3(0f, 0f, 10f));
+
+            Step(DrawTicks + 1);
+
+            List<float> angles = new List<float>();
+
+            foreach (int arrow in _world.Filter<Arrow>().End())
+                angles.Add(Vector3.SignedAngle(Vector3.forward, _world.GetPool<Velocity>().Get(arrow).Value, Vector3.up));
+
+            angles.Sort();
+
+            Assert.AreEqual(3, angles.Count, "one arrow plus two extra");
+            Assert.AreEqual(-8f, angles[0], 0.01f);
+            Assert.AreEqual(0f, angles[1], 0.01f);
+            Assert.AreEqual(8f, angles[2], 0.01f);
+        }
+
+        [Test]
+        public void APowerShotWithMultishotEmpowersTheWholeVolley()
+        {
+            Take(_powerPerk);
+            Take(_multishotPerk);
+            Enemy(new Vector3(0f, 0f, 10f));
+
+            Step(Mathf.RoundToInt(0.45f * 1.6f / Tick) + 1);
+
+            Assert.AreEqual(3, Arrows());
+
+            foreach (int arrow in _world.Filter<Arrow>().End())
+                Assert.IsTrue(_world.GetPool<Arrow>().Get(arrow).Piercing);
+        }
+
+        private void Take(PerkConfig perk)
+        {
+            ref TakenPerk taken = ref _world.GetPool<TakenPerk>().Add(_world.NewEntity());
+            taken.Owner = _world.PackEntity(_hero);
+            taken.PerkId = perk.Id;
+            taken.Level = 1;
+        }
+
+        private PerkConfig Perk(string id, PerkBehaviourConfig behaviour)
+        {
+            PerkConfig perk = Asset<PerkConfig>();
+            Set(perk, "_id", id);
+            Set(perk, "_behaviour", behaviour);
+            Set(perk, "_levels", new[] { new PerkLevel() });
+
+            return perk;
+        }
+
+        private List<int> Targets(List<DamageEvent> hits)
+        {
+            List<int> targets = new List<int>();
+
+            foreach (DamageEvent hit in hits)
+            {
+                Assert.IsTrue(hit.Target.Unpack(_world, out int target));
+                targets.Add(target);
+            }
+
+            return targets;
         }
 
         private int Enemy(Vector3 position)
