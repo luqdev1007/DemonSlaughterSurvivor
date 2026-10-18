@@ -14,6 +14,7 @@ namespace Game.Simulation.Systems
     {
         private const string VariationStream = "enemy.variation";
         private const string EliteStream = "enemy.elite";
+        private const float GoldenAngle = 2.39996323f;
 
         private readonly EcsFilterInject<Inc<WaveState>> _timelines = default;
         private readonly EcsFilterInject<Inc<Enemy>> _live = default;
@@ -28,6 +29,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
         private readonly EcsCustomInject<StatModifiers> _statModifiers = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
+        private readonly EcsCustomInject<IAnnouncementSink> _announcements = default;
 
         private RingSpawnPlacement _placement;
         private WeightedEnemyPicker _picker;
@@ -38,6 +40,7 @@ namespace Game.Simulation.Systems
 
         private WaveTimelineConfig _timeline;
         private bool[] _firedGuaranteed;
+        private bool[] _firedSwarms;
         private bool _timelineFinished;
 
         private float _spawnAccumulator;
@@ -59,6 +62,7 @@ namespace Game.Simulation.Systems
             _factory = new EnemyFactory(world, _viewFactory.Value, _statModifiers.Value);
 
             _firedGuaranteed = new bool[WaveTimelineValidator.ResolveMaxGuaranteedCount(_timeline)];
+            _firedSwarms = new bool[WaveTimelineValidator.ResolveMaxSwarmCount(_timeline)];
             _timelineFinished = false;
 
             _spawnAccumulator = 0f;
@@ -106,6 +110,7 @@ namespace Game.Simulation.Systems
                             $"which is outside 0..{waves.Count - 1}.");
 
                     Array.Clear(_firedGuaranteed, 0, _firedGuaranteed.Length);
+                    Array.Clear(_firedSwarms, 0, _firedSwarms.Length);
                 }
 
                 Wave wave = waves[state.Index];
@@ -139,6 +144,18 @@ namespace Game.Simulation.Systems
 
                     for (int copy = 0; copy < entry.Count; copy++)
                         Spawn(entry.Enemy, anchor, true);
+                }
+
+                IReadOnlyList<SwarmSpawn> swarms = wave.Swarms;
+
+                for (int index = 0; index < swarms.Count; index++)
+                {
+                    if (_firedSwarms[index] || state.Elapsed < swarms[index].OffsetSeconds)
+                        continue;
+
+                    _firedSwarms[index] = true;
+
+                    SpawnSwarm(wave, swarms[index], anchor);
                 }
 
                 int live = _live.Value.GetEntitiesCount();
@@ -194,6 +211,34 @@ namespace Game.Simulation.Systems
                 return;
 
             Spawn(enemy, anchor, false);
+        }
+
+        private void SpawnSwarm(Wave wave, SwarmSpawn swarm, Vector3 anchor)
+        {
+            EnemyConfig enemy = wave.WeakestEnemy;
+
+            if (enemy == null)
+                return;
+
+            float spread = swarm.SpreadRadius;
+            float distance = swarm.Distance;
+            float arena = _level.Value.ArenaRadius;
+
+            Vector3 center = _placement.Resolve(anchor, distance, arena > spread ? arena - spread : arena, _random.NextUnit());
+            float turn = _random.NextUnit() * Mathf.PI * 2f;
+
+            for (int index = 0; index < swarm.Count; index++)
+            {
+                float radius = spread * Mathf.Sqrt((index + 0.5f) / swarm.Count);
+                float angle = turn + index * GoldenAngle;
+
+                Vector3 position = center + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+
+                _factory.Create(enemy, position, SimulationRandom.NextUnit(ref _variationState), null);
+            }
+
+            if (_announcements.Value != null && string.IsNullOrEmpty(swarm.Announcement) == false)
+                _announcements.Value.Announce(swarm.Announcement);
         }
 
         private void Spawn(EnemyConfig enemy, Vector3 anchor, bool guaranteed)

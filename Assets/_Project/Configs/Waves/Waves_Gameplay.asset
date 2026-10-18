@@ -28,6 +28,12 @@ MonoBehaviour:
     - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
       _weight: 0.25
     _guaranteed: []
+    _swarms:
+    - _offsetSeconds: 18
+      _count: 18
+      _distance: 13
+      _spreadRadius: 3.5
+      _announcement: "\u0420\u043E\u0439!"
   - _durationSeconds: 45
     _spawnRatePerSecond: 6
     _liveCap: 100
@@ -40,6 +46,12 @@ MonoBehaviour:
     - _offsetSeconds: 10
       _enemy: {fileID: 11400000, guid: 5c4d8ad96055c5140913d77e93b29e29, type: 2}
       _count: 5
+    _swarms:
+    - _offsetSeconds: 22
+      _count: 28
+      _distance: 13
+      _spreadRadius: 3.5
+      _announcement: "\u0420\u043E\u0439!"
   - _durationSeconds: 600
     _spawnRatePerSecond: 0.5
     _liveCap: 12
@@ -54,6 +66,17 @@ MonoBehaviour:
     - _offsetSeconds: 0
       _enemy: {fileID: 11400000, guid: 87a1416bceabcb04387ce73a79b44b23, type: 2}
       _count: 1
+    _swarms:
+    - _offsetSeconds: 40
+      _count: 20
+      _distance: 13
+      _spreadRadius: 3.5
+      _announcement: "\u0420\u043E\u0439!"
+    - _offsetSeconds: 110
+      _count: 24
+      _distance: 13
+      _spreadRadius: 3.5
+      _announcement: "\u0420\u043E\u0439!"
   _prewarmCapPerEnemy: 100
   _eliteChance: 0.06
   _eliteAffixes:

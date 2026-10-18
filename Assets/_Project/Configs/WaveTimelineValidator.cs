@@ -63,6 +63,30 @@ namespace Game.Configs
                     ValidateRegistered(timeline, content, entry.Enemy, waveIndex, entryIndex, "guaranteed");
                     ValidateGuaranteed(timeline, entry, waveIndex, entryIndex);
                 }
+
+                ValidateSwarms(timeline, wave, waveIndex);
+            }
+        }
+
+        private static void ValidateSwarms(WaveTimelineConfig timeline, Wave wave, int waveIndex)
+        {
+            IReadOnlyList<SwarmSpawn> swarms = wave.Swarms;
+
+            for (int index = 0; index < swarms.Count; index++)
+            {
+                SwarmSpawn swarm = swarms[index];
+                string label = $"{nameof(WaveTimelineConfig)} '{timeline.Id}' wave {waveIndex} swarm {index}";
+
+                if (swarm == null)
+                    throw new InvalidOperationException($"{label} is empty.");
+
+                if (swarm.Count < 1 || swarm.Distance <= 0f || swarm.SpreadRadius <= 0f || swarm.OffsetSeconds < 0f)
+                    throw new InvalidOperationException(
+                        $"{label} has count {swarm.Count}, distance {swarm.Distance} m, spread {swarm.SpreadRadius} m and offset {swarm.OffsetSeconds} s; " +
+                        "the count must be at least 1, the distance and spread positive, the offset not negative.");
+
+                if (wave.WeakestEnemy == null)
+                    throw new InvalidOperationException($"{label} has no weighted non-boss enemy to swarm with.");
             }
         }
 
@@ -210,6 +234,22 @@ namespace Game.Configs
             return max;
         }
 
+        public static int ResolveMaxSwarmCount(WaveTimelineConfig timeline)
+        {
+            if (timeline == null || timeline.Waves == null)
+                return 0;
+
+            int max = 0;
+
+            for (int index = 0; index < timeline.Waves.Count; index++)
+            {
+                if (timeline.Waves[index] != null)
+                    max = Math.Max(max, timeline.Waves[index].Swarms.Count);
+            }
+
+            return max;
+        }
+
         public static int ResolveMaxLiveCap(WaveTimelineConfig timeline)
         {
             if (timeline == null)
@@ -224,7 +264,7 @@ namespace Game.Configs
 
             for (int index = 0; index < waves.Count; index++)
             {
-                int cap = waves[index].LiveCap;
+                int cap = waves[index].LiveCap + waves[index].SwarmTotal;
 
                 if (cap > max)
                     max = cap;

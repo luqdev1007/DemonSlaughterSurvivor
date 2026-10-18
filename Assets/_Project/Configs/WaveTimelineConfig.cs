@@ -30,6 +30,26 @@ namespace Game.Configs
     }
 
     [Serializable]
+    public sealed class SwarmSpawn
+    {
+        [SerializeField] private float _offsetSeconds;
+        [SerializeField] private int _count = 20;
+        [SerializeField] private float _distance = 13f;
+        [SerializeField] private float _spreadRadius = 3.5f;
+        [SerializeField] private string _announcement = "Рой!";
+
+        public float OffsetSeconds => _offsetSeconds;
+
+        public int Count => _count;
+
+        public float Distance => _distance;
+
+        public float SpreadRadius => _spreadRadius;
+
+        public string Announcement => _announcement;
+    }
+
+    [Serializable]
     public sealed class Wave
     {
         [SerializeField] private float _durationSeconds = 60f;
@@ -39,6 +59,7 @@ namespace Game.Configs
         [SerializeField] private float _refillRatePerSecond;
         [SerializeField] private WeightedEnemy[] _enemies = Array.Empty<WeightedEnemy>();
         [SerializeField] private GuaranteedSpawn[] _guaranteed = Array.Empty<GuaranteedSpawn>();
+        [SerializeField] private SwarmSpawn[] _swarms = Array.Empty<SwarmSpawn>();
 
         public float DurationSeconds => _durationSeconds;
 
@@ -53,6 +74,43 @@ namespace Game.Configs
         public IReadOnlyList<WeightedEnemy> Enemies => _enemies;
 
         public IReadOnlyList<GuaranteedSpawn> Guaranteed => _guaranteed;
+
+        public IReadOnlyList<SwarmSpawn> Swarms => _swarms ?? Array.Empty<SwarmSpawn>();
+
+        public int SwarmTotal
+        {
+            get
+            {
+                int total = 0;
+
+                foreach (SwarmSpawn swarm in Swarms)
+                {
+                    if (swarm != null)
+                        total += Mathf.Max(0, swarm.Count);
+                }
+
+                return total;
+            }
+        }
+
+        public EnemyConfig WeakestEnemy
+        {
+            get
+            {
+                EnemyConfig weakest = null;
+
+                foreach (WeightedEnemy entry in _enemies)
+                {
+                    if (entry == null || entry.Enemy == null || entry.Enemy.Boss != null)
+                        continue;
+
+                    if (weakest == null || entry.Enemy.MaxHealth < weakest.MaxHealth)
+                        weakest = entry.Enemy;
+                }
+
+                return weakest;
+            }
+        }
     }
 
     [CreateAssetMenu(fileName = "WaveTimeline", menuName = "Game/Content/Wave Timeline")]

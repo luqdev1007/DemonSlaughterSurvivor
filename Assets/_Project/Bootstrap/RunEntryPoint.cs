@@ -28,6 +28,7 @@ namespace Game.Bootstrap
         private readonly IPlayerVitalsSink _vitalsSink;
         private readonly IAbilityPanelSink _abilityPanelSink;
         private readonly IDamageNumberSink _damageNumberSink;
+        private readonly IAnnouncementSink _announcementSink;
         private readonly IDamageDealtSink _damageDealtSink;
         private readonly IItemChoiceSink _itemChoiceSink;
         private readonly ICorpseKickSink _corpseKickSink;
@@ -78,6 +79,7 @@ namespace Game.Bootstrap
             IPlayerVitalsSink vitalsSink,
             IAbilityPanelSink abilityPanelSink,
             IDamageNumberSink damageNumberSink,
+            IAnnouncementSink announcementSink,
             IDamageDealtSink damageDealtSink,
             IItemChoiceSink itemChoiceSink,
             ICorpseKickSink corpseKickSink,
@@ -115,6 +117,7 @@ namespace Game.Bootstrap
             _vitalsSink = vitalsSink;
             _abilityPanelSink = abilityPanelSink;
             _damageNumberSink = damageNumberSink;
+            _announcementSink = announcementSink;
             _damageDealtSink = damageDealtSink;
             _itemChoiceSink = itemChoiceSink;
             _corpseKickSink = corpseKickSink;
@@ -179,6 +182,7 @@ namespace Game.Bootstrap
                 _vitalsSink,
                 _abilityPanelSink,
                 _damageNumberSink,
+                _announcementSink,
                 _damageDealtSink,
                 _itemChoiceSink,
                 _corpseKickSink,

@@ -27,6 +27,7 @@ namespace Game.UI
         private readonly ISoundSettings _soundSettings;
         private readonly ICombatTextSettings _combatText;
         private readonly DamageNumbers _damageNumbers;
+        private readonly Announcements _announcements;
         private readonly DpsMeter _dpsMeter;
         private readonly ItemChoice _itemChoice;
         private readonly IDpsToggleInput _dpsToggle;
@@ -43,8 +44,9 @@ namespace Game.UI
         private readonly PerkCardContent[] _itemContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
         private readonly StringBuilder _text = new StringBuilder();
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ItemChoice itemChoice, ICameraService camera)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ItemChoice itemChoice, ICameraService camera, Announcements announcements)
         {
+            _announcements = announcements;
             _camera = camera;
             _pauseMenu = pauseMenu;
             _soundSettings = soundSettings;
@@ -112,6 +114,9 @@ namespace Game.UI
             if (_view != null)
             {
                 _damageNumbers.Tick(_view.DamageNumbers, _camera, _combatText, Time.deltaTime);
+
+                if (_view.Announcement != null && _announcements.TryTake(out string announcement))
+                    _view.Announcement.Show(announcement);
                 RefreshDps();
             }
 

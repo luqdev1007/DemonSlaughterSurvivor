@@ -18,10 +18,12 @@ namespace Game.UI
         [SerializeField] private AbilityPanelView _abilityPanel;
         [SerializeField] private DamageNumberLayerView _damageNumbers;
         [SerializeField] private DpsView _dps;
+        [SerializeField] private AnnouncementView _announcement;
 
         [Header("Experience")]
         [SerializeField] private RectTransform _experienceFill;
         [SerializeField] private TMP_Text _levelText;
+        [SerializeField] private ExperienceBarView _experienceBar;
         [SerializeField] private float _experienceFillSeconds = 0.25f;
 
         [Header("Boss")]
@@ -68,6 +70,8 @@ namespace Game.UI
 
         public DpsView Dps => _dps;
 
+        public AnnouncementView Announcement => _announcement;
+
         public PauseMenuView PauseMenu => _pauseMenu;
 
         public BossMarkerView BossMarker => _bossMarker;
@@ -108,6 +112,9 @@ namespace Game.UI
         public void ShowLevel(int level)
         {
             _levelText.SetText("{0}", level);
+
+            if (_experienceBar != null)
+                _experienceBar.ShowLevel(level);
         }
 
         public void ShowBerserk(bool active)
