@@ -4,7 +4,6 @@ using Game.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -23,9 +22,7 @@ namespace Game.UI
         [SerializeField, FormerlySerializedAs("_characterId")] private string _defaultCharacterId;
 
         [Header("Hero Choice")]
-        [SerializeField] private Button _heroButtonTemplate;
-        [SerializeField] private Color _heroSelectedColor = new Color(1f, 0.78f, 0.35f, 1f);
-        [SerializeField] private Color _heroIdleColor = new Color(0.75f, 0.75f, 0.75f, 1f);
+        [SerializeField] private MenuHeroLineup _lineup;
 
         private CancellationToken _lifeTime;
         private bool _isStarting;
@@ -35,7 +32,6 @@ namespace Game.UI
         private SettingsPopupPresenter _settings;
         private IContentRegistry _content;
         private IHeroSelection _heroSelection;
-        private readonly List<HeroButton> _heroButtons = new List<HeroButton>();
         private string _characterId;
 
         [Inject]
@@ -79,13 +75,8 @@ namespace Game.UI
             _settings?.Dispose();
             _settings = null;
 
-            foreach (HeroButton hero in _heroButtons)
-            {
-                if (hero.Button != null)
-                    hero.Button.onClick.RemoveAllListeners();
-            }
-
-            _heroButtons.Clear();
+            if (_lineup != null)
+                _lineup.Selected -= SelectHero;
         }
 
         private void BuildHeroChoice()
@@ -95,34 +86,11 @@ namespace Game.UI
 
             _characterId = ResolveInitialHero(heroes);
 
-            if (_heroButtonTemplate == null)
+            if (_lineup == null)
                 return;
 
-            _heroButtonTemplate.gameObject.SetActive(false);
-
-            if (heroes.Count < 2)
-                return;
-
-            Transform list = _heroButtonTemplate.transform.parent;
-
-            foreach (CharacterConfig hero in heroes)
-            {
-                Button button = Instantiate(_heroButtonTemplate, list);
-                button.name = "Hero_" + hero.Id;
-                button.gameObject.SetActive(true);
-
-                TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
-
-                if (label != null)
-                    label.text = hero.DisplayName;
-
-                string id = hero.Id;
-                button.onClick.AddListener(() => SelectHero(id));
-
-                _heroButtons.Add(new HeroButton(id, button, label));
-            }
-
-            RefreshHeroChoice();
+            _lineup.Build(heroes, _characterId);
+            _lineup.Selected += SelectHero;
         }
 
         private string ResolveInitialHero(List<CharacterConfig> heroes)
@@ -145,17 +113,6 @@ namespace Game.UI
 
             _characterId = characterId;
             _heroSelection.SelectCharacter(characterId);
-
-            RefreshHeroChoice();
-        }
-
-        private void RefreshHeroChoice()
-        {
-            foreach (HeroButton hero in _heroButtons)
-            {
-                if (hero.Label != null)
-                    hero.Label.color = hero.Id == _characterId ? _heroSelectedColor : _heroIdleColor;
-            }
         }
 
         private static int CompareHeroes(CharacterConfig left, CharacterConfig right)
@@ -210,27 +167,8 @@ namespace Game.UI
             _settingsButton.interactable = interactable;
             _quitButton.interactable = interactable;
 
-            foreach (HeroButton hero in _heroButtons)
-            {
-                if (hero.Button != null)
-                    hero.Button.interactable = interactable;
-            }
-        }
-
-        private readonly struct HeroButton
-        {
-            public HeroButton(string id, Button button, TMP_Text label)
-            {
-                Id = id;
-                Button = button;
-                Label = label;
-            }
-
-            public string Id { get; }
-
-            public Button Button { get; }
-
-            public TMP_Text Label { get; }
+            if (_lineup != null)
+                _lineup.SetInteractable(interactable);
         }
     }
 }

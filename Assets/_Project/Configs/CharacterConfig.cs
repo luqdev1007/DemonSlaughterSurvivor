@@ -11,6 +11,10 @@ namespace Game.Configs
 
         [SerializeField] private GameObject _viewPrefab;
 
+        [Header("Menu")]
+        [SerializeField] private AnimationClip _menuIdleClip;
+        [SerializeField] private AnimationClip _menuSelectClip;
+
         [Header("Movement")]
         [SerializeField] private float _moveSpeed;
         [SerializeField] private float _turnSpeed = 720f;
@@ -68,6 +72,10 @@ namespace Game.Configs
         public int MenuOrder => _menuOrder;
 
         public GameObject ViewPrefab => _viewPrefab;
+
+        public AnimationClip MenuIdleClip => _menuIdleClip;
+
+        public AnimationClip MenuSelectClip => _menuSelectClip;
 
         public float MoveSpeed => _moveSpeed;
 

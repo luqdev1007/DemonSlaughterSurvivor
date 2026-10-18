@@ -16,6 +16,8 @@ MonoBehaviour:
   _displayName: "\u041E\u0445\u043E\u0442\u043D\u0438\u0446\u0430"
   _menuOrder: 1
   _viewPrefab: {fileID: 5239093810765877517, guid: 289d0f510530afb43a04cc295c030882, type: 3}
+  _menuIdleClip: {fileID: 7400000, guid: 68afc9e2c3e868a4b9504d933ae96076, type: 2}
+  _menuSelectClip: {fileID: 7400000, guid: ce4381157a0fd8445b7d13f16e937685, type: 2}
   _moveSpeed: 5
   _turnSpeed: 1200
   _aimDeadZone: 1.2
