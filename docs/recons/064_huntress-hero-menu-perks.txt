@@ -1,0 +1,172 @@
+064 — Huntress: второй играбельный герой, меню в духе Diablo 2, крылья, звуки, пять перков
+Даты: 2026-10-18 … 2026-10-19. Коммиты c65b3bf6 … 4fe461a1 (15 коммитов от 38832009).
+Шаг роадмапа: вне нумерации GDD §12 — ростер (шаг 11, post-MVP) вытянут вперёд решением
+разработчика 2026-10-18. Задача — Downloads/archer_task_prompt.txt; кодовое имя героини — Huntress,
+ID character.huntress. Цель на будущее (разработчик): до 10 героев, каждый следующий собирается
+данными.
+
+==========================================================================
+1. Что сделано
+==========================================================================
+1.1. Ассеты Huntress (c65b3bf6 … 430b4d32, 83bc1d7f)
+  - Модель Mixamo «Erika Archer»: текстуры извлечены из FBX, материалы URP Lit, риг Generic, аватар
+    из модели; 24 клипа (локомоция, прицел, натяжение, прыжки, сальто) копируют аватар.
+  - Лук, стрела, колчан — OpenGameArt, mess110, CC0. Импорт через временный glTFast, сохранены как
+    обычные ассеты Unity, пакет удалён (manifest и lock побайтово как до). Лук — в левой руке
+    (во всех клипах Mixamo лук держит левая; замер Aim_Overdraw: левая вытянута на 0.72 м).
+1.2. Задача Huntress, блоки 1–5 (0c430685 … a9048160) — приняты разработчиком 2026-10-18
+  - Б1: герой как контент — необязательные модули CharacterConfig, выбор героя в меню, перки
+    привязаны к героям (PerkConfig._characters), пустой пул — уровень без окна.
+  - Б2: корпус отдельно от ног — автоцель с гистерезисом, ПКМ — ручной прицел, бег спиной за пределом
+    скручивания 110°, поворот на месте; аниматор: 2D blend tree + слой лука по маске верха тела.
+  - Б3: стрельба — автовыстрел по цели, стрела-снаряд через пространственный индекс.
+  - Б4: Backleap (толчок от цели / против бега, парение по удержанию, подскок и пике с ударом по
+    площади) и высота в симуляции (Height + тег Airborne).
+  - Б5: тесты, эталон по сиду, документы (GDD §3, ARCHITECTURE §9, CLAUDE §8).
+1.3. Главное меню в духе Diablo 2 (12711358) — принято 2026-10-18
+  - Герои стоят на 3D-сцене дугой (MenuHeroLineup), клик — выход вперёд, разовая анимация, Idle под
+    прожектором, золотое имя; кнопки «Настройки / Играть / Выход» — в ряд внизу; фон расширен.
+1.4. Крылья, звуки, скорость игры (8a0e8ede) — ждёт приёмки
+  - Модель DemonWings (от разработчика) на WingsMount; процедурная анимация костей по фазам Backleap.
+  - Звук выстрела (7 вариантов BowImpact) и Backleap (3 варианта, тон ×1.3).
+  - Отладка: Shift+1…0 — скорость игры 10…100%.
+1.5. Перки Huntress (9210fa12, 4fe461a1) — ждут приёмки
+  - «Мощный выстрел», «Мультивыстрел», «Пронзающий веер» (комбо), «Взрывная стрела», «Метка охотника».
+
+==========================================================================
+2. Созданные и изменённые файлы (основное)
+==========================================================================
+Configs:      CharacterConfig.cs (модули, меню, клипы меню, высота), Characters/Character_Berserk.asset
+              (перенесён, GUID тот же), Character_Huntress.asset, TorsoAim_Huntress.asset;
+              TorsoAimConfig.cs, BowConfig.cs (+Weapons/Bow_Huntress.asset), BackleapConfig.cs
+              (+Abilities/Backleap_Huntress.asset), PowerShotConfig.cs, MultishotConfig.cs,
+              PiercingVolleyConfig.cs, ExplosiveArrowConfig.cs, HunterMarkConfig.cs, IAbilityIcon.cs;
+              PerkConfig.cs (_characters, IsAvailableFor, IAbilityIcon); Perks/Perk_*.asset (5 новых),
+              *_Huntress.asset (5 поведений); SfxConfig.asset (Release, Backleap); ContentDatabase.asset.
+Core:         IHeroSelection, IAimView, IAirView, IArrowView; IDashInput.IsDashHeld;
+              IPlayerVitalsSink.Publish(+hasUltimate).
+Simulation:   Components — AimComponents (TorsoAim), AirComponents (Height, Airborne, Backleap*),
+              MarkComponents (HunterMark, MarkFx, ExplosiveArrowRandom), Arrow (данные пробивания),
+              BowDraw.Empowered, PowerShotCooldown, DamageEvent.CritChanceBonus.
+              Systems — AimTorso, FaceLegs, SyncAimView, EquipBow, StartBowDraw, ReleaseBowShot,
+              AdvanceArrows, ReadBackleapInput, StartBackleap, TickBackleapTimers, AdvanceBackleap,
+              UpdateAirborne, SyncAirView, MarkOnBackleap, TickHunterMarks; правки SpawnPlayer,
+              OfferUpgrades, PublishPlayerVitals, PublishAbilityPanel, ResolveHitOutcome, SyncLeapLift,
+              ReadDashInput, Face*/ApplyMoveSpeed/DetectContactDamage/SweepEnemyCharge/PulseEnemySpin/
+              ImpactEnemyHeavyStrike/AdvanceProjectiles/ResolveBodyOverlap (Exc), Accumulate/DecayRage,
+              StartBerserk, SweepDashPush (спят без модуля). Services — PerkPool.ForCharacter, YawTurn,
+              BowShot, RangedTarget.SweptHit(+время), EnemyMotionBounds (толчок пике).
+View:         AimRig, WingsFx, ViewInterpolator (IAimView, IAirView, IArrowView, _wings, _pierceTrail).
+UI:           MainMenuView, MenuHeroLineup, HudView/HudPresenter (сфера ярости по наличию ульты,
+              иконки через IAbilityIcon), PlayerVitals.
+Services:     GameSettings (IHeroSelection, CharacterId), InputService.IsDashHeld.
+Bootstrap:    GameSpeedHotkeys, ProjectLifetimeScope, Game.Bootstrap.asmdef (+Input System).
+Editor:       MixamoClipBaker (ядро BerserkClipBaker), BerserkClipBaker (профиль), HuntressClipBaker,
+              HuntressAnimatorBuilder (контроллер, маска, AimRig, крылья).
+Art/Prefabs:  Art/Animations/Huntress/** (+Baked, контроллер, маска), Art/Models/Weapons/Bow/**,
+              Art/Models/DemonWings/**, Art/SFX/Bow, Art/SFX/Backleap, материалы M_PowerArrow*,
+              M_HunterMark*; Prefabs/Heroes/Huntress*.prefab, Prefabs/Effects/ArrowExplosion,
+              HunterMark; Scenes/MainMenu.unity.
+Tests:        TorsoAimTests, BowTests, BackleapTests, HeroCompositionTests, HunterMarkTests,
+              RecordingViews; UpgradeChoiceTests (+3), PushFromPointTests (путь), DashChargeTests (фейк).
+Docs:         GDD §3/§11, ARCHITECTURE §8/§9, CLAUDE §8, PROGRESS (журнал 2026-10-18/19).
+
+==========================================================================
+3. Карта блоков: путь данных
+==========================================================================
+Герой из данных: MainMenuView → MenuHeroLineup (All<CharacterConfig>, клик) → IHeroSelection
+  (settings.json) → RunRequest.CharacterId → SpawnPlayerSystem: базовые статы + компоненты только
+  заданных модулей (DashStats, UltimateCharge+RageState, TorsoAim, BackleapStats, Height) →
+  EquipStartingWeaponSystem (меч) / EquipBowSystem (лук). Перки: OfferUpgradesSystem →
+  PerkPool.ForCharacter(RunContext.CharacterId).
+Прицел: InputService → ReadInputStateSystem (InputState: курсор, ПКМ) → AimTorsoSystem (TorsoAim:
+  цель/направление корпуса) → FaceLegsSystem (Facing ног, Backpedal, TurnSide) →
+  SyncAimViewSystem → IAimView → AimRig (MoveX/MoveZ/Turn в аниматор, скручивание позвоночника).
+Выстрел: TickWeaponCooldownSystem → StartBowDrawSystem (BowDraw, PowerShotCooldown, «Draw») →
+  ReleaseBowShotSystem.Volley (мультивыстрел, мощная стрела, комбо; Projectile + Arrow + View) →
+  MoveSystem → AdvanceArrowsSystem (индекс → попадание/пробитие → DamageEvent вида Weapon с
+  CritChanceBonus; взрыв → AreaStrike + LeapImpactFx; IArrowView.MarkPierced) →
+  ResolveAreaStrikeSystem → ResolveHitOutcomeSystem (метка: урон и шанс крита; крит) →
+  ApplyDamageSystem.
+Backleap: InputService (Space/СКМ, удержание) → ReadBackleapInputSystem (BackleapRequest, Held) →
+  StartBackleapSystem (Leap от цели / Hop; неуязвимость) → MarkOnBackleapSystem (HunterMark, MarkFx) →
+  AdvanceBackleapSystem (Velocity, Height, фазы, пике → AreaStrike, кулдаун) → UpdateAirborneSystem
+  (Airborne) → атаки по герою с Exc<Airborne> → SyncAirViewSystem → IAirView (AirPhase, крылья
+  WingsFx, звук Backleap) и SyncLeapLiftViewSystem → SetLift.
+Метки: TickHunterMarksSystem (срок, MarkFx следует за целью, уборка).
+
+==========================================================================
+4. Развилки
+==========================================================================
+Решены разработчиком:
+  - Пустой/малый пул перков — пропуск окна + окно на 1–2 карточки.
+  - Лук — в левой руке (по клипам Mixamo), импорт glb — временный glTFast.
+  - Крылья — модель разработчика; звуки — файлы разработчика.
+  - Комбо «Пронзающий веер» — отдельный перк; без него мощная только центральная стрела.
+Решены по умолчанию (отмечены в журнале):
+  - ID character.huntress (конвенция character.berserk), не hero.archer из промпта.
+  - Риг Generic (как у всех героев), не Humanoid из промпта.
+  - Huntress 5 м/с (берсерк 6) — бег не проигрывается быстрее ×1.5.
+  - Мощный выстрел — по кулдауну (6/5/4 с), а не «каждый N-й»; с мультивыстрелом без комбо —
+    центральная стрела (при чётном числе — левая от центра).
+  - Анимация крыльев процедурная (у модели нет клипов), позы в осях тела.
+  - Клики по героям в меню — проекция границ модели на экран, без физики.
+  - Бонус крита — поле DamageEvent, метка охотника — в ResolveHitOutcomeSystem (единая точка).
+Отвергнуто:
+  - Отдельный TransientFx-компонент для взрыва — переиспользован LeapImpactFx (уже общий).
+  - Обобщённый AbilityDefinition — по-прежнему ждёт артефакта (ARCHITECTURE §7).
+
+==========================================================================
+5. Что проверено запуском, с числами
+==========================================================================
+- EditMode: 504 зелёных (до сессии 459). Новые: UpgradeChoiceTests +3, TorsoAimTests 10, BowTests 16,
+  BackleapTests 10, HeroCompositionTests 3, HunterMarkTests 4.
+- Эталон Huntress (зонд 047, сид забега 1470860951 из Random(987654321), 5340 тиков, пике на 600 и
+  2000): md5 f1734946bba2b48d07b6e82ac920e8e7, 11447 Б — два прогона на одном коде совпали; 2416 урона
+  за 131 попадание, 34 тика выше порога, 58 тиков в Backleap. Снят ДО перков и крыльев — перки
+  в нём не участвуют (не взяты), но эталон стоит перепроверить.
+- MixamoClipBaker: вывод для берсерка побайтово равен старому коду.
+- Play mode: меню (клик, выход вперёд, свет), забег за Huntress без ошибок, урон и убийства
+  стрелами, пике (фаза 4, подъём 0.8 м), позы крыльев (6 рендеров), Shift+3 → timeScale 0.3,
+  взрыв перезапускается при повторной активации, руна метки над врагом.
+- Не проверено вживую: толчок Backleap в движении и парение (героиню убивали раньше, чем удавалось
+  отыграть эмулированный ввод), крылья в динамике, звуки на слух, перки в настоящем забеге.
+
+==========================================================================
+6. Сценарий ручной проверки (несданное)
+==========================================================================
+Удобно на Shift+2…3 (замедление).
+1. Крылья: отскок в беге — замах, взмах перед собой, раскрытие; удержание — парение, взмахи, рябь
+   кончиков; подскок стоя — взмах вниз; пике — сложены; приземление — исчезают.
+2. Звуки: выстрел на каждой стреле; Backleap — выше обычного.
+3. Мощный выстрел: длинное натяжение, раскалённая широкая стрела пробивает толпу, красный трейл с
+   первого врага, чаще криты, кулдаун на панели 6/5/4 с.
+4. Мультивыстрел: 2/3/4 стрелы веером; с мощным — пробивает центральная.
+5. «Пронзающий веер»: в окне только при обоих родителях; после взятия весь веер мощный.
+6. Взрывная стрела: иногда огненный взрыв в месте попадания, соседей бьёт и отбрасывает.
+7. Метка охотника: Backleap у толпы — руна и кольцо на ближайших, по ним выше урон и чаще криты,
+   гаснет через 4–6 с или со смертью.
+
+==========================================================================
+7. Незакрытое, риски
+==========================================================================
+- Лицензия DemonWings не указана (CLAUDE §8).
+- Отладочный Shift+1…0 (CLAUDE §8): Shift+1…3 в окне перков ещё и выбирают карточку.
+- 4 запечённых клипа берсерка расходятся с исходниками (CLAUDE §8) — не трогалось.
+- Ручные шаги Huntress: Game/Bake Huntress Clips, Game/Build Huntress Animator — теста свежести нет.
+- Клипы сальто/прыжка поднимают таз поверх SetLift — визуальная высота больше симуляционной.
+- Взрыв стрелы разрешается тиком позже попадания (ResolveAreaStrikeSystem раньше полёта стрел).
+- Arrow.Hits растёт удвоением массива при пробитии >16 врагов (редкая аллокация на сущность).
+- Иконки всех пяти перков и Backleap — временные.
+- Тетива не тянется за рукой; клипы AimWalk_* и Run_Stop запечены, но не используются.
+- Метка и взрыв — без стресс-замера на level.stress (CLAUDE §6 п. 9): эффекты пулятся, без теней,
+  без MaterialPropertyBlock, но замер не делался.
+
+==========================================================================
+8. Что делать дальше
+==========================================================================
+1. Ручная приёмка разделов 6.1–6.7; по итогам — правки чисел/поз в инспекторе.
+2. Перепроверить эталон Huntress после перков (зонд без перков должен дать тот же md5).
+3. Стресс-замер на level.stress с Охотницей и взятыми перками (мультивыстрел + взрывы).
+4. Свои иконки Huntress (палитра — решение разработчика), тетива, ульта и её ресурс.
+5. Вернуться к хвосту приёмок и шагу 9 (мета) — по roadmap-отчёту 2026-10-18.
