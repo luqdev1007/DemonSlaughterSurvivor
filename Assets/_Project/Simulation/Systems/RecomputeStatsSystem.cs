@@ -282,6 +282,7 @@ namespace Game.Simulation.Systems
                 combat.Evasion = StatFormula.Evaluate(combat.EvasionBase, Total(StatId.Evasion));
                 combat.AttackPower = StatFormula.Evaluate(combat.AttackPowerBase, Total(StatId.AttackPower));
                 combat.SpellPower = StatFormula.Evaluate(combat.SpellPowerBase, Total(StatId.SpellPower));
+                combat.DamageDealt = StatFormula.Evaluate(combat.DamageDealtBase, Total(StatId.DamageDealt));
             }
         }
 
@@ -378,6 +379,7 @@ namespace Game.Simulation.Systems
                 case StatId.Evasion:
                 case StatId.AttackPower:
                 case StatId.SpellPower:
+                case StatId.DamageDealt:
                     return _combatStats.Value.Has(target);
                 default:
                     return false;

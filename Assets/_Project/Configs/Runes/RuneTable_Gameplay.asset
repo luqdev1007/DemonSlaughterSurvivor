@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec6deaecad2514d42896ec88b05710a6, type: 3}
+  m_Name: RuneTable_Gameplay
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.RuneTableConfig
+  _id: runes.gameplay
+  _runes:
+  - _rune: {fileID: 11400000, guid: 5498be2b8835c634cbf9a5d157b85223, type: 2}
+    _weight: 1
+  - _rune: {fileID: 11400000, guid: 43dfa3fd24d6f5e4cad365506865c89a, type: 2}
+    _weight: 1
+  - _rune: {fileID: 11400000, guid: 35af11644d76d0b428f9a3ed499614ad, type: 2}
+    _weight: 1
+  - _rune: {fileID: 11400000, guid: 4e44a78232a8f124ebd660cc2f579e7e, type: 2}
+    _weight: 1
+  - _rune: {fileID: 11400000, guid: 18593c081e56c99429cf2965ae340919, type: 2}
+    _weight: 1
+  _firstDelaySeconds: 25
+  _minIntervalSeconds: 25
+  _maxIntervalSeconds: 45
+  _minDistanceFromHero: 8
+  _maxDistanceFromHero: 20
+  _arenaEdgeMargin: 4
+  _pickupRadius: 1.3

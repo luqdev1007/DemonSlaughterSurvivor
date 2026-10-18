@@ -127,11 +127,16 @@ namespace Game.Configs
         [Header("Items")]
         [SerializeField] private ItemLootConfig _itemLoot;
 
+        [Header("Runes")]
+        [SerializeField] private RuneTableConfig _runes;
+
         public float SpawnRadius => _spawnRadius;
 
         public float EliteChance => _eliteChance;
 
         public ItemLootConfig ItemLoot => _itemLoot;
+
+        public RuneTableConfig Runes => _runes;
 
         public IReadOnlyList<EliteAffixConfig> EliteAffixes => _eliteAffixes ?? Array.Empty<EliteAffixConfig>();
 

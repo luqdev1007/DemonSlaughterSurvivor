@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 081018d8f1cf6a5448f5ed572f7f6543, type: 3}
+  m_Name: Rune_Magnet
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.RuneConfig
+  _id: rune.magnet
+  _displayName: "\u0420\u0443\u043D\u0430 \u043F\u0440\u0438\u0442\u044F\u0436\u0435\u043D\u0438\u044F"
+  _viewPrefab: {fileID: 407246236123416420, guid: 14b5def9b7798af4f9a4e09763e3cee5, type: 3}
+  _color: {r: 0.72, g: 0.38, b: 1, a: 1}
+  _durationSeconds: 5
+  _modifiers:
+  - _stat: 9
+    _op: 1
+    _value: 200
+  _regenFraction: 0
+  _regenIntervalSeconds: 0.5

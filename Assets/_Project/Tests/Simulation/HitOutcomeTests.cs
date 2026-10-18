@@ -203,6 +203,7 @@ namespace Game.Simulation.Tests
             stats.DefenseScale = 100f;
             stats.Evasion = evasion;
             stats.MaxEvasion = 0.6f;
+            stats.DamageDealt = 1f;
 
             return hero;
         }

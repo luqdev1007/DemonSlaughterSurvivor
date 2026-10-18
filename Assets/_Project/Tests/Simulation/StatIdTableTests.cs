@@ -32,6 +32,7 @@ namespace Game.Simulation.Tests
                 { "Evasion", 18 },
                 { "AttackPower", 19 },
                 { "SpellPower", 20 },
+                { "DamageDealt", 21 },
             });
         }
 

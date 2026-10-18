@@ -64,7 +64,7 @@ namespace Game.Simulation.Systems
         {
             float power = damage.IsMagic ? attacker.SpellPower : attacker.AttackPower;
 
-            damage.Amount *= 1f + Mathf.Max(0f, power) / PowerScale;
+            damage.Amount *= (1f + Mathf.Max(0f, power) / PowerScale) * Mathf.Max(0f, attacker.DamageDealt);
 
             if (damage.IsCrit)
                 return;

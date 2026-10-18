@@ -28,6 +28,7 @@ namespace Game.UI
         private readonly ICombatTextSettings _combatText;
         private readonly DamageNumbers _damageNumbers;
         private readonly Announcements _announcements;
+        private readonly RuneStatus _runeStatus;
         private readonly DpsMeter _dpsMeter;
         private readonly ItemChoice _itemChoice;
         private readonly IDpsToggleInput _dpsToggle;
@@ -44,8 +45,9 @@ namespace Game.UI
         private readonly PerkCardContent[] _itemContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
         private readonly StringBuilder _text = new StringBuilder();
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ItemChoice itemChoice, ICameraService camera, Announcements announcements)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ItemChoice itemChoice, ICameraService camera, Announcements announcements, RuneStatus runeStatus)
         {
+            _runeStatus = runeStatus;
             _announcements = announcements;
             _camera = camera;
             _pauseMenu = pauseMenu;
@@ -117,6 +119,9 @@ namespace Game.UI
 
                 if (_view.Announcement != null && _announcements.TryTake(out string announcement))
                     _view.Announcement.Show(announcement);
+
+                if (_view.RuneStatus != null && _view.RuneStatus.IsWired)
+                    _view.RuneStatus.Show(_runeStatus.Active, _runeStatus.Name, _runeStatus.Color, _runeStatus.Remaining, _runeStatus.Total);
                 RefreshDps();
             }
 

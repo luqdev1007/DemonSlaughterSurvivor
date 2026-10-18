@@ -21,6 +21,7 @@ namespace Game.Core
         Luck = 17,
         Evasion = 18,
         AttackPower = 19,
-        SpellPower = 20
+        SpellPower = 20,
+        DamageDealt = 21
     }
 }

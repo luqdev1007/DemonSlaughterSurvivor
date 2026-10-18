@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 081018d8f1cf6a5448f5ed572f7f6543, type: 3}
+  m_Name: Rune_Fury
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.RuneConfig
+  _id: rune.fury
+  _displayName: "\u0420\u0443\u043D\u0430 \u044F\u0440\u043E\u0441\u0442\u0438"
+  _viewPrefab: {fileID: 3775322864710045342, guid: 225dbca43ade2064c9b674b5274414fa, type: 3}
+  _color: {r: 1, g: 0.18, b: 0.1, a: 1}
+  _durationSeconds: 10
+  _modifiers:
+  - _stat: 21
+    _op: 3
+    _value: 2
+  _regenFraction: 0
+  _regenIntervalSeconds: 0.5

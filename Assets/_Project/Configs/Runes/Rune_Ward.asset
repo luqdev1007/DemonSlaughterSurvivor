@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 081018d8f1cf6a5448f5ed572f7f6543, type: 3}
+  m_Name: Rune_Ward
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.RuneConfig
+  _id: rune.ward
+  _displayName: "\u0420\u0443\u043D\u0430 \u0437\u0430\u0449\u0438\u0442\u044B"
+  _viewPrefab: {fileID: 8414099075618808427, guid: a52053b55b785d949a0478192e85a768, type: 3}
+  _color: {r: 0.4, g: 0.75, b: 1, a: 1}
+  _durationSeconds: 10
+  _modifiers:
+  - _stat: 8
+    _op: 3
+    _value: -0.5
+  _regenFraction: 0
+  _regenIntervalSeconds: 0.5

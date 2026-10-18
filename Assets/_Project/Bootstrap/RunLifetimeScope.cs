@@ -36,6 +36,8 @@ namespace Game.Bootstrap
 
             builder.Register<Announcements>(Lifetime.Scoped).AsSelf().As<IAnnouncementSink>();
 
+            builder.Register<RuneStatus>(Lifetime.Scoped).AsSelf().As<IRuneStatusSink>();
+
             builder.Register<DpsMeter>(Lifetime.Scoped).AsSelf().As<IDamageDealtSink>();
 
             builder.Register<DpsToggleInput>(Lifetime.Scoped).As<IDpsToggleInput>();

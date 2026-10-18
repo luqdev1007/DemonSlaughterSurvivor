@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 081018d8f1cf6a5448f5ed572f7f6543, type: 3}
+  m_Name: Rune_Life
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.RuneConfig
+  _id: rune.life
+  _displayName: "\u0420\u0443\u043D\u0430 \u0436\u0438\u0437\u043D\u0438"
+  _viewPrefab: {fileID: 8214449640902679752, guid: 6702b70ce7699d04bb9f860de5e5e09a, type: 3}
+  _color: {r: 0.3, g: 1, b: 0.45, a: 1}
+  _durationSeconds: 4
+  _modifiers: []
+  _regenFraction: 0.1
+  _regenIntervalSeconds: 0.5

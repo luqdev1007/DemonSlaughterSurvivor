@@ -28,7 +28,8 @@ namespace Game.UI
             { StatId.Luck, "удача" },
             { StatId.Evasion, "уклонение" },
             { StatId.AttackPower, "сила атаки" },
-            { StatId.SpellPower, "сила заклинаний" }
+            { StatId.SpellPower, "сила заклинаний" },
+            { StatId.DamageDealt, "наносимый урон" }
         };
 
         private static bool IsFraction(StatId stat)

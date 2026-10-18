@@ -128,6 +128,8 @@ namespace Game.Simulation.Systems
             combat.MaxEvasion = character.MaxEvasion;
             combat.LuckBase = character.Luck;
             combat.Luck = character.Luck;
+            combat.DamageDealtBase = 1f;
+            combat.DamageDealt = 1f;
 
             ref LifeSteal lifeSteal = ref _lifeSteals.Value.Add(entity);
             lifeSteal.OnKillBase = character.LifeOnKill;

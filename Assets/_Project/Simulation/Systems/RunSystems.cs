@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SpawnBreakablesSystem());
             systems.Add(new EquipStartingWeaponSystem());
             systems.Add(new SpawnWaveSystem());
+            systems.Add(new SpawnRuneSystem());
             systems.Add(new ApplyLowHealthFurySystem());
             systems.Add(new RecomputeStatsSystem());
             // 4.  AI
@@ -93,6 +94,7 @@ namespace Game.Simulation.Systems
             systems.Add(new DetectContactDamageSystem());
             systems.Add(new ApplyBossBlindZoneSystem());
             systems.Add(new StartGemFlightSystem());
+            systems.Add(new PickupRuneSystem());
             // 9.  Damage
             systems.Add(new TickInvulnerabilitySystem());
             systems.Add(new TickProjectilePassThroughSystem());
@@ -115,6 +117,7 @@ namespace Game.Simulation.Systems
             systems.Add(new DebugLevelUpSystem());
             systems.Add(new CollectGemsSystem());
             systems.Add(new CollectHealOrbsSystem());
+            systems.Add(new TickActiveRuneSystem());
             systems.Add(new ApplyHealSystem());
             systems.Add(new AdvanceLevelSystem());
             systems.Add(new OfferUpgradesSystem());
@@ -144,6 +147,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new SyncEnemyActionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
+            systems.Add(new PublishRuneStatusSystem());
             systems.Add(new PublishAbilityPanelSystem());
             systems.Add(new PublishBossVitalsSystem());
             systems.Add(new PublishExperienceSystem());

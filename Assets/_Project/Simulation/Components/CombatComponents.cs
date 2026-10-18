@@ -92,6 +92,8 @@ namespace Game.Simulation.Components
         public float AttackPowerBase;
         public float SpellPower;
         public float SpellPowerBase;
+        public float DamageDealt;
+        public float DamageDealtBase;
     }
 
     public struct CombatRandom { public uint State; }
