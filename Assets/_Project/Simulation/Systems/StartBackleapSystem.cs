@@ -36,7 +36,6 @@ namespace Game.Simulation.Systems
 
                 ref Backleaping leap = ref _backleaps.Value.Add(hero);
                 leap.Ticks = 0;
-                leap.HoverTicks = 0;
 
                 if (intent.sqrMagnitude > Mathf.Epsilon)
                 {

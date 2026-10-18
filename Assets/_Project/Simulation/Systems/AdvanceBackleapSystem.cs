@@ -63,7 +63,6 @@ namespace Game.Simulation.Systems
                     case BackleapPhase.Hover:
                         height.Value = config.LeapHeight;
                         SetVelocity(hero, leap.Direction * drift);
-                        leap.HoverTicks++;
 
                         if (stats.Held && leap.Ticks < leap.PhaseTicks)
                             break;

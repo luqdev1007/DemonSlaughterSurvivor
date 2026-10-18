@@ -35,7 +35,6 @@ namespace Game.Simulation.Components
         public BackleapPhase Phase;
         public int Ticks;
         public int PhaseTicks;
-        public int HoverTicks;
         public Vector3 Direction;
         public float Speed;
         public float FallFrom;
