@@ -55,6 +55,7 @@ namespace Game.View
         private readonly BloodFxPool _fountains;
         private readonly BloodFxPool _drips;
         private readonly BloodFxPool _impactSplats;
+        private readonly BloodDecals _decals;
 
         private readonly ICameraService _camera;
         private readonly float _offscreenMargin;
@@ -97,6 +98,7 @@ namespace Game.View
             _impactSplats = new BloodFxPool(_config.GibImpactSplat, _config.MaxSplats, parent, _config.SplatScale);
             _fountains = new BloodFxPool(_config.StumpFountain, _config.MaxFountains, parent, 1f);
             _drips = new BloodFxPool(_config.GibDrip, _config.MaxDrips, parent, 1f);
+            _decals = new BloodDecals(_config.DecalMaterial, _config.MaxDecals, parent, _random);
         }
 
         public void PlayHit(Vector3 position, Vector3 direction)
@@ -106,6 +108,9 @@ namespace Game.View
 
             PlaySpray(_hitSprays, position, direction);
             PlaySplat(_hitSplats, position, direction);
+
+            if (_random.NextDouble() < _config.HitSplatterChance)
+                SpawnSplatter(position + Flat(direction) * Range(0.3f, 0.9f), direction, _config.HitSplatterSize, 0f);
         }
 
         public void PlayDeath(Vector3 position, Vector3 direction)
@@ -115,6 +120,53 @@ namespace Game.View
 
             PlaySpray(_deathSprays, position, direction);
             PlaySplat(_deathSplats, position, direction);
+
+            Vector2 grow = _config.PoolGrowSeconds;
+            Vector2 size = _config.PoolSize;
+            int variant = _random.NextDouble() < 0.5 ? BloodDecals.PoolVariantA : BloodDecals.PoolVariantB;
+
+            _decals.Spawn(position, Range(0f, 360f), Range(size.x, size.y), variant, _config.PoolDelaySeconds, Range(grow.x, grow.y),
+                _config.PoolLifeSeconds, _config.DecalFadeSeconds, _config.DecalDrySeconds);
+
+            Vector3 along = Flat(direction);
+            Vector2Int splatters = _config.DeathSplatters;
+            int count = _random.Next(splatters.x, splatters.y + 1);
+
+            for (int index = 0; index < count; index++)
+            {
+                Vector3 spread = Quaternion.Euler(0f, Range(-35f, 35f), 0f) * along;
+                Vector3 point = position + spread * Range(_config.DeathSplatterDistance.x, _config.DeathSplatterDistance.y);
+
+                SpawnSplatter(point, spread, _config.DeathSplatterSize, index * 0.04f);
+            }
+        }
+
+        private void SpawnSplatter(Vector3 point, Vector3 direction, Vector2 size, float delay)
+        {
+            direction.y = 0f;
+
+            float yaw = direction.sqrMagnitude > MinDirectionSqr ? Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg : Range(0f, 360f);
+            int variant = _random.NextDouble() < 0.55 ? BloodDecals.StreakVariant : BloodDecals.SplatterVariant;
+
+            _decals.Spawn(point, yaw, Range(size.x, size.y), variant, delay, Range(0.08f, 0.2f),
+                _config.SplatterLifeSeconds, _config.DecalFadeSeconds, _config.DecalDrySeconds);
+        }
+
+        private Vector3 Flat(Vector3 direction)
+        {
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude > MinDirectionSqr)
+                return direction.normalized;
+
+            float angle = Range(0f, Mathf.PI * 2f);
+
+            return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+        }
+
+        private float Range(float min, float max)
+        {
+            return min + (float)_random.NextDouble() * (max - min);
         }
 
         public bool RollDismember(float chance, in DeathBlow blow)
@@ -198,6 +250,7 @@ namespace Game.View
             Vector3 point = collision.contactCount > 0 ? collision.GetContact(0).point : gib.Transform.position;
 
             PlaySplat(_impactSplats, point, gib.Body.linearVelocity);
+            SpawnSplatter(point, gib.Body.linearVelocity, _config.HitSplatterSize, 0f);
         }
 
         public void Dispose()
@@ -206,6 +259,8 @@ namespace Game.View
                 return;
 
             _disposed = true;
+
+            _decals.Dispose();
 
             for (int index = 0; index < _gibCount; index++)
             {
@@ -510,6 +565,7 @@ namespace Game.View
             _impactSplats.Tick(now);
             _fountains.Tick(now);
             _drips.Tick(now);
+            _decals.Tick(now);
         }
 
         private void TickGibs(float deltaTime)

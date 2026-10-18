@@ -46,3 +46,17 @@ MonoBehaviour:
   _splatScale: 1.5
   _fountainSeconds: 1
   _gibImpactMinSpeed: 1.5
+  _decalMaterial: {fileID: 2100000, guid: 2b0014ce0ef010449be0093ed4bc2e7d, type: 2}
+  _maxDecals: 140
+  _poolSize: {x: 1.9, y: 2.9}
+  _poolDelaySeconds: 0.45
+  _poolGrowSeconds: {x: 3, y: 4.5}
+  _poolLifeSeconds: 26
+  _deathSplatters: {x: 2, y: 4}
+  _deathSplatterDistance: {x: 0.4, y: 2.2}
+  _deathSplatterSize: {x: 0.7, y: 1.6}
+  _hitSplatterChance: 0.45
+  _hitSplatterSize: {x: 0.35, y: 0.8}
+  _splatterLifeSeconds: 20
+  _decalFadeSeconds: 4
+  _decalDrySeconds: 18

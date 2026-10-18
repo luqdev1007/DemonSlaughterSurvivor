@@ -49,6 +49,22 @@ namespace Game.Configs
         [SerializeField] private float _fountainSeconds = 1f;
         [SerializeField] private float _gibImpactMinSpeed = 1.5f;
 
+        [Header("Blood: lasting decals")]
+        [SerializeField] private Material _decalMaterial;
+        [SerializeField, Min(0)] private int _maxDecals = 140;
+        [SerializeField] private Vector2 _poolSize = new Vector2(1.9f, 2.9f);
+        [SerializeField] private float _poolDelaySeconds = 0.45f;
+        [SerializeField] private Vector2 _poolGrowSeconds = new Vector2(3f, 4.5f);
+        [SerializeField] private float _poolLifeSeconds = 26f;
+        [SerializeField] private Vector2Int _deathSplatters = new Vector2Int(2, 4);
+        [SerializeField] private Vector2 _deathSplatterDistance = new Vector2(0.4f, 2.2f);
+        [SerializeField] private Vector2 _deathSplatterSize = new Vector2(0.7f, 1.6f);
+        [SerializeField, Range(0f, 1f)] private float _hitSplatterChance = 0.45f;
+        [SerializeField] private Vector2 _hitSplatterSize = new Vector2(0.35f, 0.8f);
+        [SerializeField] private float _splatterLifeSeconds = 20f;
+        [SerializeField] private float _decalFadeSeconds = 4f;
+        [SerializeField] private float _decalDrySeconds = 18f;
+
         public float BerserkChanceMultiplier => _berserkChanceMultiplier;
 
         public float HeadWeight => _headWeight;
@@ -116,5 +132,33 @@ namespace Game.Configs
         public float FountainSeconds => _fountainSeconds;
 
         public float GibImpactMinSpeed => _gibImpactMinSpeed;
+
+        public Material DecalMaterial => _decalMaterial;
+
+        public int MaxDecals => _maxDecals;
+
+        public Vector2 PoolSize => _poolSize;
+
+        public float PoolDelaySeconds => _poolDelaySeconds;
+
+        public Vector2 PoolGrowSeconds => _poolGrowSeconds;
+
+        public float PoolLifeSeconds => _poolLifeSeconds;
+
+        public Vector2Int DeathSplatters => _deathSplatters;
+
+        public Vector2 DeathSplatterDistance => _deathSplatterDistance;
+
+        public Vector2 DeathSplatterSize => _deathSplatterSize;
+
+        public float HitSplatterChance => _hitSplatterChance;
+
+        public Vector2 HitSplatterSize => _hitSplatterSize;
+
+        public float SplatterLifeSeconds => _splatterLifeSeconds;
+
+        public float DecalFadeSeconds => _decalFadeSeconds;
+
+        public float DecalDrySeconds => _decalDrySeconds;
     }
 }
