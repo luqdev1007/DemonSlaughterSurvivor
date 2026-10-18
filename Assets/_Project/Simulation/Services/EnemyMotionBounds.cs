@@ -59,6 +59,9 @@ namespace Game.Simulation.Services
             float maxEnemyRushSpeed = WaveTimelineValidator.ResolveMaxRushSpeed(waves);
             float pushSpeed = character.Dash == null ? 0f : character.Dash.PushSpeed;
 
+            if (character.Backleap != null)
+                pushSpeed = Math.Max(pushSpeed, character.Backleap.ImpactPushSpeed);
+
             for (int index = 0; index < perks.Count; index++)
             {
                 if (perks[index] != null && perks[index].Behaviour != null)

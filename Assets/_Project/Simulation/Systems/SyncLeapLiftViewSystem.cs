@@ -1,6 +1,7 @@
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using UnityEngine;
 
 namespace Game.Simulation.Systems
 {
@@ -10,6 +11,8 @@ namespace Game.Simulation.Systems
 
         private readonly EcsFilterInject<Inc<Player, View>> _heroes = default;
         private readonly EcsFilterInject<Inc<HeroicLeap>> _leaps = default;
+
+        private readonly EcsPoolInject<Height> _heights = default;
 
         private readonly EcsPoolInject<HeroicLeap> _leapPool = default;
         private readonly EcsPoolInject<View> _views = default;
@@ -25,7 +28,7 @@ namespace Game.Simulation.Systems
                 if (view.Value == null)
                     continue;
 
-                view.Value.SetLift(ResolveLift(world, hero));
+                view.Value.SetLift(Mathf.Max(ResolveLift(world, hero), _heights.Value.Has(hero) ? _heights.Value.Get(hero).Value : 0f));
             }
         }
 

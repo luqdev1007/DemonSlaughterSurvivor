@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Arrow> _arrows = default;
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
         private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<Backleaping> _backleaps = default;
         private readonly EcsPoolInject<View> _views = default;
 
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
@@ -41,7 +42,7 @@ namespace Game.Simulation.Systems
                 BowConfig config = _bows.Value.Get(bow).Config;
                 bool hasOwner = _ownerLinks.Value.Get(bow).Owner.Unpack(world, out int owner);
 
-                if (hasOwner == false || BowShot.IsBlocked(owner, _dead.Value) || _aims.Value.Has(owner) == false)
+                if (hasOwner == false || BowShot.IsBlocked(owner, _dead.Value, _backleaps.Value) || _aims.Value.Has(owner) == false)
                 {
                     _drawPool.Value.Del(bow);
 

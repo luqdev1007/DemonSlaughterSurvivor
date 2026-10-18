@@ -22,6 +22,7 @@ MonoBehaviour:
   _aimTurnSpeed: 1080
   _torsoAim: {fileID: 11400000, guid: 3bcb8f15044a87a42ab7124f737c8bdd, type: 2}
   _bodyRadius: 0.4
+  _airborneClearance: 1
   _maxHealth: 100
   _hitInvulnerabilitySeconds: 0.5
   _critChance: 0.05
@@ -42,5 +43,6 @@ MonoBehaviour:
   _dash: {fileID: 0}
   _startingWeapon: {fileID: 0}
   _bow: {fileID: 11400000, guid: 7e1aa1ebf54aa5748a0081206cc1ae2c, type: 2}
+  _backleap: {fileID: 11400000, guid: afe01a7ec20adbe4388a87f6c90d469e, type: 2}
   _rage: {fileID: 0}
   _ultimate: {fileID: 0}

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -27,6 +27,8 @@ namespace Game.View
         private static readonly int ActionPhaseId = Animator.StringToHash("ActionPhase");
         private static readonly int PushReactionTriggerId = Animator.StringToHash("PushReaction");
         private static readonly int PushReactionSpeedId = Animator.StringToHash("PushReactionSpeed");
+        private static readonly int AirPhaseId = Animator.StringToHash("AirPhase");
+        private static readonly int AirSpeedId = Animator.StringToHash("AirSpeed");
 
         private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
         private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
@@ -36,6 +38,7 @@ namespace Game.View
         [SerializeField] private PickupFx _pickupFx;
         [SerializeField] private RuneAuraFx _runeAura;
         [SerializeField] private AimRig _aimRig;
+        [SerializeField] private WingsFx _wings;
 
         private Vector3 _baseScale = Vector3.one;
         private bool _hasBaseScale;
@@ -74,6 +77,8 @@ namespace Game.View
         private bool _hasAttackSpeedParameter;
         private bool _hasActionPhaseParameter;
         private bool _hasPushReactionParameters;
+        private bool _hasAirParameters;
+        private int _airPhase;
         private int _actionPhase;
         private float _hitFlashSeconds;
         private float _blinkSeconds;
@@ -137,6 +142,8 @@ namespace Game.View
             _hasChargeParameters = HasParameter(animator, IsChargingId, AnimatorControllerParameterType.Bool)
                 && HasParameter(animator, ChargeRunId, AnimatorControllerParameterType.Bool);
             _hasChargedDashParameter = HasParameter(animator, ChargedDashId, AnimatorControllerParameterType.Bool);
+            _hasAirParameters = HasParameter(animator, AirPhaseId, AnimatorControllerParameterType.Int)
+                && HasParameter(animator, AirSpeedId, AnimatorControllerParameterType.Float);
             _hitFlashSeconds = hitFlashSeconds;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
@@ -177,6 +184,26 @@ namespace Game.View
                 return;
 
             _aimRig.SetAim(twistDegrees, localVelocity, turnSide);
+        }
+
+        public void SetAir(int phase, float playbackSpeed, bool wings)
+        {
+            if (_isDead)
+            {
+                phase = 0;
+                wings = false;
+            }
+
+            if (_wings != null)
+                _wings.Show(wings);
+
+            if (_hasAirParameters == false || _airPhase == phase)
+                return;
+
+            _airPhase = phase;
+
+            _animator.SetFloat(AirSpeedId, playbackSpeed);
+            _animator.SetInteger(AirPhaseId, phase);
         }
 
         public void SetPickupFlight(float progress)
@@ -540,6 +567,11 @@ namespace Game.View
 
             if (_aimRig != null)
                 _aimRig.ResetAim();
+
+            if (_wings != null)
+                _wings.HideImmediate();
+
+            _airPhase = 0;
 
             if (_hasBaseScale)
                 transform.localScale = _baseScale;

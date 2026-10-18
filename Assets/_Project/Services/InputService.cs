@@ -35,6 +35,8 @@ namespace Game.Services
 
         public bool IsChargeHeld => _input.Gameplay.ChargeDash.IsPressed();
 
+        public bool IsDashHeld => _input.Gameplay.Dash.IsPressed();
+
         public bool ConsumeChargeReleased()
         {
             if (_chargeReleased == false)

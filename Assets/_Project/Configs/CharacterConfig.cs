@@ -22,6 +22,7 @@ namespace Game.Configs
 
         [Header("Body")]
         [SerializeField] private float _bodyRadius = 0.4f;
+        [SerializeField, Min(0f)] private float _airborneClearance = 1f;
 
         [Header("Combat")]
         [SerializeField] private float _maxHealth = 100f;
@@ -58,6 +59,7 @@ namespace Game.Configs
         [SerializeField] private DashAbilityConfig _dash;
         [SerializeField] private WeaponConfig _startingWeapon;
         [SerializeField] private BowConfig _bow;
+        [SerializeField] private BackleapConfig _backleap;
         [SerializeField] private RageConfig _rage;
         [SerializeField] private BerserkAbilityConfig _ultimate;
 
@@ -78,6 +80,8 @@ namespace Game.Configs
         public TorsoAimConfig TorsoAim => _torsoAim;
 
         public float BodyRadius => _bodyRadius;
+
+        public float AirborneClearance => _airborneClearance;
 
         public float MaxHealth => _maxHealth;
 
@@ -116,6 +120,8 @@ namespace Game.Configs
         public WeaponConfig StartingWeapon => _startingWeapon;
 
         public BowConfig Bow => _bow;
+
+        public BackleapConfig Backleap => _backleap;
 
         public RageConfig Rage => _rage;
 

@@ -17,7 +17,7 @@ namespace Game.Simulation.Systems
         private const float TieBreakAngleScale = 6.2831855f / 4294967296f;
         private const float CandidateSlack = 0f;
 
-        private readonly EcsFilterInject<Inc<Player, Position, BodyRadius>> _players = default;
+        private readonly EcsFilterInject<Inc<Player, Position, BodyRadius>, Exc<Airborne>> _players = default;
 
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Position> _positions = default;

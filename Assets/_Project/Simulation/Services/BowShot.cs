@@ -5,9 +5,9 @@ namespace Game.Simulation.Services
 {
     public static class BowShot
     {
-        public static bool IsBlocked(int owner, EcsPool<Dead> dead)
+        public static bool IsBlocked(int owner, EcsPool<Dead> dead, EcsPool<Backleaping> backleaps)
         {
-            return dead.Has(owner);
+            return dead.Has(owner) || backleaps.Has(owner);
         }
     }
 }

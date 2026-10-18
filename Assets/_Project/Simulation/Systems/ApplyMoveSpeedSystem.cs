@@ -7,7 +7,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class ApplyMoveSpeedSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<MoveIntent, MoveSpeed, Velocity>, Exc<Dashing, Pushed, Rushing>> _filter = default;
+        private readonly EcsFilterInject<Inc<MoveIntent, MoveSpeed, Velocity>, Exc<Dashing, Pushed, Rushing, Backleaping>> _filter = default;
         private readonly EcsPoolInject<MoveIntent> _intents = default;
         private readonly EcsPoolInject<MoveSpeed> _speeds = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;

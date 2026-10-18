@@ -43,6 +43,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
         private readonly EcsPoolInject<CombatStats> _combatStats = default;
         private readonly EcsPoolInject<TorsoAim> _torsoAims = default;
+        private readonly EcsPoolInject<Height> _heights = default;
+        private readonly EcsPoolInject<BackleapStats> _backleaps = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -66,6 +68,9 @@ namespace Game.Simulation.Systems
 
             if (character.TorsoAim != null)
                 character.TorsoAim.Validate($"{nameof(CharacterConfig)} '{character.Id}'");
+
+            if (character.Backleap != null)
+                character.Backleap.Validate();
 
             int entity = _world.Value.NewEntity();
 
@@ -185,6 +190,13 @@ namespace Game.Simulation.Systems
 
                 _rageStates.Value.Add(entity);
             }
+
+            ref Height height = ref _heights.Value.Add(entity);
+            height.Value = 0f;
+            height.Clearance = character.AirborneClearance;
+
+            if (character.Backleap != null)
+                _backleaps.Value.Add(entity).Config = character.Backleap;
 
             if (character.TorsoAim != null)
             {

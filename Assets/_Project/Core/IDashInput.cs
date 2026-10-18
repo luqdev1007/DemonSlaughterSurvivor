@@ -4,6 +4,8 @@ namespace Game.Core
     {
         bool IsChargeHeld { get; }
 
+        bool IsDashHeld { get; }
+
         bool ConsumeChargeReleased();
     }
 }

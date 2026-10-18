@@ -9,7 +9,7 @@ namespace Game.Simulation.Systems
 {
     public sealed class FaceLegsSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<Player, TorsoAim, Facing, Velocity, TurnSpeed>, Exc<Dead>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Player, TorsoAim, Facing, Velocity, TurnSpeed>, Exc<Dead, Backleaping>> _heroes = default;
 
         private readonly EcsPoolInject<TorsoAim> _aims = default;
         private readonly EcsPoolInject<Facing> _facings = default;

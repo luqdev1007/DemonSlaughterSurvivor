@@ -22,6 +22,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<TorsoAim> _aims = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<Backleaping> _backleaps = default;
         private readonly EcsPoolInject<View> _views = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -38,7 +39,7 @@ namespace Game.Simulation.Systems
                 if (ready.Remaining > 0f)
                     continue;
 
-                if (_ownerLinks.Value.Get(bow).Owner.Unpack(world, out int owner) == false || BowShot.IsBlocked(owner, _dead.Value))
+                if (_ownerLinks.Value.Get(bow).Owner.Unpack(world, out int owner) == false || BowShot.IsBlocked(owner, _dead.Value, _backleaps.Value))
                     continue;
 
                 if (_aims.Value.Has(owner) == false)

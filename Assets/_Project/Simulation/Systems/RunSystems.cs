@@ -11,12 +11,15 @@ namespace Game.Simulation.Systems
             // 1.  Input
             systems.Add(new ReadInputStateSystem());
             systems.Add(new ReadDashInputSystem());
+            systems.Add(new ReadBackleapInputSystem());
             systems.Add(new ReadUltimateInputSystem());
             // 2.  Abilities
             systems.Add(new TickDashCooldownSystem());
             systems.Add(new AdvanceDashSystem());
             systems.Add(new StartDashSystem());
             systems.Add(new ExpireDashRequestSystem());
+            systems.Add(new StartBackleapSystem());
+            systems.Add(new TickBackleapTimersSystem());
             systems.Add(new TickBerserkModeSystem());
             systems.Add(new TickPowerUpSystem());
             systems.Add(new StartBerserkSystem());
@@ -44,6 +47,8 @@ namespace Game.Simulation.Systems
             // 5.  Movement
             systems.Add(new StorePreviousPositionSystem());
             systems.Add(new ApplyDashVelocitySystem());
+            systems.Add(new AdvanceBackleapSystem());
+            systems.Add(new UpdateAirborneSystem());
             systems.Add(new ApplyEnemyChargeVelocitySystem());
             systems.Add(new ApplyMoveSpeedSystem());
             systems.Add(new SteerEnemySpinSystem());
@@ -152,6 +157,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncSpecialAttackViewSystem());
             systems.Add(new SyncLocomotionViewSystem());
             systems.Add(new SyncAimViewSystem());
+            systems.Add(new SyncAirViewSystem());
             systems.Add(new SyncEnemyActionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
             systems.Add(new PublishRuneStatusSystem());

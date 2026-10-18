@@ -20,6 +20,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
         private readonly EcsPoolInject<DashCooldown> _dashCooldowns = default;
         private readonly EcsPoolInject<DashStats> _dashStats = default;
+        private readonly EcsPoolInject<BackleapStats> _backleapStats = default;
+        private readonly EcsPoolInject<BackleapCooldown> _backleapCooldowns = default;
         private readonly EcsPoolInject<ExecutionCooldown> _executionCooldowns = default;
         private readonly EcsPoolInject<HeroicLeapCooldown> _leapCooldowns = default;
         private readonly EcsPoolInject<AgileDashCooldown> _agileCooldowns = default;
@@ -43,6 +45,9 @@ namespace Game.Simulation.Systems
             {
                 if (_dashStats.Value.Has(hero))
                     _sink.Value.Publish(DashId, _dashCooldowns.Value.Has(hero) ? Mathf.Max(0f, _dashCooldowns.Value.Get(hero).Remaining) : 0f);
+
+                if (_backleapStats.Value.Has(hero))
+                    _sink.Value.Publish(_backleapStats.Value.Get(hero).Config.Id, _backleapCooldowns.Value.Has(hero) ? Mathf.Max(0f, _backleapCooldowns.Value.Get(hero).Remaining) : 0f);
 
                 foreach (int entity in _taken.Value)
                 {

@@ -11,7 +11,7 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<EnemyHeavyStrike, Position>, Exc<Dead>> _strikers = default;
-        private readonly EcsFilterInject<Inc<Player, Position, BodyRadius, Health>, Exc<Dead>> _targets = default;
+        private readonly EcsFilterInject<Inc<Player, Position, BodyRadius, Health>, Exc<Dead, Airborne>> _targets = default;
 
         private readonly EcsPoolInject<EnemyHeavyStrike> _strikes = default;
         private readonly EcsPoolInject<Position> _positions = default;

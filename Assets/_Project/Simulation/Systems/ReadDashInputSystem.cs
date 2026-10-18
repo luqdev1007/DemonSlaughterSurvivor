@@ -24,7 +24,7 @@ namespace Game.Simulation.Systems
 
         public void Run(IEcsSystems systems)
         {
-            bool pressed = _input.Value.ConsumeDashPressed();
+            bool pressed = _filter.Value.GetEntitiesCount() > 0 && _input.Value.ConsumeDashPressed();
             bool released = _dashInput.Value.ConsumeChargeReleased();
             bool held = _dashInput.Value.IsChargeHeld;
 

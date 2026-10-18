@@ -324,6 +324,8 @@ namespace Game.Simulation.Tests
 
             public bool IsChargeHeld => _chargeHeld;
 
+            public bool IsDashHeld => false;
+
             public void PressDash()
             {
                 _dashPressed = true;

@@ -14,6 +14,9 @@ namespace Game.Editor
         private const string MaskPath = "Assets/_Project/Art/Animations/Huntress/Huntress_UpperBody.mask";
         private const string BakedFolder = "Assets/_Project/Art/Animations/Huntress/Baked/";
         private const string PrefabPath = "Assets/_Project/Prefabs/Heroes/Huntress.prefab";
+        private const string WingsMaterialPath = "Assets/_Project/Art/Materials/M_HuntressWingsStub.mat";
+        private const string WingsMountName = "WingsMount";
+        private const string WingsBone = "mixamorig:Spine2";
         private const string SpineToken = "mixamorig:Spine";
         private const float TurnBlend = 0.12f;
         private const float BowBlend = 0.1f;
@@ -53,6 +56,7 @@ namespace Game.Editor
                 animator.applyRootMotion = false;
 
                 WireRig(prefabRoot, animator);
+                WireWings(prefabRoot, animator);
 
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, PrefabPath);
             }
@@ -80,9 +84,12 @@ namespace Game.Editor
             controller.AddParameter("Draw", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Release", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("BowCancel", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AirPhase", AnimatorControllerParameterType.Int);
+            controller.AddParameter("AirSpeed", AnimatorControllerParameterType.Float);
 
             SetDefault(controller, "LocomotionSpeed", 1f);
             SetDefault(controller, "AttackSpeed", 1f);
+            SetDefault(controller, "AirSpeed", 1f);
 
             BuildBaseLayer(controller);
             BuildBowLayer(controller, mask);
@@ -118,6 +125,56 @@ namespace Game.Editor
             Connect(locomotion, right, "Turn", AnimatorConditionMode.Equals, 1f);
             Connect(left, locomotion, "Turn", AnimatorConditionMode.NotEqual, -1f);
             Connect(right, locomotion, "Turn", AnimatorConditionMode.NotEqual, 1f);
+
+            BuildAirStates(machine, locomotion);
+        }
+
+        private static void BuildAirStates(AnimatorStateMachine machine, AnimatorState locomotion)
+        {
+            AnimatorState leap = AirState(machine, "Leap", "Huntress_Backflip", new Vector3(600f, -240f, 0f), 1, true);
+            AnimatorState hover = AirState(machine, "Hover", "Huntress_FallLoop", new Vector3(850f, -240f, 0f), 2, false);
+            AnimatorState fall = AirState(machine, "Fall", "Huntress_FallLoop", new Vector3(850f, -160f, 0f), 3, false);
+            AnimatorState hop = AirState(machine, "Hop", "Huntress_Jump", new Vector3(600f, 240f, 0f), 4, true);
+            AnimatorState dive = AirState(machine, "Dive", "Huntress_FallLoop", new Vector3(850f, 240f, 0f), 5, false);
+
+            hover.speed = 0.6f;
+            dive.speed = 1.6f;
+
+            AnimatorState land = machine.AddState("Land", new Vector3(1100f, 0f, 0f));
+            land.motion = Clip("Huntress_Land");
+
+            foreach (AnimatorState air in new[] { leap, hover, fall, hop, dive })
+            {
+                AnimatorStateTransition toLand = air.AddTransition(land);
+                toLand.AddCondition(AnimatorConditionMode.Equals, 0f, "AirPhase");
+                toLand.hasExitTime = false;
+                toLand.duration = 0.08f;
+            }
+
+            AnimatorStateTransition back = land.AddTransition(locomotion);
+            back.hasExitTime = true;
+            back.exitTime = 0.6f;
+            back.duration = 0.2f;
+        }
+
+        private static AnimatorState AirState(AnimatorStateMachine machine, string name, string clip, Vector3 position, int phase, bool usesSpeed)
+        {
+            AnimatorState state = machine.AddState(name, position);
+            state.motion = Clip(clip);
+
+            if (usesSpeed)
+            {
+                state.speedParameterActive = true;
+                state.speedParameter = "AirSpeed";
+            }
+
+            AnimatorStateTransition enter = machine.AddAnyStateTransition(state);
+            enter.AddCondition(AnimatorConditionMode.Equals, phase, "AirPhase");
+            enter.hasExitTime = false;
+            enter.canTransitionToSelf = false;
+            enter.duration = 0.1f;
+
+            return state;
         }
 
         private static void BuildBowLayer(AnimatorController controller, AvatarMask mask)
@@ -247,6 +304,76 @@ namespace Game.Editor
             SerializedObject serializedView = new SerializedObject(view);
             serializedView.FindProperty("_aimRig").objectReferenceValue = rig;
             serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WireWings(GameObject prefabRoot, Animator animator)
+        {
+            Transform bone = FindDeep(animator.transform, WingsBone);
+            Transform old = bone.Find(WingsMountName);
+
+            if (old != null)
+                UnityEngine.Object.DestroyImmediate(old.gameObject);
+
+            GameObject mount = new GameObject(WingsMountName);
+            mount.transform.SetParent(bone, false);
+            mount.transform.position = bone.position - prefabRoot.transform.forward * 0.12f + Vector3.up * 0.05f;
+            mount.transform.rotation = prefabRoot.transform.rotation;
+            mount.AddComponent<NotBody>();
+
+            Material material = WingsMaterial();
+            Transform[] wings = new Transform[2];
+
+            for (int side = 0; side < 2; side++)
+            {
+                float sign = side == 0 ? 1f : -1f;
+                GameObject wing = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                UnityEngine.Object.DestroyImmediate(wing.GetComponent<Collider>());
+
+                wing.name = side == 0 ? "WingRight" : "WingLeft";
+                wing.transform.SetParent(mount.transform, false);
+                wing.transform.localPosition = new Vector3(0.45f * sign, 0.15f, -0.1f);
+                wing.transform.localRotation = Quaternion.Euler(-15f, 30f * sign, 25f * sign);
+                wing.transform.localScale = new Vector3(0.9f, 0.6f, 1f);
+
+                MeshRenderer renderer = wing.GetComponent<MeshRenderer>();
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+                wings[side] = wing.transform;
+            }
+
+            WingsFx fx = mount.AddComponent<WingsFx>();
+            SerializedObject serializedFx = new SerializedObject(fx);
+            SerializedProperty list = serializedFx.FindProperty("_wings");
+            list.arraySize = wings.Length;
+
+            for (int index = 0; index < wings.Length; index++)
+                list.GetArrayElementAtIndex(index).objectReferenceValue = wings[index];
+
+            serializedFx.ApplyModifiedPropertiesWithoutUndo();
+
+            ViewInterpolator view = prefabRoot.GetComponent<ViewInterpolator>();
+            SerializedObject serializedView = new SerializedObject(view);
+            serializedView.FindProperty("_wings").objectReferenceValue = fx;
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static Material WingsMaterial()
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(WingsMaterialPath);
+
+            if (material != null)
+                return material;
+
+            material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            material.SetColor("_BaseColor", new Color(0.12f, 0.02f, 0.03f, 1f));
+            material.SetColor("_EmissionColor", new Color(0.7f, 0.06f, 0.04f, 1f));
+            material.EnableKeyword("_EMISSION");
+            material.SetFloat("_Cull", 0f);
+            material.SetFloat("_Smoothness", 0.2f);
+            AssetDatabase.CreateAsset(material, WingsMaterialPath);
+
+            return material;
         }
 
         private static Transform FindDeep(Transform root, string name)
