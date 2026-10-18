@@ -164,6 +164,62 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void PerksOfAnotherCharacterAreNeverOffered()
+        {
+            PerkConfig foreign = Perk("perk.foreign", 5, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            SetField(foreign, "_characters", new[] { Character("character.other") });
+            PerkConfig own = Perk("perk.own", 5, StatId.MaxHealth, StatOp.Flat, 10f);
+            SetField(own, "_characters", new[] { Character("character.test") });
+            PerkConfig shared = Perk("perk.shared", 5, StatId.AttackSpeed, StatOp.Increased, 0.1f);
+
+            Fixture fixture = Build(Seed, foreign, own, shared);
+
+            for (int round = 0; round < 6; round++)
+            {
+                fixture.LevelUp();
+
+                for (int slot = 0; slot < fixture.LastOfferCount; slot++)
+                    Assert.AreNotEqual("perk.foreign", fixture.LastOffer(slot).PerkId, "a perk bound to another character leaked into the window");
+
+                fixture.Choose(0);
+            }
+
+            Assert.AreEqual(0, fixture.LevelOf("perk.foreign"));
+        }
+
+        [Test]
+        public void APoolOfOnlyForeignPerksLetsTheLevelPassWithoutAWindow()
+        {
+            PerkConfig foreign = Perk("perk.foreign", 5, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            SetField(foreign, "_characters", new[] { Character("character.other") });
+
+            Fixture fixture = Build(Seed, foreign);
+
+            fixture.LevelUp(2);
+
+            Assert.IsFalse(fixture.Gate.IsAwaiting, "the character has no perks, so the world must keep ticking");
+            Assert.IsFalse(fixture.HasPendingChoice());
+            Assert.AreEqual(0, fixture.PendingLevelUps());
+            Assert.AreEqual(0, fixture.Sink.Shows.Count);
+        }
+
+        [Test]
+        public void ASmallPoolShowsOnlyTheCardsItHas()
+        {
+            PerkConfig own = Perk("perk.own", 5, StatId.MaxHealth, StatOp.Flat, 10f);
+            SetField(own, "_characters", new[] { Character("character.test") });
+            PerkConfig foreign = Perk("perk.foreign", 5, StatId.MoveSpeed, StatOp.Increased, 0.1f);
+            SetField(foreign, "_characters", new[] { Character("character.other") });
+
+            Fixture fixture = Build(Seed, own, foreign);
+
+            fixture.LevelUp();
+
+            Assert.AreEqual(1, fixture.LastOfferCount);
+            Assert.AreEqual("perk.own", fixture.LastOffer(0).PerkId);
+        }
+
+        [Test]
         public void OffersAreDeterministicOnOneSeed()
         {
             PerkConfig[] perks = FivePerks();
@@ -351,6 +407,15 @@ namespace Game.Simulation.Tests
             _assets.Add(perk);
 
             return perk;
+        }
+
+        private CharacterConfig Character(string id)
+        {
+            CharacterConfig character = ScriptableObject.CreateInstance<CharacterConfig>();
+            SetField(character, "_id", id);
+            _assets.Add(character);
+
+            return character;
         }
 
         private Fixture Build(int seed, params PerkConfig[] perks)

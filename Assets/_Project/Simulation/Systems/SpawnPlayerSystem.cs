@@ -53,14 +53,15 @@ namespace Game.Simulation.Systems
             CharacterConfig character = _content.Value.Get<CharacterConfig>(_context.Value.CharacterId);
             DashAbilityConfig dash = character.Dash;
 
-            if (dash.AccelerationPower < 1f)
+            if (dash != null && dash.AccelerationPower < 1f)
                 throw new InvalidOperationException(
                     $"{nameof(DashAbilityConfig)} '{dash.Id}' has {nameof(DashAbilityConfig.AccelerationPower)} {dash.AccelerationPower}. " +
                     "The dash must not slow down towards its end: use 1 for a constant speed and more for a stronger run-up.");
 
             RageConfig rage = character.Rage;
 
-            ValidateRage(character, rage);
+            if (rage != null)
+                ValidateRage(rage);
 
             int entity = _world.Value.NewEntity();
 
@@ -144,36 +145,42 @@ namespace Game.Simulation.Systems
             damageTaken.Base = BaseDamageTaken;
             damageTaken.Value = BaseDamageTaken;
 
-            ref DashStats dashStats = ref _dashStats.Value.Add(entity);
-            dashStats.Distance = dash.Distance;
-            dashStats.Duration = dash.Duration;
-            dashStats.CooldownBase = dash.Cooldown;
-            dashStats.Cooldown = dash.Cooldown;
-            dashStats.Direction = dash.Direction;
-            dashStats.AccelerationPower = dash.AccelerationPower;
-            dashStats.InvulnerabilitySeconds = dash.InvulnerabilitySeconds;
-            dashStats.PushSpeed = dash.PushSpeed;
-            dashStats.PushSeconds = dash.PushSeconds;
-            dashStats.PushArcHeight = dash.PushArcHeight;
-            dashStats.PushReach = dash.PushReach;
-            dashStats.PushEdgeScale = dash.PushEdgeScale;
-            dashStats.PushForwardTiltDegrees = dash.PushForwardTiltDegrees;
-            dashStats.PushSpreadDegrees = dash.PushSpreadDegrees;
-            dashStats.ChargeEnabled = dash.ChargeEnabled;
-            dashStats.TapSeconds = dash.TapSeconds;
-            dashStats.MaxChargeSeconds = dash.MaxChargeSeconds;
-            dashStats.ChargeCurve = dash.ChargeCurve;
-            dashStats.DistanceAtFullCharge = dash.DistanceAtFullCharge;
-            dashStats.SpeedAtFullCharge = dash.SpeedAtFullCharge;
-            dashStats.DamageAtFullCharge = dash.DamageAtFullCharge;
-            dashStats.ChargeMoveSpeedMore = dash.ChargeMoveSpeedMore;
-            dashStats.ChargeRunAnimation = dash.ChargeRunAnimation;
+            if (dash != null)
+            {
+                ref DashStats dashStats = ref _dashStats.Value.Add(entity);
+                dashStats.Distance = dash.Distance;
+                dashStats.Duration = dash.Duration;
+                dashStats.CooldownBase = dash.Cooldown;
+                dashStats.Cooldown = dash.Cooldown;
+                dashStats.Direction = dash.Direction;
+                dashStats.AccelerationPower = dash.AccelerationPower;
+                dashStats.InvulnerabilitySeconds = dash.InvulnerabilitySeconds;
+                dashStats.PushSpeed = dash.PushSpeed;
+                dashStats.PushSeconds = dash.PushSeconds;
+                dashStats.PushArcHeight = dash.PushArcHeight;
+                dashStats.PushReach = dash.PushReach;
+                dashStats.PushEdgeScale = dash.PushEdgeScale;
+                dashStats.PushForwardTiltDegrees = dash.PushForwardTiltDegrees;
+                dashStats.PushSpreadDegrees = dash.PushSpreadDegrees;
+                dashStats.ChargeEnabled = dash.ChargeEnabled;
+                dashStats.TapSeconds = dash.TapSeconds;
+                dashStats.MaxChargeSeconds = dash.MaxChargeSeconds;
+                dashStats.ChargeCurve = dash.ChargeCurve;
+                dashStats.DistanceAtFullCharge = dash.DistanceAtFullCharge;
+                dashStats.SpeedAtFullCharge = dash.SpeedAtFullCharge;
+                dashStats.DamageAtFullCharge = dash.DamageAtFullCharge;
+                dashStats.ChargeMoveSpeedMore = dash.ChargeMoveSpeedMore;
+                dashStats.ChargeRunAnimation = dash.ChargeRunAnimation;
+            }
 
-            ref UltimateCharge charge = ref _charges.Value.Add(entity);
-            charge.Value = 0f;
-            charge.Max = rage.Max;
+            if (rage != null)
+            {
+                ref UltimateCharge charge = ref _charges.Value.Add(entity);
+                charge.Value = 0f;
+                charge.Max = rage.Max;
 
-            _rageStates.Value.Add(entity);
+                _rageStates.Value.Add(entity);
+            }
 
             _intents.Value.Add(entity);
             _velocities.Value.Add(entity);
@@ -195,13 +202,8 @@ namespace Game.Simulation.Systems
             statModifiers.MarkDirty(entity);
         }
 
-        private static void ValidateRage(CharacterConfig character, RageConfig rage)
+        private static void ValidateRage(RageConfig rage)
         {
-            if (rage == null)
-                throw new InvalidOperationException(
-                    $"{nameof(CharacterConfig)} '{character.Id}' has no {nameof(RageConfig)} assigned. " +
-                    "The ultimate charge needs a resource to fill.");
-
             if (rage.Max <= 0f)
                 throw new InvalidOperationException(
                     $"{nameof(RageConfig)} '{rage.Id}' has {nameof(RageConfig.Max)} {rage.Max}. The ultimate could never charge.");

@@ -36,7 +36,7 @@ namespace Game.Bootstrap
 
             builder.Register<InputService>(Lifetime.Singleton).As<IInputService>().As<IPauseInput>().As<IPointerInput>().As<IDashInput>();
 
-            builder.Register<GameSettings>(Lifetime.Singleton).As<ISoundSettings>().As<ICombatTextSettings>();
+            builder.Register<GameSettings>(Lifetime.Singleton).As<ISoundSettings>().As<ICombatTextSettings>().As<IHeroSelection>();
 
             builder.RegisterInstance(new ContentRegistry(_contentDatabase.Entries)).As<IContentRegistry>();
 

@@ -97,7 +97,7 @@ namespace Game.Simulation.Tests
         [Test]
         public void BoundsTakeTheFastestPushSource()
         {
-            CharacterConfig character = AssetDatabase.LoadAssetAtPath<CharacterConfig>("Assets/_Project/Configs/CharacterConfig.asset");
+            CharacterConfig character = AssetDatabase.LoadAssetAtPath<CharacterConfig>("Assets/_Project/Configs/Characters/Character_Berserk.asset");
             LevelConfig level = AssetDatabase.LoadAssetAtPath<LevelConfig>("Assets/_Project/Configs/Levels/Level_Gameplay.asset");
             HeroicLeapConfig leap = Object.Instantiate(AssetDatabase.LoadAssetAtPath<HeroicLeapConfig>("Assets/_Project/Configs/Perks/HeroicLeap_Berserk.asset"));
             _assets.Add(leap);

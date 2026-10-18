@@ -38,3 +38,5 @@ MonoBehaviour:
   _requires:
   - {fileID: 11400000, guid: 8750939a386203348a1e5e7ceb78ceca, type: 2}
   - {fileID: 11400000, guid: 3cd0b45e2b9c08a48abc2b728554007b, type: 2}
+  _characters:
+  - {fileID: 11400000, guid: 29d13c4cfee513e429c8e2e39949af05, type: 2}

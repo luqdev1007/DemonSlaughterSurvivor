@@ -34,6 +34,22 @@ namespace Game.Simulation.Services
 
         public int Count => _perks.Length;
 
+        public static List<PerkConfig> ForCharacter(IReadOnlyList<PerkConfig> perks, string characterId)
+        {
+            if (perks == null)
+                throw new ArgumentNullException(nameof(perks));
+
+            List<PerkConfig> available = new List<PerkConfig>(perks.Count);
+
+            for (int index = 0; index < perks.Count; index++)
+            {
+                if (perks[index] != null && perks[index].IsAvailableFor(characterId))
+                    available.Add(perks[index]);
+            }
+
+            return available;
+        }
+
         public PerkConfig this[int index] => _perks[index];
 
         public int[] Candidates => _candidates;

@@ -10,9 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 045b0438611767647b49c9b61e627f24, type: 3}
-  m_Name: CharacterConfig
+  m_Name: Character_Berserk
   m_EditorClassIdentifier: Game.Configs::Game.Configs.CharacterConfig
   _id: character.berserk
+  _displayName: "\u0411\u0435\u0440\u0441\u0435\u0440\u043A"
+  _menuOrder: 0
   _viewPrefab: {fileID: 2234588097227066470, guid: 1c42123340482604d9a01f8ca83ae27f, type: 3}
   _moveSpeed: 6
   _turnSpeed: 1200
@@ -21,6 +23,16 @@ MonoBehaviour:
   _bodyRadius: 0.4
   _maxHealth: 100
   _hitInvulnerabilitySeconds: 0.5
+  _critChance: 0.05
+  _critMultiplier: 2
+  _attackPower: 0
+  _spellPower: 0
+  _armor: 0
+  _magicResist: 0
+  _defenseScale: 100
+  _evasion: 0
+  _maxEvasion: 0.6
+  _luck: 0
   _lifeOnKill: 0.01
   _lifeOnHit: 0
   _lowHealthFury: {fileID: 11400000, guid: 98314a4530a48334882371b3e3108bd7, type: 2}

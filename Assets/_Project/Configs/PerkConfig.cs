@@ -6,7 +6,7 @@ using UnityEngine.Serialization;
 namespace Game.Configs
 {
     [CreateAssetMenu(fileName = "PerkConfig", menuName = "Game/Content/Perk Config")]
-    public sealed class PerkConfig : ContentConfig
+    public sealed class PerkConfig : ContentConfig, IAbilityIcon
     {
         [SerializeField] private string _displayName;
         [SerializeField, TextArea] private string _description;
@@ -19,6 +19,9 @@ namespace Game.Configs
 
         [Header("Combo")]
         [SerializeField] private PerkConfig[] _requires = Array.Empty<PerkConfig>();
+
+        [Header("Characters")]
+        [SerializeField] private CharacterConfig[] _characters = Array.Empty<CharacterConfig>();
 
         public string DisplayName => _displayName;
 
@@ -33,6 +36,22 @@ namespace Game.Configs
         public IReadOnlyList<PerkConfig> Requires => _requires ?? Array.Empty<PerkConfig>();
 
         public string Description => _description;
+
+        public IReadOnlyList<CharacterConfig> Characters => _characters ?? Array.Empty<CharacterConfig>();
+
+        public bool IsAvailableFor(string characterId)
+        {
+            if (_characters == null || _characters.Length == 0)
+                return true;
+
+            for (int index = 0; index < _characters.Length; index++)
+            {
+                if (_characters[index] != null && _characters[index].Id == characterId)
+                    return true;
+            }
+
+            return false;
+        }
 
         public int MaxLevel => _levels == null ? 0 : _levels.Length;
 

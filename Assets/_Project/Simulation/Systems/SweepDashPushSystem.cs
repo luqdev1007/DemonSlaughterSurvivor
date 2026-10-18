@@ -41,9 +41,7 @@ namespace Game.Simulation.Systems
             DashAbilityConfig dash = character.Dash;
 
             if (dash == null)
-                throw new InvalidOperationException(
-                    $"{nameof(CharacterConfig)} '{character.Id}' has no dash ability assigned, " +
-                    $"but {nameof(SweepDashPushSystem)} is registered and reads its push numbers.");
+                return;
 
             if (dash.PushSpeed < 0f)
                 throw new InvalidOperationException(

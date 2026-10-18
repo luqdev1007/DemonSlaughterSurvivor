@@ -34,7 +34,7 @@ namespace Game.Simulation.Systems
 
         public void Init(IEcsSystems systems)
         {
-            _pool = new PerkPool(_content.Value.All<PerkConfig>());
+            _pool = new PerkPool(PerkPool.ForCharacter(_content.Value.All<PerkConfig>(), _context.Value.CharacterId));
         }
 
         public void Run(IEcsSystems systems)

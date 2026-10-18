@@ -30,3 +30,5 @@ MonoBehaviour:
   - _modifiers: []
   _behaviour: {fileID: 11400000, guid: 8a244bfd603c9884f805f3cdd95f179d, type: 2}
   _requires: []
+  _characters:
+  - {fileID: 11400000, guid: 29d13c4cfee513e429c8e2e39949af05, type: 2}

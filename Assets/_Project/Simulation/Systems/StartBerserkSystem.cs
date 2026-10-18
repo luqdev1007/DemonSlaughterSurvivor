@@ -35,11 +35,17 @@ namespace Game.Simulation.Systems
 
             _config = character.Ultimate;
 
-            Validate(character, _config);
+            if (_config == null)
+                return;
+
+            Validate(_config);
         }
 
         public void Run(IEcsSystems systems)
         {
+            if (_config == null)
+                return;
+
             foreach (int hero in _filter.Value)
             {
                 ref UltimateCharge charge = ref _charges.Value.Get(hero);
@@ -84,13 +90,8 @@ namespace Game.Simulation.Systems
             Invulnerability.Grant(_invulnerables.Value, hero, ticks + Invulnerability.TicksSpentBeforeDamage);
         }
 
-        private static void Validate(CharacterConfig character, BerserkAbilityConfig config)
+        private static void Validate(BerserkAbilityConfig config)
         {
-            if (config == null)
-                throw new InvalidOperationException(
-                    $"{nameof(CharacterConfig)} '{character.Id}' has no ultimate assigned, " +
-                    $"but {nameof(StartBerserkSystem)} is registered and reads its duration and modifiers.");
-
             if (config.DurationSeconds <= 0f)
                 throw new InvalidOperationException(
                     $"{nameof(BerserkAbilityConfig)} '{config.Id}' has duration {config.DurationSeconds}; it must be positive.");

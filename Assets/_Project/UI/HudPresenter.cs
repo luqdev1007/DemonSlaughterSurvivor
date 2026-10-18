@@ -98,6 +98,7 @@ namespace Game.UI
                 _vitals.MaxHealth.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()),
+                _vitals.HasUltimate.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()),
                 _itemChoice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshItemChoice()),
                 _pauseMenu.Changed.Subscribe(this, (_, presenter) => presenter.RefreshPause()),
@@ -177,6 +178,7 @@ namespace Game.UI
                 return;
 
             _view.ShowHealth(_vitals.Health.CurrentValue, maxHealth);
+            _view.ShowUltimateAvailable(_vitals.HasUltimate.CurrentValue);
             _view.ShowUltimateCharge(_vitals.UltimateCharge.CurrentValue);
             _view.ShowBerserk(_vitals.UltimateActive.CurrentValue);
         }
@@ -307,8 +309,8 @@ namespace Game.UI
 
         private Sprite ResolveAbilityIcon(string abilityId, AbilityPanelView view)
         {
-            if (_content.TryGet(abilityId, out PerkConfig perk))
-                return perk.Icon;
+            if (_content.TryGet(abilityId, out IAbilityIcon ability) && ability.Icon != null)
+                return ability.Icon;
 
             return view.DashIcon;
         }

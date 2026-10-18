@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 045b0438611767647b49c9b61e627f24, type: 3}
+  m_Name: Character_Huntress
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.CharacterConfig
+  _id: character.huntress
+  _displayName: "\u041E\u0445\u043E\u0442\u043D\u0438\u0446\u0430"
+  _menuOrder: 1
+  _viewPrefab: {fileID: 5239093810765877517, guid: 289d0f510530afb43a04cc295c030882, type: 3}
+  _moveSpeed: 6
+  _turnSpeed: 1200
+  _aimDeadZone: 1.2
+  _aimTurnSpeed: 1080
+  _bodyRadius: 0.4
+  _maxHealth: 100
+  _hitInvulnerabilitySeconds: 0.5
+  _critChance: 0.05
+  _critMultiplier: 2
+  _attackPower: 0
+  _spellPower: 0
+  _armor: 0
+  _magicResist: 0
+  _defenseScale: 100
+  _evasion: 0
+  _maxEvasion: 0.6
+  _luck: 0
+  _lifeOnKill: 0
+  _lifeOnHit: 0
+  _lowHealthFury: {fileID: 0}
+  _pickupRadius: 3
+  _experience: {fileID: 11400000, guid: 810d3fda96e086643898af6c4dfed372, type: 2}
+  _dash: {fileID: 0}
+  _startingWeapon: {fileID: 0}
+  _rage: {fileID: 0}
+  _ultimate: {fileID: 0}

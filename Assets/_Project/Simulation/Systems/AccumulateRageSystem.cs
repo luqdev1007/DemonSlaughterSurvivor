@@ -34,9 +34,7 @@ namespace Game.Simulation.Systems
             RageConfig rage = character.Rage;
 
             if (rage == null)
-                throw new InvalidOperationException(
-                    $"{nameof(CharacterConfig)} '{character.Id}' has no {nameof(RageConfig)} assigned, " +
-                    $"but {nameof(AccumulateRageSystem)} is registered and reads its gain numbers.");
+                return;
 
             _dealtPerHit = rage.DealtPerHit;
             _receivedScale = rage.ReceivedScale;

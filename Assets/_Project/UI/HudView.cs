@@ -100,6 +100,14 @@ namespace Game.UI
             _healthText.SetText("{0} / {1}", Mathf.Ceil(health), Mathf.Ceil(maxHealth));
         }
 
+        public void ShowUltimateAvailable(bool available)
+        {
+            GameObject orb = _rageOrb != null ? _rageOrb.gameObject : _ultimateChargeFill.gameObject;
+
+            if (orb.activeSelf != available)
+                orb.SetActive(available);
+        }
+
         public void ShowUltimateCharge(float fraction)
         {
             _ultimateChargeFill.fillAmount = Mathf.Clamp01(fraction);

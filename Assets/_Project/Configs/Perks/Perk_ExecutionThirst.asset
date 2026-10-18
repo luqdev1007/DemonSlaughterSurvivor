@@ -28,3 +28,5 @@ MonoBehaviour:
   _behaviour: {fileID: 11400000, guid: 3adb6bee10333a94a8e28e9d3d01a6e2, type: 2}
   _requires:
   - {fileID: 11400000, guid: 3cd0b45e2b9c08a48abc2b728554007b, type: 2}
+  _characters:
+  - {fileID: 11400000, guid: 29d13c4cfee513e429c8e2e39949af05, type: 2}

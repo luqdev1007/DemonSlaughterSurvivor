@@ -27,7 +27,7 @@ namespace Game.Simulation.Systems
                 bool active = _modes.Value.Has(entity);
                 float fraction = active ? ResolveModeFraction(entity) : ResolveChargeFraction(entity);
 
-                _sink.Value.Publish(Mathf.Max(0f, health.Current), maxHealth.Value, fraction, active);
+                _sink.Value.Publish(Mathf.Max(0f, health.Current), maxHealth.Value, _charges.Value.Has(entity), fraction, active);
             }
         }
 

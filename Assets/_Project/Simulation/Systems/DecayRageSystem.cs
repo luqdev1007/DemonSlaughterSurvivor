@@ -33,9 +33,7 @@ namespace Game.Simulation.Systems
             RageConfig rage = character.Rage;
 
             if (rage == null)
-                throw new InvalidOperationException(
-                    $"{nameof(CharacterConfig)} '{character.Id}' has no {nameof(RageConfig)} assigned, " +
-                    $"but {nameof(DecayRageSystem)} is registered and reads its decay numbers.");
+                return;
 
             _delaySeconds = rage.DecayDelaySeconds;
             _decayPerSecond = rage.DecayPerSecond;

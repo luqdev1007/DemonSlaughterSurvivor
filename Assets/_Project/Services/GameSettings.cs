@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.Services
 {
-    public sealed class GameSettings : ISoundSettings, ICombatTextSettings
+    public sealed class GameSettings : ISoundSettings, ICombatTextSettings, IHeroSelection
     {
         public const int CurrentVersion = 1;
 
@@ -30,6 +30,8 @@ namespace Game.Services
         public float DamageNumberScale => _data.DamageNumberScale;
 
         public bool DpsVisible => _data.DpsVisible;
+
+        public string SelectedCharacterId => _data.CharacterId;
 
         public void SetMasterVolume(float volume)
         {
@@ -60,6 +62,12 @@ namespace Game.Services
         public void SetDpsVisible(bool visible)
         {
             _data.DpsVisible = visible;
+            Save();
+        }
+
+        public void SelectCharacter(string characterId)
+        {
+            _data.CharacterId = characterId;
             Save();
         }
 
@@ -114,6 +122,7 @@ namespace Game.Services
             public bool DamageNumbers;
             public float DamageNumberScale;
             public bool DpsVisible;
+            public string CharacterId;
 
             public static SettingsData Defaults()
             {

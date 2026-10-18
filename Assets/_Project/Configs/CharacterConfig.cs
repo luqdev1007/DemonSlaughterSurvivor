@@ -5,6 +5,10 @@ namespace Game.Configs
     [CreateAssetMenu(fileName = "CharacterConfig", menuName = "Game/Content/Character Config")]
     public sealed class CharacterConfig : ContentConfig
     {
+        [Header("Roster")]
+        [SerializeField] private string _displayName;
+        [SerializeField] private int _menuOrder;
+
         [SerializeField] private GameObject _viewPrefab;
 
         [Header("Movement")]
@@ -54,6 +58,10 @@ namespace Game.Configs
         [SerializeField] private WeaponConfig _startingWeapon;
         [SerializeField] private RageConfig _rage;
         [SerializeField] private BerserkAbilityConfig _ultimate;
+
+        public string DisplayName => string.IsNullOrEmpty(_displayName) ? Id : _displayName;
+
+        public int MenuOrder => _menuOrder;
 
         public GameObject ViewPrefab => _viewPrefab;
 
