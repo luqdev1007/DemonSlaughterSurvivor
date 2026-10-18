@@ -27,6 +27,7 @@ namespace Game.Configs
         [SerializeField] private float _dashSeconds = 0.45f;
         [SerializeField, Range(0f, 1f)] private float _dashEarliestFraction = 0.25f;
         [SerializeField, Range(0f, 1f)] private float _dashLatestFraction = 0.7f;
+        [SerializeField, Min(0f)] private float _dashRepeatSeconds;
 
         [Header("Damage")]
         [SerializeField] private float _radius = 4f;
@@ -56,6 +57,8 @@ namespace Game.Configs
         public float DashEarliestFraction => _dashEarliestFraction;
 
         public float DashLatestFraction => _dashLatestFraction;
+
+        public float DashRepeatSeconds => _dashRepeatSeconds;
 
         public float PeakDashSpeed => _dashChance > 0f ? _dashMaxDistance / _dashSeconds : 0f;
 
@@ -107,6 +110,7 @@ namespace Game.Configs
             RequireNonNegative(label, nameof(_wanderTurnSpeedDegrees), _wanderTurnSpeedDegrees);
             RequireNonNegative(label, nameof(_dashMaxDistance), _dashMaxDistance);
             RequirePositive(label, nameof(_dashSeconds), _dashSeconds);
+            RequireNonNegative(label, nameof(_dashRepeatSeconds), _dashRepeatSeconds);
 
             if (_dashLatestFraction < _dashEarliestFraction)
                 throw new InvalidOperationException($"{label} has {nameof(_dashLatestFraction)} {_dashLatestFraction} below {nameof(_dashEarliestFraction)} {_dashEarliestFraction}.");

@@ -78,6 +78,9 @@ namespace Game.Simulation.Systems
         {
             SpinAbilityConfig config = spin.Config;
 
+            if (config.DashRepeatSeconds > 0f)
+                spin.DashDelayTicks = EnemyActionPhases.ToTicks(config.DashSeconds + config.DashRepeatSeconds, delta);
+
             if (_chaseTargets.Value.Has(entity) == false)
                 return;
 

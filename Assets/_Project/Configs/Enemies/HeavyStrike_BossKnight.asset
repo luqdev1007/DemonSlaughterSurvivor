@@ -15,10 +15,10 @@ MonoBehaviour:
   _id: ability.heavy_strike.boss_knight
   _triggerRange: 5
   _cooldownSeconds: 8
-  _windupSeconds: 1.8
-  _lockSeconds: 0.5
-  _recoverSeconds: 2
-  _windupTurnSpeedDegrees: 90
+  _windupSeconds: 0.9
+  _lockSeconds: 0.25
+  _recoverSeconds: 1
+  _windupTurnSpeedDegrees: 180
   _strikeDistance: 3
   _radius: 2
   _damage: 45

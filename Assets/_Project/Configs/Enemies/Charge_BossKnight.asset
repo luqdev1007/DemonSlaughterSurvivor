@@ -16,12 +16,12 @@ MonoBehaviour:
   _minRange: 6
   _maxRange: 18
   _cooldownSeconds: 8
-  _windupSeconds: 1
-  _windupTurnSpeedDegrees: 120
-  _lockSeconds: 0.35
-  _rushSpeed: 20
-  _rushSeconds: 0.5
+  _windupSeconds: 0.6667
+  _windupTurnSpeedDegrees: 180
+  _lockSeconds: 0.2333
+  _rushSpeed: 30
+  _rushSeconds: 0.3333
   _damage: 60
   _hitRadiusExtra: 0.3
-  _recoverSeconds: 1
+  _recoverSeconds: 0.6667
   _rushClipSeconds: 0.4

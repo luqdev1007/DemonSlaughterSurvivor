@@ -26,3 +26,12 @@ MonoBehaviour:
   _raiseClipSeconds: 0.8
   _spinAngularSpeedDegrees: 540
   _armWobbleDegrees: 12
+  _wanderDegrees: 70
+  _wanderRetargetSeconds: 0.4
+  _wanderTurnSpeedDegrees: 220
+  _dashChance: 1
+  _dashMaxDistance: 7
+  _dashSeconds: 0.4
+  _dashEarliestFraction: 0.1
+  _dashLatestFraction: 0.25
+  _dashRepeatSeconds: 0.9
