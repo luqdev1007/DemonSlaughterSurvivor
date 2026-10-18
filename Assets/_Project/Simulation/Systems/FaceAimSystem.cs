@@ -12,7 +12,7 @@ namespace Game.Simulation.Systems
     {
         private const float MinAimDistance = 0.05f;
 
-        private readonly EcsFilterInject<Inc<Player, InputState, Aim, Position, Facing>, Exc<Dead, Dashing>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Player, InputState, Aim, Position, Facing>, Exc<Dead, Dashing, TorsoAim>> _heroes = default;
 
         private readonly EcsPoolInject<InputState> _states = default;
         private readonly EcsPoolInject<Aim> _aims = default;

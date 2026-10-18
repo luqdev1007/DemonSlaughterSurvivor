@@ -18,6 +18,7 @@ namespace Game.Configs
         [Header("Aim")]
         [SerializeField, Min(0f)] private float _aimDeadZone = 1.2f;
         [SerializeField, Min(0f)] private float _aimTurnSpeed = 1080f;
+        [SerializeField] private TorsoAimConfig _torsoAim;
 
         [Header("Body")]
         [SerializeField] private float _bodyRadius = 0.4f;
@@ -72,6 +73,8 @@ namespace Game.Configs
         public float AimDeadZone => _aimDeadZone;
 
         public float AimTurnSpeed => _aimTurnSpeed;
+
+        public TorsoAimConfig TorsoAim => _torsoAim;
 
         public float BodyRadius => _bodyRadius;
 

@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Breakable> _breakables = default;
         private readonly EcsPoolInject<Dead> _dead = default;
+        private readonly EcsPoolInject<TorsoAim> _torsoAims = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -45,6 +46,9 @@ namespace Game.Simulation.Systems
         {
             foreach (int player in _players.Value)
             {
+                if (_torsoAims.Value.Has(player))
+                    continue;
+
                 if (_intents.Value.Get(player).Value.sqrMagnitude > Mathf.Epsilon)
                     continue;
 

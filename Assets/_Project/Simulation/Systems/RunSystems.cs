@@ -53,6 +53,8 @@ namespace Game.Simulation.Systems
             systems.Add(new FaceEnemyChargeTargetSystem());
             systems.Add(new FaceEnemyHeavyStrikeTargetSystem());
             systems.Add(new FaceAimSystem());
+            systems.Add(new AimTorsoSystem());
+            systems.Add(new FaceLegsSystem());
             systems.Add(new AssistSwingFacingSystem());
             systems.Add(new ApplyPushSystem());
             systems.Add(new AdvanceGemScatterSystem());
@@ -145,6 +147,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncDashViewSystem());
             systems.Add(new SyncSpecialAttackViewSystem());
             systems.Add(new SyncLocomotionViewSystem());
+            systems.Add(new SyncAimViewSystem());
             systems.Add(new SyncEnemyActionViewSystem());
             systems.Add(new PublishPlayerVitalsSystem());
             systems.Add(new PublishRuneStatusSystem());

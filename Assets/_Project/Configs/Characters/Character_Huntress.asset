@@ -16,10 +16,11 @@ MonoBehaviour:
   _displayName: "\u041E\u0445\u043E\u0442\u043D\u0438\u0446\u0430"
   _menuOrder: 1
   _viewPrefab: {fileID: 5239093810765877517, guid: 289d0f510530afb43a04cc295c030882, type: 3}
-  _moveSpeed: 6
+  _moveSpeed: 5
   _turnSpeed: 1200
   _aimDeadZone: 1.2
   _aimTurnSpeed: 1080
+  _torsoAim: {fileID: 11400000, guid: 3bcb8f15044a87a42ab7124f737c8bdd, type: 2}
   _bodyRadius: 0.4
   _maxHealth: 100
   _hitInvulnerabilitySeconds: 0.5

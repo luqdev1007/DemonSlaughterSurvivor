@@ -42,6 +42,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
         private readonly EcsPoolInject<CombatStats> _combatStats = default;
+        private readonly EcsPoolInject<TorsoAim> _torsoAims = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -62,6 +63,9 @@ namespace Game.Simulation.Systems
 
             if (rage != null)
                 ValidateRage(rage);
+
+            if (character.TorsoAim != null)
+                character.TorsoAim.Validate($"{nameof(CharacterConfig)} '{character.Id}'");
 
             int entity = _world.Value.NewEntity();
 
@@ -180,6 +184,14 @@ namespace Game.Simulation.Systems
                 charge.Max = rage.Max;
 
                 _rageStates.Value.Add(entity);
+            }
+
+            if (character.TorsoAim != null)
+            {
+                ref TorsoAim torso = ref _torsoAims.Value.Add(entity);
+                torso.Config = character.TorsoAim;
+                torso.Direction = Vector3.forward;
+                torso.Desired = Vector3.forward;
             }
 
             _intents.Value.Add(entity);

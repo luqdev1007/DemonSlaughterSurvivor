@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4341200648891757425}
   - component: {fileID: 6891908896859347660}
+  - component: {fileID: 4182294751334239401}
   m_Layer: 0
   m_Name: Huntress
   m_TagString: Untagged
@@ -49,9 +50,35 @@ MonoBehaviour:
   _swordTrail: {fileID: 0}
   _pickupFx: {fileID: 0}
   _runeAura: {fileID: 0}
+  _aimRig: {fileID: 4182294751334239401}
   _actionView: {fileID: 0}
   _chargeIndicator: {fileID: 0}
   _dazeFx: {fileID: 0}
+--- !u!114 &4182294751334239401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5239093810765877517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8558a1dc3550c534ea867cec7c6ebe71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.AimRig
+  _animator: {fileID: 7607374821004939759}
+  _spine:
+  - {fileID: 8595776121998006418}
+  - {fileID: 2907047877759224954}
+  - {fileID: 4462131348247477265}
+  _spineWeights:
+  - 0.3
+  - 0.3
+  - 0.4
+  _runSpeed: 3.4
+  _moveDamping: 0.08
+  _maxPlaybackSpeed: 2
+  _twistSharpness: 18
 --- !u!1001 &3700201970957121972
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -190,6 +217,16 @@ PrefabInstance:
       addedObject: {fileID: 1407362114167869359}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ee0b83e018b862a48855639545a0c810, type: 3}
+--- !u!4 &2907047877759224954 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8021001004253913084, guid: ee0b83e018b862a48855639545a0c810, type: 3}
+  m_PrefabInstance: {fileID: 4105108790339218558}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4462131348247477265 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 366175167995203695, guid: ee0b83e018b862a48855639545a0c810, type: 3}
+  m_PrefabInstance: {fileID: 4105108790339218558}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4571997825826409365 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ee0b83e018b862a48855639545a0c810, type: 3}
@@ -198,5 +235,15 @@ Transform:
 --- !u!4 &7116851134121261501 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6502182839619065283, guid: ee0b83e018b862a48855639545a0c810, type: 3}
+  m_PrefabInstance: {fileID: 4105108790339218558}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &7607374821004939759 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: ee0b83e018b862a48855639545a0c810, type: 3}
+  m_PrefabInstance: {fileID: 4105108790339218558}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8595776121998006418 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -3480699329000672020, guid: ee0b83e018b862a48855639545a0c810, type: 3}
   m_PrefabInstance: {fileID: 4105108790339218558}
   m_PrefabAsset: {fileID: 0}

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -35,6 +35,7 @@ namespace Game.View
         [SerializeField] private SwordTrail _swordTrail;
         [SerializeField] private PickupFx _pickupFx;
         [SerializeField] private RuneAuraFx _runeAura;
+        [SerializeField] private AimRig _aimRig;
 
         private Vector3 _baseScale = Vector3.one;
         private bool _hasBaseScale;
@@ -168,6 +169,14 @@ namespace Game.View
         {
             if (_runeAura != null)
                 _runeAura.Show(active, color, glyph, fraction, remainingSeconds);
+        }
+
+        public void SetAim(float twistDegrees, Vector2 localVelocity, int turnSide)
+        {
+            if (_aimRig == null || _isDead)
+                return;
+
+            _aimRig.SetAim(twistDegrees, localVelocity, turnSide);
         }
 
         public void SetPickupFlight(float progress)
@@ -528,6 +537,9 @@ namespace Game.View
                 _animator.enabled = true;
 
             _sinkOffset = 0f;
+
+            if (_aimRig != null)
+                _aimRig.ResetAim();
 
             if (_hasBaseScale)
                 transform.localScale = _baseScale;
