@@ -199,7 +199,7 @@ namespace Game.Simulation.Tests
             SlicingDashConfig slicing = Object.Instantiate(AssetDatabase.LoadAssetAtPath<SlicingDashConfig>(SlicingPath));
             _assets.Add(slicing);
 
-            SetField(slicing.Level(1), "_chance", 1f);
+            SetField(slicing.Level(1), "_cooldownSeconds", 0f);
             SetField(slicing.Level(1), "_corridorDamageShare", SlicingCorridorShare);
             SetField(slicing.Level(1), "_finalDamageShare", SlicingFinalShare);
 

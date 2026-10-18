@@ -38,7 +38,7 @@ namespace Game.Simulation.Tests
 
             _punish = Own(ScriptableObject.CreateInstance<PunishingLeapConfig>());
             PunishingLeapLevel level = new PunishingLeapLevel();
-            SetField(level, "_chance", 1f);
+            SetField(level, "_cooldownSeconds", 5f);
             SetField(_punish, "_levels", new[] { level });
 
             _leapPerk = Perk(LeapPerkId, _leap);
@@ -96,16 +96,65 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void AnEnemyLeftAboveTheThresholdIsNotFinished()
+        public void WhenNobodyIsUnderTheThresholdTheWeakestHitEnemyIsStillFinished()
         {
             Take(LeapPerkId);
             Take(PunishPerkId);
 
-            Hit(SpawnEnemy(health: 60f), 20f, _leap);
+            int strong = SpawnEnemy(health: 100f);
+            int weaker = SpawnEnemy(health: 90f);
+            Hit(strong, 20f, _leap);
+            Hit(weaker, 20f, _leap);
 
             _systems.Run();
 
-            Assert.AreEqual(0, Count(_punish), "40 of 100 left is above 25%");
+            DamageEvent finish = Single(_punish);
+
+            Assert.IsTrue(finish.Target.Unpack(_world, out int target) && target == weaker, "70 of 100 left is the weakest");
+        }
+
+        [Test]
+        public void EveryHitEnemyUnderTheThresholdIsFinishedAndOthersAreSpared()
+        {
+            Take(LeapPerkId);
+            Take(PunishPerkId);
+
+            Hit(SpawnEnemy(health: 40f), 20f, _leap);
+            Hit(SpawnEnemy(health: 60f), 20f, _leap);
+            Hit(SpawnEnemy(health: 100f), 20f, _leap);
+
+            _systems.Run();
+
+            Assert.AreEqual(2, Count(_punish), "20 and 40 of 100 left are under 50%, 80 is not");
+        }
+
+        [Test]
+        public void TheCooldownsOfThePerkAndOfTheExecutionBlockTheFinish()
+        {
+            Take(LeapPerkId);
+            Take(PunishPerkId);
+
+            Hit(SpawnEnemy(health: 40f), 20f, _leap);
+            _systems.Run();
+            Assert.AreEqual(1, Count(_punish));
+
+            ClearEvents();
+            Hit(SpawnEnemy(health: 40f), 20f, _leap);
+            _systems.Run();
+            Assert.AreEqual(0, Count(_punish), "the perk is on its own cooldown");
+
+            ClearEvents();
+            _world.GetPool<PunishingLeapCooldown>().Get(_hero).RemainingTicks = 0;
+            _world.GetPool<ExecutionCooldown>().Add(_hero).RemainingTicks = 100;
+            Hit(SpawnEnemy(health: 40f), 20f, _leap);
+            _systems.Run();
+            Assert.AreEqual(0, Count(_punish), "the execution is on cooldown");
+        }
+
+        private void ClearEvents()
+        {
+            foreach (int entity in _world.Filter<DamageEvent>().End())
+                _world.DelEntity(entity);
         }
 
         [Test]

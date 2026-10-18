@@ -24,6 +24,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<HeroicLeapCooldown> _leapCooldowns = default;
         private readonly EcsPoolInject<AgileDashCooldown> _agileCooldowns = default;
         private readonly EcsPoolInject<CounterStrikeCooldown> _counterCooldowns = default;
+        private readonly EcsPoolInject<SlicingDashCooldown> _slicingCooldowns = default;
+        private readonly EcsPoolInject<PunishingLeapCooldown> _punishCooldowns = default;
 
         private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -69,6 +71,12 @@ namespace Game.Simulation.Systems
 
             if (behaviour is CounterStrikeConfig && _counterCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _counterCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is SlicingDashConfig && _slicingCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _slicingCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is PunishingLeapConfig && _punishCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _punishCooldowns.Value.Get(hero).RemainingTicks);
 
             return 0;
         }

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: PunishingLeap_Berserk
   m_EditorClassIdentifier: Game.Configs::Game.Configs.PunishingLeapConfig
   _levels:
-  - _chance: 0.4
-  - _chance: 0.6
-  - _chance: 0.8
-  _healthThreshold: 0.25
+  - _cooldownSeconds: 7
+  - _cooldownSeconds: 5.5
+  - _cooldownSeconds: 4
+  _healthThreshold: 0.5
   _impactFxPrefab: {fileID: 4960327967821986495, guid: 5edc20135226b3d4bb370e085832a0d0, type: 3}
   _impactFxSeconds: 1.1

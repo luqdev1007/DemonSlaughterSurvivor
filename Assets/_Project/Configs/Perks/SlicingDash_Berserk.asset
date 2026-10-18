@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: SlicingDash_Berserk
   m_EditorClassIdentifier: Game.Configs::Game.Configs.SlicingDashConfig
   _levels:
-  - _chance: 0.3
+  - _cooldownSeconds: 5
     _corridorDamageShare: 0.5
     _finalDamageShare: 1.5
-  - _chance: 0.45
+  - _cooldownSeconds: 4.25
     _corridorDamageShare: 0.7
     _finalDamageShare: 2
-  - _chance: 0.6
+  - _cooldownSeconds: 3.5
     _corridorDamageShare: 0.9
     _finalDamageShare: 2.5
   _swordSide: 0

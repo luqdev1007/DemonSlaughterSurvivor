@@ -48,7 +48,7 @@ namespace Game.Simulation.Tests
         [Test]
         public void CorridorCutsTheSwordSideOnceAndPushesSideways()
         {
-            Build(chance: 1f);
+            Build(cooldown: 0f);
             TakePerk();
 
             int swordSide = SpawnEnemy(new Vector3(0.9f, 0f, 3f));
@@ -69,7 +69,7 @@ namespace Game.Simulation.Tests
         [Test]
         public void WithoutThePerkTheDashNeitherCutsNorFinishes()
         {
-            Build(chance: 1f);
+            Build(cooldown: 0f);
 
             int swordSide = SpawnEnemy(new Vector3(0.9f, 0f, 3f));
 
@@ -83,12 +83,13 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void AFailedRollSkipsTheCorridorAndTheFinalSlash()
+        public void ADashOnCooldownSkipsTheCorridorAndTheFinalSlash()
         {
-            Build(chance: 1e-6f);
+            Build(cooldown: 5f);
             TakePerk();
 
             int swordSide = SpawnEnemy(new Vector3(0.9f, 0f, 3f));
+            _world.GetPool<SlicingDashCooldown>().Add(_hero).RemainingTicks = 10000;
 
             Dash(0f);
             StepUntilDashEnds();
@@ -98,14 +99,14 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(0, _world.Filter<DashFinisher>().End().GetEntitiesCount());
         }
 
-        private void Build(float chance)
+        private void Build(float cooldown)
         {
             _config = Object.Instantiate(AssetDatabase.LoadAssetAtPath<SlicingDashConfig>(ConfigPath));
             Assert.IsNotNull(_config, $"{ConfigPath} is missing.");
             _assets.Add(_config);
 
             SlicingDashLevel level = _config.Level(1);
-            SetField(level, "_chance", chance);
+            SetField(level, "_cooldownSeconds", cooldown);
             SetField(level, "_corridorDamageShare", 0.5f);
             SetField(level, "_finalDamageShare", 1.5f);
 

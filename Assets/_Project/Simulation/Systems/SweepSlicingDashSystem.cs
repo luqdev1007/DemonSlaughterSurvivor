@@ -11,8 +11,6 @@ namespace Game.Simulation.Systems
 {
     public sealed class SweepSlicingDashSystem : IEcsInitSystem, IEcsRunSystem
     {
-        public const string RandomStreamId = "stream.slicing-dash";
-
         private const int CandidateCapacityReserve = 16;
 
         private readonly EcsWorldInject _world = default;
@@ -20,6 +18,7 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<Player, Dashing, Position, PreviousPosition>, Exc<Dead>> _heroes = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
         private readonly EcsFilterInject<Inc<Weapon, OwnerLink, WeaponDamage>> _weapons = default;
+        private readonly EcsFilterInject<Inc<SlicingDashCooldown>> _cooldowns = default;
 
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
         private readonly EcsPoolInject<Dashing> _dashes = default;
@@ -35,12 +34,12 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<OwnerLink> _ownerLinks = default;
         private readonly EcsPoolInject<WeaponDamage> _weaponDamages = default;
         private readonly EcsPoolInject<SlicingDashRoll> _rolls = default;
-        private readonly EcsPoolInject<SlicingDashRandom> _randoms = default;
+        private readonly EcsPoolInject<SlicingDashCooldown> _cooldownPool = default;
+        private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
         private readonly EcsPoolInject<AreaStrike> _strikes = default;
         private readonly EcsPoolInject<UpperSlashCue> _cues = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
-        private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<EnemyMotionBounds> _motionBounds = default;
@@ -57,6 +56,14 @@ namespace Game.Simulation.Systems
 
         public void Run(IEcsSystems systems)
         {
+            foreach (int entity in _cooldowns.Value)
+            {
+                ref SlicingDashCooldown cooldown = ref _cooldownPool.Value.Get(entity);
+
+                if (cooldown.RemainingTicks > 0)
+                    cooldown.RemainingTicks--;
+            }
+
             EcsWorld world = _world.Value;
 
             foreach (int hero in _heroes.Value)
@@ -126,8 +133,17 @@ namespace Game.Simulation.Systems
             if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out SlicingDashConfig config, out int level) == false)
                 return;
 
-            if (SimulationRandom.NextUnit(ref ResolveRandom(hero).State) >= config.Level(level).Chance)
+            if (_cooldownPool.Value.Has(hero) == false)
+                _cooldownPool.Value.Add(hero);
+
+            ref SlicingDashCooldown cooldown = ref _cooldownPool.Value.Get(hero);
+
+            if (cooldown.RemainingTicks > 0)
                 return;
+
+            float seconds = config.Level(level).CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero);
+
+            cooldown.RemainingTicks = Mathf.Max(0, Mathf.RoundToInt(seconds / _clock.Value.Delta));
 
             ref SlicingDashRoll roll = ref _rolls.Value.Add(hero);
             roll.Level = level;
@@ -209,17 +225,6 @@ namespace Game.Simulation.Systems
             }
 
             return 0f;
-        }
-
-        private ref SlicingDashRandom ResolveRandom(int hero)
-        {
-            if (_randoms.Value.Has(hero))
-                return ref _randoms.Value.Get(hero);
-
-            ref SlicingDashRandom random = ref _randoms.Value.Add(hero);
-            random.State = SimulationRandom.StreamState(_context.Value.Seed, RandomStreamId);
-
-            return ref random;
         }
 
         private static Vector3 ClosestPointOnSegment(Vector3 point, Vector3 from, Vector3 to)

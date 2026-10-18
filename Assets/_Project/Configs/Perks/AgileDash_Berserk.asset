@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Configs::Game.Configs.AgileDashConfig
   _levels:
   - _damageShare: 2
-    _cooldownSeconds: 8
-  - _damageShare: 2.75
-    _cooldownSeconds: 6.5
-  - _damageShare: 3.5
     _cooldownSeconds: 5
+  - _damageShare: 2.75
+    _cooldownSeconds: 4.25
+  - _damageShare: 3.5
+    _cooldownSeconds: 3.5
   _triggerRadius: 3
   _minEnemies: 1
   _windowSeconds: 0.25

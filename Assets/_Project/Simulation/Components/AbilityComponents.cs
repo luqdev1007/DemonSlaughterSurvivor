@@ -34,7 +34,7 @@ namespace Game.Simulation.Components
         public float PlaybackSpeed;
     }
 
-    public struct SlicingDashRandom { public uint State; }
+    public struct SlicingDashCooldown { public int RemainingTicks; }
 
     public struct AgileDashCooldown { public int RemainingTicks; }
 

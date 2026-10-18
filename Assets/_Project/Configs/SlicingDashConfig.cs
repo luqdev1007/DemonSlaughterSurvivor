@@ -88,8 +88,8 @@ namespace Game.Configs
                 if (entry == null)
                     throw new InvalidOperationException($"{label} level {level} is empty.");
 
-                if (float.IsNaN(entry.Chance) || entry.Chance <= 0f || entry.Chance > 1f)
-                    throw new InvalidOperationException($"{label} level {level} has chance {entry.Chance}; it must be in (0, 1].");
+                if (float.IsNaN(entry.CooldownSeconds) || entry.CooldownSeconds < 0f)
+                    throw new InvalidOperationException($"{label} level {level} has cooldown {entry.CooldownSeconds} s; it must not be negative.");
 
                 if (float.IsNaN(entry.CorridorDamageShare) || entry.CorridorDamageShare < 0f
                     || float.IsNaN(entry.FinalDamageShare) || entry.FinalDamageShare < 0f)
@@ -122,11 +122,11 @@ namespace Game.Configs
     [Serializable]
     public sealed class SlicingDashLevel
     {
-        [SerializeField] private float _chance = 0.3f;
+        [SerializeField] private float _cooldownSeconds = 5f;
         [SerializeField] private float _corridorDamageShare = 0.5f;
         [SerializeField] private float _finalDamageShare = 1.5f;
 
-        public float Chance => _chance;
+        public float CooldownSeconds => _cooldownSeconds;
 
         public float CorridorDamageShare => _corridorDamageShare;
 

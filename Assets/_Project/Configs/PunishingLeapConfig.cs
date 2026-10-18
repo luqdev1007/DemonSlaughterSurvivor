@@ -7,7 +7,7 @@ namespace Game.Configs
     public sealed class PunishingLeapConfig : PerkBehaviourConfig
     {
         [SerializeField] private PunishingLeapLevel[] _levels = Array.Empty<PunishingLeapLevel>();
-        [SerializeField, Range(0f, 1f)] private float _healthThreshold = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float _healthThreshold = 0.5f;
 
         [Header("View")]
         [SerializeField] private GameObject _impactFxPrefab;
@@ -46,8 +46,8 @@ namespace Game.Configs
                 if (entry == null)
                     throw new InvalidOperationException($"{label} level {level} is empty.");
 
-                if (float.IsNaN(entry.Chance) || entry.Chance <= 0f || entry.Chance > 1f)
-                    throw new InvalidOperationException($"{label} level {level} has chance {entry.Chance}; it must be in (0, 1].");
+                if (float.IsNaN(entry.CooldownSeconds) || entry.CooldownSeconds < 0f)
+                    throw new InvalidOperationException($"{label} level {level} has cooldown {entry.CooldownSeconds} s; it must not be negative.");
             }
 
             if (RequiresLeap(perk) == false)
@@ -70,8 +70,8 @@ namespace Game.Configs
     [Serializable]
     public sealed class PunishingLeapLevel
     {
-        [SerializeField, Range(0f, 1f)] private float _chance = 0.4f;
+        [SerializeField, Min(0f)] private float _cooldownSeconds = 8f;
 
-        public float Chance => _chance;
+        public float CooldownSeconds => _cooldownSeconds;
     }
 }
