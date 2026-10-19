@@ -132,6 +132,12 @@ namespace Game.View
                     $"duration ({feedback.HitFlashSeconds}) or with a negative cooldown ({feedback.HitFlashCooldownSeconds}). " +
                     "The flash swaps every body renderer to that one shared material for its duration.");
 
+            if (feedback.HitRecoilDistance < 0f || feedback.HitSquash < 0f || feedback.HitSquash >= 1f ||
+                feedback.HitPulseSeconds < 0f || feedback.HitPulseCooldownSeconds < 0f)
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' has an invalid hit pulse: recoil, duration and cooldown must not be negative, " +
+                    $"and squash must be in [0, 1) (got {feedback.HitSquash}). Set the duration to 0 to switch the pulse off.");
+
             if (feedback.DissolveSeconds < 0f)
                 throw new InvalidOperationException(
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative dissolve duration ({feedback.DissolveSeconds}).");
@@ -155,7 +161,11 @@ namespace Game.View
             _hit = new HitFeedback(
                 feedback.HitFlashEnabled ? feedback.HitFlashMaterial : null,
                 feedback.HitFlashSeconds,
-                feedback.HitFlashCooldownSeconds);
+                feedback.HitFlashCooldownSeconds,
+                feedback.HitRecoilDistance,
+                feedback.HitSquash,
+                feedback.HitPulseSeconds,
+                feedback.HitPulseCooldownSeconds);
             _blinkSeconds = feedback.InvulnerabilityBlinkSeconds;
             _dissolveSeconds = feedback.DissolveSeconds;
             _dissolveTemplate = feedback.DissolveMaterial;

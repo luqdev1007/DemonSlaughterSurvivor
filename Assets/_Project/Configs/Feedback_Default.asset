@@ -21,6 +21,17 @@ MonoBehaviour:
   _hitFlashSeconds: 0.06
   _hitFlashCooldownSeconds: 0.15
   _hitFlashMaterial: {fileID: 2100000, guid: b3592e5561748244e92745fb484ca830, type: 2}
+  _hitRecoilDistance: 0.18
+  _hitSquash: 0.12
+  _hitPulseSeconds: 0.14
+  _hitPulseCooldownSeconds: 0.1
+  _shakeMultiplier: 1
+  _shakeHeroHit: 0.12
+  _shakeHeroHitCooldownSeconds: 0.35
+  _shakeLanding: 0.3
+  _shakeUltimate: 0.4
+  _shakeEliteDeath: 0.3
+  _shakeBossDeath: 0.9
   _dissolveSeconds: 0.8
   _heroDissolveDelaySeconds: 3.6
   _dissolveMaterial: {fileID: 2100000, guid: 16098906d1c754641bb152973c5e7853, type: 2}

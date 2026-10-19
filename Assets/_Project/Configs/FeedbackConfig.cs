@@ -16,6 +16,12 @@ namespace Game.Configs
         [SerializeField] private float _hitFlashCooldownSeconds = 0.15f;
         [SerializeField] private Material _hitFlashMaterial;
 
+        [Header("Hit Pulse")]
+        [SerializeField] private float _hitRecoilDistance = 0.18f;
+        [SerializeField] private float _hitSquash = 0.12f;
+        [SerializeField] private float _hitPulseSeconds = 0.14f;
+        [SerializeField] private float _hitPulseCooldownSeconds = 0.1f;
+
         [Header("Screen Shake")]
         [SerializeField] private float _shakeMultiplier = 1f;
         [SerializeField] private float _shakeHeroHit = 0.12f;
@@ -69,6 +75,14 @@ namespace Game.Configs
         public Material HitFlashMaterial => _hitFlashMaterial;
 
         public float InvulnerabilityBlinkSeconds => _invulnerabilityBlinkSeconds;
+
+        public float HitRecoilDistance => _hitRecoilDistance;
+
+        public float HitSquash => _hitSquash;
+
+        public float HitPulseSeconds => _hitPulseSeconds;
+
+        public float HitPulseCooldownSeconds => _hitPulseCooldownSeconds;
 
         public float ShakeMultiplier => _shakeMultiplier;
 

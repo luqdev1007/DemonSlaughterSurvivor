@@ -7,12 +7,27 @@ namespace Game.View
         public readonly Material FlashMaterial;
         public readonly float FlashSeconds;
         public readonly float FlashCooldownSeconds;
+        public readonly float RecoilDistance;
+        public readonly float Squash;
+        public readonly float PulseSeconds;
+        public readonly float PulseCooldownSeconds;
 
-        public HitFeedback(Material flashMaterial, float flashSeconds, float flashCooldownSeconds)
+        public HitFeedback(
+            Material flashMaterial,
+            float flashSeconds,
+            float flashCooldownSeconds,
+            float recoilDistance,
+            float squash,
+            float pulseSeconds,
+            float pulseCooldownSeconds)
         {
             FlashMaterial = flashMaterial;
             FlashSeconds = flashSeconds;
             FlashCooldownSeconds = flashCooldownSeconds;
+            RecoilDistance = recoilDistance;
+            Squash = squash;
+            PulseSeconds = pulseSeconds;
+            PulseCooldownSeconds = pulseCooldownSeconds;
         }
     }
 }

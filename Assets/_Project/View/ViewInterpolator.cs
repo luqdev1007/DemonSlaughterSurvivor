@@ -95,6 +95,13 @@ namespace Game.View
         private float _flashEndTime;
         private float _nextFlashTime;
 
+        private bool _isPulsing;
+        private float _pulseStartTime;
+        private float _nextPulseTime;
+        private Vector3 _pulseDirection;
+        private Vector3 _pulseOffset;
+        private Vector3 _pulseRestScale;
+
         private bool _isBlinking;
         private bool _renderersVisible = true;
 
@@ -334,6 +341,7 @@ namespace Game.View
             _onHit?.Invoke(this, direction);
 
             StartFlash();
+            StartPulse(direction);
         }
 
         public void PlayWeaponHit()
@@ -599,6 +607,7 @@ namespace Game.View
         internal void BeginRetire(float seconds, float deathPoseSeconds, float decaySeconds, float sinkDepth, Vector3 knockbackVelocity, float gravity, float friction)
         {
             EndFlash();
+            EndPulse();
 
             _isRetiring = true;
             _retireTime = Time.time + seconds;
@@ -690,6 +699,9 @@ namespace Game.View
             EndFlash();
             _nextFlashTime = 0f;
 
+            EndPulse();
+            _nextPulseTime = 0f;
+
             if (_isDissolving)
                 SwapMaterials(_originalMaterials);
 
@@ -743,7 +755,12 @@ namespace Game.View
                 AdvanceCorpse(time);
 
             if (_hasPosition)
-                transform.position = ResolvePosition() + Vector3.up * (ResolveLift() + _sinkOffset) + _knockbackOffset;
+            {
+                if (_isPulsing)
+                    AdvancePulse(time);
+
+                transform.position = ResolvePosition() + Vector3.up * (ResolveLift() + _sinkOffset) + _knockbackOffset + _pulseOffset;
+            }
 
             if (_isFlashing && time >= _flashEndTime)
                 EndFlash();
@@ -958,6 +975,57 @@ namespace Game.View
             _isFlashing = false;
 
             SwapMaterials(_savedMaterials);
+        }
+
+        private void StartPulse(Vector3 direction)
+        {
+            if (_hit.PulseSeconds <= 0f || _isRetiring)
+                return;
+
+            float time = Time.time;
+
+            if (time < _nextPulseTime)
+                return;
+
+            _nextPulseTime = time + _hit.PulseCooldownSeconds;
+
+            if (_isPulsing == false)
+                _pulseRestScale = transform.localScale;
+
+            direction.y = 0f;
+
+            _isPulsing = true;
+            _pulseStartTime = time;
+            _pulseDirection = direction.sqrMagnitude > 1e-8f ? direction.normalized : Vector3.zero;
+        }
+
+        private void AdvancePulse(float time)
+        {
+            float progress = (time - _pulseStartTime) / _hit.PulseSeconds;
+
+            if (progress >= 1f)
+            {
+                EndPulse();
+
+                return;
+            }
+
+            float kick = Mathf.Sin(Mathf.PI * Mathf.Sqrt(Mathf.Max(0f, progress)));
+            float squash = _hit.Squash * kick;
+
+            _pulseOffset = _pulseDirection * (_hit.RecoilDistance * kick);
+            transform.localScale = Vector3.Scale(_pulseRestScale, new Vector3(1f + squash * 0.5f, 1f - squash, 1f + squash * 0.5f));
+        }
+
+        private void EndPulse()
+        {
+            if (_isPulsing == false)
+                return;
+
+            _isPulsing = false;
+            _pulseOffset = Vector3.zero;
+
+            transform.localScale = _pulseRestScale;
         }
 
         private void SaveMaterials()
