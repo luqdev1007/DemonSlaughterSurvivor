@@ -16,6 +16,15 @@ namespace Game.Configs
         [SerializeField] private float _hitFlashCooldownSeconds = 0.15f;
         [SerializeField] private Material _hitFlashMaterial;
 
+        [Header("Screen Shake")]
+        [SerializeField] private float _shakeMultiplier = 1f;
+        [SerializeField] private float _shakeHeroHit = 0.12f;
+        [SerializeField] private float _shakeHeroHitCooldownSeconds = 0.35f;
+        [SerializeField] private float _shakeLanding = 0.3f;
+        [SerializeField] private float _shakeUltimate = 0.4f;
+        [SerializeField] private float _shakeEliteDeath = 0.3f;
+        [SerializeField] private float _shakeBossDeath = 0.9f;
+
         [Header("Dissolve")]
         [SerializeField] private float _dissolveSeconds = 0.8f;
         [SerializeField] private float _heroDissolveDelaySeconds;
@@ -60,6 +69,20 @@ namespace Game.Configs
         public Material HitFlashMaterial => _hitFlashMaterial;
 
         public float InvulnerabilityBlinkSeconds => _invulnerabilityBlinkSeconds;
+
+        public float ShakeMultiplier => _shakeMultiplier;
+
+        public float ShakeHeroHit => _shakeHeroHit;
+
+        public float ShakeHeroHitCooldownSeconds => _shakeHeroHitCooldownSeconds;
+
+        public float ShakeLanding => _shakeLanding;
+
+        public float ShakeUltimate => _shakeUltimate;
+
+        public float ShakeEliteDeath => _shakeEliteDeath;
+
+        public float ShakeBossDeath => _shakeBossDeath;
 
         public float EnemyDeathSeconds => _enemyDeathSeconds;
 

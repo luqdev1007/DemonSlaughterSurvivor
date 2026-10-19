@@ -43,10 +43,19 @@ namespace Game.View
             follow.FollowOffset = offset;
 
             _camera.transform.SetPositionAndRotation(offset, rotation);
+
+            ImpulseSource = _rig.GetComponentInChildren<CinemachineImpulseSource>();
+
+            if (ImpulseSource == null)
+                throw new InvalidOperationException(
+                    $"Camera rig prefab '{level.CameraRigPrefab.name}' has no {nameof(CinemachineImpulseSource)}. " +
+                    "Screen shake sends its impulses through it to the listener on the camera.");
             _camera.PreviousStateIsValid = false;
         }
 
         public Camera OutputCamera => _outputCamera;
+
+        public CinemachineImpulseSource ImpulseSource { get; }
 
         public bool TryWorldToViewport(Vector3 world, out Vector3 viewport)
         {
