@@ -20,6 +20,8 @@ namespace Game.Configs
         [SerializeField, Min(0f)] private float _calmDelaySeconds = 3f;
         [SerializeField, Min(0f)] private float _calmPerSecond = 0.015f;
         [SerializeField, Min(0f)] private float _healScale = 0.6f;
+        [SerializeField, Range(0f, 1f)] private float _passiveHumanCeiling = 0.7f;
+        [SerializeField, Min(0f)] private float _passiveHumanPerSecond = 0.01f;
 
         public float StartDemonic => _startDemonic;
 
@@ -40,6 +42,10 @@ namespace Game.Configs
         public float CalmPerSecond => _calmPerSecond;
 
         public float HealScale => _healScale;
+
+        public float PassiveHumanCeiling => _passiveHumanCeiling;
+
+        public float PassiveHumanPerSecond => _passiveHumanPerSecond;
 
         public void Validate()
         {

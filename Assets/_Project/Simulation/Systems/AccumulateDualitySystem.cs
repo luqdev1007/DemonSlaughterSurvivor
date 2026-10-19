@@ -82,7 +82,13 @@ namespace Game.Simulation.Systems
                 if (leaping == false && IsAimingStill(hero))
                     humanGain += config.AimStillPerSecond * delta;
 
-                duality.Demonic = Mathf.Clamp01(duality.Demonic + demonicGain - humanGain);
+                float demonic = Mathf.Clamp01(duality.Demonic + demonicGain - humanGain);
+                float passiveFloor = 1f - config.PassiveHumanCeiling;
+
+                if (demonic > passiveFloor)
+                    demonic = Mathf.Max(passiveFloor, demonic - config.PassiveHumanPerSecond * delta);
+
+                duality.Demonic = demonic;
                 duality.LastHealth = current;
                 duality.WasLeaping = leaping;
             }
