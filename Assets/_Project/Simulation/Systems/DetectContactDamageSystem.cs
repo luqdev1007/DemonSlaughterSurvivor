@@ -19,6 +19,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<ContactDamage> _contactDamages = default;
+        private readonly EcsPoolInject<Frozen> _frozen = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
@@ -64,7 +65,7 @@ namespace Game.Simulation.Systems
                 {
                     int source = _contacts[index];
 
-                    if (_contactDamages.Value.Has(source) == false)
+                    if (_contactDamages.Value.Has(source) == false || _frozen.Value.Has(source))
                         continue;
 
                     if (_bodyRadii.Value.Has(source) == false)

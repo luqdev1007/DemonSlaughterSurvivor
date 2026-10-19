@@ -12,7 +12,7 @@ namespace Game.Simulation.Systems
     {
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<RangedAttack, ChaseTarget, Position, Facing>, Exc<Dead>> _filter = default;
+        private readonly EcsFilterInject<Inc<RangedAttack, ChaseTarget, Position, Facing>, Exc<Dead, Frozen>> _filter = default;
 
         private readonly EcsPoolInject<RangedAttack> _attacks = default;
         private readonly EcsPoolInject<ChaseTarget> _chaseTargets = default;

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView, IFreezeView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -110,6 +110,7 @@ namespace Game.View
         private float _sinkOffset;
 
         private bool _isBerserkSuppressed;
+        private bool _isFrozen;
 
         private bool _isKnockedBack;
         private bool _isAirborne;
@@ -174,6 +175,15 @@ namespace Game.View
             _previousPosition = _currentPosition;
             _currentPosition = position;
             _lastSyncTime = Time.time;
+        }
+
+        public void SetFrozen(bool value)
+        {
+            if (_animator == null || _isDead || _isFrozen == value)
+                return;
+
+            _isFrozen = value;
+            _animator.speed = value ? 0f : 1f;
         }
 
         public void Teleport(Vector3 position)
@@ -486,6 +496,8 @@ namespace Game.View
             if (_hoverRig != null)
                 _hoverRig.SetVelocity(Vector2.zero);
 
+            Thaw();
+
             if (_hasDeathTrigger == false || _isDead)
                 return;
 
@@ -586,6 +598,17 @@ namespace Game.View
             _knockbackOffset = Vector3.up * lift;
         }
 
+        private void Thaw()
+        {
+            if (_isFrozen == false)
+                return;
+
+            _isFrozen = false;
+
+            if (_animator != null)
+                _animator.speed = 1f;
+        }
+
         internal void DecayBy(float time)
         {
             if (_isRetiring && _retireTime > time + _decaySeconds)
@@ -605,6 +628,8 @@ namespace Game.View
 
             if (_hoverRig != null)
                 _hoverRig.ResetHover();
+
+            Thaw();
 
             if (_wings != null)
                 _wings.HideImmediate();
