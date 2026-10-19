@@ -8,7 +8,7 @@ TerrainLayer:
   m_PrefabAsset: {fileID: 0}
   m_Name: Courtyard_Cobble
   m_DiffuseTexture: {fileID: 2800000, guid: 3ab7f48c6fb4a1746be385924854bd96, type: 3}
-  m_NormalMapTexture: {fileID: 0}
+  m_NormalMapTexture: {fileID: 2800000, guid: 885dd3eed92c1c146bb7918955615cc6, type: 3}
   m_MaskMapTexture: {fileID: 0}
   m_TileSize: {x: 3.5, y: 3.5}
   m_TileOffset: {x: 0, y: 0}
@@ -17,7 +17,7 @@ TerrainLayer:
   m_Smoothness: 0.05
   m_NormalScale: 1
   m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 0}
-  m_DiffuseRemapMax: {x: 0.55, y: 0.53, z: 0.52, w: 1}
+  m_DiffuseRemapMax: {x: 0.44, y: 0.43, z: 0.45, w: 1}
   m_MaskMapRemapMin: {x: 0, y: 0, z: 0, w: 0}
   m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 1}
   m_SmoothnessSource: 1
