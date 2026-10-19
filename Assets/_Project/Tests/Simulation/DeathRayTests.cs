@@ -44,7 +44,7 @@ namespace Game.Simulation.Tests
             Set(level, "_tickDamage", TickDamage);
             Set(ray, "_levels", new[] { level });
             Set(ray, "_chargeSeconds", ChargeSeconds);
-            Set(ray, "_beamSeconds", BeamSeconds);
+            Set(ray, "_maxBeamSeconds", 3f);
             Set(ray, "_tickSeconds", 0.1f);
             Set(ray, "_length", 16f);
             Set(ray, "_halfWidth", 0.45f);
@@ -73,6 +73,7 @@ namespace Game.Simulation.Tests
             _world.GetPool<Facing>().Add(_hero).Value = Vector3.forward;
             _world.GetPool<MoveIntent>().Add(_hero);
             _world.GetPool<View>().Add(_hero).Value = _heroView;
+            _world.GetPool<InputState>().Add(_hero).StandHeld = true;
 
             ref TorsoAim torso = ref _world.GetPool<TorsoAim>().Add(_hero);
             torso.Config = aim;
@@ -114,7 +115,13 @@ namespace Game.Simulation.Tests
 
             Assert.AreEqual(0f, Total(near), "no damage while the energy gathers");
 
-            Step(Mathf.RoundToInt((ChargeSeconds + BeamSeconds) / Tick) + 4 - Mathf.RoundToInt(ChargeSeconds / Tick) + 2);
+            Step(Mathf.RoundToInt((ChargeSeconds + BeamSeconds) / Tick) - Mathf.RoundToInt(ChargeSeconds / Tick) + 2);
+
+            Assert.IsTrue(_world.GetPool<Channeling>().Has(_hero), "the beam burns on while the button is held");
+
+            _world.GetPool<InputState>().Get(_hero).StandHeld = false;
+
+            Step(1);
 
             float expected = InitialDamage + TickDamage * 10f;
             TestContext.WriteLine($"near {Total(near)}, far {Total(far)}, beside {Total(beside)}");
@@ -142,12 +149,42 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void NoTargetMeansNoRay()
+        public void NoRayUnlessTheMageStandsWithTheButtonHeld()
         {
+            _world.GetPool<InputState>().Get(_hero).StandHeld = false;
+
+            Step(30);
+
+            _world.GetPool<InputState>().Get(_hero).StandHeld = true;
+            _world.GetPool<InputState>().Get(_hero).MoveRequested = true;
+
             Step(30);
 
             Assert.AreEqual(0, _heroView.Triggers.Count);
             Assert.AreEqual(0, _world.Filter<DeathRay>().End().GetEntitiesCount());
+        }
+
+        [Test]
+        public void MovingBreaksTheChannelAndStartsTheCooldown()
+        {
+            Step(Mathf.RoundToInt(ChargeSeconds / Tick) + 10);
+
+            _world.GetPool<InputState>().Get(_hero).MoveRequested = true;
+
+            Step(1);
+
+            Assert.IsFalse(_world.GetPool<Channeling>().Has(_hero));
+            Assert.AreEqual(0, _world.Filter<DeathRay>().End().GetEntitiesCount());
+            Assert.IsTrue(_world.GetPool<DeathRayCooldown>().Has(_hero));
+        }
+
+        [Test]
+        public void TheBeamStopsByItselfAfterItsLongestChannel()
+        {
+            Step(Mathf.RoundToInt((ChargeSeconds + 3f) / Tick) + 2);
+
+            Assert.IsFalse(_world.GetPool<Channeling>().Has(_hero));
+            Assert.IsTrue(_world.GetPool<DeathRayCooldown>().Has(_hero));
         }
 
         private void Target(int enemy)

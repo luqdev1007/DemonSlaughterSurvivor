@@ -8,6 +8,7 @@ namespace Game.Simulation.Components
         public bool HasAim;
         public bool StandHeld;
         public bool MoveHeld;
+        public bool MoveRequested;
         public bool AimTurning;
         public float AimAngularSpeed;
         public Vector3 LastAimDirection;

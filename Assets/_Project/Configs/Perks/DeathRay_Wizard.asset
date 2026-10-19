@@ -13,25 +13,24 @@ MonoBehaviour:
   m_Name: DeathRay_Wizard
   m_EditorClassIdentifier: Game.Configs::Game.Configs.DeathRayConfig
   _levels:
-  - _cooldownSeconds: 12
+  - _cooldownSeconds: 8
     _initialDamage: 25
     _tickDamage: 6
-  - _cooldownSeconds: 10
+  - _cooldownSeconds: 7
     _initialDamage: 35
     _tickDamage: 8
-  - _cooldownSeconds: 8
+  - _cooldownSeconds: 6
     _initialDamage: 45
     _tickDamage: 10
-  _triggerRange: 14
   _chargeSeconds: 0.6
-  _beamSeconds: 1
+  _maxBeamSeconds: 3
   _tickSeconds: 0.1
   _castTrigger: CastRay
   _endTrigger: CastCancel
   _chargeClipSeconds: 1.6
   _length: 16
   _halfWidth: 0.45
-  _turnSpeed: 90
+  _turnSpeed: 150
   _muzzleForward: 0.6
   _muzzleHeight: 1.45
   _beamPrefab: {fileID: 1468519396040663709, guid: 3b059f0fa218ada43a901250af45916b, type: 3}

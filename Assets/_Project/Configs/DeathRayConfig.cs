@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Configs
 {
@@ -9,9 +10,8 @@ namespace Game.Configs
         [SerializeField] private DeathRayLevel[] _levels = Array.Empty<DeathRayLevel>();
 
         [Header("Cast")]
-        [SerializeField, Min(1f)] private float _triggerRange = 14f;
         [SerializeField, Min(0.05f)] private float _chargeSeconds = 0.6f;
-        [SerializeField, Min(0.1f)] private float _beamSeconds = 1f;
+        [FormerlySerializedAs("_beamSeconds"), SerializeField, Min(0.1f)] private float _maxBeamSeconds = 3f;
         [SerializeField, Min(0.02f)] private float _tickSeconds = 0.1f;
         [SerializeField] private string _castTrigger = "CastRay";
         [SerializeField] private string _endTrigger = "CastCancel";
@@ -20,7 +20,7 @@ namespace Game.Configs
         [Header("Beam")]
         [SerializeField, Min(1f)] private float _length = 16f;
         [SerializeField, Min(0.05f)] private float _halfWidth = 0.45f;
-        [SerializeField, Min(0f)] private float _turnSpeed = 90f;
+        [SerializeField, Min(0f)] private float _turnSpeed = 150f;
         [SerializeField, Min(0f)] private float _muzzleForward = 1f;
         [SerializeField, Min(0f)] private float _muzzleHeight = 1.2f;
 
@@ -29,11 +29,9 @@ namespace Game.Configs
 
         public override int LevelCount => _levels.Length;
 
-        public float TriggerRange => _triggerRange;
-
         public float ChargeSeconds => _chargeSeconds;
 
-        public float BeamSeconds => _beamSeconds;
+        public float MaxBeamSeconds => _maxBeamSeconds;
 
         public float TickSeconds => _tickSeconds;
 

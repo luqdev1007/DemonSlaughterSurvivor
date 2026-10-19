@@ -51,6 +51,8 @@ namespace Game.Simulation.Systems
                     ControlScheme.MouseHold => state.MoveHeld && state.StandHeld == false ? ResolveCursorDirection(entity, in state) : Vector3.zero,
                     _ => throw new InvalidOperationException($"Unknown control scheme {scheme}.")
                 };
+
+                state.MoveRequested = intent.Value.sqrMagnitude > Mathf.Epsilon;
             }
         }
 

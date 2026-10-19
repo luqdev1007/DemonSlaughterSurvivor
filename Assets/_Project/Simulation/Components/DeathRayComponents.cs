@@ -19,5 +19,6 @@ namespace Game.Simulation.Components
         public int TickCountdown;
         public float InitialDamage;
         public float TickDamage;
+        public int CooldownTicks;
     }
 }

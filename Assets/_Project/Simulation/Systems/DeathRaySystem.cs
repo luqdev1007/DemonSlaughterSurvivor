@@ -12,7 +12,7 @@ namespace Game.Simulation.Systems
     {
         private readonly EcsWorldInject _world = default;
 
-        private readonly EcsFilterInject<Inc<Player, Position, TorsoAim>, Exc<Dead, Channeling>> _heroes = default;
+        private readonly EcsFilterInject<Inc<Player, Position, TorsoAim, InputState>, Exc<Dead, Channeling>> _heroes = default;
         private readonly EcsFilterInject<Inc<DeathRayCooldown>> _cooldownFilter = default;
         private readonly EcsFilterInject<Inc<DeathRay, Position>> _rays = default;
         private readonly EcsFilterInject<Inc<Enemy, Position, BodyRadius>, Exc<Dead>> _enemies = default;
@@ -25,6 +25,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Channeling> _channeling = default;
         private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
         private readonly EcsPoolInject<TorsoAim> _aims = default;
+        private readonly EcsPoolInject<InputState> _inputs = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
@@ -56,16 +57,14 @@ namespace Game.Simulation.Systems
                 if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out DeathRayConfig config, out int level) == false)
                     continue;
 
+                if (IsHolding(hero) == false)
+                    continue;
+
                 ref TorsoAim aim = ref _aims.Value.Get(hero);
                 Vector3 origin = _positions.Value.Get(hero).Value;
+                Vector3 direction = aim.Manual ? aim.Desired : aim.Direction;
 
-                if (aim.HasTarget == false || RangedTarget.TryFindLiving(world, aim.Target, _positions.Value, _dead.Value, out Vector3 target) == false)
-                    continue;
-
-                if (RangedTarget.IsWithin(origin, target, config.TriggerRange) == false)
-                    continue;
-
-                Begin(world, hero, config, config.Level(level), origin, target, delta);
+                Begin(world, hero, config, config.Level(level), origin, origin + direction, delta);
             }
 
             foreach (int ray in _rays.Value)
@@ -105,8 +104,9 @@ namespace Game.Simulation.Systems
                 view.SetLift(config.MuzzleHeight);
             }
 
+            data.CooldownTicks = Mathf.Max(1, Mathf.RoundToInt(entry.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero) / delta));
+
             _channeling.Value.Add(hero);
-            _cooldowns.Value.Add(hero).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(entry.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero) / delta));
 
             if (_views.Value.Has(hero) && _views.Value.Get(hero).Value != null)
                 _views.Value.Get(hero).Value.PlayAttack(config.CastTrigger, config.ChargeClipSeconds / (chargeTicks * delta));
@@ -120,6 +120,13 @@ namespace Game.Simulation.Systems
             if (data.Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner))
             {
                 End(world, ray, in data, owner, false);
+
+                return;
+            }
+
+            if (IsHolding(owner) == false)
+            {
+                End(world, ray, in data, owner, true);
 
                 return;
             }
@@ -141,7 +148,7 @@ namespace Game.Simulation.Systems
                     return;
 
                 data.Firing = true;
-                data.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.BeamSeconds / delta));
+                data.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.MaxBeamSeconds / delta));
                 data.TotalTicks = data.RemainingTicks;
                 data.TickCountdown = Mathf.Max(1, Mathf.RoundToInt(config.TickSeconds / delta));
 
@@ -161,6 +168,16 @@ namespace Game.Simulation.Systems
                 return;
 
             End(world, ray, in data, owner, true);
+        }
+
+        private bool IsHolding(int hero)
+        {
+            if (_inputs.Value.Has(hero) == false)
+                return false;
+
+            ref InputState input = ref _inputs.Value.Get(hero);
+
+            return input.StandHeld && input.MoveRequested == false;
         }
 
         private void Burn(EcsWorld world, int owner, in DeathRay data, float amount)
@@ -216,6 +233,7 @@ namespace Game.Simulation.Systems
             if (ownerAlive)
             {
                 _channeling.Value.Del(owner);
+                _cooldowns.Value.Add(owner).RemainingTicks = data.CooldownTicks;
 
                 if (_views.Value.Has(owner) && _views.Value.Get(owner).Value != null)
                     _views.Value.Get(owner).Value.PlayAttack(data.Config.EndTrigger, 1f);
