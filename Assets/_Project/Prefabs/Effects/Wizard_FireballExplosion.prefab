@@ -52,9 +52,11 @@ MonoBehaviour:
   _runeAura: {fileID: 0}
   _aimRig: {fileID: 0}
   _hoverRig: {fileID: 0}
+  _beamFx: {fileID: 0}
   _wings: {fileID: 0}
   _pierceTrail: {fileID: 0}
   _lightningBolt: {fileID: 0}
+  _shieldFx: {fileID: 0}
   _actionView: {fileID: 0}
   _chargeIndicator: {fileID: 0}
   _dazeFx: {fileID: 0}
@@ -138,6 +140,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: FireballExplosionVFX
       objectReference: {fileID: 0}
+    - target: {fileID: 4684641208065809156, guid: 80009f9cf49c1004eab49723aecccdd3, type: 3}
+      propertyPath: EmissionModule.m_Bursts.Array.data[0].countCurve.scalar
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4684641208065809156, guid: 80009f9cf49c1004eab49723aecccdd3, type: 3}
+      propertyPath: EmissionModule.m_Bursts.Array.data[0].countCurve.minScalar
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4684641208065809156, guid: 80009f9cf49c1004eab49723aecccdd3, type: 3}
+      propertyPath: EmissionModule.m_Bursts.Array.data[0].countCurve.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 9058666455289217652, guid: 80009f9cf49c1004eab49723aecccdd3, type: 3}
       propertyPath: clearBehavior
       value: 0
@@ -147,7 +161,9 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 9043046197809611051, guid: 80009f9cf49c1004eab49723aecccdd3, type: 3}
+    - {fileID: 1485737954131935843, guid: 80009f9cf49c1004eab49723aecccdd3, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 80009f9cf49c1004eab49723aecccdd3, type: 3}
