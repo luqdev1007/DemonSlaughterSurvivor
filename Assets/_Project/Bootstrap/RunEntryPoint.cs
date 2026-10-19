@@ -50,6 +50,7 @@ namespace Game.Bootstrap
         private readonly IPauseMenuSink _pauseMenuSink;
         private readonly IPauseMenuInput _pauseMenuInput;
         private readonly IScreenShake _screenShake;
+        private readonly IThreatSink _threatSink;
         private readonly LevelConfig _levelConfig;
         private readonly InputConfig _inputConfig;
 
@@ -104,6 +105,7 @@ namespace Game.Bootstrap
             IPauseMenuSink pauseMenuSink,
             IPauseMenuInput pauseMenuInput,
             IScreenShake screenShake,
+            IThreatSink threatSink,
             LevelConfig levelConfig,
             InputConfig inputConfig)
         {
@@ -114,6 +116,7 @@ namespace Game.Bootstrap
             _pauseMenuSink = pauseMenuSink;
             _pauseMenuInput = pauseMenuInput;
             _screenShake = screenShake;
+            _threatSink = threatSink;
             _context = context;
             _clock = clock;
             _outcome = outcome;
@@ -208,7 +211,8 @@ namespace Game.Bootstrap
                 _experienceSink,
                 _bossVitalsSink,
                 _statsSink,
-                _screenShake
+                _screenShake,
+                _threatSink
                 );
         }
 

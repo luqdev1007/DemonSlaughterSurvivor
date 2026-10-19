@@ -30,6 +30,7 @@ namespace Game.Configs
         [Header("Feedback")]
         [SerializeField] private FeedbackConfig _feedback;
         [SerializeField] private GameObject _hudPrefab;
+        [SerializeField] private GameObject _threatAtmospherePrefab;
 
         public string SceneName => _sceneName;
 
@@ -60,5 +61,7 @@ namespace Game.Configs
         public FeedbackConfig Feedback => _feedback;
 
         public GameObject HudPrefab => _hudPrefab;
+
+        public GameObject ThreatAtmospherePrefab => _threatAtmospherePrefab;
     }
 }

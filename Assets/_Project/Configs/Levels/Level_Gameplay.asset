@@ -28,3 +28,4 @@ MonoBehaviour:
   _breakableSpacing: 2
   _feedback: {fileID: 11400000, guid: 1e3e2f9fcb2a8cb429beae9cc1f19c96, type: 2}
   _hudPrefab: {fileID: 5707546872913258700, guid: 737023acb467e244e9f020d184bec290, type: 3}
+  _threatAtmospherePrefab: {fileID: 785492122486250043, guid: 989864ab685b2914bbb0905ce4566411, type: 3}

@@ -192,6 +192,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PublishRuneStatusSystem());
             systems.Add(new PublishAbilityPanelSystem());
             systems.Add(new PublishBossVitalsSystem());
+            systems.Add(new PublishThreatSystem());
             systems.Add(new PublishExperienceSystem());
             systems.Add(new BindCameraTargetSystem());
             // 13. Cleanup

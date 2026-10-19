@@ -28,6 +28,8 @@ namespace Game.Bootstrap
 
             builder.Register<ScreenShake>(Lifetime.Scoped).As<IScreenShake>();
 
+            builder.Register<ThreatAtmosphere>(Lifetime.Scoped).As<IThreatSink>();
+
             builder.Register<CursorAim>(Lifetime.Scoped).As<IAimInput>();
 
             builder.Register<PlayerVitals>(Lifetime.Scoped).AsSelf().As<IPlayerVitalsSink>();
