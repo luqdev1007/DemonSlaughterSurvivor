@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf5820ff0a972b4d987b09afcc13ff0, type: 3}
+  m_Name: ElementalWeakness_Wizard
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.ElementalWeaknessConfig
+  _levels:
+  - _intervalSeconds: 3
+    _marksPerPulse: 1
+    _damageBonus: 0.5
+    _explosionDamage: 30
+  - _intervalSeconds: 2.5
+    _marksPerPulse: 2
+    _damageBonus: 0.75
+    _explosionDamage: 45
+  - _intervalSeconds: 2
+    _marksPerPulse: 2
+    _damageBonus: 1
+    _explosionDamage: 60
+  _range: 15
+  _markSeconds: 6
+  _explosionRadius: 3
+  _explosionFxSeconds: 1.2
+  _markHeight: 2.3
+  _fireMarkPrefab: {fileID: 2569841239796812731, guid: b33ac451b05bddf49aefa2f192e8e9f9, type: 3}
+  _iceMarkPrefab: {fileID: 3859854573160579560, guid: 3a20014104f7b7d41a4fcb76a10cb96f, type: 3}
+  _arcaneMarkPrefab: {fileID: 861990842617427284, guid: bd691a5ba6c5d4f4d93c8d52e30008b4, type: 3}
+  _fireExplosionPrefab: {fileID: 6817492502091456056, guid: 289bc3f938a6c7445a1ccd1a7410797f, type: 3}
+  _iceExplosionPrefab: {fileID: 9051674983915013381, guid: a40cc1ad6306def42b9766f8bc5458f9, type: 3}
+  _arcaneExplosionPrefab: {fileID: 463892596457488763, guid: b449e7871f519564a9eb5c288f743991, type: 3}

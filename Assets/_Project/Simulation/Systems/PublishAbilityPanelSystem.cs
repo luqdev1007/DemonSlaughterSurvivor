@@ -36,6 +36,9 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<IceRingCooldown> _iceRingCooldowns = default;
         private readonly EcsPoolInject<MeteorCooldown> _meteorCooldowns = default;
         private readonly EcsPoolInject<DeathRayCooldown> _rayCooldowns = default;
+        private readonly EcsPoolInject<ArcaneWaveCooldown> _waveCooldowns = default;
+        private readonly EcsPoolInject<TornadoCooldown> _tornadoCooldowns = default;
+        private readonly EcsPoolInject<FireballVolleyCooldown> _volleyCooldowns = default;
 
         private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -90,7 +93,10 @@ namespace Game.Simulation.Systems
                 || behaviour is LightningArrowConfig
                 || behaviour is IceRingConfig
                 || behaviour is MeteorConfig
-                || behaviour is DeathRayConfig;
+                || behaviour is DeathRayConfig
+                || behaviour is ArcaneWaveConfig
+                || behaviour is TornadoConfig
+                || behaviour is FireballVolleyConfig;
         }
 
         private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
@@ -106,6 +112,15 @@ namespace Game.Simulation.Systems
 
             if (behaviour is DeathRayConfig && _rayCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _rayCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is ArcaneWaveConfig && _waveCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _waveCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is TornadoConfig && _tornadoCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _tornadoCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is FireballVolleyConfig && _volleyCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _volleyCooldowns.Value.Get(hero).RemainingTicks);
 
             if (behaviour is MeteorConfig && _meteorCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _meteorCooldowns.Value.Get(hero).RemainingTicks);

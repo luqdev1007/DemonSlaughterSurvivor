@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e75b1539b2a64b429eefc1ebea03396, type: 3}
+  m_Name: ArcaneWave_Wizard
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.ArcaneWaveConfig
+  _levels:
+  - _cooldownSeconds: 6
+    _damage: 20
+    _radius: 5
+    _affectedBonus: 0.5
+  - _cooldownSeconds: 5
+    _damage: 30
+    _radius: 5.5
+    _affectedBonus: 0.75
+  - _cooldownSeconds: 4
+    _damage: 40
+    _radius: 6
+    _affectedBonus: 1
+  _speed: 12
+  _pushSpeed: 4
+  _pushSeconds: 0.25
+  _fxDesignRadius: 5
+  _waveFxPrefab: {fileID: 7162776196636447330, guid: aea52bf9b6fc14d4784c2356647c0a8e, type: 3}

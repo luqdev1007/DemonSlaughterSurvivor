@@ -129,6 +129,7 @@ namespace Game.Simulation.Systems
                 killingBlow.Source = damageEvent.Source;
                 killingBlow.SourcePosition = damageEvent.SourcePosition;
                 killingBlow.IsSlash = damageEvent.IsSlash;
+                killingBlow.Element = damageEvent.Element;
                 killingBlow.IsEmpowered = IsEmpowered(damageEvent.Source);
             }
 

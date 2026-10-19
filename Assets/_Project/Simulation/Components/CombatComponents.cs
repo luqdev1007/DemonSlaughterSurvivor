@@ -38,6 +38,15 @@ namespace Game.Simulation.Components
         EnemyAbility = 5,
     }
 
+    public enum DamageElement
+    {
+        None = 0,
+        Fire = 1,
+        Ice = 2,
+        Arcane = 3,
+        Nature = 4,
+    }
+
     public struct DamageEvent
     {
         public EcsPackedEntity Target;
@@ -48,6 +57,7 @@ namespace Game.Simulation.Components
         public bool IsSlash;
         public bool IsCrit;
         public bool IsMagic;
+        public DamageElement Element;
         public float CritChanceBonus;
         public PerkBehaviourConfig SourcePerk;
     }
@@ -58,6 +68,7 @@ namespace Game.Simulation.Components
         public Vector3 SourcePosition;
         public bool IsSlash;
         public bool IsEmpowered;
+        public DamageElement Element;
     }
 
     public struct DamageApplied
@@ -114,6 +125,7 @@ namespace Game.Simulation.Components
         public DamageKind Kind;
         public bool IsSlash;
         public bool IsMagic;
+        public DamageElement Element;
         public PerkBehaviourConfig SourcePerk;
         public float PushSpeed;
         public float PushSeconds;

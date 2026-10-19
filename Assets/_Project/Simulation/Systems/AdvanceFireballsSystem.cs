@@ -79,6 +79,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Amount = projectile.Damage;
                     damageEvent.Kind = DamageKind.Weapon;
                     damageEvent.IsMagic = true;
+                    damageEvent.Element = DamageElement.Fire;
 
                     Explode(world, in projectile, in data, impact, target);
                     Remove(world, fireball);
@@ -113,6 +114,7 @@ namespace Game.Simulation.Systems
             strike.Damage = projectile.Damage * config.ExplosionDamageScale;
             strike.Kind = DamageKind.Weapon;
             strike.IsMagic = true;
+            strike.Element = DamageElement.Fire;
             strike.PushSpeed = config.ExplosionPushSpeed;
             strike.PushSeconds = config.ExplosionPushSeconds;
             strike.PushArcHeight = config.ExplosionPushArcHeight;

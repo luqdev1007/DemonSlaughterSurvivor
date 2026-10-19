@@ -13,6 +13,7 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<BlinkCooldown>> _cooldownFilter = default;
+        private readonly EcsFilterInject<Inc<BlinkEcho>> _echoFilter = default;
         private readonly EcsFilterInject<Inc<Player, BlinkStats, BlinkRequest, Position, Facing, BodyRadius>> _requests = default;
         private readonly EcsFilterInject<Inc<Breakable, Position, BodyRadius>, Exc<Dead>> _breakables = default;
         private readonly EcsFilterInject<Inc<NotPushable, Position, BodyRadius>, Exc<Dead>> _immovables = default;
@@ -21,6 +22,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<BlinkStats> _stats = default;
         private readonly EcsPoolInject<BlinkRequest> _requestPool = default;
         private readonly EcsPoolInject<BlinkCooldown> _cooldowns = default;
+        private readonly EcsPoolInject<BlinkEcho> _echoes = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<PreviousPosition> _previousPositions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
@@ -53,6 +55,15 @@ namespace Game.Simulation.Systems
                     _cooldowns.Value.Del(entity);
             }
 
+            foreach (int entity in _echoFilter.Value)
+            {
+                ref BlinkEcho echo = ref _echoes.Value.Get(entity);
+                echo.Remaining -= delta;
+
+                if (echo.Remaining <= 0f)
+                    _echoes.Value.Del(entity);
+            }
+
             foreach (int hero in _requests.Value)
             {
                 ref BlinkRequest request = ref _requestPool.Value.Get(hero);
@@ -64,7 +75,9 @@ namespace Game.Simulation.Systems
                     continue;
                 }
 
-                if (_cooldowns.Value.Has(hero))
+                bool echo = _cooldowns.Value.Has(hero) && _echoes.Value.Has(hero);
+
+                if (_cooldowns.Value.Has(hero) && echo == false)
                 {
                     request.Age += delta;
 
@@ -73,11 +86,14 @@ namespace Game.Simulation.Systems
 
                 _requestPool.Value.Del(hero);
 
-                Blink(hero, _stats.Value.Get(hero).Config);
+                if (echo)
+                    _echoes.Value.Del(hero);
+
+                Blink(hero, _stats.Value.Get(hero).Config, echo);
             }
         }
 
-        private void Blink(int hero, BlinkConfig config)
+        private void Blink(int hero, BlinkConfig config, bool echo)
         {
             ref Position position = ref _positions.Value.Get(hero);
             Vector3 origin = position.Value;
@@ -93,7 +109,11 @@ namespace Game.Simulation.Systems
             if (_previousPositions.Value.Has(hero))
                 _previousPositions.Value.Get(hero).Value = destination;
 
-            _cooldowns.Value.Add(hero).Remaining = config.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero);
+            if (echo == false)
+            {
+                _cooldowns.Value.Add(hero).Remaining = config.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero);
+                OpenEcho(hero);
+            }
 
             if (_views.Value.Has(hero) && _views.Value.Get(hero).Value is ITeleportView view)
                 view.Teleport(destination);
@@ -102,6 +122,14 @@ namespace Game.Simulation.Systems
             Fx(config.ArriveFxPrefab, destination, config.FxSeconds);
 
             Repulse(hero, destination);
+        }
+
+        private void OpenEcho(int hero)
+        {
+            if (TakenBehaviourLookup.TryFind(_world.Value, _taken.Value, _takenPool.Value, _content.Value, hero, out BlinkEchoConfig config, out int level) == false)
+                return;
+
+            _echoes.Value.Add(hero).Remaining = config.Level(level).WindowSeconds;
         }
 
         private void Repulse(int hero, Vector3 at)
@@ -120,6 +148,7 @@ namespace Game.Simulation.Systems
             strike.Reach = entry.Radius;
             strike.HalfAngleDegrees = 180f;
             strike.Kind = DamageKind.Perk;
+            strike.Element = DamageElement.Arcane;
             strike.SourcePerk = config;
             strike.PushSpeed = entry.PushSpeed;
             strike.PushSeconds = config.PushSeconds;

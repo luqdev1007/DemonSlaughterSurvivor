@@ -49,6 +49,7 @@ namespace Game.Simulation.Systems
             systems.Add(new HoldStaggeredSystem());
             systems.Add(new SeparateNeighborsSystem());
             systems.Add(new TickFrozenSystem());
+            systems.Add(new TickSlowedSystem());
             systems.Add(new HoldChannelingSystem());
             // 5.  Movement
             systems.Add(new StorePreviousPositionSystem());
@@ -95,6 +96,10 @@ namespace Game.Simulation.Systems
             systems.Add(new IceRingSystem());
             systems.Add(new MeteorSystem());
             systems.Add(new DeathRaySystem());
+            systems.Add(new ArcaneWaveSystem());
+            systems.Add(new LightningShieldSystem());
+            systems.Add(new TornadoSystem());
+            systems.Add(new ElementalWeaknessSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new GrantHarvestHealSystem());
@@ -123,10 +128,12 @@ namespace Game.Simulation.Systems
             // 9.  Damage
             systems.Add(new TickInvulnerabilitySystem());
             systems.Add(new TickProjectilePassThroughSystem());
+            systems.Add(new BurningSystem());
             systems.Add(new ResolveHitOutcomeSystem());
             systems.Add(new ApplyDamageSystem());
             // 10. Death
             systems.Add(new MarkDeadSystem());
+            systems.Add(new ExplodeMarkedKillsSystem());
             systems.Add(new DropGemsSystem());
             systems.Add(new QueueItemDropsSystem());
             systems.Add(new DropHealOrbsSystem());
@@ -151,6 +158,7 @@ namespace Game.Simulation.Systems
             systems.Add(new OfferUpgradesSystem());
             systems.Add(new OfferItemsSystem());
             // 12. ViewSync
+            systems.Add(new TickStatusFxSystem());
             systems.Add(new SyncViewSystem());
             systems.Add(new SyncGemViewSystem());
             systems.Add(new PlayHitFeedbackSystem());

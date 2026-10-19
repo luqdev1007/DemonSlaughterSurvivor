@@ -104,6 +104,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Amount = entry.Damage;
                     damageEvent.Kind = DamageKind.Perk;
                     damageEvent.IsMagic = true;
+                    damageEvent.Element = DamageElement.Ice;
                     damageEvent.SourcePerk = config;
                 }
 

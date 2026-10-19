@@ -177,6 +177,7 @@ namespace Game.Simulation.Systems
             strike.Damage = meteor.Damage;
             strike.Kind = DamageKind.Perk;
             strike.IsMagic = true;
+            strike.Element = DamageElement.Fire;
             strike.SourcePerk = config;
             strike.PushSpeed = config.PushSpeed;
             strike.PushSeconds = config.PushSeconds;

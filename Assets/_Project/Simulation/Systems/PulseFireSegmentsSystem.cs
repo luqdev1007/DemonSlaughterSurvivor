@@ -110,6 +110,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Amount = weaponDamage * segment.DamageScale;
                     damageEvent.Kind = DamageKind.Perk;
                     damageEvent.IsMagic = true;
+                    damageEvent.Element = DamageElement.Fire;
                     damageEvent.SourcePerk = segment.SourcePerk;
                 }
             }

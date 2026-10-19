@@ -220,6 +220,7 @@ namespace Game.Simulation.Systems
             damageEvent.Amount = amount;
             damageEvent.Kind = DamageKind.Perk;
             damageEvent.IsMagic = true;
+            damageEvent.Element = DamageElement.Arcane;
             damageEvent.SourcePerk = config;
         }
 

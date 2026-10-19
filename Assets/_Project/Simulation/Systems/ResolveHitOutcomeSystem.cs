@@ -19,6 +19,8 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<DamageEvent>> _events = default;
 
         private readonly EcsPoolInject<HunterMark> _marks = default;
+        private readonly EcsPoolInject<Burning> _burning = default;
+        private readonly EcsPoolInject<ElementMark> _elementMarks = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<DamageEvaded> _evaded = default;
         private readonly EcsPoolInject<CombatStats> _combatStats = default;
@@ -60,6 +62,12 @@ namespace Game.Simulation.Systems
                     damage.Amount *= 1f + mark.DamageTakenBonus;
                     damage.CritChanceBonus += mark.CritChanceBonus;
                 }
+
+                if (_burning.Value.Has(target))
+                    damage.CritChanceBonus += _burning.Value.Get(target).CritChanceBonus;
+
+                if (_elementMarks.Value.Has(target) && damage.Element != DamageElement.None && _elementMarks.Value.Get(target).Element == damage.Element)
+                    damage.Amount *= 1f + _elementMarks.Value.Get(target).DamageBonus;
 
                 if (damage.Source.Unpack(world, out int source) && source != target && damage.IsMagic)
                     damage.Amount *= ConcentrationBonus.Damage(_concentrations.Value, source);

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3220f39d87bcc24c9d9c041c9f2e2f3, type: 3}
+  m_Name: SearingFireball_Wizard
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.SearingFireballConfig
+  _levels:
+  - _damagePerSecond: 5
+    _seconds: 3
+    _critChanceBonus: 0.1
+  - _damagePerSecond: 8
+    _seconds: 3.5
+    _critChanceBonus: 0.15
+  - _damagePerSecond: 12
+    _seconds: 4
+    _critChanceBonus: 0.2
+  _tickSeconds: 0.5
+  _burningFxPrefab: {fileID: 3722695275769107803, guid: cebfa713ed5361849987f2bb30284c43, type: 3}

@@ -131,6 +131,7 @@ namespace Game.Simulation.Systems
                     damageEvent.Kind = strike.Kind;
                     damageEvent.IsSlash = strike.IsSlash;
                     damageEvent.IsMagic = strike.IsMagic;
+                    damageEvent.Element = strike.Element;
                     damageEvent.SourcePerk = strike.SourcePerk;
                 }
 

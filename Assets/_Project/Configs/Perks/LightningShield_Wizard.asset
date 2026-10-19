@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 441b9a3183d5cb14696a26df39092b6d, type: 3}
+  m_Name: LightningShield_Wizard
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.LightningShieldConfig
+  _levels:
+  - _intervalSeconds: 0.6
+    _maxTargets: 2
+    _damage: 8
+  - _intervalSeconds: 0.5
+    _maxTargets: 3
+    _damage: 11
+  - _intervalSeconds: 0.4
+    _maxTargets: 4
+    _damage: 14
+  _radius: 2.6
+  _boltHeight: 1.1
+  _boltSeconds: 0.2
+  _impactSeconds: 0.6
+  _auraFxPrefab: {fileID: 3280736402966184005, guid: 2149284387e219247aa423f0f4eb924c, type: 3}
+  _boltPrefab: {fileID: 4028629046443415440, guid: 73535ca8976e2bd4fac7ae46e58e5d5e, type: 3}
+  _impactFxPrefab: {fileID: 5726609226906716350, guid: fad03bfcab08048448f2b73f76f71430, type: 3}
