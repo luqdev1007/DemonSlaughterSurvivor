@@ -79,7 +79,7 @@ namespace Game.View
         private readonly GoreDirector _gore;
         private readonly CombatAudio _audio;
 
-        private readonly float _hitFlashSeconds;
+        private readonly HitFeedback _hit;
         private readonly float _blinkSeconds;
         private readonly float _dissolveSeconds;
         private readonly Material _dissolveTemplate;
@@ -126,6 +126,12 @@ namespace Game.View
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative hit flash ({feedback.HitFlashSeconds}) " +
                     $"or blink period ({feedback.InvulnerabilityBlinkSeconds}). Use 0 to switch the effect off.");
 
+            if (feedback.HitFlashEnabled && (feedback.HitFlashMaterial == null || feedback.HitFlashSeconds <= 0f || feedback.HitFlashCooldownSeconds < 0f))
+                throw new InvalidOperationException(
+                    $"{nameof(FeedbackConfig)} '{feedback.Id}' enables the hit flash without a flash material, with a non-positive " +
+                    $"duration ({feedback.HitFlashSeconds}) or with a negative cooldown ({feedback.HitFlashCooldownSeconds}). " +
+                    "The flash swaps every body renderer to that one shared material for its duration.");
+
             if (feedback.DissolveSeconds < 0f)
                 throw new InvalidOperationException(
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' has a negative dissolve duration ({feedback.DissolveSeconds}).");
@@ -146,7 +152,10 @@ namespace Game.View
                     $"{nameof(FeedbackConfig)} '{feedback.Id}' throws corpses up at {feedback.KnockbackUpSpeed} m/s " +
                     $"with a gravity of {feedback.KnockbackGravity}. Without a positive gravity they never land.");
 
-            _hitFlashSeconds = feedback.HitFlashSeconds;
+            _hit = new HitFeedback(
+                feedback.HitFlashEnabled ? feedback.HitFlashMaterial : null,
+                feedback.HitFlashSeconds,
+                feedback.HitFlashCooldownSeconds);
             _blinkSeconds = feedback.InvulnerabilityBlinkSeconds;
             _dissolveSeconds = feedback.DissolveSeconds;
             _dissolveTemplate = feedback.DissolveMaterial;
@@ -797,7 +806,7 @@ namespace Game.View
                 Prefab = prefab
             };
 
-            view.Configure(entry.Animator, _hitFlashSeconds, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired, _onHit, _onCue);
+            view.Configure(entry.Animator, _hit, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired, _onHit, _onCue);
 
             entry.Body = view.BodyRenderers;
 

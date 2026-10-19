@@ -5,11 +5,16 @@ namespace Game.Configs
     [CreateAssetMenu(fileName = "FeedbackConfig", menuName = "Game/Content/Feedback Config")]
     public sealed class FeedbackConfig : ContentConfig
     {
-        [SerializeField] private float _hitFlashSeconds = 0.1f;
         [SerializeField] private float _invulnerabilityBlinkSeconds = 0.1f;
         [SerializeField] private float _enemyDeathSeconds = 1f;
         [SerializeField] private float _playerDeathDelaySeconds = 1.5f;
         [SerializeField] private float _victoryBannerSeconds = 3f;
+
+        [Header("Hit Flash")]
+        [SerializeField] private bool _hitFlashEnabled;
+        [SerializeField] private float _hitFlashSeconds = 0.06f;
+        [SerializeField] private float _hitFlashCooldownSeconds = 0.15f;
+        [SerializeField] private Material _hitFlashMaterial;
 
         [Header("Dissolve")]
         [SerializeField] private float _dissolveSeconds = 0.8f;
@@ -46,7 +51,13 @@ namespace Game.Configs
         [Header("Audio")]
         [SerializeField] private SfxConfig _sfx;
 
+        public bool HitFlashEnabled => _hitFlashEnabled;
+
         public float HitFlashSeconds => _hitFlashSeconds;
+
+        public float HitFlashCooldownSeconds => _hitFlashCooldownSeconds;
+
+        public Material HitFlashMaterial => _hitFlashMaterial;
 
         public float InvulnerabilityBlinkSeconds => _invulnerabilityBlinkSeconds;
 

@@ -13,9 +13,6 @@ namespace Game.View
 
         private const float TickSeconds = 1f / 60f;
 
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int ColorId = Shader.PropertyToID("_Color");
-        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int DissolveAmountId = Shader.PropertyToID("_DissolveAmount");
         private static readonly int DeathTriggerId = Animator.StringToHash("Death");
         private static readonly int IsDashingId = Animator.StringToHash("IsDashing");
@@ -30,9 +27,6 @@ namespace Game.View
         private static readonly int AirPhaseId = Animator.StringToHash("AirPhase");
         private static readonly int AirSpeedId = Animator.StringToHash("AirSpeed");
         private const string BackleapCue = "Backleap";
-
-        private static readonly Color FlashColor = new Color(1f, 0.35f, 0.35f, 1f);
-        private static readonly Color FlashEmission = new Color(0.8f, 0.1f, 0.1f, 1f);
 
         [SerializeField] private BerserkLightningFx _berserkFx;
         [SerializeField] private SwordTrail _swordTrail;
@@ -66,6 +60,9 @@ namespace Game.View
         private float _currentLift;
 
         private Renderer[] _renderers;
+        private Material[][] _savedMaterials;
+        private Material[][] _flashMaterials;
+        private readonly List<Material> _materialScratch = new List<Material>();
         private Material[][] _originalMaterials;
         private Material[][] _dissolveMaterials;
         private Animator _animator;
@@ -86,7 +83,7 @@ namespace Game.View
         private bool _hasAirParameters;
         private int _airPhase;
         private int _actionPhase;
-        private float _hitFlashSeconds;
+        private HitFeedback _hit;
         private float _blinkSeconds;
         private float _dissolveSeconds;
         private Func<Material, Material> _dissolveMaterialFor;
@@ -96,6 +93,7 @@ namespace Game.View
 
         private bool _isFlashing;
         private float _flashEndTime;
+        private float _nextFlashTime;
 
         private bool _isBlinking;
         private bool _renderersVisible = true;
@@ -125,7 +123,7 @@ namespace Game.View
 
         internal void Configure(
             Animator animator,
-            float hitFlashSeconds,
+            in HitFeedback hit,
             float blinkSeconds,
             float dissolveSeconds,
             Func<Material, Material> dissolveMaterialFor,
@@ -151,13 +149,15 @@ namespace Game.View
             _hasChargedDashParameter = HasParameter(animator, ChargedDashId, AnimatorControllerParameterType.Bool);
             _hasAirParameters = HasParameter(animator, AirPhaseId, AnimatorControllerParameterType.Int)
                 && HasParameter(animator, AirSpeedId, AnimatorControllerParameterType.Float);
-            _hitFlashSeconds = hitFlashSeconds;
+            _hit = hit;
             _blinkSeconds = blinkSeconds;
             _dissolveSeconds = dissolveSeconds;
             _dissolveMaterialFor = dissolveMaterialFor;
             _onRetired = onRetired;
             _onHit = onHit;
             _onCue = onCue;
+
+            BuildFlashMaterials();
         }
 
         public void SetPosition(Vector3 position)
@@ -328,16 +328,12 @@ namespace Game.View
 
         public void PlayHit(Vector3 direction)
         {
-            if (_isDead == false)
-                _onHit?.Invoke(this, direction);
-
-            if (_hitFlashSeconds <= 0f || _isDissolving)
+            if (_isDead)
                 return;
 
-            _isFlashing = true;
-            _flashEndTime = Time.time + _hitFlashSeconds;
+            _onHit?.Invoke(this, direction);
 
-            ApplyBlock();
+            StartFlash();
         }
 
         public void PlayWeaponHit()
@@ -575,10 +571,11 @@ namespace Game.View
             if (_isDissolving || _dissolveMaterialFor == null)
                 return;
 
+            EndFlash();
+
             if (_dissolveMaterials == null)
                 BuildDissolveMaterials();
 
-            _isFlashing = false;
             _isDissolving = true;
             _dissolveStartTime = Time.time;
             _dissolveAmount = 0f;
@@ -601,6 +598,8 @@ namespace Game.View
 
         internal void BeginRetire(float seconds, float deathPoseSeconds, float decaySeconds, float sinkDepth, Vector3 knockbackVelocity, float gravity, float friction)
         {
+            EndFlash();
+
             _isRetiring = true;
             _retireTime = Time.time + seconds;
             _animatorOffTime = Time.time + deathPoseSeconds;
@@ -688,10 +687,12 @@ namespace Game.View
                 _activeEliteFx = null;
             }
 
+            EndFlash();
+            _nextFlashTime = 0f;
+
             if (_isDissolving)
                 SwapMaterials(_originalMaterials);
 
-            _isFlashing = false;
             _isDissolving = false;
             _dissolveAmount = 0f;
             _isBlinking = false;
@@ -745,11 +746,7 @@ namespace Game.View
                 transform.position = ResolvePosition() + Vector3.up * (ResolveLift() + _sinkOffset) + _knockbackOffset;
 
             if (_isFlashing && time >= _flashEndTime)
-            {
-                _isFlashing = false;
-
-                ApplyBlock();
-            }
+                EndFlash();
 
             if (_isDissolving && _dissolveAmount < 1f)
             {
@@ -889,17 +886,10 @@ namespace Game.View
 
             _block.Clear();
 
-            if (_isFlashing)
-            {
-                _block.SetColor(BaseColorId, FlashColor);
-                _block.SetColor(ColorId, FlashColor);
-                _block.SetColor(EmissionColorId, FlashEmission);
-            }
-
             if (_isDissolving)
                 _block.SetFloat(DissolveAmountId, _dissolveAmount);
 
-            MaterialPropertyBlock block = _isFlashing || _isDissolving ? _block : null;
+            MaterialPropertyBlock block = _isDissolving ? _block : null;
 
             for (int index = 0; index < _renderers.Length; index++)
             {
@@ -909,6 +899,83 @@ namespace Game.View
                     continue;
 
                 target.SetPropertyBlock(block);
+            }
+        }
+
+        private void BuildFlashMaterials()
+        {
+            if (_hit.FlashMaterial == null || _renderers == null)
+            {
+                _flashMaterials = null;
+                _savedMaterials = null;
+
+                return;
+            }
+
+            _flashMaterials = new Material[_renderers.Length][];
+            _savedMaterials = new Material[_renderers.Length][];
+
+            for (int index = 0; index < _renderers.Length; index++)
+            {
+                int slots = _renderers[index].sharedMaterials.Length;
+                Material[] flash = new Material[slots];
+
+                for (int slot = 0; slot < slots; slot++)
+                    flash[slot] = _hit.FlashMaterial;
+
+                _flashMaterials[index] = flash;
+                _savedMaterials[index] = new Material[slots];
+            }
+        }
+
+        private void StartFlash()
+        {
+            if (_flashMaterials == null || _isDissolving || _isRetiring)
+                return;
+
+            float time = Time.time;
+
+            if (time < _nextFlashTime)
+                return;
+
+            _nextFlashTime = time + _hit.FlashCooldownSeconds;
+            _flashEndTime = time + _hit.FlashSeconds;
+
+            if (_isFlashing)
+                return;
+
+            SaveMaterials();
+            SwapMaterials(_flashMaterials);
+
+            _isFlashing = true;
+        }
+
+        private void EndFlash()
+        {
+            if (_isFlashing == false)
+                return;
+
+            _isFlashing = false;
+
+            SwapMaterials(_savedMaterials);
+        }
+
+        private void SaveMaterials()
+        {
+            for (int index = 0; index < _renderers.Length; index++)
+            {
+                Renderer target = _renderers[index];
+
+                if (target == null)
+                    continue;
+
+                target.GetSharedMaterials(_materialScratch);
+
+                Material[] saved = _savedMaterials[index];
+                int count = Mathf.Min(saved.Length, _materialScratch.Count);
+
+                for (int slot = 0; slot < count; slot++)
+                    saved[slot] = _materialScratch[slot];
             }
         }
 
