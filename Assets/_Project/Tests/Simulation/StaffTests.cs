@@ -21,6 +21,9 @@ namespace Game.Simulation.Tests
         private const float BlastScale = 0.6f;
         private const float BlastRadius = 2.5f;
 
+        private static readonly Vector3 RightHand = new Vector3(0.5f, 1.1f, 0.4f);
+        private static readonly Vector3 LeftHand = new Vector3(-0.5f, 1.1f, 0.4f);
+
         private readonly List<Object> _assets = new List<Object>();
         private readonly SimulationClock _clock = new SimulationClock();
 
@@ -50,11 +53,11 @@ namespace Game.Simulation.Tests
             Set(staff, "_fireballSpeed", 14f);
             Set(staff, "_fireballRange", 16f);
             Set(staff, "_fireballRadius", 0.3f);
-            Set(staff, "_muzzleDistance", 0.8f);
             Set(staff, "_explosionRadius", BlastRadius);
             Set(staff, "_explosionDamageScale", BlastScale);
             Set(staff, "_explosionPushSpeed", 6f);
             Set(staff, "_explosionPushSeconds", 0.33f);
+            Set(staff, "_casts", new[] { Variant("CastFireballR1", RightHand), Variant("CastFireballL1", LeftHand), Variant("CastFireballR2", RightHand) });
             Set(staff, "_fireballPrefab", fx);
             Set(staff, "_explosionPrefab", fx);
 
@@ -77,7 +80,7 @@ namespace Game.Simulation.Tests
             _systems.Add(new AdvanceFireballsSystem());
             _systems.Add(new ResolveAreaStrikeSystem());
             _systems.Add(new RebuildSpatialGridSystem());
-            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 6f, 0.5f), (IViewFactory)_views);
+            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 6f, 0.5f), (IViewFactory)_views, new RunContext("level.test", "character.test", RunMode.Story, 7, System.Array.Empty<StatModifierSpec>()));
             _systems.Init();
 
             _heroView = new RecordingView();
@@ -127,7 +130,8 @@ namespace Game.Simulation.Tests
             Step(1);
 
             Assert.IsTrue(_world.GetPool<StaffCast>().Has(_staff), "the cast starts on the first tick a target is in range");
-            CollectionAssert.AreEqual(new[] { "CastFireball" }, _heroView.Triggers);
+            Assert.AreEqual(1, _heroView.Triggers.Count);
+            StringAssert.StartsWith("CastFireball", _heroView.Triggers[0]);
 
             Step(CastTicks - 1);
 
@@ -136,6 +140,45 @@ namespace Game.Simulation.Tests
             Step(1);
 
             Assert.AreEqual(1, Fireballs());
+        }
+
+        [Test]
+        public void CastsAlternateHandsAndTheFireballLeavesTheCastingHand()
+        {
+            Enemy(new Vector3(0f, 0f, 12f));
+
+            List<float> sides = new List<float>();
+
+            for (int cast = 0; cast < 6; cast++)
+            {
+                Step(1);
+
+                Assert.IsTrue(_world.GetPool<StaffCast>().Has(_staff), $"cast {cast} starts");
+
+                Step(CastTicks);
+
+                float side = 0f;
+
+                foreach (int entity in _world.Filter<Fireball>().End())
+                    side = _world.GetPool<Projectile>().Get(entity).LastPosition.x;
+
+                sides.Add(side);
+
+                foreach (int entity in _world.Filter<Fireball>().End())
+                    _world.DelEntity(entity);
+
+                _world.GetPool<WeaponReady>().Get(_staff).Remaining = 0f;
+            }
+
+            for (int index = 0; index < sides.Count; index++)
+            {
+                Assert.AreEqual(0.5f, Mathf.Abs(sides[index]), 1e-3f, "the fireball starts at the casting hand, half a metre to the side");
+
+                if (index > 0)
+                    Assert.AreNotEqual(Mathf.Sign(sides[index]), Mathf.Sign(sides[index - 1]), "right and left hands take turns");
+            }
+
+            StringAssert.StartsWith("CastFireball", _heroView.Triggers[0]);
         }
 
         [Test]
@@ -191,6 +234,16 @@ namespace Game.Simulation.Tests
 
             Assert.AreEqual(0, Fireballs());
             Assert.AreEqual(2, _views.Created, "the fireball and its explosion");
+        }
+
+        private static StaffCastVariant Variant(string trigger, Vector3 muzzle)
+        {
+            StaffCastVariant variant = new StaffCastVariant();
+            Set(variant, "_trigger", trigger);
+            Set(variant, "_releaseClipSeconds", 0.8f);
+            Set(variant, "_muzzle", muzzle);
+
+            return variant;
         }
 
         private void OnlyOneCast()

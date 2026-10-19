@@ -59,12 +59,18 @@ namespace Game.Simulation.Systems
                 if (cast.RemainingTicks > 0)
                     continue;
 
+                int variant = cast.Variant;
                 _castPool.Value.Del(staff);
 
                 Vector3 origin = _positions.Value.Get(owner).Value;
-                Vector3 direction = ResolveDirection(world, in _aims.Value.Get(owner), origin);
+                ref TorsoAim aim = ref _aims.Value.Get(owner);
+                Vector3 forward = ResolveDirection(world, in aim, origin);
+                Vector3 muzzle = config.Cast(variant).Muzzle;
+                Vector3 right = new Vector3(forward.z, 0f, -forward.x);
+                Vector3 spawn = origin + right * muzzle.x + forward * muzzle.z;
+                Vector3 direction = ResolveDirection(world, in aim, spawn);
 
-                Launch(world, owner, config, origin, direction, _damages.Value.Get(staff).Value, delta);
+                Launch(world, config, owner, spawn, direction, muzzle.y, _damages.Value.Get(staff).Value, delta);
             }
         }
 
@@ -85,10 +91,8 @@ namespace Game.Simulation.Systems
             return aim.Direction;
         }
 
-        private void Launch(EcsWorld world, int owner, StaffConfig config, Vector3 origin, Vector3 direction, float damage, float delta)
+        private void Launch(EcsWorld world, StaffConfig config, int owner, Vector3 spawn, Vector3 direction, float height, float damage, float delta)
         {
-            Vector3 spawn = origin + direction * config.MuzzleDistance;
-
             int fireball = world.NewEntity();
 
             ref Projectile projectile = ref _projectiles.Value.Add(fireball);
@@ -103,7 +107,14 @@ namespace Game.Simulation.Systems
             _velocities.Value.Add(fireball).Value = direction * config.FireballSpeed;
             _facings.Value.Add(fireball).Value = direction;
             _notIndexed.Value.Add(fireball);
-            _views.Value.Add(fireball).Value = _viewFactory.Value.Create(config.FireballPrefab, spawn);
+            IView view = _viewFactory.Value.Create(config.FireballPrefab, spawn);
+            _views.Value.Add(fireball).Value = view;
+
+            if (view == null)
+                return;
+
+            view.SetLift(height);
+            view.SetLift(height);
         }
 
         private void Cue(int owner, string trigger)

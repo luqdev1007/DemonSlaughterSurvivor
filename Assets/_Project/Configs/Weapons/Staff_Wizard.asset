@@ -22,7 +22,6 @@ MonoBehaviour:
   _fireballSpeed: 14
   _fireballRange: 16
   _fireballRadius: 0.3
-  _muzzleDistance: 0.8
   _explosionRadius: 2.5
   _explosionDamageScale: 0.6
   _explosionPushSpeed: 6
@@ -30,6 +29,17 @@ MonoBehaviour:
   _explosionPushArcHeight: 0.3
   _explosionPrefab: {fileID: 6817492502091456056, guid: 289bc3f938a6c7445a1ccd1a7410797f, type: 3}
   _explosionFxSeconds: 1.5
-  _releaseClipSeconds: 0.82
-  _castTrigger: CastFireball
+  _casts:
+  - _trigger: CastFireballR1
+    _releaseClipSeconds: 0.8
+    _muzzle: {x: 0.6, y: 1.45, z: 0.35}
+  - _trigger: CastFireballL1
+    _releaseClipSeconds: 0.8
+    _muzzle: {x: -0.6, y: 1.45, z: 0.35}
+  - _trigger: CastFireballR2
+    _releaseClipSeconds: 0.55
+    _muzzle: {x: 0.62, y: 1.25, z: 0.25}
+  - _trigger: CastFireballL2
+    _releaseClipSeconds: 0.55
+    _muzzle: {x: -0.62, y: 1.25, z: 0.25}
   _cancelTrigger: CastCancel

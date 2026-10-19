@@ -16,7 +16,20 @@ namespace Game.Editor
         private const string HoverClipPath = Folder + "Wizard_Hover.anim";
         private const string PrefabPath = "Assets/_Project/Prefabs/Heroes/Wizard.prefab";
         private const string PoseSource = "Standing 1H Magic Attack 01";
-        private const string FireballClip = "Standing 1H Magic Attack 01";
+        private const string BookName = "Wizard_Book";
+        private const string BookMountName = "BookMount";
+        private const string HeadBone = "head";
+        private static readonly Vector3 BookMountPosition = new Vector3(0f, 1.3f, 0.62f);
+        private static readonly Vector3 BookMountEuler = new Vector3(-35f, 0f, 0f);
+        private const float BookScale = 1.15f;
+
+        private static readonly (string State, string Clip, bool Mirror, string Trigger)[] FireballCasts =
+        {
+            ("FireballRight1", "Standing 1H Magic Attack 01", false, "CastFireballR1"),
+            ("FireballLeft1", "Standing 1H Magic Attack 01", true, "CastFireballL1"),
+            ("FireballRight2", "Standing 1H Magic Attack 02", false, "CastFireballR2"),
+            ("FireballLeft2", "Standing 1H Magic Attack 02", true, "CastFireballL2"),
+        };
         private const string NovaClip = "Standing 2H Magic Area Attack 02";
         private const string ViewName = "View";
         private const float CastBlend = 0.12f;
@@ -70,6 +83,7 @@ namespace Game.Editor
                 animator.transform.localScale = Vector3.one * ViewScale;
 
                 WireView(prefabRoot, animator);
+                WireBook(prefabRoot, animator);
 
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, PrefabPath);
             }
@@ -221,7 +235,9 @@ namespace Game.Editor
             AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
 
             controller.AddParameter("AttackSpeed", AnimatorControllerParameterType.Float);
-            controller.AddParameter("CastFireball", AnimatorControllerParameterType.Trigger);
+            foreach ((string _, string _, bool _, string trigger) in FireballCasts)
+                controller.AddParameter(trigger, AnimatorControllerParameterType.Trigger);
+
             controller.AddParameter("CastNova", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("CastCancel", AnimatorControllerParameterType.Trigger);
 
@@ -258,8 +274,13 @@ namespace Game.Editor
             AnimatorState empty = machine.AddState("Empty", new Vector3(300f, 0f, 0f));
             machine.defaultState = empty;
 
-            CastState(machine, empty, "Fireball", FireballClip, "CastFireball", new Vector3(550f, -80f, 0f));
-            CastState(machine, empty, "Nova", NovaClip, "CastNova", new Vector3(550f, 80f, 0f));
+            for (int index = 0; index < FireballCasts.Length; index++)
+            {
+                (string state, string clip, bool mirror, string trigger) = FireballCasts[index];
+                CastState(machine, empty, state, clip, trigger, mirror, new Vector3(550f, -240f + index * 80f, 0f));
+            }
+
+            CastState(machine, empty, "Nova", NovaClip, "CastNova", false, new Vector3(550f, 160f, 0f));
 
             AnimatorStateTransition cancel = machine.AddAnyStateTransition(empty);
             cancel.AddCondition(AnimatorConditionMode.If, 0f, "CastCancel");
@@ -267,10 +288,11 @@ namespace Game.Editor
             cancel.hasExitTime = false;
         }
 
-        private static void CastState(AnimatorStateMachine machine, AnimatorState empty, string name, string clip, string trigger, Vector3 position)
+        private static void CastState(AnimatorStateMachine machine, AnimatorState empty, string name, string clip, string trigger, bool mirror, Vector3 position)
         {
             AnimatorState state = machine.AddState(name, position);
             state.motion = SourceClip(clip);
+            state.mirror = mirror;
             state.speedParameterActive = true;
             state.speedParameter = "AttackSpeed";
 
@@ -337,6 +359,60 @@ namespace Game.Editor
             SerializedObject serializedView = new SerializedObject(prefabRoot.GetComponent<ViewInterpolator>());
             serializedView.FindProperty("_hoverRig").objectReferenceValue = hoverRig;
             serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WireBook(GameObject prefabRoot, Animator animator)
+        {
+            Transform view = animator.transform;
+            Transform mount = view.Find(BookMountName);
+
+            if (mount == null)
+            {
+                mount = new GameObject(BookMountName).transform;
+                mount.SetParent(view, false);
+            }
+
+            mount.localPosition = BookMountPosition;
+            mount.localRotation = Quaternion.Euler(BookMountEuler);
+            mount.localScale = Vector3.one;
+
+            Transform book = view.Find(BookName);
+
+            if (book == null)
+                book = mount.Find(BookName);
+
+            if (book == null)
+                throw new InvalidOperationException($"{PrefabPath} has no {BookName} under {ViewName}.");
+
+            book.SetParent(mount, false);
+            book.gameObject.SetActive(true);
+            book.localRotation = Quaternion.identity;
+            book.localScale = Vector3.one * BookScale;
+
+            Renderer renderer = book.GetComponentInChildren<Renderer>(true);
+            Vector3 center = mount.InverseTransformPoint(renderer.bounds.center) - book.localPosition;
+            book.localPosition = -center;
+
+            BookFloat bookFloat = prefabRoot.GetComponent<BookFloat>();
+
+            if (bookFloat == null)
+                bookFloat = prefabRoot.AddComponent<BookFloat>();
+
+            SerializedObject serialized = new SerializedObject(bookFloat);
+            serialized.FindProperty("_book").objectReferenceValue = mount;
+            serialized.FindProperty("_head").objectReferenceValue = FindBone(view, HeadBone);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static Transform FindBone(Transform root, string name)
+        {
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == name)
+                    return child;
+            }
+
+            throw new InvalidOperationException($"{PrefabPath} has no bone {name}.");
         }
 
         private static AnimationClip SourceClip(string name)

@@ -10,7 +10,9 @@ namespace Game.Simulation.Components
 
     public struct Staff { public StaffConfig Config; }
 
-    public struct StaffCast { public int RemainingTicks; }
+    public struct StaffCast { public int RemainingTicks; public int Variant; }
+
+    public struct StaffCastPick { public uint State; public bool HasLast; public bool LastLeft; }
 
     public struct BowDraw
     {
