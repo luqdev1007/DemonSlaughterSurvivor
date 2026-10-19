@@ -54,6 +54,11 @@ namespace Game.Configs
         [SerializeField] private int _maxCorpses = 60;
         [SerializeField] private float _offscreenMargin = 0.08f;
 
+        [Header("Death Embers")]
+        [SerializeField] private GameObject _deathEmbersPrefab;
+        [SerializeField] private int _maxDeathEmbers = 24;
+        [SerializeField] private float _deathEmbersHeight = 0.9f;
+
         [Header("Gib kicks")]
         [SerializeField] private float _kickRadius = 1f;
         [SerializeField] private float _kickSpeed = 3.5f;
@@ -139,6 +144,12 @@ namespace Game.Configs
         public float CorpseSinkDepth => _corpseSinkDepth;
 
         public Material CorpseBurnMaterial => _corpseBurnMaterial;
+
+        public GameObject DeathEmbersPrefab => _deathEmbersPrefab;
+
+        public int MaxDeathEmbers => _maxDeathEmbers;
+
+        public float DeathEmbersHeight => _deathEmbersHeight;
 
         public int MaxCorpses => _maxCorpses;
 

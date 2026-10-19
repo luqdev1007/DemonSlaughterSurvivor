@@ -41,6 +41,7 @@ namespace Game.Configs
         [Header("Gore")]
         [SerializeField] private GameObject _dismemberedViewPrefab;
         [SerializeField, Range(0f, 1f)] private float _dismemberChance = 0.35f;
+        [SerializeField] private bool _deathEmbers;
 
         [Header("Separation")]
         [SerializeField] private float _separationRadius = 1f;
@@ -83,6 +84,8 @@ namespace Game.Configs
         public GameObject DismemberedViewPrefab => _dismemberedViewPrefab;
 
         public float DismemberChance => _dismemberChance;
+
+        public bool DeathEmbers => _deathEmbers;
 
         public float SeparationRadius => _separationRadius;
 

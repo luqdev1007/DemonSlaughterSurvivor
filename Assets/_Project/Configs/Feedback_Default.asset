@@ -49,6 +49,9 @@ MonoBehaviour:
   _corpseBurnMaterial: {fileID: 2100000, guid: e0b950779e9c7074682f311da8adbd92, type: 2}
   _maxCorpses: 60
   _offscreenMargin: 0.08
+  _deathEmbersPrefab: {fileID: 7787911663638618477, guid: 058964270824f04439c64ea6a4dd0644, type: 3}
+  _maxDeathEmbers: 24
+  _deathEmbersHeight: 0.9
   _kickRadius: 1
   _kickSpeed: 3.5
   _kickHeroSpeedShare: 0.6

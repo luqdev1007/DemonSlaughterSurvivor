@@ -36,5 +36,6 @@ MonoBehaviour:
   - {r: 0.9, g: 0.96, b: 1.06, a: 1}
   _dismemberedViewPrefab: {fileID: 5398845736747080846, guid: b989dc3842544ca43828a3d7c095096a, type: 3}
   _dismemberChance: 0.35
+  _deathEmbers: 1
   _separationRadius: 1
   _separationStrength: 0.5

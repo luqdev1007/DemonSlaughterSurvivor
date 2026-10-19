@@ -71,6 +71,7 @@ namespace Game.View
         private readonly Dictionary<GameObject, Dismemberment> _dismemberments = new Dictionary<GameObject, Dismemberment>();
         private readonly HashSet<GameObject> _gemPrefabs = new HashSet<GameObject>();
         private readonly HashSet<GameObject> _breakablePrefabs = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _emberPrefabs = new HashSet<GameObject>();
         private readonly Dictionary<GameObject, GameObject> _templates = new Dictionary<GameObject, GameObject>();
         private readonly Dictionary<GameObject, Color[]> _tints = new Dictionary<GameObject, Color[]>();
         private readonly Dictionary<GameObject, Material[][][]> _tintTables = new Dictionary<GameObject, Material[][][]>();
@@ -110,6 +111,8 @@ namespace Game.View
         private bool _hasHero;
 
         private GameObject _templateRoot;
+        private GameObject _emberRoot;
+        private BloodFxPool _embers;
         private ViewPoolTicker _ticker;
         private bool _disposed;
 
@@ -194,6 +197,7 @@ namespace Game.View
             CollectTints(content);
             CollectGemPrefabs(content);
             CollectBreakablePrefabs(content);
+            CollectEmberPrefabs(content);
         }
 
         public IView Create(GameObject prefab, Vector3 position)
@@ -260,7 +264,11 @@ namespace Game.View
             }
 
             Vector3 velocity = ResolveKnockbackVelocity(blow.Direction);
+            bool embers = _emberPrefabs.Contains(entry.Prefab);
             Entry corpse = SwapForDismembered(entry, blow);
+
+            if (embers)
+                PlayDeathEmbers(corpse.View.transform.position);
 
             _retiring.Add(corpse.View.GetInstanceID());
 
@@ -340,6 +348,12 @@ namespace Game.View
 
             _templateRoot = null;
             _templates.Clear();
+
+            if (_emberRoot != null)
+                UnityEngine.Object.Destroy(_emberRoot);
+
+            _emberRoot = null;
+            _embers = null;
 
             if (_ticker != null)
                 UnityEngine.Object.Destroy(_ticker.gameObject);
@@ -469,6 +483,8 @@ namespace Game.View
         public void Tick(float time, float deltaTime)
         {
             TickCorpses();
+
+            _embers?.Tick(time);
 
             for (int index = _active.Count - 1; index >= 0; index--)
             {
@@ -671,6 +687,38 @@ namespace Game.View
 
                 _dismemberments[enemy.ViewPrefab] = new Dismemberment(enemy.DismemberedViewPrefab, enemy.DismemberChance);
             }
+        }
+
+        private void CollectEmberPrefabs(IContentRegistry content)
+        {
+            if (content == null || _feedback.DeathEmbersPrefab == null)
+                return;
+
+            IReadOnlyList<EnemyConfig> enemies = content.All<EnemyConfig>();
+
+            for (int index = 0; index < enemies.Count; index++)
+            {
+                EnemyConfig enemy = enemies[index];
+
+                if (enemy.DeathEmbers == false || enemy.ViewPrefab == null)
+                    continue;
+
+                _emberPrefabs.Add(enemy.ViewPrefab);
+
+                if (enemy.DismemberedViewPrefab != null)
+                    _emberPrefabs.Add(enemy.DismemberedViewPrefab);
+            }
+        }
+
+        private void PlayDeathEmbers(Vector3 position)
+        {
+            if (_embers == null)
+            {
+                _emberRoot = new GameObject("Death Embers");
+                _embers = new BloodFxPool(_feedback.DeathEmbersPrefab, _feedback.MaxDeathEmbers, _emberRoot.transform, 1f);
+            }
+
+            _embers.Play(position + Vector3.up * _feedback.DeathEmbersHeight, Quaternion.identity);
         }
 
         private void CollectTints(IContentRegistry content)
