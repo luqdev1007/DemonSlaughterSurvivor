@@ -39,6 +39,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<FireBurstRandom> _burstRandoms = default;
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<Facing> _facings = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -101,12 +102,13 @@ namespace Game.Simulation.Systems
         private void Explode(EcsWorld world, in Projectile projectile, in Fireball data, Vector3 at, int hit)
         {
             StaffConfig config = data.Config;
+            float area = ConcentrationBonus.Area(world, _concentrations.Value, projectile.Source);
 
             ref AreaStrike strike = ref _strikes.Value.Add(world.NewEntity());
             strike.Owner = projectile.Source;
             strike.Origin = at;
             strike.Forward = Vector3.forward;
-            strike.Reach = config.ExplosionRadius * data.BlastScale;
+            strike.Reach = config.ExplosionRadius * data.BlastScale * area;
             strike.HalfAngleDegrees = FullCircleDegrees;
             strike.Damage = projectile.Damage * config.ExplosionDamageScale;
             strike.Kind = DamageKind.Weapon;
@@ -119,7 +121,7 @@ namespace Game.Simulation.Systems
             _impacts.Value.Add(fx).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.ExplosionFxSeconds / _clock.Value.Delta));
             _positions.Value.Add(fx).Value = at;
             _notIndexed.Value.Add(fx);
-            _views.Value.Add(fx).Value = _viewFactory.Value.Create(config.ExplosionPrefab, at);
+            _views.Value.Add(fx).Value = AreaScale.Apply(_viewFactory.Value.Create(config.ExplosionPrefab, at), area);
 
             if (data.Child == false)
                 TryBurst(world, in projectile, in data, at, hit);

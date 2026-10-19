@@ -32,6 +32,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<LeapImpactFx> _impacts = default;
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -165,12 +166,13 @@ namespace Game.Simulation.Systems
         private void Impact(EcsWorld world, in Meteor meteor)
         {
             MeteorConfig config = meteor.Config;
+            float area = ConcentrationBonus.Area(world, _concentrations.Value, meteor.Owner);
 
             ref AreaStrike strike = ref _strikes.Value.Add(world.NewEntity());
             strike.Owner = meteor.Owner;
             strike.Origin = meteor.To;
             strike.Forward = Vector3.forward;
-            strike.Reach = config.Radius;
+            strike.Reach = config.Radius * area;
             strike.HalfAngleDegrees = FullCircleDegrees;
             strike.Damage = meteor.Damage;
             strike.Kind = DamageKind.Perk;
@@ -184,7 +186,7 @@ namespace Game.Simulation.Systems
             _impacts.Value.Add(fx).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.ImpactSeconds / _clock.Value.Delta));
             _positions.Value.Add(fx).Value = meteor.To;
             _notIndexed.Value.Add(fx);
-            _views.Value.Add(fx).Value = _viewFactory.Value.Create(config.ImpactPrefab, meteor.To);
+            _views.Value.Add(fx).Value = AreaScale.Apply(_viewFactory.Value.Create(config.ImpactPrefab, meteor.To), area);
         }
 
         private bool TryFindCluster(Vector3 origin, MeteorConfig config, out Vector3 target)

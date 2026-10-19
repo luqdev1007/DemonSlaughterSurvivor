@@ -26,6 +26,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Invulnerable> _invulnerables = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
 
@@ -60,7 +61,10 @@ namespace Game.Simulation.Systems
                     damage.CritChanceBonus += mark.CritChanceBonus;
                 }
 
-                if (damage.Source.Unpack(world, out int source) && source != target && _combatStats.Value.Has(source))
+                if (damage.Source.Unpack(world, out int source) && source != target && damage.IsMagic)
+                    damage.Amount *= ConcentrationBonus.Damage(_concentrations.Value, source);
+
+                if (damage.Source.Unpack(world, out source) && source != target && _combatStats.Value.Has(source))
                     Empower(ref damage, ref _combatStats.Value.Get(source));
 
                 if (_combatStats.Value.Has(target))

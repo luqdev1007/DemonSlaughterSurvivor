@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<StaffCastPick> _picks = default;
         private readonly EcsPoolInject<Channeling> _channeling = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -59,7 +60,7 @@ namespace Game.Simulation.Systems
                 if (Vector3.Angle(aim.Direction, aim.Desired) > config.AimToleranceDegrees)
                     continue;
 
-                float attackSpeed = _attackSpeeds.Value.Get(staff).Value;
+                float attackSpeed = _attackSpeeds.Value.Get(staff).Value * ConcentrationBonus.CastSpeed(_concentrations.Value, owner);
                 int ticks = Mathf.Max(1, Mathf.RoundToInt(config.CastSeconds / attackSpeed / delta));
                 int variant = Pick(staff, config);
                 StaffCastVariant cast = config.Cast(variant);

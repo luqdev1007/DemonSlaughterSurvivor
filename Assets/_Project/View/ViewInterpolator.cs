@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView, IFreezeView, IBeamView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView, IFreezeView, IBeamView, IAreaView, IShieldView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -44,6 +44,7 @@ namespace Game.View
         [SerializeField] private WingsFx _wings;
         [SerializeField] private TrailRenderer _pierceTrail;
         [SerializeField] private LightningBoltFx _lightningBolt;
+        [SerializeField] private EnergyShieldFx _shieldFx;
 
         private Vector3 _baseScale = Vector3.one;
         private bool _hasBaseScale;
@@ -176,6 +177,23 @@ namespace Game.View
             _previousPosition = _currentPosition;
             _currentPosition = position;
             _lastSyncTime = Time.time;
+        }
+
+        public void SetAreaScale(float scale)
+        {
+            if (_hasBaseScale == false)
+            {
+                _baseScale = transform.localScale;
+                _hasBaseScale = true;
+            }
+
+            transform.localScale = _baseScale * scale;
+        }
+
+        public void FlashShield(float strength)
+        {
+            if (_shieldFx != null && _isDead == false)
+                _shieldFx.Flash(strength);
         }
 
         public void SetBeam(float charge, bool firing)
@@ -640,6 +658,9 @@ namespace Game.View
 
             if (_wings != null)
                 _wings.HideImmediate();
+
+            if (_shieldFx != null)
+                _shieldFx.HideImmediate();
 
             if (_pierceTrail != null)
             {

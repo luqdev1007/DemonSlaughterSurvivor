@@ -135,6 +135,7 @@ namespace Game.Simulation.Systems
             systems.Add(new FinishRunOnBossDeathSystem());
             systems.Add(new DebugVictorySystem());
             systems.Add(new GrantLifeStealSystem());
+            systems.Add(new RestoreConcentrationSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
             systems.Add(new AccumulateRageSystem());
@@ -153,6 +154,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncViewSystem());
             systems.Add(new SyncGemViewSystem());
             systems.Add(new PlayHitFeedbackSystem());
+            systems.Add(new PlayShieldFeedbackSystem());
             systems.Add(new PublishDamageDealtSystem());
             systems.Add(new PublishCorpseKicksSystem());
             systems.Add(new PlaySwingFeedbackSystem());

@@ -29,6 +29,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<Facing> _facings = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -53,13 +54,14 @@ namespace Game.Simulation.Systems
                     continue;
 
                 Vector3 origin = _positions.Value.Get(hero).Value;
+                float radius = config.Radius * ConcentrationBonus.Area(_concentrations.Value, hero);
 
-                if (HasEnemyWithin(origin, config.Radius) == false)
+                if (HasEnemyWithin(origin, radius) == false)
                     continue;
 
                 IceRingLevel entry = config.Level(level);
 
-                Cast(world, hero, config, entry, origin, delta);
+                Cast(world, hero, config, entry, origin, radius, delta);
 
                 _cooldowns.Value.Add(hero).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(entry.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero) / delta));
             }
@@ -84,13 +86,13 @@ namespace Game.Simulation.Systems
             return offset.x * offset.x + offset.z * offset.z <= reach * reach;
         }
 
-        private void Cast(EcsWorld world, int hero, IceRingConfig config, IceRingLevel entry, Vector3 origin, float delta)
+        private void Cast(EcsWorld world, int hero, IceRingConfig config, IceRingLevel entry, Vector3 origin, float radius, float delta)
         {
             int freezeTicks = Mathf.Max(1, Mathf.RoundToInt(entry.FreezeSeconds / delta));
 
             foreach (int enemy in _enemies.Value)
             {
-                if (IsWithin(origin, enemy, config.Radius) == false)
+                if (IsWithin(origin, enemy, radius) == false)
                     continue;
 
                 if (entry.Damage > 0f)
@@ -109,7 +111,7 @@ namespace Game.Simulation.Systems
                     Freeze(world, enemy, config, freezeTicks);
             }
 
-            Fx(world, config.RingFxPrefab, origin, Mathf.Max(1, Mathf.RoundToInt(config.RingFxSeconds / delta)));
+            Fx(world, config.RingFxPrefab, origin, Mathf.Max(1, Mathf.RoundToInt(config.RingFxSeconds / delta)), radius / config.Radius);
         }
 
         private void Freeze(EcsWorld world, int enemy, IceRingConfig config, int ticks)
@@ -136,14 +138,14 @@ namespace Game.Simulation.Systems
             _views.Value.Add(fx).Value = _viewFactory.Value.Create(config.FrozenFxPrefab, at);
         }
 
-        private void Fx(EcsWorld world, GameObject prefab, Vector3 at, int ticks)
+        private void Fx(EcsWorld world, GameObject prefab, Vector3 at, int ticks, float scale)
         {
             int fx = world.NewEntity();
 
             _impacts.Value.Add(fx).RemainingTicks = ticks;
             _positions.Value.Add(fx).Value = at;
             _notIndexed.Value.Add(fx);
-            _views.Value.Add(fx).Value = _viewFactory.Value.Create(prefab, at);
+            _views.Value.Add(fx).Value = AreaScale.Apply(_viewFactory.Value.Create(prefab, at), scale);
         }
     }
 }

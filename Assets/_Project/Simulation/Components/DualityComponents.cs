@@ -16,4 +16,6 @@ namespace Game.Simulation.Components
         public ConcentrationConfig Config;
         public float Value;
     }
+
+    public struct ShieldAbsorbed { public float Amount; }
 }

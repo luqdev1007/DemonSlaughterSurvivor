@@ -33,6 +33,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
         private readonly EcsPoolInject<View> _views = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -207,7 +208,7 @@ namespace Game.Simulation.Systems
                 return;
 
             Vector3 side = offset - data.Direction * along;
-            float limit = config.HalfWidth + reach;
+            float limit = config.HalfWidth * ConcentrationBonus.Area(_concentrations.Value, owner) + reach;
 
             if (side.sqrMagnitude > limit * limit)
                 return;

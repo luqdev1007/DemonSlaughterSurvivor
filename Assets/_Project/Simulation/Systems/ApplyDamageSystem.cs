@@ -29,6 +29,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<BodyHeight> _bodyHeights = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
+        private readonly EcsPoolInject<ShieldAbsorbed> _absorbed = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -106,6 +108,8 @@ namespace Game.Simulation.Systems
             if (_damageTakens.Value.Has(target))
                 amount *= _damageTakens.Value.Get(target).Value;
 
+            amount -= AbsorbWithShield(target, eventEntity, amount);
+
             health.Current -= amount;
 
             ref DamageApplied applied = ref _applied.Value.Add(eventEntity);
@@ -129,6 +133,24 @@ namespace Game.Simulation.Systems
             }
 
             GrantInvulnerability(target, delta);
+        }
+
+        private float AbsorbWithShield(int target, int eventEntity, float amount)
+        {
+            if (_concentrations.Value.Has(target) == false || amount <= 0f)
+                return 0f;
+
+            ref Concentration concentration = ref _concentrations.Value.Get(target);
+            ConcentrationConfig config = concentration.Config;
+            float absorbed = Mathf.Min(amount * config.ShieldAbsorb, concentration.Value / config.ShieldCostPerDamage);
+
+            if (absorbed <= 0f)
+                return 0f;
+
+            concentration.Value = Mathf.Max(0f, concentration.Value - absorbed * config.ShieldCostPerDamage);
+            _absorbed.Value.Add(eventEntity).Amount = absorbed;
+
+            return absorbed;
         }
 
         private bool IsEmpowered(EcsPackedEntity source)
