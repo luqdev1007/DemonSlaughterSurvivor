@@ -36,6 +36,7 @@ namespace Game.Simulation.Tests
         private PerkConfig _explosivePerk;
         private PerkConfig _agilityPerk;
         private PerkConfig _rainPerk;
+        private PerkConfig _lightningPerk;
 
         [SetUp]
         public void SetUp()
@@ -98,6 +99,18 @@ namespace Game.Simulation.Tests
             Set(rain, "_fxPrefab", rainFx);
             _rainPerk = Perk("perk.arrow-rain", rain);
 
+            LightningArrowConfig lightning = Asset<LightningArrowConfig>();
+            LightningArrowLevel lightningLevel = new LightningArrowLevel();
+            Set(lightningLevel, "_cooldownSeconds", 7f);
+            Set(lightningLevel, "_jumps", 2);
+            Set(lightningLevel, "_damageScale", 0.5f);
+            Set(lightning, "_levels", new[] { lightningLevel });
+            Set(lightning, "_chainRange", 5f);
+            Set(lightning, "_jumpFalloff", 0.8f);
+            Set(lightning, "_arrowPrefab", rainFx);
+            Set(lightning, "_boltPrefab", rainFx);
+            _lightningPerk = Perk("perk.lightning-arrow", lightning);
+
             WaveTimelineConfig timeline = Asset<WaveTimelineConfig>();
             LevelConfig level = Asset<LevelConfig>();
             Set(level, "_waves", timeline);
@@ -114,9 +127,10 @@ namespace Game.Simulation.Tests
             _systems.Add(new ArrowRainSystem());
             _systems.Add(new AdvanceProjectilesSystem());
             _systems.Add(new AdvanceArrowsSystem());
+            _systems.Add(new LightningArrowSystem());
             _systems.Add(new ResolveAreaStrikeSystem());
             _systems.Add(new RebuildSpatialGridSystem());
-            ContentRegistry registry = new ContentRegistry(new IContentEntry[] { _powerPerk, _multishotPerk, _volleyPerk, _explosivePerk, _agilityPerk, _rainPerk });
+            ContentRegistry registry = new ContentRegistry(new IContentEntry[] { _powerPerk, _multishotPerk, _volleyPerk, _explosivePerk, _agilityPerk, _rainPerk, _lightningPerk });
             RunContext context = new RunContext("level.test", "character.test", RunMode.Story, 7, System.Array.Empty<StatModifierSpec>());
             _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f), (IViewFactory)_views, (IContentRegistry)registry, context);
             _systems.Init();
@@ -223,6 +237,28 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(4, landings.Count, "repeated picks of one enemy land on separate ticks");
             Assert.GreaterOrEqual(landings[1] - landings[0], 29, "a repeat waits for the repeat delay");
             Assert.IsTrue(_world.GetPool<ArrowRainCooldown>().Has(_hero));
+        }
+
+        [Test]
+        public void TheLightningArrowChainsToTheNearestEnemiesOnce()
+        {
+            int first = Enemy(new Vector3(0f, 0f, 6f));
+            int second = Enemy(new Vector3(2f, 0f, 6f));
+            int third = Enemy(new Vector3(4f, 0f, 6.5f));
+            int far = Enemy(new Vector3(12f, 0f, 6f));
+            Take(_lightningPerk);
+
+            Step(DrawTicks + 40);
+
+            List<DamageEvent> chain = Hits().FindAll(hit => hit.Kind == DamageKind.Perk);
+
+            Assert.AreEqual(2, chain.Count, "two jumps, then the chain ends");
+            CollectionAssert.AreEqual(new[] { second, third }, Targets(chain), "each jump goes to the nearest enemy not yet struck");
+            Assert.AreEqual(Damage * 0.5f, chain[0].Amount, 1e-4f);
+            Assert.AreEqual(Damage * 0.5f * 0.8f, chain[1].Amount, 1e-4f);
+            CollectionAssert.DoesNotContain(Targets(chain), first);
+            CollectionAssert.DoesNotContain(Targets(chain), far);
+            Assert.IsTrue(_world.GetPool<LightningArrowCooldown>().Has(_hero), "the next charge waits for the cooldown");
         }
 
         [Test]

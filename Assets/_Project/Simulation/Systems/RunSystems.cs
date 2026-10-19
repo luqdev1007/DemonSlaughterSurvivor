@@ -96,6 +96,7 @@ namespace Game.Simulation.Systems
             systems.Add(new TickFireSegmentsSystem());
             systems.Add(new AdvanceProjectilesSystem());
             systems.Add(new AdvanceArrowsSystem());
+            systems.Add(new LightningArrowSystem());
             systems.Add(new PulseEnemySpinSystem());
             systems.Add(new ImpactEnemyHeavyStrikeSystem());
             // 8.  Collision

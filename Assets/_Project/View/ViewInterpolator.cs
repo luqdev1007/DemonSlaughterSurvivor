@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -41,6 +41,7 @@ namespace Game.View
         [SerializeField] private AimRig _aimRig;
         [SerializeField] private WingsFx _wings;
         [SerializeField] private TrailRenderer _pierceTrail;
+        [SerializeField] private LightningBoltFx _lightningBolt;
 
         private Vector3 _baseScale = Vector3.one;
         private bool _hasBaseScale;
@@ -212,6 +213,12 @@ namespace Game.View
 
             _animator.SetFloat(AirSpeedId, playbackSpeed);
             _animator.SetInteger(AirPhaseId, phase);
+        }
+
+        public void Strike(Vector3 from, Vector3 to)
+        {
+            if (_lightningBolt != null)
+                _lightningBolt.Strike(from, to);
         }
 
         public void MarkPierced()

@@ -27,6 +27,7 @@ namespace Game.Simulation.Components
         public const int InitialHitCapacity = 16;
 
         public bool Piercing;
+        public bool Lightning;
         public float CritChanceBonus;
         public EcsPackedEntity[] Hits;
         public int HitCount;
@@ -37,6 +38,7 @@ namespace Game.Simulation.Components
                 c.Hits = new EcsPackedEntity[InitialHitCapacity];
 
             c.Piercing = false;
+            c.Lightning = false;
             c.CritChanceBonus = 0f;
             c.HitCount = 0;
         }

@@ -39,6 +39,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<AreaStrike> _strikes = default;
         private readonly EcsPoolInject<LeapImpactFx> _impacts = default;
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
+        private readonly EcsPoolInject<LightningChain> _chains = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -141,6 +142,30 @@ namespace Game.Simulation.Systems
             damageEvent.CritChanceBonus = data.CritChanceBonus;
 
             TryExplode(world, in projectile, at);
+
+            if (data.Lightning && data.HitCount <= 1)
+                StartChain(world, target, in projectile);
+        }
+
+        private void StartChain(EcsWorld world, int target, in Projectile projectile)
+        {
+            if (projectile.Source.Unpack(world, out int owner) == false)
+                return;
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out LightningArrowConfig config, out int level) == false)
+                return;
+
+            LightningArrowLevel entry = config.Level(level);
+
+            ref LightningChain chain = ref _chains.Value.Add(world.NewEntity());
+            chain.Config = config;
+            chain.Owner = projectile.Source;
+            chain.From = _positions.Value.Get(target).Value;
+            chain.Hits = new EcsPackedEntity[entry.Jumps + 1];
+            chain.Hits[0] = world.PackEntity(target);
+            chain.HitCount = 1;
+            chain.JumpsLeft = entry.Jumps;
+            chain.Damage = projectile.Damage * entry.DamageScale;
         }
 
         private void TryExplode(EcsWorld world, in Projectile projectile, Vector3 at)

@@ -10,6 +10,8 @@ namespace Game.Simulation.Systems
 {
     public sealed class ReleaseBowShotSystem : IEcsRunSystem
     {
+        public const string LightningStreamId = "stream.lightning-arrow";
+
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Bow, BowDraw, OwnerLink, WeaponDamage>> _draws = default;
@@ -33,8 +35,11 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
         private readonly EcsPoolInject<PowerShotCooldown> _powerCooldowns = default;
         private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
+        private readonly EcsPoolInject<LightningArrowCooldown> _lightningCooldowns = default;
+        private readonly EcsPoolInject<LightningArrowRandom> _lightningRandoms = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
+        private readonly EcsCustomInject<RunContext> _context = default;
 
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -124,6 +129,7 @@ namespace Game.Simulation.Systems
 
             bool wholeVolley = TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out PiercingVolleyConfig _, out _);
             int center = (count - 1) / 2;
+            int charged = PickChargedArrow(world, owner, count, delta, out LightningArrowConfig lightning);
 
             for (int index = 0; index < count; index++)
             {
@@ -132,11 +138,39 @@ namespace Game.Simulation.Systems
 
                 Vector3 arrowDirection = Quaternion.AngleAxis(angle, Vector3.up) * direction;
 
-                if (strongArrow)
-                    Shoot(world, owner, config, origin, arrowDirection, in strong, delta);
-                else
-                    Shoot(world, owner, config, origin, arrowDirection, in normal, delta);
+                Shot shot = strongArrow ? strong : normal;
+
+                if (index == charged)
+                {
+                    shot.Lightning = true;
+                    shot.Prefab = lightning.ArrowPrefab;
+                }
+
+                Shoot(world, owner, config, origin, arrowDirection, in shot, delta);
             }
+        }
+
+        private int PickChargedArrow(EcsWorld world, int owner, int count, float delta, out LightningArrowConfig lightning)
+        {
+            if (_lightningCooldowns.Value.Has(owner))
+            {
+                lightning = null;
+
+                return -1;
+            }
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out lightning, out int level) == false)
+                return -1;
+
+            if (_lightningRandoms.Value.Has(owner) == false)
+                _lightningRandoms.Value.Add(owner).State = SimulationRandom.StreamState(_context.Value.Seed, LightningStreamId);
+
+            int pick = Mathf.Min(count - 1, (int)(SimulationRandom.NextUnit(ref _lightningRandoms.Value.Get(owner).State) * count));
+            float seconds = lightning.Level(level).CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, owner);
+
+            _lightningCooldowns.Value.Add(owner).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(seconds / delta));
+
+            return pick;
         }
 
         private void Shoot(EcsWorld world, int owner, BowConfig config, Vector3 origin, Vector3 direction, in Shot shot, float delta)
@@ -154,6 +188,7 @@ namespace Game.Simulation.Systems
 
             ref Arrow arrowData = ref _arrows.Value.Add(arrow);
             arrowData.Piercing = shot.Piercing;
+            arrowData.Lightning = shot.Lightning;
             arrowData.CritChanceBonus = shot.CritChanceBonus;
             _positions.Value.Add(arrow).Value = spawn;
             _velocities.Value.Add(arrow).Value = direction * config.ArrowSpeed;
@@ -177,6 +212,7 @@ namespace Game.Simulation.Systems
             public float Radius;
             public GameObject Prefab;
             public bool Piercing;
+            public bool Lightning;
             public float CritChanceBonus;
         }
 
