@@ -7396,6 +7396,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Staff
       objectReference: {fileID: 0}
+    - target: {fileID: 4113470902580576760, guid: f8d4216c550117a49837cc6bc239e73b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4113470902581009880, guid: f8d4216c550117a49837cc6bc239e73b, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.053144652
