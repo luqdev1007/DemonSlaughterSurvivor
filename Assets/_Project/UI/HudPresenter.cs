@@ -270,7 +270,9 @@ namespace Game.UI
             view.AddRow("Нанесено урона", FormatNumber(_dpsMeter.Total));
             view.AddRow("Получено урона", FormatNumber(_stats.DamageTaken));
             view.AddRow("Время прохождения", FormatTime(_result.RunSeconds));
+            view.AddRow("Убито врагов", _stats.EnemiesKilled.ToString(CultureInfo.InvariantCulture));
             view.AddRow("Собрано сфер", _stats.GemsCollected.ToString(CultureInfo.InvariantCulture));
+            view.AddRow("Найдено предметов", _stats.ItemsFound.ToString(CultureInfo.InvariantCulture));
 
             _view.ShowVictory(false);
             view.Open();

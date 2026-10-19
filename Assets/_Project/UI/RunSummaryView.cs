@@ -50,10 +50,10 @@ namespace Game.UI
         {
             _rowTemplate.gameObject.SetActive(false);
 
-            Canvas.ForceUpdateCanvases();
-            _scroll.verticalNormalizedPosition = 1f;
-
             _fade.Show();
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_rows);
+            _scroll.verticalNormalizedPosition = 1f;
         }
 
         public void HideImmediate()

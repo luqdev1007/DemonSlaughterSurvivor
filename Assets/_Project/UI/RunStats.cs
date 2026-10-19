@@ -8,6 +8,10 @@ namespace Game.UI
 
         public int GemsCollected { get; private set; }
 
+        public int EnemiesKilled { get; private set; }
+
+        public int ItemsFound { get; private set; }
+
         public void RecordDamageTaken(float amount)
         {
             DamageTaken += amount;
@@ -16,6 +20,16 @@ namespace Game.UI
         public void RecordGemCollected()
         {
             GemsCollected++;
+        }
+
+        public void RecordEnemyKilled()
+        {
+            EnemiesKilled++;
+        }
+
+        public void RecordItemFound()
+        {
+            ItemsFound++;
         }
     }
 }

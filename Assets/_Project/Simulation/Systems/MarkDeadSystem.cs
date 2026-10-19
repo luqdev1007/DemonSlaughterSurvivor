@@ -1,4 +1,5 @@
 using Game.Configs;
+using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
@@ -16,12 +17,14 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Dead> _deads = default;
         private readonly EcsPoolInject<DiedEvent> _diedEvents = default;
         private readonly EcsPoolInject<Player> _players = default;
+        private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<MoveIntent> _intents = default;
         private readonly EcsPoolInject<DashRequest> _dashRequests = default;
         private readonly EcsPoolInject<PendingFinish> _pendingFinishes = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
+        private readonly EcsCustomInject<IRunStatsSink> _stats = default;
 
         private float _finishDelaySeconds;
 
@@ -65,6 +68,9 @@ namespace Game.Simulation.Systems
 
                 if (_players.Value.Has(entity))
                     StopPlayer(entity);
+
+                if (_stats.Value != null && _enemies.Value.Has(entity))
+                    _stats.Value.RecordEnemyKilled();
             }
         }
 

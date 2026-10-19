@@ -33,6 +33,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<IUpgradeChoiceInput> _input = default;
         private readonly EcsCustomInject<IItemChoiceSink> _sink = default;
         private readonly EcsCustomInject<ItemChoiceState> _state = default;
+        private readonly EcsCustomInject<IRunStatsSink> _stats = default;
 
         private readonly List<int> _scratch = new List<int>();
         private readonly ItemFloors _floors = new ItemFloors();
@@ -92,6 +93,9 @@ namespace Game.Simulation.Systems
                 _gate.Value.Await();
                 _input.Value.Clear();
                 _sink.Value.Show(state.Offers);
+
+                if (_stats.Value != null)
+                    _stats.Value.RecordItemFound();
             }
         }
 
