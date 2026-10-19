@@ -972,6 +972,9 @@ namespace Game.View
 
         private Material BurnMaterialFor(Material source)
         {
+            if (source == null || (source.HasProperty(BaseColorId) == false && source.HasProperty(ColorId) == false))
+                return source;
+
             return CopyOnto(_burnTemplate, _burnCopies, source, " (Burn)");
         }
 
