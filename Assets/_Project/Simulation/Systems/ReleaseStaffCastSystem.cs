@@ -102,7 +102,10 @@ namespace Game.Simulation.Systems
             projectile.Radius = config.FireballRadius;
             projectile.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.FireballRange / (config.FireballSpeed * delta)));
 
-            _fireballs.Value.Add(fireball).Config = config;
+            ref Fireball data = ref _fireballs.Value.Add(fireball);
+            data.Config = config;
+            data.BlastScale = 1f;
+            data.Lift = height;
             _positions.Value.Add(fireball).Value = spawn;
             _velocities.Value.Add(fireball).Value = direction * config.FireballSpeed;
             _facings.Value.Add(fireball).Value = direction;

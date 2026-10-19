@@ -33,6 +33,7 @@ namespace Game.Simulation.Tests
         private RecordingView _heroView;
         private int _hero;
         private int _staff;
+        private PerkConfig _burstPerk;
 
         [SetUp]
         public void SetUp()
@@ -61,6 +62,18 @@ namespace Game.Simulation.Tests
             Set(staff, "_fireballPrefab", fx);
             Set(staff, "_explosionPrefab", fx);
 
+            FireBurstConfig burst = Asset<FireBurstConfig>();
+            FireBurstLevel burstLevel = new FireBurstLevel();
+            Set(burstLevel, "_chance", 1f);
+            Set(burstLevel, "_count", 3);
+            Set(burst, "_levels", new[] { burstLevel });
+            Set(burst, "_fireballPrefab", fx);
+
+            _burstPerk = Asset<PerkConfig>();
+            Set(_burstPerk, "_id", "perk.fire-burst");
+            Set(_burstPerk, "_behaviour", burst);
+            Set(_burstPerk, "_levels", new[] { new PerkLevel() });
+
             WaveTimelineConfig timeline = Asset<WaveTimelineConfig>();
             LevelConfig level = Asset<LevelConfig>();
             Set(level, "_waves", timeline);
@@ -80,7 +93,7 @@ namespace Game.Simulation.Tests
             _systems.Add(new AdvanceFireballsSystem());
             _systems.Add(new ResolveAreaStrikeSystem());
             _systems.Add(new RebuildSpatialGridSystem());
-            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 6f, 0.5f), (IViewFactory)_views, new RunContext("level.test", "character.test", RunMode.Story, 7, System.Array.Empty<StatModifierSpec>()));
+            _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 6f, 0.5f), (IViewFactory)_views, (IContentRegistry)new ContentRegistry(new IContentEntry[] { _burstPerk }), new RunContext("level.test", "character.test", RunMode.Story, 7, System.Array.Empty<StatModifierSpec>()));
             _systems.Init();
 
             _heroView = new RecordingView();
@@ -182,6 +195,39 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void FireBurstSplitsTheBlastIntoSmallFireballsThatSpareTheFirstTargetAndDoNotSplitAgain()
+        {
+            OnlyOneCast();
+
+            ref TakenPerk taken = ref _world.GetPool<TakenPerk>().Add(_world.NewEntity());
+            taken.Owner = _world.PackEntity(_hero);
+            taken.PerkId = _burstPerk.Id;
+            taken.Level = 1;
+
+            int first = Enemy(new Vector3(0f, 0f, 8f));
+
+            Step(CastTicks + 1);
+
+            int ticksToHit = 0;
+
+            while (Children() == 0 && ticksToHit < 120)
+            {
+                Step(1);
+                ticksToHit++;
+            }
+
+            Assert.AreEqual(3, Children(), "the blast splits into three");
+
+            float before = Total(first);
+
+            Step(90);
+
+            Assert.AreEqual(before, Total(first), 1e-3f, "the small fireballs fly away from the enemy that was hit");
+            Assert.AreEqual(0, Children(), "they burst at the end of their range without splitting again");
+            Assert.AreEqual(0, _world.Filter<Fireball>().End().GetEntitiesCount());
+        }
+
+        [Test]
         public void TheFirstEnemyTakesTheHitAndTheBlastWhileItsNeighbourTakesOnlyTheBlast()
         {
             int first = Enemy(new Vector3(0f, 0f, 8f));
@@ -244,6 +290,19 @@ namespace Game.Simulation.Tests
             Set(variant, "_muzzle", muzzle);
 
             return variant;
+        }
+
+        private int Children()
+        {
+            int count = 0;
+
+            foreach (int entity in _world.Filter<Fireball>().End())
+            {
+                if (_world.GetPool<Fireball>().Get(entity).Child)
+                    count++;
+            }
+
+            return count;
         }
 
         private void OnlyOneCast()

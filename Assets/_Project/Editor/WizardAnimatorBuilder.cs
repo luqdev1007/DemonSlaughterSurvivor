@@ -31,6 +31,22 @@ namespace Game.Editor
             ("FireballLeft2", "Standing 1H Magic Attack 02", true, "CastFireballL2"),
         };
         private const string NovaClip = "Standing 2H Magic Area Attack 02";
+        private const string RayClip = "Standing 2H Magic Attack 02";
+        private const string RayHoldClipPath = Folder + "Wizard_RayHold.anim";
+        private const float RayHoldSeconds = 1.6f;
+        private const float RayTremble = 0.012f;
+
+        private static readonly (string Muscle, float Value)[] RayArms =
+        {
+            ("Arm Front-Back", -0.8f),
+            ("Arm Down-Up", 0.15f),
+            ("Arm Twist In-Out", 0f),
+            ("Forearm Stretch", 1f),
+            ("Forearm Twist In-Out", 0f),
+            ("Hand Down-Up", -0.8f),
+            ("Hand In-Out", 0f),
+            ("Shoulder Front-Back", 0.2f),
+        };
         private const string ViewName = "View";
         private const float CastBlend = 0.12f;
         private const float ViewScale = 0.82f;
@@ -239,6 +255,7 @@ namespace Game.Editor
                 controller.AddParameter(trigger, AnimatorControllerParameterType.Trigger);
 
             controller.AddParameter("CastNova", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("CastRay", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("CastCancel", AnimatorControllerParameterType.Trigger);
 
             AnimatorControllerParameter[] parameters = controller.parameters;
@@ -281,11 +298,95 @@ namespace Game.Editor
             }
 
             CastState(machine, empty, "Nova", NovaClip, "CastNova", false, new Vector3(550f, 160f, 0f));
+            RayStates(machine, empty);
 
             AnimatorStateTransition cancel = machine.AddAnyStateTransition(empty);
             cancel.AddCondition(AnimatorConditionMode.If, 0f, "CastCancel");
             cancel.duration = CastBlend;
             cancel.hasExitTime = false;
+        }
+
+        private static void RayStates(AnimatorStateMachine machine, AnimatorState empty)
+        {
+            AnimationClip source = SourceClip(RayClip);
+
+            AnimatorState charge = machine.AddState("RayCharge", new Vector3(800f, 160f, 0f));
+            charge.motion = source;
+            charge.speedParameterActive = true;
+            charge.speedParameter = "AttackSpeed";
+
+            AnimatorState hold = machine.AddState("RayHold", new Vector3(1050f, 160f, 0f));
+            hold.motion = BuildRayHoldClip();
+
+            AnimatorStateTransition enter = machine.AddAnyStateTransition(charge);
+            enter.AddCondition(AnimatorConditionMode.If, 0f, "CastRay");
+            enter.duration = CastBlend;
+            enter.hasExitTime = false;
+            enter.canTransitionToSelf = false;
+
+            AnimatorStateTransition toHold = charge.AddTransition(hold);
+            toHold.hasExitTime = true;
+            toHold.exitTime = RayHoldSeconds / source.length;
+            toHold.duration = 0.2f;
+        }
+
+        private static AnimationClip BuildRayHoldClip()
+        {
+            AnimationClip hover = AssetDatabase.LoadAssetAtPath<AnimationClip>(HoverClipPath);
+
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(RayHoldClipPath);
+
+            if (clip == null)
+            {
+                clip = new AnimationClip();
+                AssetDatabase.CreateAsset(clip, RayHoldClipPath);
+            }
+
+            clip.ClearCurves();
+
+            foreach (EditorCurveBinding binding in AnimationUtility.GetCurveBindings(hover))
+            {
+                if (IsMuscle(binding.propertyName) == false)
+                    continue;
+
+                float value = AnimationUtility.GetEditorCurve(hover, binding).Evaluate(0f);
+                bool arm = false;
+
+                foreach ((string muscle, float pose) in RayArms)
+                {
+                    if (binding.propertyName == "Left " + muscle || binding.propertyName == "Right " + muscle)
+                    {
+                        value = pose;
+                        arm = true;
+                    }
+                }
+
+                float phase = (binding.propertyName.Length * 37 % 100) / 100f;
+
+                SetCurve(clip, binding.propertyName, Tremble(value, arm ? RayTremble : 0f, phase));
+            }
+
+            AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
+            settings.loopTime = true;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            EditorUtility.SetDirty(clip);
+
+            return clip;
+        }
+
+        private static AnimationCurve Tremble(float center, float amplitude, float phase)
+        {
+            const int keys = 12;
+            const float seconds = 0.6f;
+            Keyframe[] frames = new Keyframe[keys + 1];
+
+            for (int index = 0; index <= keys; index++)
+            {
+                float angle = (index / (float)keys * 4f + phase) * Mathf.PI * 2f;
+                frames[index] = new Keyframe(seconds * index / keys, center + amplitude * Mathf.Sin(angle));
+            }
+
+            return new AnimationCurve(frames);
         }
 
         private static void CastState(AnimatorStateMachine machine, AnimatorState empty, string name, string clip, string trigger, bool mirror, Vector3 position)

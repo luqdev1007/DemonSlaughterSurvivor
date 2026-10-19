@@ -412,6 +412,7 @@ MonoBehaviour:
   _runeAura: {fileID: 0}
   _aimRig: {fileID: 0}
   _hoverRig: {fileID: 1760802420175278191}
+  _beamFx: {fileID: 0}
   _wings: {fileID: 0}
   _pierceTrail: {fileID: 0}
   _lightningBolt: {fileID: 0}
@@ -7548,11 +7549,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8732636680810326001, guid: 47a517abda2197c4995b12331cfca04d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.020084824
+      value: 0.020084755
       objectReference: {fileID: 0}
     - target: {fileID: 8732636680810326001, guid: 47a517abda2197c4995b12331cfca04d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.13673486
+      value: 0.13673496
       objectReference: {fileID: 0}
     - target: {fileID: 8732636680810326001, guid: 47a517abda2197c4995b12331cfca04d, type: 3}
       propertyPath: m_LocalRotation.w

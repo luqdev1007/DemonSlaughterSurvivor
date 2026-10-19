@@ -22,7 +22,17 @@ namespace Game.Simulation.Components
         public int RemainingTicks;
     }
 
-    public struct Fireball { public StaffConfig Config; }
+    public struct Fireball
+    {
+        public StaffConfig Config;
+        public float BlastScale;
+        public float Lift;
+        public bool Child;
+        public bool HasIgnore;
+        public EcsPackedEntity Ignore;
+    }
+
+    public struct FireBurstRandom { public uint State; }
 
     public struct Arrow : IEcsAutoReset<Arrow>
     {

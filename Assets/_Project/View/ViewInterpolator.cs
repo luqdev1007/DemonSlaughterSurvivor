@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView, IFreezeView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView, IFreezeView, IBeamView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -40,6 +40,7 @@ namespace Game.View
         [SerializeField] private RuneAuraFx _runeAura;
         [SerializeField] private AimRig _aimRig;
         [SerializeField] private HoverRig _hoverRig;
+        [SerializeField] private DeathRayFx _beamFx;
         [SerializeField] private WingsFx _wings;
         [SerializeField] private TrailRenderer _pierceTrail;
         [SerializeField] private LightningBoltFx _lightningBolt;
@@ -175,6 +176,12 @@ namespace Game.View
             _previousPosition = _currentPosition;
             _currentPosition = position;
             _lastSyncTime = Time.time;
+        }
+
+        public void SetBeam(float charge, bool firing)
+        {
+            if (_beamFx != null)
+                _beamFx.Show(charge, firing);
         }
 
         public void SetFrozen(bool value)

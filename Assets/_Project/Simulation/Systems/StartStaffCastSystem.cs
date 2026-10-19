@@ -27,6 +27,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<StaffCastPick> _picks = default;
+        private readonly EcsPoolInject<Channeling> _channeling = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -43,7 +44,7 @@ namespace Game.Simulation.Systems
                 if (ready.Remaining > 0f)
                     continue;
 
-                if (_ownerLinks.Value.Get(staff).Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner))
+                if (_ownerLinks.Value.Get(staff).Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner) || _channeling.Value.Has(owner))
                     continue;
 
                 if (_aims.Value.Has(owner) == false)

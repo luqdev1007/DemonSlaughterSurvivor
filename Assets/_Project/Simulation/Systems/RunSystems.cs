@@ -49,6 +49,7 @@ namespace Game.Simulation.Systems
             systems.Add(new HoldStaggeredSystem());
             systems.Add(new SeparateNeighborsSystem());
             systems.Add(new TickFrozenSystem());
+            systems.Add(new HoldChannelingSystem());
             // 5.  Movement
             systems.Add(new StorePreviousPositionSystem());
             systems.Add(new ApplyDashVelocitySystem());
@@ -93,6 +94,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ArrowRainSystem());
             systems.Add(new IceRingSystem());
             systems.Add(new MeteorSystem());
+            systems.Add(new DeathRaySystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new GrantHarvestHealSystem());

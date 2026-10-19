@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f41323dd84ae3842a1a0988bd5b4a9e, type: 3}
+  m_Name: FireBurst_Wizard
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.FireBurstConfig
+  _levels:
+  - _chance: 0.25
+    _count: 3
+  - _chance: 0.35
+    _count: 4
+  - _chance: 0.5
+    _count: 5
+  _damageScale: 0.5
+  _speed: 12
+  _range: 7
+  _blastScale: 0.6
+  _spawnOffset: 0.5
+  _fireballPrefab: {fileID: 6434701732981916456, guid: 3369754091018fb428317c12d7ce2a8d, type: 3}

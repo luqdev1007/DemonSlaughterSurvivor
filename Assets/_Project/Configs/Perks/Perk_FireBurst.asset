@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53717ce3cd87b6640ab973e8d9198c21, type: 3}
+  m_Name: Perk_FireBurst
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.PerkConfig
+  _id: perk.fire-burst
+  _displayName: "\u041E\u0433\u043D\u0435\u043D\u043D\u0430\u044F \u0432\u0441\u043F\u044B\u0448\u043A\u0430"
+  _description: "\u0412\u0437\u043E\u0440\u0432\u0430\u0432\u0448\u0438\u0439\u0441\u044F
+    \u043E\u0433\u043D\u0435\u043D\u043D\u044B\u0439 \u0448\u0430\u0440 \u0441 \u043D\u0435\u043A\u043E\u0442\u043E\u0440\u043E\u0439
+    \u0432\u0435\u0440\u043E\u044F\u0442\u043D\u043E\u0441\u0442\u044C\u044E \u0440\u0430\u0441\u043F\u0430\u0434\u0430\u0435\u0442\u0441\u044F
+    \u043D\u0430 \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u043C\u0430\u043B\u044B\u0445
+    \u043E\u0433\u043D\u0435\u043D\u043D\u044B\u0445 \u0448\u0430\u0440\u043E\u0432,
+    \u0440\u0430\u0437\u043B\u0435\u0442\u0430\u044E\u0449\u0438\u0445\u0441\u044F
+    \u0432\u043E \u0432\u0441\u0435 \u0441\u0442\u043E\u0440\u043E\u043D\u044B."
+  _icon: {fileID: 21300000, guid: dd3885098198d104888439be4c590aba, type: 3}
+  _rarity: 1
+  _levels:
+  - _modifiers: []
+  - _modifiers: []
+  - _modifiers: []
+  _behaviour: {fileID: 11400000, guid: cb80356740676384bad555f0c72bc4ba, type: 2}
+  _requires: []
+  _characters:
+  - {fileID: 11400000, guid: 49ecc0355588c4847aa8b308d2923c46, type: 2}
