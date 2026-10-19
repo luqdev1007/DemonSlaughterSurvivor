@@ -3708,7 +3708,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1fdb38a4914c4ba4aadb8a6eb5c17146, type: 2}
+  - {fileID: 2100000, guid: 0a559cfe24009a54ebc98ebb8d4a3f59, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6685,7 +6685,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1fdb38a4914c4ba4aadb8a6eb5c17146, type: 2}
+  - {fileID: 2100000, guid: 0a559cfe24009a54ebc98ebb8d4a3f59, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7236,7 +7236,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1fdb38a4914c4ba4aadb8a6eb5c17146, type: 2}
+  - {fileID: 2100000, guid: 0a559cfe24009a54ebc98ebb8d4a3f59, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8076,7 +8076,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.View::Game.View.ViewInterpolator
   _berserkFx: {fileID: 0}
   _swordTrail: {fileID: 0}
+  _pickupFx: {fileID: 0}
+  _runeAura: {fileID: 0}
+  _aimRig: {fileID: 0}
+  _hoverRig: {fileID: 0}
+  _beamFx: {fileID: 0}
+  _wings: {fileID: 0}
+  _pierceTrail: {fileID: 0}
+  _lightningBolt: {fileID: 0}
+  _shieldFx: {fileID: 0}
   _actionView: {fileID: 0}
+  _chargeIndicator: {fileID: 0}
+  _dazeFx: {fileID: 0}
 --- !u!114 &2468690837406123016
 MonoBehaviour:
   m_ObjectHideFlags: 0
