@@ -92,6 +92,7 @@ namespace Game.Simulation.Systems
             systems.Add(new StartStaffCastSystem());
             systems.Add(new ArrowRainSystem());
             systems.Add(new IceRingSystem());
+            systems.Add(new MeteorSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new GrantHarvestHealSystem());

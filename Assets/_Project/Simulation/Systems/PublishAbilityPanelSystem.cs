@@ -34,6 +34,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<ArrowRainCooldown> _arrowRainCooldowns = default;
         private readonly EcsPoolInject<LightningArrowCooldown> _lightningCooldowns = default;
         private readonly EcsPoolInject<IceRingCooldown> _iceRingCooldowns = default;
+        private readonly EcsPoolInject<MeteorCooldown> _meteorCooldowns = default;
 
         private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -86,7 +87,8 @@ namespace Game.Simulation.Systems
                 || behaviour is PowerShotConfig
                 || behaviour is ArrowRainConfig
                 || behaviour is LightningArrowConfig
-                || behaviour is IceRingConfig;
+                || behaviour is IceRingConfig
+                || behaviour is MeteorConfig;
         }
 
         private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
@@ -99,6 +101,9 @@ namespace Game.Simulation.Systems
 
             if (behaviour is LightningArrowConfig && _lightningCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _lightningCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is MeteorConfig && _meteorCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _meteorCooldowns.Value.Get(hero).RemainingTicks);
 
             if (behaviour is IceRingConfig && _iceRingCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _iceRingCooldowns.Value.Get(hero).RemainingTicks);

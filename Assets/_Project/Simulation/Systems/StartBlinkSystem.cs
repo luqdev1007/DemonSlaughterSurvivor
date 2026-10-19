@@ -16,6 +16,7 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<Player, BlinkStats, BlinkRequest, Position, Facing, BodyRadius>> _requests = default;
         private readonly EcsFilterInject<Inc<Breakable, Position, BodyRadius>, Exc<Dead>> _breakables = default;
         private readonly EcsFilterInject<Inc<NotPushable, Position, BodyRadius>, Exc<Dead>> _immovables = default;
+        private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<BlinkStats> _stats = default;
         private readonly EcsPoolInject<BlinkRequest> _requestPool = default;
@@ -30,11 +31,14 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<LeapImpactFx> _impacts = default;
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
+        private readonly EcsPoolInject<TakenPerk> _takenPool = default;
+        private readonly EcsPoolInject<AreaStrike> _strikes = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<InputConfig> _input = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
+        private readonly EcsCustomInject<IContentRegistry> _content = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -96,6 +100,32 @@ namespace Game.Simulation.Systems
 
             Fx(config.DepartFxPrefab, origin, config.FxSeconds);
             Fx(config.ArriveFxPrefab, destination, config.FxSeconds);
+
+            Repulse(hero, destination);
+        }
+
+        private void Repulse(int hero, Vector3 at)
+        {
+            EcsWorld world = _world.Value;
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out BlinkRepulseConfig config, out int level) == false)
+                return;
+
+            BlinkRepulseLevel entry = config.Level(level);
+
+            ref AreaStrike strike = ref _strikes.Value.Add(world.NewEntity());
+            strike.Owner = world.PackEntity(hero);
+            strike.Origin = at;
+            strike.Forward = Vector3.forward;
+            strike.Reach = entry.Radius;
+            strike.HalfAngleDegrees = 180f;
+            strike.Kind = DamageKind.Perk;
+            strike.SourcePerk = config;
+            strike.PushSpeed = entry.PushSpeed;
+            strike.PushSeconds = config.PushSeconds;
+            strike.PushArcHeight = config.PushArcHeight;
+
+            Fx(config.FxPrefab, at, config.FxSeconds);
         }
 
         private Vector3 Resolve(Vector3 origin, Vector3 target, float bodyRadius, float step)

@@ -28,6 +28,7 @@ namespace Game.Simulation.Tests
         private FakeInput _input;
         private RecordingViewFactory _views;
         private int _hero;
+        private PerkConfig _repulsePerk;
 
         [SetUp]
         public void SetUp()
@@ -43,6 +44,18 @@ namespace Game.Simulation.Tests
             Set(blink, "_departFxPrefab", fx);
             Set(blink, "_arriveFxPrefab", fx);
 
+            BlinkRepulseConfig repulse = Asset<BlinkRepulseConfig>();
+            BlinkRepulseLevel repulseLevel = new BlinkRepulseLevel();
+            Set(repulseLevel, "_radius", 3f);
+            Set(repulseLevel, "_pushSpeed", 8f);
+            Set(repulse, "_levels", new[] { repulseLevel });
+            Set(repulse, "_fxPrefab", fx);
+
+            _repulsePerk = Asset<PerkConfig>();
+            Set(_repulsePerk, "_id", "perk.blink-repulse");
+            Set(_repulsePerk, "_behaviour", repulse);
+            Set(_repulsePerk, "_levels", new[] { new PerkLevel() });
+
             LevelConfig level = Asset<LevelConfig>();
             Set(level, "_arenaRadius", ArenaRadius);
 
@@ -53,7 +66,7 @@ namespace Game.Simulation.Tests
             _systems = new EcsSystems(_world);
             _systems.Add(new ReadBlinkInputSystem());
             _systems.Add(new StartBlinkSystem());
-            _systems.Inject(_clock, level, Asset<InputConfig>(), (IInputService)_input, (IViewFactory)_views);
+            _systems.Inject(_clock, level, Asset<InputConfig>(), (IInputService)_input, (IViewFactory)_views, (IContentRegistry)new ContentRegistry(new IContentEntry[] { _repulsePerk }));
             _systems.Init();
 
             _hero = _world.NewEntity();
@@ -137,6 +150,41 @@ namespace Game.Simulation.Tests
             Blink(new Vector3(0f, 0f, 6f));
 
             AssertNear(new Vector3(0f, 0f, 6f), Hero());
+        }
+
+        [Test]
+        public void WithoutThePerkTheBlinkPushesNobody()
+        {
+            Blink(new Vector3(0f, 0f, 5f));
+
+            Assert.AreEqual(0, _world.Filter<AreaStrike>().End().GetEntitiesCount());
+        }
+
+        [Test]
+        public void TheRepulsePerkBlastsAwayFromTheArrivalPoint()
+        {
+            ref TakenPerk taken = ref _world.GetPool<TakenPerk>().Add(_world.NewEntity());
+            taken.Owner = _world.PackEntity(_hero);
+            taken.PerkId = _repulsePerk.Id;
+            taken.Level = 1;
+
+            Blink(new Vector3(0f, 0f, 5f));
+
+            int strikes = 0;
+
+            foreach (int entity in _world.Filter<AreaStrike>().End())
+            {
+                AreaStrike strike = _world.GetPool<AreaStrike>().Get(entity);
+                strikes++;
+
+                AssertNear(new Vector3(0f, 0f, 5f), strike.Origin);
+                Assert.AreEqual(3f, strike.Reach);
+                Assert.AreEqual(8f, strike.PushSpeed);
+                Assert.AreEqual(0f, strike.Damage, "a push, not a hit");
+            }
+
+            Assert.AreEqual(1, strikes);
+            Assert.AreEqual(3, _views.Created, "two blink flashes and the repulse burst");
         }
 
         private void Blink(Vector3 cursor)

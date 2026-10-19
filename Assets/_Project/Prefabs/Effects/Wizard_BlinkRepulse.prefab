@@ -1,0 +1,250 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &463892596457488763
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5662538339467132739}
+  - component: {fileID: 5485334927695118444}
+  - component: {fileID: 4196117403102574440}
+  - component: {fileID: 9076532425900290324}
+  m_Layer: 0
+  m_Name: Wizard_BlinkRepulse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5662538339467132739
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463892596457488763}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6006913433077948981}
+  - {fileID: 7524624581828650267}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5485334927695118444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463892596457488763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27bd928a97da63b44bc1e08395dad2d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.ViewInterpolator
+  _berserkFx: {fileID: 0}
+  _swordTrail: {fileID: 0}
+  _pickupFx: {fileID: 0}
+  _runeAura: {fileID: 0}
+  _aimRig: {fileID: 0}
+  _hoverRig: {fileID: 0}
+  _wings: {fileID: 0}
+  _pierceTrail: {fileID: 0}
+  _lightningBolt: {fileID: 0}
+  _actionView: {fileID: 0}
+  _chargeIndicator: {fileID: 0}
+  _dazeFx: {fileID: 0}
+--- !u!114 &4196117403102574440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463892596457488763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc88e09352988804eb16ee73103d1874, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.NotBody
+--- !u!114 &9076532425900290324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463892596457488763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5c9aee26a589f649ac18f5d0f60065e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Game.View.ParticleReplay
+--- !u!1001 &3480401412462724448
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5662538339467132739}
+    m_Modifications:
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7456632087041089067, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: m_Name
+      value: CFXR3 Hit Magical Stars (Pink)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684287634735157507, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: clearBehavior
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7684287634735157507, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+      propertyPath: cameraShake.enabled
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+--- !u!4 &7524624581828650267 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6350084913547075707, guid: fd3c584dbb6a4e6488879d0e79f43917, type: 3}
+  m_PrefabInstance: {fileID: 3480401412462724448}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3785701643378603582
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5662538339467132739}
+    m_Modifications:
+    - target: {fileID: 3432096254281428335, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: clearBehavior
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3432096254281428335, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: cameraShake.enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417608, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_Name
+      value: CFXR3 Hit Electric A (Air, Purple)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+--- !u!4 &6006913433077948981 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7481979155963417611, guid: 771e9d5a2f4e773488952bec196f1391, type: 3}
+  m_PrefabInstance: {fileID: 3785701643378603582}
+  m_PrefabAsset: {fileID: 0}
