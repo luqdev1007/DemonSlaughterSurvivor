@@ -22,6 +22,8 @@ namespace Game.Simulation.Components
         public int RemainingTicks;
     }
 
+    public struct Fireball { public StaffConfig Config; }
+
     public struct Arrow : IEcsAutoReset<Arrow>
     {
         public const int InitialHitCapacity = 16;

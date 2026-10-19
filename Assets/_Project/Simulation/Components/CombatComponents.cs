@@ -113,6 +113,7 @@ namespace Game.Simulation.Components
         public float Damage;
         public DamageKind Kind;
         public bool IsSlash;
+        public bool IsMagic;
         public PerkBehaviourConfig SourcePerk;
         public float PushSpeed;
         public float PushSeconds;

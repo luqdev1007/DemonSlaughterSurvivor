@@ -63,6 +63,7 @@ namespace Game.Configs
         [SerializeField] private DashAbilityConfig _dash;
         [SerializeField] private WeaponConfig _startingWeapon;
         [SerializeField] private BowConfig _bow;
+        [SerializeField] private StaffConfig _staff;
         [SerializeField] private BackleapConfig _backleap;
         [SerializeField] private RageConfig _rage;
         [SerializeField] private DualityConfig _duality;
@@ -129,6 +130,8 @@ namespace Game.Configs
         public WeaponConfig StartingWeapon => _startingWeapon;
 
         public BowConfig Bow => _bow;
+
+        public StaffConfig Staff => _staff;
 
         public BackleapConfig Backleap => _backleap;
 

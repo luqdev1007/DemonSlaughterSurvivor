@@ -30,6 +30,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SpawnBreakablesSystem());
             systems.Add(new EquipStartingWeaponSystem());
             systems.Add(new EquipBowSystem());
+            systems.Add(new EquipStaffSystem());
             systems.Add(new SpawnWaveSystem());
             systems.Add(new SpawnRuneSystem());
             systems.Add(new ApplyLowHealthFurySystem());
@@ -84,6 +85,8 @@ namespace Game.Simulation.Systems
             systems.Add(new StartRangedAttackSystem());
             systems.Add(new ReleaseBowShotSystem());
             systems.Add(new StartBowDrawSystem());
+            systems.Add(new ReleaseStaffCastSystem());
+            systems.Add(new StartStaffCastSystem());
             systems.Add(new ArrowRainSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
@@ -96,6 +99,7 @@ namespace Game.Simulation.Systems
             systems.Add(new TickFireSegmentsSystem());
             systems.Add(new AdvanceProjectilesSystem());
             systems.Add(new AdvanceArrowsSystem());
+            systems.Add(new AdvanceFireballsSystem());
             systems.Add(new LightningArrowSystem());
             systems.Add(new PulseEnemySpinSystem());
             systems.Add(new ImpactEnemyHeavyStrikeSystem());

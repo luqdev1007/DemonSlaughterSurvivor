@@ -8,6 +8,10 @@ namespace Game.Simulation.Components
 
     public struct Bow { public BowConfig Config; }
 
+    public struct Staff { public StaffConfig Config; }
+
+    public struct StaffCast { public int RemainingTicks; }
+
     public struct BowDraw
     {
         public int RemainingTicks;

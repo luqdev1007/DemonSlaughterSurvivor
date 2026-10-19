@@ -62,6 +62,9 @@ namespace Game.Simulation.Services
             if (character.Backleap != null)
                 pushSpeed = Math.Max(pushSpeed, character.Backleap.ImpactPushSpeed);
 
+            if (character.Staff != null)
+                pushSpeed = Math.Max(pushSpeed, character.Staff.ExplosionPushSpeed);
+
             for (int index = 0; index < perks.Count; index++)
             {
                 if (perks[index] != null && perks[index].Behaviour != null)
