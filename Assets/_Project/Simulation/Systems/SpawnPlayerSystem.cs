@@ -46,6 +46,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Height> _heights = default;
         private readonly EcsPoolInject<BackleapStats> _backleaps = default;
         private readonly EcsPoolInject<Duality> _dualities = default;
+        private readonly EcsPoolInject<BlinkStats> _blinks = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -75,6 +76,9 @@ namespace Game.Simulation.Systems
 
             if (character.Duality != null)
                 character.Duality.Validate();
+
+            if (character.Blink != null)
+                character.Blink.Validate();
 
             int entity = _world.Value.NewEntity();
 
@@ -201,6 +205,9 @@ namespace Game.Simulation.Systems
 
             if (character.Backleap != null)
                 _backleaps.Value.Add(entity).Config = character.Backleap;
+
+            if (character.Blink != null)
+                _blinks.Value.Add(entity).Config = character.Blink;
 
             if (character.Duality != null)
             {

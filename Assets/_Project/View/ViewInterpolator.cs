@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -174,6 +174,12 @@ namespace Game.View
             _previousPosition = _currentPosition;
             _currentPosition = position;
             _lastSyncTime = Time.time;
+        }
+
+        public void Teleport(Vector3 position)
+        {
+            _hasPosition = false;
+            SetPosition(position);
         }
 
         public void SetRune(bool active, Color color, Texture glyph, float fraction, float remainingSeconds)

@@ -65,6 +65,7 @@ namespace Game.Configs
         [SerializeField] private BowConfig _bow;
         [SerializeField] private StaffConfig _staff;
         [SerializeField] private BackleapConfig _backleap;
+        [SerializeField] private BlinkConfig _blink;
         [SerializeField] private RageConfig _rage;
         [SerializeField] private DualityConfig _duality;
         [SerializeField] private BerserkAbilityConfig _ultimate;
@@ -134,6 +135,8 @@ namespace Game.Configs
         public StaffConfig Staff => _staff;
 
         public BackleapConfig Backleap => _backleap;
+
+        public BlinkConfig Blink => _blink;
 
         public RageConfig Rage => _rage;
 

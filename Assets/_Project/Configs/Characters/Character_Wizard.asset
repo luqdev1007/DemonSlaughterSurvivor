@@ -47,6 +47,7 @@ MonoBehaviour:
   _bow: {fileID: 0}
   _staff: {fileID: 11400000, guid: 04c34aedba21d6842b3b9dcc80b8ef31, type: 2}
   _backleap: {fileID: 0}
+  _blink: {fileID: 11400000, guid: 782d35e29ce9b984da82a53581591d32, type: 2}
   _rage: {fileID: 0}
   _duality: {fileID: 0}
   _ultimate: {fileID: 0}

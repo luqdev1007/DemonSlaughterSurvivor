@@ -1,3 +1,4 @@
+using Game.Configs;
 using Game.Core;
 using Leopotam.EcsLite;
 using UnityEngine;
@@ -18,6 +19,12 @@ namespace Game.Simulation.Components
     }
 
     public struct DashCooldown { public float Remaining; }
+
+    public struct BlinkStats { public BlinkConfig Config; }
+
+    public struct BlinkRequest { public float Age; }
+
+    public struct BlinkCooldown { public float Remaining; }
 
     public struct AbilityCooldownScale { public float Value; public float Base; }
 
