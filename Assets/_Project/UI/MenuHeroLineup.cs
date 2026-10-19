@@ -139,14 +139,20 @@ namespace Game.UI
             PlayableGraph graph = PlayableGraph.Create("MenuHero_" + config.Id);
             graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
 
-            AnimationMixerPlayable mixer = AnimationMixerPlayable.Create(graph, 2);
+            bool layered = config.MenuSelectMask != null;
+            Playable mixer = layered ? (Playable)AnimationLayerMixerPlayable.Create(graph, 2) : (Playable)AnimationMixerPlayable.Create(graph, 2);
             AnimationClipPlayable idle = AnimationClipPlayable.Create(graph, config.MenuIdleClip);
+            idle.SetApplyFootIK(false);
             graph.Connect(idle, 0, mixer, 0);
             mixer.SetInputWeight(0, 1f);
+
+            if (layered)
+                ((AnimationLayerMixerPlayable)mixer).SetLayerMaskFromAvatarMask(1, config.MenuSelectMask);
 
             if (config.MenuSelectClip != null)
             {
                 AnimationClipPlayable select = AnimationClipPlayable.Create(graph, config.MenuSelectClip);
+                select.SetApplyFootIK(false);
                 select.SetDuration(config.MenuSelectClip.length);
                 graph.Connect(select, 0, mixer, 1);
                 mixer.SetInputWeight(1, 0f);
@@ -160,6 +166,7 @@ namespace Game.UI
 
             hero.Graph = graph;
             hero.Mixer = mixer;
+            hero.Layered = layered;
             hero.HasGraph = true;
         }
 
@@ -258,7 +265,7 @@ namespace Game.UI
                 }
 
                 float weight = Mathf.MoveTowards(hero.Mixer.GetInputWeight(1), target, deltaTime / _blendSeconds);
-                hero.Mixer.SetInputWeight(0, 1f - weight);
+                hero.Mixer.SetInputWeight(0, hero.Layered ? 1f : 1f - weight);
                 hero.Mixer.SetInputWeight(1, weight);
 
                 _heroes[index] = hero;
@@ -405,7 +412,8 @@ namespace Game.UI
             public Renderer[] Renderers;
             public TMP_Text Label;
             public PlayableGraph Graph;
-            public AnimationMixerPlayable Mixer;
+            public Playable Mixer;
+            public bool Layered;
             public AnimationClipPlayable Select;
             public float SelectSeconds;
             public float Elapsed;

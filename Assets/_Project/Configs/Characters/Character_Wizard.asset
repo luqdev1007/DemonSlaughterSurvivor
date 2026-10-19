@@ -18,6 +18,7 @@ MonoBehaviour:
   _viewPrefab: {fileID: 7755258275708173979, guid: 5a8921644b3221747b34c05ab918d759, type: 3}
   _menuIdleClip: {fileID: 7400000, guid: 8d82f1d8baaae3e439924855e3047625, type: 2}
   _menuSelectClip: {fileID: -203655887218126122, guid: b4dd35f99472e52458a8c4b46e9c3d1c, type: 3}
+  _menuSelectMask: {fileID: 31900000, guid: 6d0410b09bae2f74cad611997e624e5e, type: 2}
   _moveSpeed: 4.6
   _turnSpeed: 1200
   _aimDeadZone: 1.2

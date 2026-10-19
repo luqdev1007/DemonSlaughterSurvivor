@@ -14,6 +14,7 @@ namespace Game.Configs
         [Header("Menu")]
         [SerializeField] private AnimationClip _menuIdleClip;
         [SerializeField] private AnimationClip _menuSelectClip;
+        [SerializeField] private AvatarMask _menuSelectMask;
 
         [Header("Movement")]
         [SerializeField] private float _moveSpeed;
@@ -80,6 +81,8 @@ namespace Game.Configs
         public AnimationClip MenuIdleClip => _menuIdleClip;
 
         public AnimationClip MenuSelectClip => _menuSelectClip;
+
+        public AvatarMask MenuSelectMask => _menuSelectMask;
 
         public float MoveSpeed => _moveSpeed;
 
