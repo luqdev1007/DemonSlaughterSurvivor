@@ -28,6 +28,15 @@ namespace Game.Simulation.Systems
                 ref Facing facing = ref _facings.Value.Get(hero);
                 TorsoAimConfig config = aim.Config;
 
+                if (config.WholeBody)
+                {
+                    aim.TurnSide = 0;
+                    aim.Backpedal = false;
+                    facing.Value = aim.Direction;
+
+                    continue;
+                }
+
                 Vector3 velocity = _velocities.Value.Get(hero).Value;
                 velocity.y = 0f;
 

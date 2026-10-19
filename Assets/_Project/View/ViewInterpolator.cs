@@ -39,6 +39,7 @@ namespace Game.View
         [SerializeField] private PickupFx _pickupFx;
         [SerializeField] private RuneAuraFx _runeAura;
         [SerializeField] private AimRig _aimRig;
+        [SerializeField] private HoverRig _hoverRig;
         [SerializeField] private WingsFx _wings;
         [SerializeField] private TrailRenderer _pierceTrail;
         [SerializeField] private LightningBoltFx _lightningBolt;
@@ -183,10 +184,14 @@ namespace Game.View
 
         public void SetAim(float twistDegrees, Vector2 localVelocity, int turnSide)
         {
-            if (_aimRig == null || _isDead)
+            if (_isDead)
                 return;
 
-            _aimRig.SetAim(twistDegrees, localVelocity, turnSide);
+            if (_hoverRig != null)
+                _hoverRig.SetVelocity(localVelocity);
+
+            if (_aimRig != null)
+                _aimRig.SetAim(twistDegrees, localVelocity, turnSide);
         }
 
         public void SetAir(int phase, float playbackSpeed, bool wings)
@@ -472,6 +477,9 @@ namespace Game.View
             if (_actionView != null)
                 _actionView.ResetImmediate();
 
+            if (_hoverRig != null)
+                _hoverRig.SetVelocity(Vector2.zero);
+
             if (_hasDeathTrigger == false || _isDead)
                 return;
 
@@ -588,6 +596,9 @@ namespace Game.View
 
             if (_aimRig != null)
                 _aimRig.ResetAim();
+
+            if (_hoverRig != null)
+                _hoverRig.ResetHover();
 
             if (_wings != null)
                 _wings.HideImmediate();

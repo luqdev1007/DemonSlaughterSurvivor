@@ -16,6 +16,7 @@ namespace Game.Configs
         [SerializeField, Range(10f, 180f)] private float _twistLimit = 110f;
 
         [Header("Legs")]
+        [SerializeField] private bool _wholeBody;
         [SerializeField, Range(0f, 60f)] private float _backpedalHysteresis = 20f;
         [SerializeField, Min(1f)] private float _turnInPlaceSpeed = 240f;
         [SerializeField, Range(0f, 45f)] private float _turnInPlaceSettle = 8f;
@@ -29,6 +30,8 @@ namespace Game.Configs
         public float TorsoTurnSpeed => _torsoTurnSpeed;
 
         public float TwistLimit => _twistLimit;
+
+        public bool WholeBody => _wholeBody;
 
         public float BackpedalHysteresis => _backpedalHysteresis;
 
