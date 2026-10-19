@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<CombatStats> _combatStats = default;
 
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
+        private readonly EcsCustomInject<IRunStatsSink> _stats = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -36,6 +37,9 @@ namespace Game.Simulation.Systems
                     continue;
 
                 Grant(hero, _gems.Value.Get(gem).Experience);
+
+                if (_stats.Value != null)
+                    _stats.Value.RecordGemCollected();
 
                 if (_views.Value.Has(gem))
                 {

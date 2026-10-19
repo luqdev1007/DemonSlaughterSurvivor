@@ -7,14 +7,24 @@ namespace Game.UI
     {
         public const float BucketSeconds = 0.5f;
         public const float MaxWindowSeconds = 120f;
+        public const float BestWindowSeconds = 5f;
 
         private readonly float[] _buckets = new float[Mathf.CeilToInt(MaxWindowSeconds / BucketSeconds) + 1];
 
         private float _windowSeconds = 15f;
         private float _time;
         private long _bucket;
+        private float _total;
+        private float _biggest;
+        private float _bestDps;
 
         public float WindowSeconds => _windowSeconds;
+
+        public float Total => _total;
+
+        public float Biggest => _biggest;
+
+        public float BestDps => _bestDps > 0f ? _bestDps : _total / Mathf.Max(_time, BestWindowSeconds);
 
         public void SetWindow(float seconds)
         {
@@ -27,6 +37,8 @@ namespace Game.UI
 
             if (bucket > _bucket)
             {
+                TrackBest();
+
                 long steps = bucket - _bucket;
 
                 if (steps >= _buckets.Length)
@@ -46,11 +58,31 @@ namespace Game.UI
         public void Record(float amount)
         {
             _buckets[_bucket % _buckets.Length] += amount;
+
+            _total += amount;
+            _biggest = Mathf.Max(_biggest, amount);
         }
 
         public float Dps()
         {
-            int count = Mathf.Min(Mathf.CeilToInt(_windowSeconds / BucketSeconds), _buckets.Length);
+            float span = Mathf.Min(_windowSeconds, Mathf.Max(_time, BucketSeconds));
+
+            return Sum(Mathf.CeilToInt(_windowSeconds / BucketSeconds)) / span;
+        }
+
+        private void TrackBest()
+        {
+            int count = Mathf.CeilToInt(BestWindowSeconds / BucketSeconds);
+
+            if (_bucket + 1 < count)
+                return;
+
+            _bestDps = Mathf.Max(_bestDps, Sum(count) / BestWindowSeconds);
+        }
+
+        private float Sum(int buckets)
+        {
+            int count = Mathf.Min(buckets, _buckets.Length);
             float sum = 0f;
 
             for (int index = 0; index < count; index++)
@@ -63,9 +95,7 @@ namespace Game.UI
                 sum += _buckets[bucket % _buckets.Length];
             }
 
-            float span = Mathf.Min(_windowSeconds, Mathf.Max(_time, BucketSeconds));
-
-            return sum / span;
+            return sum;
         }
     }
 }

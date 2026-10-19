@@ -4,6 +4,7 @@ using Game.Core;
 using R3;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using UnityEngine;
 using VContainer.Unity;
@@ -23,6 +24,7 @@ namespace Game.UI
         private readonly PlayerExperience _experience;
         private readonly BossVitals _bossVitals;
         private readonly RunResult _result;
+        private readonly RunStats _stats;
         private readonly PauseMenu _pauseMenu;
         private readonly ISoundSettings _soundSettings;
         private readonly ICombatTextSettings _combatText;
@@ -45,7 +47,7 @@ namespace Game.UI
         private readonly PerkCardContent[] _itemContents = { new PerkCardContent(), new PerkCardContent(), new PerkCardContent(), new PerkCardContent() };
         private readonly StringBuilder _text = new StringBuilder();
 
-        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ItemChoice itemChoice, ICameraService camera, Announcements announcements, RuneStatus runeStatus)
+        public HudPresenter(LevelConfig level, PlayerVitals vitals, AbilityPanel abilityPanel, UpgradeChoice choice, IUpgradeChoiceSubmit submit, IContentRegistry content, PlayerExperience experience, BossVitals bossVitals, RunResult result, RunStats stats, PauseMenu pauseMenu, ISoundSettings soundSettings, ICombatTextSettings combatText, DamageNumbers damageNumbers, DpsMeter dpsMeter, IDpsToggleInput dpsToggle, ItemChoice itemChoice, ICameraService camera, Announcements announcements, RuneStatus runeStatus)
         {
             _runeStatus = runeStatus;
             _announcements = announcements;
@@ -66,6 +68,7 @@ namespace Game.UI
             _experience = experience;
             _bossVitals = bossVitals;
             _result = result;
+            _stats = stats;
         }
 
         public void Initialize()
@@ -81,7 +84,7 @@ namespace Game.UI
                 throw new InvalidOperationException(
                     $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
                     $"an {nameof(UpgradeChoiceView)} with its panel and {_view.UpgradeChoice.SlotCount} wired perk cards and a tooltip," +
-                    $"the experience fill and level text, the boss bar with its fill and name, a wired {nameof(BossMarkerView)}, the victory banner, " +
+                    $"the experience fill and level text, the boss bar with its fill and name, a wired {nameof(BossMarkerView)}, the victory banner, a wired {nameof(RunSummaryView)}, " +
                     $"and a {nameof(PauseMenuView)} with its fade, resume and settings buttons and a wired {nameof(SettingsPopupView)} assigned.");
 
             _view.UpgradeChoice.Bind(_submit.Submit);
@@ -92,6 +95,9 @@ namespace Game.UI
             _settingsPopup = new SettingsPopupPresenter(_view.PauseMenu.SettingsPopup, _soundSettings, _combatText);
             _view.PauseMenu.Bind(_pauseMenu.RequestResume, _settingsPopup.Open);
             _view.PauseMenu.HideImmediate();
+
+            _view.RunSummary.Bind(_result.RequestExit);
+            _view.RunSummary.HideImmediate();
 
             _subscription = Disposable.Combine(
                 _vitals.Health.Subscribe(this, (_, presenter) => presenter.Refresh()),
@@ -111,7 +117,8 @@ namespace Game.UI
                 _bossVitals.Health.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
                 _bossVitals.MaxHealth.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
                 _bossVitals.DisplayName.Subscribe(this, (_, presenter) => presenter.RefreshBoss()),
-                _result.Victory.Subscribe(this, (victory, presenter) => presenter._view.ShowVictory(victory)));
+                _result.Victory.Subscribe(this, (victory, presenter) => presenter._view.ShowVictory(victory)),
+                _result.Summary.Subscribe(this, (summary, presenter) => presenter.RefreshSummary(summary)));
         }
 
         public void LateTick()
@@ -163,6 +170,7 @@ namespace Game.UI
                 _view.UpgradeChoice.Unbind();
                 _view.ItemChoice.Unbind();
                 _view.PauseMenu.Unbind();
+                _view.RunSummary.Unbind();
             }
 
             if (_instance != null)
@@ -247,6 +255,37 @@ namespace Game.UI
                 _experienceTween.Kill();
 
             _experienceTween = null;
+        }
+
+        private void RefreshSummary(bool open)
+        {
+            if (open == false)
+                return;
+
+            RunSummaryView view = _view.RunSummary;
+
+            view.ClearRows();
+            view.AddRow("Лучший DPS", FormatNumber(_dpsMeter.BestDps));
+            view.AddRow("Самый сильный удар", FormatNumber(_dpsMeter.Biggest));
+            view.AddRow("Нанесено урона", FormatNumber(_dpsMeter.Total));
+            view.AddRow("Получено урона", FormatNumber(_stats.DamageTaken));
+            view.AddRow("Время прохождения", FormatTime(_result.RunSeconds));
+            view.AddRow("Собрано сфер", _stats.GemsCollected.ToString(CultureInfo.InvariantCulture));
+
+            _view.ShowVictory(false);
+            view.Open();
+        }
+
+        private static string FormatNumber(float value)
+        {
+            return Mathf.RoundToInt(value).ToString("#,0", CultureInfo.InvariantCulture).Replace(',', ' ');
+        }
+
+        private static string FormatTime(float seconds)
+        {
+            int total = Mathf.FloorToInt(seconds);
+
+            return string.Format(CultureInfo.InvariantCulture, "{0}:{1:00}", total / 60, total % 60);
         }
 
         private void RefreshPause()

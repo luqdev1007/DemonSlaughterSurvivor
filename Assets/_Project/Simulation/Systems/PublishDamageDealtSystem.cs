@@ -14,9 +14,11 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<DamageApplied> _applied = default;
         private readonly EcsPoolInject<DamageEvaded> _evaded = default;
+        private readonly EcsPoolInject<Player> _players = default;
 
         private readonly EcsCustomInject<IDamageNumberSink> _sink = default;
         private readonly EcsCustomInject<IDamageDealtSink> _dealt = default;
+        private readonly EcsCustomInject<IRunStatsSink> _stats = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
         public void Run(IEcsSystems systems)
@@ -24,15 +26,23 @@ namespace Game.Simulation.Systems
             if (_dealt.Value != null)
                 _dealt.Value.Advance(_clock.Value.Elapsed);
 
-            if (_sink.Value == null && _dealt.Value == null)
+            if (_sink.Value == null && _dealt.Value == null && _stats.Value == null)
                 return;
 
             foreach (int entity in _events.Value)
             {
                 ref DamageApplied applied = ref _applied.Value.Get(entity);
 
-                if (applied.Amount <= 0f || applied.OnEnemy == false)
+                if (applied.Amount <= 0f)
                     continue;
+
+                if (applied.OnEnemy == false)
+                {
+                    if (_stats.Value != null && _players.Value.Has(applied.TargetKey))
+                        _stats.Value.RecordDamageTaken(applied.Amount);
+
+                    continue;
+                }
 
                 if (_dealt.Value != null)
                     _dealt.Value.Record(applied.Amount);

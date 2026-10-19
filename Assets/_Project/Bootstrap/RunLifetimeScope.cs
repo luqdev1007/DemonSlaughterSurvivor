@@ -44,7 +44,9 @@ namespace Game.Bootstrap
 
             builder.Register<BossVitals>(Lifetime.Scoped).AsSelf().As<IBossVitalsSink>();
 
-            builder.Register<RunResult>(Lifetime.Scoped).AsSelf().As<IRunResultSink>();
+            builder.Register<RunResult>(Lifetime.Scoped).AsSelf().As<IRunResultSink>().As<IRunResultInput>();
+
+            builder.Register<RunStats>(Lifetime.Scoped).AsSelf().As<IRunStatsSink>();
 
             builder.Register<UpgradeChoice>(Lifetime.Scoped).AsSelf().As<IUpgradeChoiceSink>();
 

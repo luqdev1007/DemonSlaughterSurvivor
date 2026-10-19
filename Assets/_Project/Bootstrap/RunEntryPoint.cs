@@ -41,6 +41,8 @@ namespace Game.Bootstrap
         private readonly IExperienceSink _experienceSink;
         private readonly IBossVitalsSink _bossVitalsSink;
         private readonly IRunResultSink _resultSink;
+        private readonly IRunResultInput _resultInput;
+        private readonly IRunStatsSink _statsSink;
         private readonly IPauseInput _pauseInput;
         private readonly IPointerInput _pointerInput;
         private readonly IDashInput _dashInput;
@@ -92,6 +94,8 @@ namespace Game.Bootstrap
             IExperienceSink experienceSink,
             IBossVitalsSink bossVitalsSink,
             IRunResultSink resultSink,
+            IRunResultInput resultInput,
+            IRunStatsSink statsSink,
             IPauseInput pauseInput,
             IPointerInput pointerInput,
             IDashInput dashInput,
@@ -131,6 +135,8 @@ namespace Game.Bootstrap
             _experienceSink = experienceSink;
             _bossVitalsSink = bossVitalsSink;
             _resultSink = resultSink;
+            _resultInput = resultInput;
+            _statsSink = statsSink;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -197,7 +203,8 @@ namespace Game.Bootstrap
                 _debugLevelUpInput,
                 _debugVictoryInput,
                 _experienceSink,
-                _bossVitalsSink
+                _bossVitalsSink,
+                _statsSink
                 );
         }
 
@@ -312,6 +319,10 @@ namespace Game.Bootstrap
             Time.timeScale = 0f;
 
             await UniTask.Delay(TimeSpan.FromSeconds(_levelConfig.Feedback.VictoryBannerSeconds), ignoreTimeScale: true);
+
+            _resultSink.ShowSummary(_clock.Elapsed);
+
+            await UniTask.WaitUntil(_resultInput.ConsumeExitRequested);
 
             ReleaseVictoryFreeze();
 
