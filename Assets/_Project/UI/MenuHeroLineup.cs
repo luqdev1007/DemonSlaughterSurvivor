@@ -1,5 +1,6 @@
 using DG.Tweening;
 using Game.Configs;
+using Game.Core;
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -112,7 +113,12 @@ namespace Game.UI
             instance.transform.rotation = toCamera.sqrMagnitude > Mathf.Epsilon ? Quaternion.LookRotation(toCamera) : Quaternion.identity;
 
             foreach (MonoBehaviour behaviour in instance.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (behaviour is IMenuPreviewBehaviour)
+                    continue;
+
                 behaviour.enabled = false;
+            }
 
             Hero hero = new Hero
             {

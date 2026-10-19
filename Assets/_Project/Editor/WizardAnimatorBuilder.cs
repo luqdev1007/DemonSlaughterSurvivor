@@ -22,6 +22,8 @@ namespace Game.Editor
         private static readonly Vector3 BookMountPosition = new Vector3(0f, 1.08f, 0.55f);
         private static readonly Vector3 BookMountEuler = new Vector3(12f, 0f, 0f);
         private const float BookScale = 0.95f;
+        private static readonly Vector3 BookLocalPosition = new Vector3(-0.2731f, 0.2062f, 0.0277f);
+        private static readonly Vector3 BookLocalEuler = new Vector3(11.485f, 317.248f, 358.068f);
 
         private static readonly (string State, string Clip, bool Mirror, string Trigger)[] FireballCasts =
         {
@@ -489,14 +491,9 @@ namespace Game.Editor
 
             book.SetParent(mount, false);
             book.gameObject.SetActive(true);
-            book.localRotation = Quaternion.identity;
+            book.localPosition = BookLocalPosition;
+            book.localRotation = Quaternion.Euler(BookLocalEuler);
             book.localScale = Vector3.one * BookScale;
-
-            book.localPosition = Vector3.zero;
-
-            Renderer renderer = book.GetComponentInChildren<Renderer>(true);
-            Vector3 center = mount.InverseTransformPoint(renderer.bounds.center);
-            book.localPosition = -center;
 
             BookFloat bookFloat = prefabRoot.GetComponent<BookFloat>();
 

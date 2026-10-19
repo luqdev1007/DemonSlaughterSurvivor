@@ -1,8 +1,9 @@
+using Game.Core;
 using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class BookFloat : MonoBehaviour
+    public sealed class BookFloat : MonoBehaviour, IMenuPreviewBehaviour
     {
         [SerializeField] private Transform _book;
         [SerializeField] private Transform _head;
