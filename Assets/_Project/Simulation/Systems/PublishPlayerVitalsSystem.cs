@@ -14,6 +14,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<UltimateCharge> _charges = default;
         private readonly EcsPoolInject<BerserkMode> _modes = default;
+        private readonly EcsPoolInject<Duality> _dualities = default;
 
         private readonly EcsCustomInject<IPlayerVitalsSink> _sink = default;
 
@@ -28,6 +29,16 @@ namespace Game.Simulation.Systems
                 float fraction = active ? ResolveModeFraction(entity) : ResolveChargeFraction(entity);
 
                 _sink.Value.Publish(Mathf.Max(0f, health.Current), maxHealth.Value, _charges.Value.Has(entity), fraction, active);
+
+                if (_dualities.Value.Has(entity))
+                {
+                    ref Duality duality = ref _dualities.Value.Get(entity);
+                    _sink.Value.PublishDuality(true, duality.Demonic, duality.Config.FormThreshold);
+                }
+                else
+                {
+                    _sink.Value.PublishDuality(false, 0.5f, 1f);
+                }
             }
         }
 

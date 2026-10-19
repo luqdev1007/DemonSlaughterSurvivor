@@ -20,7 +20,8 @@ MonoBehaviour:
   _leapHeight: 1.6
   _invulnerabilitySeconds: 0.35
   _maxHoverSeconds: 1.2
-  _hoverDriftSpeed: 1
+  _glideSpeed: 5.5
+  _glideSteering: 25
   _fallSeconds: 0.25
   _hopHeight: 2.2
   _hopSeconds: 0.35

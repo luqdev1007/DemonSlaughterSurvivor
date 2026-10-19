@@ -35,6 +35,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
         private readonly EcsPoolInject<ExplosiveArrowRandom> _explosionRandoms = default;
+        private readonly EcsPoolInject<Duality> _dualities = default;
         private readonly EcsPoolInject<AreaStrike> _strikes = default;
         private readonly EcsPoolInject<LeapImpactFx> _impacts = default;
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
@@ -154,17 +155,19 @@ namespace Game.Simulation.Systems
                 _explosionRandoms.Value.Add(owner).State = SimulationRandom.StreamState(_context.Value.Seed, ExplosionStreamId);
 
             ExplosiveArrowLevel entry = config.Level(level);
+            bool demonic = DualityForm.IsDemonic(_dualities.Value, owner);
+            float chance = demonic ? Mathf.Min(1f, entry.Chance * config.DemonicChanceScale) : entry.Chance;
 
-            if (SimulationRandom.NextUnit(ref _explosionRandoms.Value.Get(owner).State) >= entry.Chance)
+            if (SimulationRandom.NextUnit(ref _explosionRandoms.Value.Get(owner).State) >= chance)
                 return;
 
             ref AreaStrike strike = ref _strikes.Value.Add(world.NewEntity());
             strike.Owner = projectile.Source;
             strike.Origin = at;
             strike.Forward = Vector3.forward;
-            strike.Reach = config.Radius;
+            strike.Reach = config.Radius * (demonic ? config.DemonicRadiusScale : 1f);
             strike.HalfAngleDegrees = FullCircleDegrees;
-            strike.Damage = projectile.Damage * entry.DamageScale;
+            strike.Damage = projectile.Damage * entry.DamageScale * (demonic ? config.DemonicDamageScale : 1f);
             strike.Kind = DamageKind.Perk;
             strike.SourcePerk = config;
             strike.PushSpeed = config.PushSpeed;

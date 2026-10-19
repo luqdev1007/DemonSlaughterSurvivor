@@ -109,6 +109,7 @@ namespace Game.Simulation.Systems
 
                 ref PowerShotCooldown cooldown = ref _powerCooldowns.Value.Has(owner) ? ref _powerCooldowns.Value.Get(owner) : ref _powerCooldowns.Value.Add(owner);
                 cooldown.RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(level.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, owner) / delta));
+                cooldown.Progress = 0f;
             }
 
             int count = 1;

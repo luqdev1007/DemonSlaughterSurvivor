@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Configs
 {
@@ -17,7 +18,8 @@ namespace Game.Configs
 
         [Header("Hover")]
         [SerializeField, Min(0f)] private float _maxHoverSeconds = 1.2f;
-        [SerializeField, Min(0f)] private float _hoverDriftSpeed = 1f;
+        [SerializeField, Min(0f), FormerlySerializedAs("_hoverDriftSpeed")] private float _glideSpeed = 5.5f;
+        [SerializeField, Min(0f)] private float _glideSteering = 25f;
 
         [Header("Fall")]
         [SerializeField, Min(0.02f)] private float _fallSeconds = 0.25f;
@@ -49,7 +51,9 @@ namespace Game.Configs
 
         public float MaxHoverSeconds => _maxHoverSeconds;
 
-        public float HoverDriftSpeed => _hoverDriftSpeed;
+        public float GlideSpeed => _glideSpeed;
+
+        public float GlideSteering => _glideSteering;
 
         public float FallSeconds => _fallSeconds;
 

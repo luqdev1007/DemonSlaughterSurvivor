@@ -177,6 +177,30 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void HoldingGlidesFurtherAndSteersWithTheStick()
+        {
+            SetIntent(Vector3.right);
+            Hold(true);
+
+            Press();
+            Step(LeapTicks);
+
+            float leapEnd = Position().x;
+
+            Step(20);
+
+            Assert.Less(Position().x, leapEnd - 1f, "the glide keeps carrying the leap away");
+
+            SetIntent(Vector3.forward);
+            Step(40);
+
+            Vector3 velocity = _world.GetPool<Velocity>().Get(_hero).Value;
+
+            Assert.Greater(Position().z, 1.5f, "the stick turns the glide");
+            Assert.AreEqual(_config.GlideSpeed, velocity.z, 0.01f, "the glide settles at its own speed along the stick");
+        }
+
+        [Test]
         public void ReleasingTheButtonEndsTheHover()
         {
             SetIntent(Vector3.right);

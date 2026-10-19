@@ -38,5 +38,6 @@ namespace Game.Simulation.Components
         public Vector3 Direction;
         public float Speed;
         public float FallFrom;
+        public bool Glided;
     }
 }

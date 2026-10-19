@@ -65,6 +65,7 @@ namespace Game.Configs
         [SerializeField] private BowConfig _bow;
         [SerializeField] private BackleapConfig _backleap;
         [SerializeField] private RageConfig _rage;
+        [SerializeField] private DualityConfig _duality;
         [SerializeField] private BerserkAbilityConfig _ultimate;
 
         public string DisplayName => string.IsNullOrEmpty(_displayName) ? Id : _displayName;
@@ -132,6 +133,8 @@ namespace Game.Configs
         public BackleapConfig Backleap => _backleap;
 
         public RageConfig Rage => _rage;
+
+        public DualityConfig Duality => _duality;
 
         public LowHealthFuryConfig LowHealthFury => _lowHealthFury;
 

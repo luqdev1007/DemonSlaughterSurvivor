@@ -11,6 +11,9 @@ namespace Game.Configs
         [SerializeField, Min(1f)] private float _widthMultiplier = 2f;
         [SerializeField] private GameObject _arrowPrefab;
 
+        [Header("Human form")]
+        [SerializeField, Range(0.1f, 1f)] private float _humanCooldownScale = 0.6f;
+
         public override int LevelCount => _levels.Length;
 
         public float DrawMultiplier => _drawMultiplier;
@@ -18,6 +21,8 @@ namespace Game.Configs
         public float WidthMultiplier => _widthMultiplier;
 
         public GameObject ArrowPrefab => _arrowPrefab;
+
+        public float HumanCooldownScale => _humanCooldownScale;
 
         public PowerShotLevel Level(int level)
         {

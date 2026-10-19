@@ -29,6 +29,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
         private readonly EcsPoolInject<PowerShotCooldown> _powerCooldownPool = default;
+        private readonly EcsPoolInject<Duality> _dualities = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
 
@@ -43,7 +44,15 @@ namespace Game.Simulation.Systems
             {
                 ref PowerShotCooldown cooldown = ref _powerCooldownPool.Value.Get(hero);
 
-                if (--cooldown.RemainingTicks <= 0)
+                cooldown.Progress += ResolveCooldownRate(world, hero);
+
+                while (cooldown.Progress >= 1f && cooldown.RemainingTicks > 0)
+                {
+                    cooldown.Progress -= 1f;
+                    cooldown.RemainingTicks--;
+                }
+
+                if (cooldown.RemainingTicks <= 0)
                     _powerCooldownPool.Value.Del(hero);
             }
 
@@ -84,6 +93,17 @@ namespace Game.Simulation.Systems
                 if (_views.Value.Has(owner) && _views.Value.Get(owner).Value != null)
                     _views.Value.Get(owner).Value.PlayAttack(config.DrawTrigger, draw.PlaybackSpeed);
             }
+        }
+
+        private float ResolveCooldownRate(EcsWorld world, int hero)
+        {
+            if (DualityForm.IsHuman(_dualities.Value, hero) == false)
+                return 1f;
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out PowerShotConfig power, out _) == false)
+                return 1f;
+
+            return 1f / power.HumanCooldownScale;
         }
 
         private bool IsPowerShotReady(EcsWorld world, int owner, out PowerShotConfig power)

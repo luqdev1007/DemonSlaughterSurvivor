@@ -25,6 +25,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
         private readonly EcsPoolInject<AreaStrike> _strikes = default;
+        private readonly EcsPoolInject<MoveIntent> _intents = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
@@ -42,7 +43,6 @@ namespace Game.Simulation.Systems
                 leap.Ticks++;
 
                 float progress = Mathf.Clamp01((float)leap.Ticks / leap.PhaseTicks);
-                float drift = config.HoverDriftSpeed;
 
                 switch (leap.Phase)
                 {
@@ -54,7 +54,10 @@ namespace Game.Simulation.Systems
                             break;
 
                         if (stats.Held && config.MaxHoverSeconds > 0f)
+                        {
+                            leap.Glided = true;
                             Enter(ref leap, BackleapPhase.Hover, StartBackleapSystem.Ticks(config.MaxHoverSeconds, delta));
+                        }
                         else
                             EnterFall(ref leap, height.Value, config, delta);
 
@@ -62,7 +65,7 @@ namespace Game.Simulation.Systems
 
                     case BackleapPhase.Hover:
                         height.Value = config.LeapHeight;
-                        SetVelocity(hero, leap.Direction * drift);
+                        Glide(hero, ref leap, config, delta);
 
                         if (stats.Held && leap.Ticks < leap.PhaseTicks)
                             break;
@@ -73,7 +76,11 @@ namespace Game.Simulation.Systems
 
                     case BackleapPhase.Fall:
                         height.Value = leap.FallFrom * (1f - progress);
-                        SetVelocity(hero, leap.Direction * drift);
+
+                        if (leap.Glided)
+                            Glide(hero, ref leap, config, delta);
+                        else
+                            SetVelocity(hero, Vector3.zero);
 
                         if (leap.Ticks < leap.PhaseTicks)
                             break;
@@ -147,6 +154,29 @@ namespace Game.Simulation.Systems
             strike.PushSpeed = config.ImpactPushSpeed;
             strike.PushSeconds = config.ImpactPushSeconds;
             strike.PushArcHeight = config.ImpactPushArcHeight;
+        }
+
+        private void Glide(int hero, ref Backleaping leap, BackleapConfig config, float delta)
+        {
+            ref Velocity velocity = ref _velocities.Value.Get(hero);
+            Vector3 heading = leap.Direction;
+
+            if (_intents.Value.Has(hero))
+            {
+                Vector3 intent = _intents.Value.Get(hero).Value;
+                intent.y = 0f;
+
+                if (intent.sqrMagnitude > Mathf.Epsilon)
+                    heading = intent.normalized;
+            }
+
+            velocity.Value = Vector3.MoveTowards(velocity.Value, heading * config.GlideSpeed, config.GlideSteering * delta);
+
+            Vector3 flat = velocity.Value;
+            flat.y = 0f;
+
+            if (flat.sqrMagnitude > Mathf.Epsilon)
+                leap.Direction = flat.normalized;
         }
 
         private void SetVelocity(int hero, Vector3 velocity)

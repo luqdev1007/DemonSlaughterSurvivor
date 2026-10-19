@@ -13,6 +13,7 @@ namespace Game.UI
         [SerializeField] private TMP_Text _healthText;
         [SerializeField] private Image _ultimateChargeFill;
         [SerializeField] private RageOrbView _rageOrb;
+        [SerializeField] private DualityOrbView _dualityOrb;
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
         [SerializeField] private UpgradeChoiceView _itemChoice;
         [SerializeField] private AbilityPanelView _abilityPanel;
@@ -114,6 +115,18 @@ namespace Game.UI
 
             if (_rageOrb != null)
                 _rageOrb.Show(fraction);
+        }
+
+        public void ShowDuality(bool available, float demonic, float formThreshold)
+        {
+            if (_dualityOrb == null)
+                return;
+
+            if (_dualityOrb.gameObject.activeSelf != available)
+                _dualityOrb.gameObject.SetActive(available);
+
+            if (available)
+                _dualityOrb.Show(demonic, formThreshold);
         }
 
         public void SetExperienceFill(float fraction)

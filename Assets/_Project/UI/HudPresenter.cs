@@ -99,6 +99,8 @@ namespace Game.UI
                 _vitals.UltimateCharge.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.UltimateActive.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _vitals.HasUltimate.Subscribe(this, (_, presenter) => presenter.Refresh()),
+                _vitals.HasDuality.Subscribe(this, (_, presenter) => presenter.Refresh()),
+                _vitals.Demonic.Subscribe(this, (_, presenter) => presenter.Refresh()),
                 _choice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshChoice()),
                 _itemChoice.Changed.Subscribe(this, (_, presenter) => presenter.RefreshItemChoice()),
                 _pauseMenu.Changed.Subscribe(this, (_, presenter) => presenter.RefreshPause()),
@@ -181,6 +183,7 @@ namespace Game.UI
             _view.ShowUltimateAvailable(_vitals.HasUltimate.CurrentValue);
             _view.ShowUltimateCharge(_vitals.UltimateCharge.CurrentValue);
             _view.ShowBerserk(_vitals.UltimateActive.CurrentValue);
+            _view.ShowDuality(_vitals.HasDuality.CurrentValue, _vitals.Demonic.CurrentValue, _vitals.FormThreshold.CurrentValue);
         }
 
         private void RefreshBoss()

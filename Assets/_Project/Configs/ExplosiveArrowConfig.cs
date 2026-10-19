@@ -12,6 +12,11 @@ namespace Game.Configs
         [SerializeField, Min(0f)] private float _pushSeconds = 0.3f;
         [SerializeField, Min(0f)] private float _pushArcHeight = 0.5f;
 
+        [Header("Demonic form")]
+        [SerializeField, Min(1f)] private float _demonicChanceScale = 1.6f;
+        [SerializeField, Min(1f)] private float _demonicRadiusScale = 1.4f;
+        [SerializeField, Min(1f)] private float _demonicDamageScale = 1.5f;
+
         [Header("View")]
         [SerializeField] private GameObject _fxPrefab;
         [SerializeField, Min(0.05f)] private float _fxSeconds = 1.2f;
@@ -27,6 +32,12 @@ namespace Game.Configs
         public float PushSeconds => _pushSeconds;
 
         public float PushArcHeight => _pushArcHeight;
+
+        public float DemonicChanceScale => _demonicChanceScale;
+
+        public float DemonicRadiusScale => _demonicRadiusScale;
+
+        public float DemonicDamageScale => _demonicDamageScale;
 
         public GameObject FxPrefab => _fxPrefab;
 

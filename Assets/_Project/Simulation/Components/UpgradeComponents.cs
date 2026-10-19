@@ -27,7 +27,7 @@ namespace Game.Simulation.Components
 
     public struct HeroicLeapCooldown { public int RemainingTicks; }
 
-    public struct PowerShotCooldown { public int RemainingTicks; }
+    public struct PowerShotCooldown { public int RemainingTicks; public float Progress; }
 
     public struct ExecutionCooldown { public int RemainingTicks; }
 

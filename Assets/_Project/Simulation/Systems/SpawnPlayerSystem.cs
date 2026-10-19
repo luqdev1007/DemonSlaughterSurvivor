@@ -45,6 +45,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<TorsoAim> _torsoAims = default;
         private readonly EcsPoolInject<Height> _heights = default;
         private readonly EcsPoolInject<BackleapStats> _backleaps = default;
+        private readonly EcsPoolInject<Duality> _dualities = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -71,6 +72,9 @@ namespace Game.Simulation.Systems
 
             if (character.Backleap != null)
                 character.Backleap.Validate();
+
+            if (character.Duality != null)
+                character.Duality.Validate();
 
             int entity = _world.Value.NewEntity();
 
@@ -197,6 +201,14 @@ namespace Game.Simulation.Systems
 
             if (character.Backleap != null)
                 _backleaps.Value.Add(entity).Config = character.Backleap;
+
+            if (character.Duality != null)
+            {
+                ref Duality duality = ref _dualities.Value.Add(entity);
+                duality.Config = character.Duality;
+                duality.Demonic = character.Duality.StartDemonic;
+                duality.LastHealth = -1f;
+            }
 
             if (character.TorsoAim != null)
             {
