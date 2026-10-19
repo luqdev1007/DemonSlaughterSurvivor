@@ -67,6 +67,7 @@ namespace Game.View
         private readonly HashSet<int> _retiring = new HashSet<int>();
         private readonly List<Entry> _all = new List<Entry>();
         private readonly Dictionary<Material, Material> _dissolveCopies = new Dictionary<Material, Material>();
+        private readonly Dictionary<Material, Material> _burnCopies = new Dictionary<Material, Material>();
         private readonly Dictionary<GameObject, Dismemberment> _dismemberments = new Dictionary<GameObject, Dismemberment>();
         private readonly HashSet<GameObject> _gemPrefabs = new HashSet<GameObject>();
         private readonly HashSet<GameObject> _breakablePrefabs = new HashSet<GameObject>();
@@ -87,6 +88,8 @@ namespace Game.View
         private readonly Action<ViewInterpolator, Vector3> _onHit;
         private readonly Action<ViewInterpolator, ViewCue, string> _onCue;
         private readonly Func<Material, Material> _dissolveMaterialFor;
+        private readonly Func<Material, Material> _burnMaterialFor;
+        private readonly Material _burnTemplate;
         private readonly System.Random _random = new System.Random();
 
         private readonly float _knockbackSpeed;
@@ -174,6 +177,8 @@ namespace Game.View
             _onHit = OnHit;
             _onCue = OnCue;
             _dissolveMaterialFor = DissolveMaterialFor;
+            _burnTemplate = feedback.CorpseBurnMaterial;
+            _burnMaterialFor = _burnTemplate != null ? BurnMaterialFor : null;
             _knockbackSpeed = feedback.KnockbackSpeed;
             _knockbackUpSpeed = feedback.KnockbackUpSpeed;
             _knockbackSpeedJitter = feedback.KnockbackSpeedJitter;
@@ -312,6 +317,14 @@ namespace Game.View
             }
 
             _dissolveCopies.Clear();
+
+            foreach (Material copy in _burnCopies.Values)
+            {
+                if (copy != null)
+                    UnityEngine.Object.Destroy(copy);
+            }
+
+            _burnCopies.Clear();
 
             foreach (Material copy in _tintCopies.Values)
             {
@@ -818,6 +831,7 @@ namespace Game.View
             };
 
             view.Configure(entry.Animator, _hit, _blinkSeconds, _dissolveSeconds, _dissolveMaterialFor, _onRetired, _onHit, _onCue);
+            view.ConfigureCorpseBurn(_burnMaterialFor);
 
             entry.Body = view.BodyRenderers;
 
@@ -905,15 +919,25 @@ namespace Game.View
 
         private Material DissolveMaterialFor(Material source)
         {
+            return CopyOnto(_dissolveTemplate, _dissolveCopies, source, " (Dissolve)");
+        }
+
+        private Material BurnMaterialFor(Material source)
+        {
+            return CopyOnto(_burnTemplate, _burnCopies, source, " (Burn)");
+        }
+
+        private static Material CopyOnto(Material template, Dictionary<Material, Material> copies, Material source, string suffix)
+        {
             if (source == null)
                 return null;
 
-            if (_dissolveCopies.TryGetValue(source, out Material copy))
+            if (copies.TryGetValue(source, out Material copy))
                 return copy;
 
-            copy = new Material(_dissolveTemplate)
+            copy = new Material(template)
             {
-                name = source.name + " (Dissolve)",
+                name = source.name + suffix,
                 mainTexture = source.mainTexture,
                 mainTextureScale = source.mainTextureScale,
                 mainTextureOffset = source.mainTextureOffset
@@ -924,7 +948,7 @@ namespace Game.View
             else if (source.HasProperty(ColorId))
                 copy.SetColor(BaseColorId, source.GetColor(ColorId));
 
-            _dissolveCopies.Add(source, copy);
+            copies.Add(source, copy);
 
             return copy;
         }

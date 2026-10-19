@@ -9,6 +9,9 @@ Shader "Game/Dissolve"
         _DissolveAmount("Dissolve Amount", Range(0, 1)) = 0
         _EdgeWidth("Edge Width", Range(0.001, 0.3)) = 0.08
         [HDR] _EdgeColor("Edge Color", Color) = (4, 1.2, 0.3, 1)
+        [ToggleUI] _BurnFromGround("Burn From Ground", Float) = 0
+        _BurnHeight("Burn Height (world Y, m)", Float) = 0.12
+        _BurnNoise("Burn Line Noise (m)", Float) = 0.3
     }
 
     SubShader
@@ -37,6 +40,9 @@ Shader "Game/Dissolve"
             float _DissolveAmount;
             float _EdgeWidth;
             half4 _EdgeColor;
+            float _BurnFromGround;
+            float _BurnHeight;
+            float _BurnNoise;
         CBUFFER_END
 
         float SampleNoiseTriplanar(float3 positionWS, float3 normalWS)
@@ -54,8 +60,13 @@ Shader "Game/Dissolve"
 
         float DissolveMargin(float3 positionWS, float3 normalWS)
         {
+            float noise = SampleNoiseTriplanar(positionWS, normalWS);
+
+            if (_BurnFromGround > 0.5)
+                return positionWS.y - _BurnHeight - (noise - 0.5) * _BurnNoise;
+
             float threshold = _DissolveAmount * (1.0 + 2.0 * _EdgeWidth) - _EdgeWidth;
-            return SampleNoiseTriplanar(positionWS, normalWS) - threshold;
+            return noise - threshold;
         }
 
         void ClipDissolve(float margin, float4 positionCS)

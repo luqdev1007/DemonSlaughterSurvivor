@@ -25,6 +25,7 @@ MonoBehaviour:
   _hitSquash: 0.12
   _hitPulseSeconds: 0.14
   _hitPulseCooldownSeconds: 0.1
+  _hitPauseSeconds: 0.05
   _shakeMultiplier: 1
   _shakeHeroHit: 0.12
   _shakeHeroHitCooldownSeconds: 0.35
@@ -44,7 +45,8 @@ MonoBehaviour:
   _corpseMinSeconds: 10
   _corpseMaxSeconds: 15
   _corpseDecaySeconds: 1.5
-  _corpseSinkDepth: 1.4
+  _corpseSinkDepth: 0.6
+  _corpseBurnMaterial: {fileID: 2100000, guid: e0b950779e9c7074682f311da8adbd92, type: 2}
   _maxCorpses: 60
   _offscreenMargin: 0.08
   _kickRadius: 1

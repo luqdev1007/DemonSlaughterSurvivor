@@ -50,6 +50,7 @@ namespace Game.Configs
         [SerializeField] private float _corpseMaxSeconds = 15f;
         [SerializeField] private float _corpseDecaySeconds = 1.5f;
         [SerializeField] private float _corpseSinkDepth = 1.4f;
+        [SerializeField] private Material _corpseBurnMaterial;
         [SerializeField] private int _maxCorpses = 60;
         [SerializeField] private float _offscreenMargin = 0.08f;
 
@@ -136,6 +137,8 @@ namespace Game.Configs
         public float CorpseDecaySeconds => _corpseDecaySeconds;
 
         public float CorpseSinkDepth => _corpseSinkDepth;
+
+        public Material CorpseBurnMaterial => _corpseBurnMaterial;
 
         public int MaxCorpses => _maxCorpses;
 

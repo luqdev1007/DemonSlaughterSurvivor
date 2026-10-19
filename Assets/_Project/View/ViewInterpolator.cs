@@ -87,6 +87,10 @@ namespace Game.View
         private float _blinkSeconds;
         private float _dissolveSeconds;
         private Func<Material, Material> _dissolveMaterialFor;
+        private Func<Material, Material> _burnMaterialFor;
+        private Material[][] _burnSaved;
+        private Material[][] _burnMaterials;
+        private bool _isBurning;
         private Action<ViewInterpolator> _onRetired;
         private Action<ViewInterpolator, Vector3> _onHit;
         private Action<ViewInterpolator, ViewCue, string> _onCue;
@@ -168,6 +172,11 @@ namespace Game.View
             _onCue = onCue;
 
             BuildFlashMaterials();
+        }
+
+        internal void ConfigureCorpseBurn(Func<Material, Material> burnMaterialFor)
+        {
+            _burnMaterialFor = burnMaterialFor;
         }
 
         public void SetPosition(Vector3 position)
@@ -726,6 +735,8 @@ namespace Game.View
             EndFlash();
             _nextFlashTime = 0f;
 
+            EndBurn();
+
             EndPulse();
             _nextPulseTime = 0f;
 
@@ -823,7 +834,12 @@ namespace Game.View
             float decayStart = _retireTime - _decaySeconds;
 
             if (_decaySeconds > 0f && time > decayStart)
+            {
+                if (_isBurning == false)
+                    StartBurn();
+
                 _sinkOffset = -_sinkDepth * Mathf.Clamp01((time - decayStart) / _decaySeconds);
+            }
         }
 
         private void AdvanceKnockback(float deltaTime)
@@ -975,6 +991,57 @@ namespace Game.View
                 _flashMaterials[index] = flash;
                 _savedMaterials[index] = new Material[slots];
             }
+        }
+
+        private void StartBurn()
+        {
+            _isBurning = true;
+
+            if (_burnMaterialFor == null || _renderers == null || _isDissolving)
+                return;
+
+            if (_burnSaved == null)
+            {
+                _burnSaved = new Material[_renderers.Length][];
+                _burnMaterials = new Material[_renderers.Length][];
+            }
+
+            for (int index = 0; index < _renderers.Length; index++)
+            {
+                Renderer target = _renderers[index];
+
+                if (target == null)
+                    continue;
+
+                target.GetSharedMaterials(_materialScratch);
+
+                int slots = _materialScratch.Count;
+
+                if (_burnSaved[index] == null || _burnSaved[index].Length != slots)
+                {
+                    _burnSaved[index] = new Material[slots];
+                    _burnMaterials[index] = new Material[slots];
+                }
+
+                for (int slot = 0; slot < slots; slot++)
+                {
+                    _burnSaved[index][slot] = _materialScratch[slot];
+                    _burnMaterials[index][slot] = _burnMaterialFor(_materialScratch[slot]);
+                }
+            }
+
+            SwapMaterials(_burnMaterials);
+        }
+
+        private void EndBurn()
+        {
+            if (_isBurning == false)
+                return;
+
+            _isBurning = false;
+
+            if (_burnSaved != null)
+                SwapMaterials(_burnSaved);
         }
 
         private void StartFlash()
