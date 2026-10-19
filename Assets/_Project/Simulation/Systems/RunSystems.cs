@@ -144,6 +144,7 @@ namespace Game.Simulation.Systems
             systems.Add(new GrantLifeStealSystem());
             systems.Add(new RestoreConcentrationSystem());
             systems.Add(new ShakeOnNotableDeathSystem());
+            systems.Add(new SlowMotionOnBossDeathSystem());
             systems.Add(new ReapDeadEnemiesSystem());
             // 11. Progression
             systems.Add(new AccumulateRageSystem());

@@ -11,7 +11,7 @@ using VContainer.Unity;
 
 namespace Game.Bootstrap
 {
-    public sealed class RunEntryPoint : IInitializable, ITickable, IDisposable
+    public sealed class RunEntryPoint : IInitializable, ITickable, IDisposable, ISlowMotionSink
     {
         private const float FixedDelta = 1f / 60f;
         private const int MaxStepsPerFrame = 5;
@@ -70,6 +70,9 @@ namespace Game.Bootstrap
         private float _timeScaleBeforeVictory;
         private bool _isMenuPaused;
         private float _timeScaleBeforeMenu;
+        private bool _isSlowMotion;
+        private float _slowMotionEndTime;
+        private float _timeScaleBeforeSlowMotion;
 
         public RunEntryPoint(
             RunContext context,
@@ -212,7 +215,8 @@ namespace Game.Bootstrap
                 _bossVitalsSink,
                 _statsSink,
                 _screenShake,
-                _threatSink
+                _threatSink,
+                (ISlowMotionSink)this
                 );
         }
 
@@ -237,6 +241,8 @@ namespace Game.Bootstrap
 
                 return;
             }
+
+            TickSlowMotion();
 
             if (_isPaused)
             {
@@ -290,6 +296,41 @@ namespace Game.Bootstrap
             _launcher.FinishAsync().Forget();
         }
 
+        public void RequestSlowMotion(float timeScale, float realSeconds)
+        {
+            if (realSeconds <= 0f || timeScale <= 0f || timeScale >= 1f || _isPaused || _isMenuPaused || _isFinishing)
+                return;
+
+            if (_isSlowMotion == false)
+                _timeScaleBeforeSlowMotion = Time.timeScale;
+
+            _isSlowMotion = true;
+            _slowMotionEndTime = Time.unscaledTime + realSeconds;
+
+            Time.timeScale = _timeScaleBeforeSlowMotion * timeScale;
+        }
+
+        private void TickSlowMotion()
+        {
+            if (_isSlowMotion == false || _isPaused || _isMenuPaused || _isVictoryFrozen)
+                return;
+
+            if (Time.unscaledTime < _slowMotionEndTime)
+                return;
+
+            ReleaseSlowMotion();
+        }
+
+        private void ReleaseSlowMotion()
+        {
+            if (_isSlowMotion == false)
+                return;
+
+            _isSlowMotion = false;
+
+            Time.timeScale = _timeScaleBeforeSlowMotion;
+        }
+
         public void Dispose()
         {
             if (_isMenuPaused)
@@ -299,6 +340,7 @@ namespace Game.Bootstrap
                 Resume();
 
             ReleaseVictoryFreeze();
+            ReleaseSlowMotion();
 
             _cameraService.SetFollowTarget(null);
 
@@ -320,6 +362,8 @@ namespace Game.Bootstrap
 
         private async UniTaskVoid FinishWithVictoryAsync()
         {
+            ReleaseSlowMotion();
+
             _resultSink.ShowVictory();
 
             _isVictoryFrozen = true;
