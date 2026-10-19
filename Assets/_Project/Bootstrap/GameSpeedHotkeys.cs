@@ -29,11 +29,11 @@ namespace Game.Bootstrap
 
                     _speed = (index + 1) * Step;
                     Debug.Log($"Game speed {Mathf.RoundToInt(_speed * 100f)}%");
+
+                    if (Time.timeScale > 0f)
+                        Time.timeScale = _speed;
                 }
             }
-
-            if (Time.timeScale > 0f && Mathf.Approximately(Time.timeScale, _speed) == false)
-                Time.timeScale = _speed;
         }
     }
 }
