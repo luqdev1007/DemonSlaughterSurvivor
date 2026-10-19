@@ -19,9 +19,9 @@ namespace Game.Editor
         private const string BookName = "Wizard_Book";
         private const string BookMountName = "BookMount";
         private const string HeadBone = "head";
-        private static readonly Vector3 BookMountPosition = new Vector3(0f, 1.3f, 0.62f);
-        private static readonly Vector3 BookMountEuler = new Vector3(-35f, 0f, 0f);
-        private const float BookScale = 1.15f;
+        private static readonly Vector3 BookMountPosition = new Vector3(0f, 1.08f, 0.55f);
+        private static readonly Vector3 BookMountEuler = new Vector3(12f, 0f, 0f);
+        private const float BookScale = 0.95f;
 
         private static readonly (string State, string Clip, bool Mirror, string Trigger)[] FireballCasts =
         {
@@ -60,7 +60,7 @@ namespace Game.Editor
         private static readonly (string Muscle, float Left, float Right)[] HangingLegs =
         {
             ("Upper Leg Front-Back", 0.05f, -0.05f),
-            ("Upper Leg In-Out", 0.1f, 0.1f),
+            ("Upper Leg In-Out", -0.08f, -0.08f),
             ("Upper Leg Twist In-Out", 0f, 0f),
             ("Lower Leg Stretch", 0.95f, 1f),
             ("Lower Leg Twist In-Out", 0f, 0f),
@@ -465,13 +465,15 @@ namespace Game.Editor
         private static void WireBook(GameObject prefabRoot, Animator animator)
         {
             Transform view = animator.transform;
-            Transform mount = view.Find(BookMountName);
+            Transform mount = prefabRoot.transform.Find(BookMountName);
 
             if (mount == null)
-            {
+                mount = view.Find(BookMountName);
+
+            if (mount == null)
                 mount = new GameObject(BookMountName).transform;
-                mount.SetParent(view, false);
-            }
+
+            mount.SetParent(prefabRoot.transform, false);
 
             mount.localPosition = BookMountPosition;
             mount.localRotation = Quaternion.Euler(BookMountEuler);
@@ -490,8 +492,10 @@ namespace Game.Editor
             book.localRotation = Quaternion.identity;
             book.localScale = Vector3.one * BookScale;
 
+            book.localPosition = Vector3.zero;
+
             Renderer renderer = book.GetComponentInChildren<Renderer>(true);
-            Vector3 center = mount.InverseTransformPoint(renderer.bounds.center) - book.localPosition;
+            Vector3 center = mount.InverseTransformPoint(renderer.bounds.center);
             book.localPosition = -center;
 
             BookFloat bookFloat = prefabRoot.GetComponent<BookFloat>();
