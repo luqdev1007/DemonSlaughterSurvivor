@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a7287292bcb37749ab71bbeaa82bfef, type: 3}
+  m_Name: ArrowRain_Huntress
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.ArrowRainConfig
+  _levels:
+  - _cooldownSeconds: 8
+    _strikes: 5
+    _damageScale: 0.8
+  - _cooldownSeconds: 7
+    _strikes: 7
+    _damageScale: 0.9
+  - _cooldownSeconds: 6
+    _strikes: 9
+    _damageScale: 1
+  _range: 14
+  _radius: 1.4
+  _staggerSeconds: 0.12
+  _repeatDelaySeconds: 0.5
+  _fallSeconds: 0.4
+  _fxPrefab: {fileID: 1332280520430449768, guid: b0083ba2f51a29848a75c973bbc2d798, type: 3}
+  _lingerSeconds: 0.6

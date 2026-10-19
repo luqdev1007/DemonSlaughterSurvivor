@@ -34,6 +34,8 @@ namespace Game.Simulation.Tests
         private PerkConfig _multishotPerk;
         private PerkConfig _volleyPerk;
         private PerkConfig _explosivePerk;
+        private PerkConfig _agilityPerk;
+        private PerkConfig _rainPerk;
 
         [SetUp]
         public void SetUp()
@@ -83,6 +85,19 @@ namespace Game.Simulation.Tests
             Set(explosive, "_pushSeconds", 0.3f);
             _explosivePerk = Perk("perk.explosive-arrow", explosive);
 
+            _agilityPerk = Perk("perk.demonic-agility", Asset<DemonicAgilityConfig>());
+
+            ArrowRainConfig rain = Asset<ArrowRainConfig>();
+            ArrowRainLevel rainLevel = new ArrowRainLevel();
+            Set(rainLevel, "_cooldownSeconds", 8f);
+            Set(rainLevel, "_strikes", 4);
+            Set(rainLevel, "_damageScale", 0.5f);
+            Set(rain, "_levels", new[] { rainLevel });
+            GameObject rainFx = new GameObject("RainFx");
+            _assets.Add(rainFx);
+            Set(rain, "_fxPrefab", rainFx);
+            _rainPerk = Perk("perk.arrow-rain", rain);
+
             WaveTimelineConfig timeline = Asset<WaveTimelineConfig>();
             LevelConfig level = Asset<LevelConfig>();
             Set(level, "_waves", timeline);
@@ -96,11 +111,12 @@ namespace Game.Simulation.Tests
             _systems.Add(new TickWeaponCooldownSystem());
             _systems.Add(new ReleaseBowShotSystem());
             _systems.Add(new StartBowDrawSystem());
+            _systems.Add(new ArrowRainSystem());
             _systems.Add(new AdvanceProjectilesSystem());
             _systems.Add(new AdvanceArrowsSystem());
             _systems.Add(new ResolveAreaStrikeSystem());
             _systems.Add(new RebuildSpatialGridSystem());
-            ContentRegistry registry = new ContentRegistry(new IContentEntry[] { _powerPerk, _multishotPerk, _volleyPerk, _explosivePerk });
+            ContentRegistry registry = new ContentRegistry(new IContentEntry[] { _powerPerk, _multishotPerk, _volleyPerk, _explosivePerk, _agilityPerk, _rainPerk });
             RunContext context = new RunContext("level.test", "character.test", RunMode.Story, 7, System.Array.Empty<StatModifierSpec>());
             _systems.Inject(_clock, level, new SpatialGrid(_world, 45f, 1f), new EnemyMotionBounds(2.5f, 0.9f, 5f, 0.5f), (IViewFactory)_views, (IContentRegistry)registry, context);
             _systems.Init();
@@ -161,6 +177,52 @@ namespace Game.Simulation.Tests
 
             Assert.AreEqual(1, Arrows());
             Assert.AreEqual("Release", _heroView.Triggers[_heroView.Triggers.Count - 1]);
+        }
+
+        [Test]
+        public void TheBackleapBlocksTheBowWithoutDemonicAgility()
+        {
+            Enemy(new Vector3(0f, 0f, 10f));
+            _world.GetPool<Backleaping>().Add(_hero).Phase = BackleapPhase.Hover;
+
+            Step(DrawTicks + 5);
+
+            Assert.AreEqual(0, Arrows());
+        }
+
+        [Test]
+        public void DemonicAgilityShootsDuringTheBackleap()
+        {
+            Enemy(new Vector3(0f, 0f, 10f));
+            _world.GetPool<Backleaping>().Add(_hero).Phase = BackleapPhase.Hover;
+            Take(_agilityPerk);
+
+            Step(DrawTicks + 1);
+
+            Assert.AreEqual(1, Arrows());
+        }
+
+        [Test]
+        public void ArrowRainHitsTheOnlyEnemyEveryStrikeButNeverTwiceAtOnce()
+        {
+            int enemy = Enemy(new Vector3(3f, 0f, -3f));
+            Take(_rainPerk);
+
+            List<int> landings = new List<int>();
+
+            for (int tick = 0; tick < 200; tick++)
+            {
+                int before = RainHits(enemy);
+                Step(1);
+
+                if (RainHits(enemy) > before)
+                    landings.Add(tick);
+            }
+
+            Assert.AreEqual(4, RainHits(enemy), "every strike of the volley lands on the only enemy");
+            Assert.AreEqual(4, landings.Count, "repeated picks of one enemy land on separate ticks");
+            Assert.GreaterOrEqual(landings[1] - landings[0], 29, "a repeat waits for the repeat delay");
+            Assert.IsTrue(_world.GetPool<ArrowRainCooldown>().Has(_hero));
         }
 
         [Test]
@@ -504,6 +566,22 @@ namespace Game.Simulation.Tests
                 _clock.Advance(Tick);
                 _systems.Run();
             }
+        }
+
+        private int RainHits(int enemy)
+        {
+            int count = 0;
+
+            foreach (DamageEvent hit in Hits())
+            {
+                if (hit.Kind == DamageKind.Perk && hit.Target.Unpack(_world, out int target) && target == enemy)
+                {
+                    Assert.AreEqual(Damage * 0.5f, hit.Amount, 1e-4f);
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private int Arrows()

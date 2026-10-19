@@ -84,6 +84,7 @@ namespace Game.Simulation.Systems
             systems.Add(new StartRangedAttackSystem());
             systems.Add(new ReleaseBowShotSystem());
             systems.Add(new StartBowDrawSystem());
+            systems.Add(new ArrowRainSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new GrantHarvestHealSystem());

@@ -63,7 +63,7 @@ namespace Game.Simulation.Systems
                 if (ready.Remaining > 0f)
                     continue;
 
-                if (_ownerLinks.Value.Get(bow).Owner.Unpack(world, out int owner) == false || BowShot.IsBlocked(owner, _dead.Value, _backleaps.Value))
+                if (_ownerLinks.Value.Get(bow).Owner.Unpack(world, out int owner) == false || BowShot.IsBlocked(owner, _dead.Value, _backleaps.Value, ShootsInAir(world, owner)))
                     continue;
 
                 if (_aims.Value.Has(owner) == false)
@@ -93,6 +93,11 @@ namespace Game.Simulation.Systems
                 if (_views.Value.Has(owner) && _views.Value.Get(owner).Value != null)
                     _views.Value.Get(owner).Value.PlayAttack(config.DrawTrigger, draw.PlaybackSpeed);
             }
+        }
+
+        private bool ShootsInAir(EcsWorld world, int owner)
+        {
+            return _backleaps.Value.Has(owner) && TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out DemonicAgilityConfig _, out _);
         }
 
         private float ResolveCooldownRate(EcsWorld world, int hero)

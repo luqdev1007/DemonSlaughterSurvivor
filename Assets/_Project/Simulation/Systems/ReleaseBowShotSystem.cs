@@ -28,6 +28,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<Backleaping> _backleaps = default;
+        private readonly EcsPoolInject<Height> _heights = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
         private readonly EcsPoolInject<PowerShotCooldown> _powerCooldowns = default;
@@ -48,7 +49,7 @@ namespace Game.Simulation.Systems
                 BowConfig config = _bows.Value.Get(bow).Config;
                 bool hasOwner = _ownerLinks.Value.Get(bow).Owner.Unpack(world, out int owner);
 
-                if (hasOwner == false || BowShot.IsBlocked(owner, _dead.Value, _backleaps.Value) || _aims.Value.Has(owner) == false)
+                if (hasOwner == false || BowShot.IsBlocked(owner, _dead.Value, _backleaps.Value, ShootsInAir(world, owner)) || _aims.Value.Has(owner) == false)
                 {
                     _drawPool.Value.Del(bow);
 
@@ -158,7 +159,16 @@ namespace Game.Simulation.Systems
             _velocities.Value.Add(arrow).Value = direction * config.ArrowSpeed;
             _facings.Value.Add(arrow).Value = direction;
             _notIndexed.Value.Add(arrow);
-            _views.Value.Add(arrow).Value = _viewFactory.Value.Create(shot.Prefab, spawn);
+            IView view = _viewFactory.Value.Create(shot.Prefab, spawn);
+            _views.Value.Add(arrow).Value = view;
+
+            float lift = _heights.Value.Has(owner) ? _heights.Value.Get(owner).Value : 0f;
+
+            if (lift > 0f && view != null)
+            {
+                view.SetLift(lift);
+                view.SetLift(lift);
+            }
         }
 
         private struct Shot
@@ -168,6 +178,11 @@ namespace Game.Simulation.Systems
             public GameObject Prefab;
             public bool Piercing;
             public float CritChanceBonus;
+        }
+
+        private bool ShootsInAir(EcsWorld world, int owner)
+        {
+            return _backleaps.Value.Has(owner) && TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out DemonicAgilityConfig _, out _);
         }
 
         private void Cue(int owner, string trigger)
