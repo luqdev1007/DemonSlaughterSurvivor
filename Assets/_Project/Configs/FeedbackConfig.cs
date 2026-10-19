@@ -21,6 +21,7 @@ namespace Game.Configs
         [SerializeField] private float _hitSquash = 0.12f;
         [SerializeField] private float _hitPulseSeconds = 0.14f;
         [SerializeField] private float _hitPulseCooldownSeconds = 0.1f;
+        [SerializeField] private float _hitPauseSeconds = 0.05f;
 
         [Header("Screen Shake")]
         [SerializeField] private float _shakeMultiplier = 1f;
@@ -83,6 +84,8 @@ namespace Game.Configs
         public float HitPulseSeconds => _hitPulseSeconds;
 
         public float HitPulseCooldownSeconds => _hitPulseCooldownSeconds;
+
+        public float HitPauseSeconds => _hitPauseSeconds;
 
         public float ShakeMultiplier => _shakeMultiplier;
 

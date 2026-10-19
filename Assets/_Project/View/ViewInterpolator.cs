@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.View
 {
-    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView, IFreezeView, IBeamView, IAreaView, IShieldView
+    public sealed class ViewInterpolator : MonoBehaviour, IView, IDashChargeView, ICastInterruptView, ISwingStyleView, IEliteView, IPickupView, IRuneAuraView, IAimView, IAirView, IArrowView, ILightningView, ITeleportView, IFreezeView, IBeamView, IAreaView, IShieldView, IHitPauseView
     {
         private static readonly int IsChargingId = Animator.StringToHash("IsCharging");
         private static readonly int ChargeRunId = Animator.StringToHash("ChargeRun");
@@ -94,6 +94,9 @@ namespace Game.View
         private bool _isFlashing;
         private float _flashEndTime;
         private float _nextFlashTime;
+
+        private bool _isHitPaused;
+        private float _hitPauseEndTime;
 
         private bool _isPulsing;
         private float _pulseStartTime;
@@ -221,6 +224,7 @@ namespace Game.View
                 return;
 
             _isFrozen = value;
+            _isHitPaused = false;
             _animator.speed = value ? 0f : 1f;
         }
 
@@ -342,6 +346,16 @@ namespace Game.View
 
             StartFlash();
             StartPulse(direction);
+        }
+
+        public void PlayHitPause()
+        {
+            if (_animator == null || _isDead || _isFrozen || _hit.PauseSeconds <= 0f)
+                return;
+
+            _isHitPaused = true;
+            _hitPauseEndTime = Time.time + _hit.PauseSeconds;
+            _animator.speed = 0f;
         }
 
         public void PlayWeaponHit()
@@ -525,6 +539,8 @@ namespace Game.View
 
         public void PlayDeath()
         {
+            EndHitPause();
+
             if (_actionView != null)
                 _actionView.ResetImmediate();
 
@@ -640,6 +656,17 @@ namespace Game.View
             _knockbackOffset = Vector3.up * lift;
         }
 
+        private void EndHitPause()
+        {
+            if (_isHitPaused == false)
+                return;
+
+            _isHitPaused = false;
+
+            if (_animator != null && _isFrozen == false)
+                _animator.speed = 1f;
+        }
+
         private void Thaw()
         {
             if (_isFrozen == false)
@@ -702,6 +729,8 @@ namespace Game.View
             EndPulse();
             _nextPulseTime = 0f;
 
+            EndHitPause();
+
             if (_isDissolving)
                 SwapMaterials(_originalMaterials);
 
@@ -748,6 +777,9 @@ namespace Game.View
 
         internal void Tick(float time, float deltaTime)
         {
+            if (_isHitPaused && time >= _hitPauseEndTime)
+                EndHitPause();
+
             if (_isKnockedBack)
                 AdvanceKnockback(deltaTime);
 

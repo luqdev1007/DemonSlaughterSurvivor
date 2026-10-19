@@ -1,3 +1,5 @@
+using Game.Configs;
+using Game.Core;
 using Game.Simulation.Components;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
@@ -16,6 +18,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Player> _players = default;
         private readonly EcsPoolInject<Breakable> _breakables = default;
         private readonly EcsPoolInject<Position> _positions = default;
+        private readonly EcsPoolInject<BerserkMode> _berserkModes = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -45,7 +48,18 @@ namespace Game.Simulation.Systems
                     continue;
 
                 view.Value.PlayHit(ResolveDirection(target, damageEvent.SourcePosition));
+
+                if (IsHeavy(world, ref damageEvent) && view.Value is IHitPauseView pause)
+                    pause.PlayHitPause();
             }
+        }
+
+        private bool IsHeavy(EcsWorld world, ref DamageEvent damageEvent)
+        {
+            if (damageEvent.IsCrit || damageEvent.SourcePerk is ExecutionConfig)
+                return true;
+
+            return damageEvent.Source.Unpack(world, out int source) && _berserkModes.Value.Has(source);
         }
 
         private void PlayWeaponHit(EcsWorld world, EcsPackedEntity source)
