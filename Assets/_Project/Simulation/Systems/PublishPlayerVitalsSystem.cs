@@ -15,6 +15,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<UltimateCharge> _charges = default;
         private readonly EcsPoolInject<BerserkMode> _modes = default;
         private readonly EcsPoolInject<Duality> _dualities = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<IPlayerVitalsSink> _sink = default;
 
@@ -38,6 +39,16 @@ namespace Game.Simulation.Systems
                 else
                 {
                     _sink.Value.PublishDuality(false, 0.5f, 1f);
+                }
+
+                if (_concentrations.Value.Has(entity))
+                {
+                    ref Concentration concentration = ref _concentrations.Value.Get(entity);
+                    _sink.Value.PublishConcentration(true, concentration.Value / concentration.Config.Max);
+                }
+                else
+                {
+                    _sink.Value.PublishConcentration(false, 0f);
                 }
             }
         }

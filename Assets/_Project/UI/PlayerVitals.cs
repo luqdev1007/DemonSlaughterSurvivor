@@ -14,6 +14,8 @@ namespace Game.UI
         private readonly ReactiveProperty<bool> _hasDuality = new ReactiveProperty<bool>();
         private readonly ReactiveProperty<float> _demonic = new ReactiveProperty<float>(0.5f);
         private readonly ReactiveProperty<float> _formThreshold = new ReactiveProperty<float>(1f);
+        private readonly ReactiveProperty<bool> _hasConcentration = new ReactiveProperty<bool>();
+        private readonly ReactiveProperty<float> _concentration = new ReactiveProperty<float>();
 
         public ReadOnlyReactiveProperty<float> Health => _health;
 
@@ -31,6 +33,10 @@ namespace Game.UI
 
         public ReadOnlyReactiveProperty<float> FormThreshold => _formThreshold;
 
+        public ReadOnlyReactiveProperty<bool> HasConcentration => _hasConcentration;
+
+        public ReadOnlyReactiveProperty<float> Concentration => _concentration;
+
         public void Publish(float health, float maxHealth, bool hasUltimate, float ultimateCharge, bool ultimateActive)
         {
             _hasUltimate.Value = hasUltimate;
@@ -47,6 +53,12 @@ namespace Game.UI
             _demonic.Value = demonic;
         }
 
+        public void PublishConcentration(bool hasConcentration, float fraction)
+        {
+            _hasConcentration.Value = hasConcentration;
+            _concentration.Value = fraction;
+        }
+
         public void Dispose()
         {
             _health.Dispose();
@@ -57,6 +69,8 @@ namespace Game.UI
             _hasDuality.Dispose();
             _demonic.Dispose();
             _formThreshold.Dispose();
+            _hasConcentration.Dispose();
+            _concentration.Dispose();
         }
     }
 }

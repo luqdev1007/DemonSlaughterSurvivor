@@ -50,4 +50,5 @@ MonoBehaviour:
   _blink: {fileID: 11400000, guid: 782d35e29ce9b984da82a53581591d32, type: 2}
   _rage: {fileID: 0}
   _duality: {fileID: 0}
+  _concentration: {fileID: 11400000, guid: d00a71f79dccceb499aa290a8a31e2c5, type: 2}
   _ultimate: {fileID: 0}

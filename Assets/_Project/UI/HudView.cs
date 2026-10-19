@@ -14,6 +14,7 @@ namespace Game.UI
         [SerializeField] private Image _ultimateChargeFill;
         [SerializeField] private RageOrbView _rageOrb;
         [SerializeField] private DualityOrbView _dualityOrb;
+        [SerializeField] private ConcentrationOrbView _concentrationOrb;
         [SerializeField] private UpgradeChoiceView _upgradeChoice;
         [SerializeField] private UpgradeChoiceView _itemChoice;
         [SerializeField] private AbilityPanelView _abilityPanel;
@@ -127,6 +128,18 @@ namespace Game.UI
 
             if (available)
                 _dualityOrb.Show(demonic, formThreshold);
+        }
+
+        public void ShowConcentration(bool available, float fraction)
+        {
+            if (_concentrationOrb == null)
+                return;
+
+            if (_concentrationOrb.gameObject.activeSelf != available)
+                _concentrationOrb.gameObject.SetActive(available);
+
+            if (available)
+                _concentrationOrb.Show(fraction);
         }
 
         public void SetExperienceFill(float fraction)

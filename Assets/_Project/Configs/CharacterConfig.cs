@@ -68,6 +68,7 @@ namespace Game.Configs
         [SerializeField] private BlinkConfig _blink;
         [SerializeField] private RageConfig _rage;
         [SerializeField] private DualityConfig _duality;
+        [SerializeField] private ConcentrationConfig _concentration;
         [SerializeField] private BerserkAbilityConfig _ultimate;
 
         public string DisplayName => string.IsNullOrEmpty(_displayName) ? Id : _displayName;
@@ -141,6 +142,8 @@ namespace Game.Configs
         public RageConfig Rage => _rage;
 
         public DualityConfig Duality => _duality;
+
+        public ConcentrationConfig Concentration => _concentration;
 
         public LowHealthFuryConfig LowHealthFury => _lowHealthFury;
 

@@ -10,4 +10,10 @@ namespace Game.Simulation.Components
         public int CalmTicks;
         public bool WasLeaping;
     }
+
+    public struct Concentration
+    {
+        public ConcentrationConfig Config;
+        public float Value;
+    }
 }

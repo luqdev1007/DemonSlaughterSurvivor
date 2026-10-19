@@ -47,6 +47,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<BackleapStats> _backleaps = default;
         private readonly EcsPoolInject<Duality> _dualities = default;
         private readonly EcsPoolInject<BlinkStats> _blinks = default;
+        private readonly EcsPoolInject<Concentration> _concentrations = default;
 
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -79,6 +80,9 @@ namespace Game.Simulation.Systems
 
             if (character.Blink != null)
                 character.Blink.Validate();
+
+            if (character.Concentration != null)
+                character.Concentration.Validate();
 
             int entity = _world.Value.NewEntity();
 
@@ -208,6 +212,13 @@ namespace Game.Simulation.Systems
 
             if (character.Blink != null)
                 _blinks.Value.Add(entity).Config = character.Blink;
+
+            if (character.Concentration != null)
+            {
+                ref Concentration concentration = ref _concentrations.Value.Add(entity);
+                concentration.Config = character.Concentration;
+                concentration.Value = character.Concentration.Start;
+            }
 
             if (character.Duality != null)
             {
