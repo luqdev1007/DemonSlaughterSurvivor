@@ -190,10 +190,16 @@ namespace Game.View
             transform.localScale = _baseScale * scale;
         }
 
+        public void SetShieldStrength(float strength)
+        {
+            if (_shieldFx != null && _isDead == false)
+                _shieldFx.SetStrength(strength);
+        }
+
         public void FlashShield(float strength)
         {
             if (_shieldFx != null && _isDead == false)
-                _shieldFx.Flash(strength);
+                _shieldFx.Flash();
         }
 
         public void SetBeam(float charge, bool firing)
@@ -522,6 +528,9 @@ namespace Game.View
                 _hoverRig.SetVelocity(Vector2.zero);
 
             Thaw();
+
+            if (_shieldFx != null)
+                _shieldFx.HideImmediate();
 
             if (_hasDeathTrigger == false || _isDead)
                 return;

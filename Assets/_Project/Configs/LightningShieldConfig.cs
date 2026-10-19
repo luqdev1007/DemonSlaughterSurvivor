@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Configs
 {
@@ -11,9 +12,13 @@ namespace Game.Configs
         [SerializeField, Min(0f)] private float _boltHeight = 1.1f;
         [SerializeField, Min(0.02f)] private float _boltSeconds = 0.15f;
         [SerializeField, Min(0.05f)] private float _impactSeconds = 0.6f;
+        [SerializeField, Min(1)] private int _orbCount = 3;
+        [SerializeField, Min(0.1f)] private float _orbRadius = 1.1f;
+        [SerializeField, Min(0f)] private float _orbHeight = 1.3f;
+        [SerializeField] private float _orbDegreesPerSecond = 150f;
 
         [Header("View")]
-        [SerializeField] private GameObject _auraFxPrefab;
+        [FormerlySerializedAs("_auraFxPrefab"), SerializeField] private GameObject _orbPrefab;
         [SerializeField] private GameObject _boltPrefab;
         [SerializeField] private GameObject _impactFxPrefab;
 
@@ -27,7 +32,15 @@ namespace Game.Configs
 
         public float ImpactSeconds => _impactSeconds;
 
-        public GameObject AuraFxPrefab => _auraFxPrefab;
+        public int OrbCount => _orbCount;
+
+        public float OrbRadius => _orbRadius;
+
+        public float OrbHeight => _orbHeight;
+
+        public float OrbDegreesPerSecond => _orbDegreesPerSecond;
+
+        public GameObject OrbPrefab => _orbPrefab;
 
         public GameObject BoltPrefab => _boltPrefab;
 
@@ -45,7 +58,7 @@ namespace Game.Configs
         {
             string label = $"{nameof(PerkConfig)} '{perk.Id}' lightning shield '{name}'";
 
-            if (_auraFxPrefab == null || _boltPrefab == null || _impactFxPrefab == null)
+            if (_orbPrefab == null || _boltPrefab == null || _impactFxPrefab == null)
                 throw new InvalidOperationException($"{label} is missing a view prefab.");
 
             for (int level = 1; level <= LevelCount; level++)

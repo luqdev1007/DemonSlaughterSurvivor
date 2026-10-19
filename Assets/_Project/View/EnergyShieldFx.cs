@@ -4,52 +4,98 @@ namespace Game.View
 {
     public sealed class EnergyShieldFx : MonoBehaviour
     {
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
         [SerializeField] private GameObject _bubble;
-        [SerializeField, Min(0.05f)] private float _holdSeconds = 0.5f;
-        [SerializeField, Min(0f)] private float _minScale = 0.8f;
-        [SerializeField, Min(0f)] private float _maxScale = 1.15f;
-        [SerializeField, Min(0.1f)] private float _fullStrengthDamage = 20f;
+        [SerializeField] private GameObject _hit;
+        [SerializeField, Min(0.05f)] private float _holdSeconds = 0.6f;
+        [SerializeField, Range(0f, 1f)] private float _hiddenBelow = 0.02f;
+        [SerializeField, Range(0.001f, 0.2f)] private float _step = 0.01f;
 
-        private float _remaining;
-        private Vector3 _baseScale = Vector3.one;
-        private bool _hasBaseScale;
+        private Material[] _materials;
+        private Color[] _baseColors;
+        private float _strength = -1f;
+        private float _hitRemaining;
 
-        public void Flash(float absorbed)
+        public void SetStrength(float strength)
         {
-            if (_bubble == null)
+            if (_bubble == null || Mathf.Abs(strength - _strength) < _step)
                 return;
 
-            if (_hasBaseScale == false)
-            {
-                _baseScale = _bubble.transform.localScale;
-                _hasBaseScale = true;
-            }
+            _strength = strength;
 
-            float strength = Mathf.Clamp01(absorbed / _fullStrengthDamage);
-            _bubble.transform.localScale = _baseScale * Mathf.Lerp(_minScale, _maxScale, strength);
-            _remaining = _holdSeconds;
+            bool visible = strength > _hiddenBelow;
 
-            if (_bubble.activeSelf == false)
-                _bubble.SetActive(true);
+            if (_bubble.activeSelf != visible)
+                _bubble.SetActive(visible);
+
+            if (visible == false)
+                return;
+
+            CacheMaterials();
+
+            for (int index = 0; index < _materials.Length; index++)
+                _materials[index].SetColor(ColorId, _baseColors[index] * strength);
+        }
+
+        public void Flash()
+        {
+            if (_hit == null)
+                return;
+
+            if (_hit.activeSelf)
+                _hit.SetActive(false);
+
+            _hit.SetActive(true);
+            _hitRemaining = _holdSeconds;
         }
 
         public void HideImmediate()
         {
-            _remaining = 0f;
+            _strength = -1f;
+            _hitRemaining = 0f;
 
             if (_bubble != null && _bubble.activeSelf)
                 _bubble.SetActive(false);
+
+            if (_hit != null && _hit.activeSelf)
+                _hit.SetActive(false);
+        }
+
+        private void CacheMaterials()
+        {
+            if (_materials != null)
+                return;
+
+            ParticleSystemRenderer[] renderers = _bubble.GetComponentsInChildren<ParticleSystemRenderer>(true);
+            _materials = new Material[renderers.Length];
+            _baseColors = new Color[renderers.Length];
+
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                _materials[index] = renderers[index].material;
+                _baseColors[index] = _materials[index].GetColor(ColorId);
+            }
         }
 
         private void Update()
         {
-            if (_remaining <= 0f)
+            if (_hitRemaining <= 0f)
                 return;
 
-            _remaining -= Time.deltaTime;
+            _hitRemaining -= Time.deltaTime;
 
-            if (_remaining <= 0f)
-                HideImmediate();
+            if (_hitRemaining <= 0f && _hit != null)
+                _hit.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            if (_materials == null)
+                return;
+
+            for (int index = 0; index < _materials.Length; index++)
+                Destroy(_materials[index]);
         }
     }
 }

@@ -15,13 +15,13 @@ namespace Game.Simulation.Systems
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Player, Position>> _heroes = default;
-        private readonly EcsFilterInject<Inc<LightningAuraFx, Position>> _auras = default;
+        private readonly EcsFilterInject<Inc<LightningOrb, Position>> _orbs = default;
         private readonly EcsFilterInject<Inc<Enemy, Position, BodyRadius>, Exc<Dead>> _enemies = default;
         private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<TakenPerk> _takenPool = default;
         private readonly EcsPoolInject<LightningShield> _shields = default;
-        private readonly EcsPoolInject<LightningAuraFx> _auraPool = default;
+        private readonly EcsPoolInject<LightningOrb> _orbPool = default;
         private readonly EcsPoolInject<Concentration> _concentrations = default;
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Facing> _facings = default;
@@ -56,11 +56,14 @@ namespace Game.Simulation.Systems
                     _shields.Value.Add(hero);
 
                 ref LightningShield shield = ref _shields.Value.Get(hero);
+                shield.Angle = Mathf.Repeat(shield.Angle + config.OrbDegreesPerSecond * delta, 360f);
 
-                if (shield.HasAura == false)
+                if (shield.HasOrbs == false)
                 {
-                    shield.HasAura = true;
-                    shield.Aura = SpawnAura(world, hero, config);
+                    shield.HasOrbs = true;
+
+                    for (int index = 0; index < config.OrbCount; index++)
+                        SpawnOrb(world, hero, config, index, shield.Angle);
                 }
 
                 if (shield.Countdown > 0)
@@ -79,13 +82,20 @@ namespace Game.Simulation.Systems
                     continue;
 
                 for (int index = 0; index < count; index++)
-                    Strike(world, hero, config, entry, origin, _picks[index]);
+                    Strike(world, hero, config, entry, origin, shield.Angle, _picks[index]);
 
                 shield.Countdown = Mathf.Max(1, Mathf.RoundToInt(entry.IntervalSeconds / delta));
             }
 
-            foreach (int aura in _auras.Value)
-                FollowOrRelease(world, aura);
+            foreach (int orb in _orbs.Value)
+                FollowOrRelease(world, orb);
+        }
+
+        public static Vector3 OrbOffset(LightningShieldConfig config, int index, float angle)
+        {
+            float degrees = angle + 360f * index / config.OrbCount;
+
+            return Quaternion.AngleAxis(degrees, Vector3.up) * Vector3.forward * config.OrbRadius;
         }
 
         private int Pick(Vector3 origin, float radius, int limit)
@@ -126,27 +136,47 @@ namespace Game.Simulation.Systems
             return count;
         }
 
-        private void Strike(EcsWorld world, int hero, LightningShieldConfig config, LightningShieldLevel entry, Vector3 origin, int enemy)
+        private void Strike(EcsWorld world, int hero, LightningShieldConfig config, LightningShieldLevel entry, Vector3 origin, float angle, int enemy)
         {
             Vector3 to = _positions.Value.Get(enemy).Value;
+            Vector3 from = origin + NearestOrb(config, angle, to - origin);
 
             ref DamageEvent damage = ref _damageEvents.Value.Add(world.NewEntity());
             damage.Target = world.PackEntity(enemy);
             damage.Source = world.PackEntity(hero);
-            damage.SourcePosition = origin;
+            damage.SourcePosition = from;
             damage.Amount = entry.Damage;
             damage.Kind = DamageKind.Perk;
             damage.IsMagic = true;
             damage.Element = DamageElement.Nature;
             damage.SourcePerk = config;
 
-            Vector3 lift = Vector3.up * config.BoltHeight;
-            IView bolt = Fx(world, config.BoltPrefab, origin, config.BoltSeconds);
+            IView bolt = Fx(world, config.BoltPrefab, from, config.BoltSeconds);
 
             if (bolt is ILightningView lightning)
-                lightning.Strike(origin + lift, to + lift);
+                lightning.Strike(from + Vector3.up * config.OrbHeight, to + Vector3.up * config.BoltHeight);
 
             Fx(world, config.ImpactFxPrefab, to, config.ImpactSeconds);
+        }
+
+        private static Vector3 NearestOrb(LightningShieldConfig config, float angle, Vector3 towards)
+        {
+            Vector3 best = OrbOffset(config, 0, angle);
+            float bestDistance = (towards - best).sqrMagnitude;
+
+            for (int index = 1; index < config.OrbCount; index++)
+            {
+                Vector3 offset = OrbOffset(config, index, angle);
+                float distance = (towards - offset).sqrMagnitude;
+
+                if (distance >= bestDistance)
+                    continue;
+
+                best = offset;
+                bestDistance = distance;
+            }
+
+            return best;
         }
 
         private IView Fx(EcsWorld world, GameObject prefab, Vector3 at, float seconds)
@@ -163,32 +193,44 @@ namespace Game.Simulation.Systems
             return view;
         }
 
-        private EcsPackedEntity SpawnAura(EcsWorld world, int hero, LightningShieldConfig config)
+        private void SpawnOrb(EcsWorld world, int hero, LightningShieldConfig config, int index, float angle)
         {
-            Vector3 at = _positions.Value.Get(hero).Value;
-            int aura = world.NewEntity();
+            Vector3 at = _positions.Value.Get(hero).Value + OrbOffset(config, index, angle);
+            int orb = world.NewEntity();
 
-            _auraPool.Value.Add(aura).Owner = world.PackEntity(hero);
-            _positions.Value.Add(aura).Value = at;
-            _facings.Value.Add(aura).Value = Vector3.forward;
-            _notIndexed.Value.Add(aura);
-            _views.Value.Add(aura).Value = _viewFactory.Value.Create(config.AuraFxPrefab, at);
+            ref LightningOrb data = ref _orbPool.Value.Add(orb);
+            data.Config = config;
+            data.Owner = world.PackEntity(hero);
+            data.Index = index;
 
-            return world.PackEntity(aura);
+            _positions.Value.Add(orb).Value = at;
+            _facings.Value.Add(orb).Value = Vector3.forward;
+            _notIndexed.Value.Add(orb);
+
+            IView view = _viewFactory.Value.Create(config.OrbPrefab, at);
+            _views.Value.Add(orb).Value = view;
+
+            if (view == null)
+                return;
+
+            view.SetLift(config.OrbHeight);
+            view.SetLift(config.OrbHeight);
         }
 
-        private void FollowOrRelease(EcsWorld world, int aura)
+        private void FollowOrRelease(EcsWorld world, int orb)
         {
-            if (_auraPool.Value.Get(aura).Owner.Unpack(world, out int owner) && _dead.Value.Has(owner) == false)
+            ref LightningOrb data = ref _orbPool.Value.Get(orb);
+
+            if (data.Owner.Unpack(world, out int owner) && _dead.Value.Has(owner) == false && _shields.Value.Has(owner))
             {
-                _positions.Value.Get(aura).Value = _positions.Value.Get(owner).Value;
+                _positions.Value.Get(orb).Value = _positions.Value.Get(owner).Value + OrbOffset(data.Config, data.Index, _shields.Value.Get(owner).Angle);
 
                 return;
             }
 
-            if (_views.Value.Has(aura))
+            if (_views.Value.Has(orb))
             {
-                ref View view = ref _views.Value.Get(aura);
+                ref View view = ref _views.Value.Get(orb);
 
                 if (view.Value != null)
                     _viewFactory.Value.Release(view.Value);
@@ -196,7 +238,7 @@ namespace Game.Simulation.Systems
                 view.Value = null;
             }
 
-            world.DelEntity(aura);
+            world.DelEntity(orb);
         }
     }
 }

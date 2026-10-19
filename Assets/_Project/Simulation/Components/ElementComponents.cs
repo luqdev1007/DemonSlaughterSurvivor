@@ -100,11 +100,16 @@ namespace Game.Simulation.Components
     public struct LightningShield
     {
         public int Countdown;
-        public EcsPackedEntity Aura;
-        public bool HasAura;
+        public float Angle;
+        public bool HasOrbs;
     }
 
-    public struct LightningAuraFx { public EcsPackedEntity Owner; }
+    public struct LightningOrb
+    {
+        public LightningShieldConfig Config;
+        public EcsPackedEntity Owner;
+        public int Index;
+    }
 
     public struct TornadoCooldown { public int RemainingTicks; }
 

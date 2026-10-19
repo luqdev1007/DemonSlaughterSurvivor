@@ -143,7 +143,7 @@ namespace Game.Simulation.Tests
             Set(level, "_damage", 8f);
             Set(config, "_levels", new[] { level });
             Set(config, "_radius", 2.6f);
-            Set(config, "_auraFxPrefab", _fx);
+            Set(config, "_orbPrefab", _fx);
             Set(config, "_boltPrefab", _fx);
             Set(config, "_impactFxPrefab", _fx);
 
@@ -165,7 +165,13 @@ namespace Game.Simulation.Tests
             Assert.AreEqual(0f, Get(totals, outside));
 
             foreach (int entity in _world.Filter<DamageEvent>().End())
-                Assert.AreEqual(DamageElement.Nature, _world.GetPool<DamageEvent>().Get(entity).Element);
+            {
+                DamageEvent damage = _world.GetPool<DamageEvent>().Get(entity);
+                Assert.AreEqual(DamageElement.Nature, damage.Element);
+                Assert.AreEqual(1.1f, new Vector2(damage.SourcePosition.x, damage.SourcePosition.z).magnitude, 1e-3f, "the bolt leaves from an orb on its orbit");
+            }
+
+            Assert.AreEqual(3, _world.Filter<LightningOrb>().End().GetEntitiesCount(), "three orbs circle the mage");
         }
 
         [Test]

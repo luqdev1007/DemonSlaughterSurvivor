@@ -163,6 +163,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SyncGemViewSystem());
             systems.Add(new PlayHitFeedbackSystem());
             systems.Add(new PlayShieldFeedbackSystem());
+            systems.Add(new SyncShieldViewSystem());
             systems.Add(new PublishDamageDealtSystem());
             systems.Add(new PublishCorpseKicksSystem());
             systems.Add(new PlaySwingFeedbackSystem());
