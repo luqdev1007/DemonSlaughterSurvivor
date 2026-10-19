@@ -143,12 +143,19 @@ namespace Game.Simulation.Systems
 
             ref Concentration concentration = ref _concentrations.Value.Get(target);
             ConcentrationConfig config = concentration.Config;
+
+            if (concentration.ShieldDown)
+                return 0f;
+
             float absorbed = Mathf.Min(amount * config.ShieldAbsorb, concentration.Value / config.ShieldCostPerDamage);
 
             if (absorbed <= 0f)
                 return 0f;
 
             concentration.Value = Mathf.Max(0f, concentration.Value - absorbed * config.ShieldCostPerDamage);
+
+            if (concentration.Value <= 0f)
+                concentration.ShieldDown = true;
             _absorbed.Value.Add(eventEntity).Amount = absorbed;
 
             return absorbed;

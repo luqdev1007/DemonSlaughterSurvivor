@@ -9,7 +9,7 @@ namespace Game.View
         [SerializeField] private GameObject _bubble;
         [SerializeField] private GameObject _hit;
         [SerializeField, Min(0.05f)] private float _holdSeconds = 0.6f;
-        [SerializeField, Range(0f, 1f)] private float _hiddenBelow = 0.02f;
+        [SerializeField, Range(0f, 1f)] private float _hiddenBelow = 0.001f;
         [SerializeField, Range(0.001f, 0.2f)] private float _step = 0.01f;
 
         private Material[] _materials;

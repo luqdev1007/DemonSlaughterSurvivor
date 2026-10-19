@@ -103,6 +103,28 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
+        public void ADrainedShieldStaysDownUntilFivePoints()
+        {
+            _world.GetPool<Concentration>().Get(_hero).Value = 4f;
+
+            Hit(_hero, 20f, false, -1);
+            Step(1);
+
+            Assert.IsTrue(_world.GetPool<Concentration>().Get(_hero).ShieldDown, "emptied by the hit");
+
+            _world.GetPool<Concentration>().Get(_hero).Value = 4.5f;
+            Hit(_hero, 10f, false, -1);
+            Step(1);
+
+            Assert.AreEqual(84f - 10f, _world.GetPool<Health>().Get(_hero).Current, 1e-3f, "below 5 nothing is absorbed");
+
+            _world.GetPool<Concentration>().Get(_hero).Value = 5f;
+            Step(1);
+
+            Assert.IsFalse(_world.GetPool<Concentration>().Get(_hero).ShieldDown, "back up from 5");
+        }
+
+        [Test]
         public void KillingAnEliteRestoresConcentration()
         {
             _world.GetPool<Concentration>().Get(_hero).Value = 10f;

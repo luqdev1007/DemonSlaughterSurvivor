@@ -18,7 +18,7 @@ namespace Game.Simulation.Systems
             foreach (int hero in _heroes.Value)
             {
                 if (_views.Value.Get(hero).Value is IShieldView view)
-                    view.SetShieldStrength(ConcentrationBonus.Fraction(_concentrations.Value, hero));
+                    view.SetShieldStrength(_concentrations.Value.Get(hero).ShieldDown ? 0f : ConcentrationBonus.Fraction(_concentrations.Value, hero));
             }
         }
     }

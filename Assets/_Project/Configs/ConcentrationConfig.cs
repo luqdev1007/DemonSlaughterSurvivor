@@ -16,6 +16,7 @@ namespace Game.Configs
         [Header("Energy shield")]
         [SerializeField, Range(0f, 1f)] private float _shieldAbsorb = 0.5f;
         [SerializeField, Min(0.01f)] private float _shieldCostPerDamage = 1f;
+        [SerializeField, Min(0f)] private float _shieldRestoreAt = 5f;
 
         [Header("Bonuses at full concentration")]
         [SerializeField, Min(0f)] private float _damageBonus = 0.3f;
@@ -33,6 +34,8 @@ namespace Game.Configs
         public float ShieldAbsorb => _shieldAbsorb;
 
         public float ShieldCostPerDamage => _shieldCostPerDamage;
+
+        public float ShieldRestoreAt => _shieldRestoreAt;
 
         public float DamageBonus => _damageBonus;
 

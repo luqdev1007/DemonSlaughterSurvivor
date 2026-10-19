@@ -35,6 +35,9 @@ namespace Game.Simulation.Systems
                 }
 
                 concentration.Value = Mathf.Min(concentration.Config.Max, concentration.Value + gain);
+
+                if (concentration.ShieldDown && concentration.Value >= concentration.Config.ShieldRestoreAt)
+                    concentration.ShieldDown = false;
             }
         }
     }
