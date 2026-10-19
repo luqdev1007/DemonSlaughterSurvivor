@@ -64,9 +64,9 @@ namespace Game.Editor
             ("Upper Leg Twist In-Out", 0f, 0f),
             ("Lower Leg Stretch", 0.95f, 1f),
             ("Lower Leg Twist In-Out", 0f, 0f),
-            ("Foot Up-Down", 0.9f, 0.9f),
+            ("Foot Up-Down", 1.3f, 1.3f),
             ("Foot Twist In-Out", 0f, 0f),
-            ("Toes Up-Down", 0.6f, 0.6f),
+            ("Toes Up-Down", 1f, 1f),
         };
 
         private static readonly (string Muscle, float Amplitude, float Phase)[] Sway =
