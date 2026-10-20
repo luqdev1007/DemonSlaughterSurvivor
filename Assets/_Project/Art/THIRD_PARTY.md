@@ -25,6 +25,7 @@ are listed in `docs/recons/058_art-direction-recon.md` §1, not here.
 | Fern 02 (Rob Tuytel, Rico Cilliers) | Poly Haven | https://polyhaven.com/a/fern_02 | CC0 1.0 | `Art/Environment/PolyHaven/fern_02/` — ferns in the shade of the walls | 2026-10-20 |
 | Weed Plant 02 (Rob Tuytel, Rico Cilliers) | Poly Haven | https://polyhaven.com/a/weed_plant_02 | CC0 1.0 | `Art/Environment/PolyHaven/weed_plant_02/` — weeds in the cracks | 2026-10-20 |
 | Large Castle Door (Tina) | Poly Haven | https://polyhaven.com/a/large_castle_door | CC0 1.0 | `Art/Environment/PolyHaven/large_castle_door/` — doors of the lean-tos / gate | 2026-10-20 |
+| Burned Ground 01 (Rob Tuytel) | Poly Haven | https://polyhaven.com/a/burned_ground_01 | CC0 1.0 | `Art/Textures/T_Scorch.png` — scorch marks (1K albedo, 512 px, our noisy radial alpha) | 2026-10-20 |
 
 Notes
 - Poly Haven: all assets are CC0, no attribution required (https://polyhaven.com/license). Authors are kept here anyway.
