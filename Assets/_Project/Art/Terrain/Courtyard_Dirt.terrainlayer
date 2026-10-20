@@ -7,17 +7,17 @@ TerrainLayer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Courtyard_Dirt
-  m_DiffuseTexture: {fileID: 2800000, guid: b075d48064d55484f8f593efb6941674, type: 3}
-  m_NormalMapTexture: {fileID: 2800000, guid: 84b1622e7951a4d4f90c8de0abf5ba23, type: 3}
-  m_MaskMapTexture: {fileID: 0}
+  m_DiffuseTexture: {fileID: 2800000, guid: 99e3a314473362942ab87f88aa19a7af, type: 3}
+  m_NormalMapTexture: {fileID: 2800000, guid: 360689a5ab689014ebb4b5d4f050fce7, type: 3}
+  m_MaskMapTexture: {fileID: 2800000, guid: 096cd9e8342d1884fa19b9c422f220ee, type: 3}
   m_TileSize: {x: 4, y: 4}
   m_TileOffset: {x: 0, y: 0}
   m_Specular: {r: 0, g: 0, b: 0, a: 0}
   m_Metallic: 0
-  m_Smoothness: 0.05
-  m_NormalScale: 0.6
-  m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 0}
-  m_DiffuseRemapMax: {x: 0.46, y: 0.42, z: 0.41, w: 1}
+  m_Smoothness: 0.2
+  m_NormalScale: 0.8
+  m_DiffuseRemapMin: {x: 0.05, y: 0.05, z: 0.05, w: 0}
+  m_DiffuseRemapMax: {x: 0.58, y: 0.55, z: 0.53, w: 1}
   m_MaskMapRemapMin: {x: 0, y: 0, z: 0, w: 0}
   m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 1}
   m_SmoothnessSource: 1
