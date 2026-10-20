@@ -29,7 +29,7 @@ MonoBehaviour:
   _animatorTrigger: FlameSwing
   _clipSeconds: 1.25
   _releaseClipSeconds: 0.67
-  _playbackSpeed: 1.2
+  _playbackSpeed: 1.56
   _startRadius: 1.2
   _speed: 9
   _halfAngleDegrees: 50

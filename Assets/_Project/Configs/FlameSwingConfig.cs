@@ -18,7 +18,7 @@ namespace Game.Configs
         [SerializeField] private string _animatorTrigger = "FlameSwing";
         [SerializeField] private float _clipSeconds = 1.25f;
         [SerializeField] private float _releaseClipSeconds = 0.67f;
-        [SerializeField] private float _playbackSpeed = 1.2f;
+        [SerializeField] private float _playbackSpeed = 1.56f;
 
         [Header("Wave")]
         [SerializeField] private float _startRadius = 1.2f;

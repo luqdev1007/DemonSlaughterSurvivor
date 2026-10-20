@@ -30,6 +30,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<FlameSwingStarted> _started = default;
         private readonly EcsPoolInject<SpecialAttack> _specialAttacks = default;
         private readonly EcsPoolInject<AbilityCooldownScale> _cooldownScales = default;
+        private readonly EcsPoolInject<InputState> _inputStates = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -67,6 +68,9 @@ namespace Game.Simulation.Systems
                 ref FlameSwingCooldown cooldown = ref _cooldownPool.Value.Get(hero);
 
                 if (cooldown.RemainingTicks > 0)
+                    continue;
+
+                if (_inputStates.Value.Has(hero) == false || _inputStates.Value.Get(hero).StandHeld == false)
                     continue;
 
                 if (CountEnemiesAhead(hero, config) < config.MinEnemies)
