@@ -9,17 +9,19 @@ namespace Game.UI
         [SerializeField] private UiFade _fade;
         [SerializeField] private Button _resume;
         [SerializeField] private Button _settings;
+        [SerializeField] private Button _exit;
         [SerializeField] private SettingsPopupView _settingsPopup;
 
-        public bool IsWired => _fade != null && _fade.IsWired && _resume != null && _settings != null
+        public bool IsWired => _fade != null && _fade.IsWired && _resume != null && _settings != null && _exit != null
             && _settingsPopup != null && _settingsPopup.IsWired;
 
         public SettingsPopupView SettingsPopup => _settingsPopup;
 
-        public void Bind(Action onResume, Action onSettings)
+        public void Bind(Action onResume, Action onSettings, Action onExit)
         {
             _resume.onClick.AddListener(() => onResume());
             _settings.onClick.AddListener(() => onSettings());
+            _exit.onClick.AddListener(() => onExit());
         }
 
         public void Unbind()
@@ -29,6 +31,9 @@ namespace Game.UI
 
             if (_settings != null)
                 _settings.onClick.RemoveAllListeners();
+
+            if (_exit != null)
+                _exit.onClick.RemoveAllListeners();
         }
 
         public void SetOpen(bool open)

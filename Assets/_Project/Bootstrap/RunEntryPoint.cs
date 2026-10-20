@@ -227,6 +227,13 @@ namespace Game.Bootstrap
 
             if (_isMenuPaused)
             {
+                if (_pauseMenuInput.ConsumeExitRequested())
+                {
+                    ExitFromMenu();
+
+                    return;
+                }
+
                 bool resume = _pauseInput.ConsumePausePressed() | _pauseMenuInput.ConsumeResumeRequested();
 
                 if (resume)
@@ -433,6 +440,17 @@ namespace Game.Bootstrap
 
             if (_isPaused)
                 _choiceInput.Clear();
+        }
+
+        private void ExitFromMenu()
+        {
+            _isFinishing = true;
+
+            ReleaseMenuPause();
+
+            _pauseMenuSink.Hide();
+
+            _launcher.FinishAsync().Forget();
         }
 
         private void ReleaseMenuPause()

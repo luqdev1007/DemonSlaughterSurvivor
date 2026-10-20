@@ -85,7 +85,7 @@ namespace Game.UI
                     $"HUD prefab '{_level.HudPrefab.name}' needs a {nameof(HudView)} on its root with the health fill, health text, ultimate charge fill, vignette, " +
                     $"an {nameof(UpgradeChoiceView)} with its panel and {_view.UpgradeChoice.SlotCount} wired perk cards and a tooltip," +
                     $"the experience fill and level text, the boss bar with its fill and name, a wired {nameof(BossMarkerView)}, the victory banner, a wired {nameof(RunSummaryView)}, " +
-                    $"and a {nameof(PauseMenuView)} with its fade, resume and settings buttons and a wired {nameof(SettingsPopupView)} assigned.");
+                    $"and a {nameof(PauseMenuView)} with its fade, resume, settings and exit buttons and a wired {nameof(SettingsPopupView)} assigned.");
 
             _view.UpgradeChoice.Bind(_submit.Submit);
             _view.ItemChoice.Bind(_submit.Submit);
@@ -93,7 +93,7 @@ namespace Game.UI
             RefreshItemChoice();
 
             _settingsPopup = new SettingsPopupPresenter(_view.PauseMenu.SettingsPopup, _soundSettings, _combatText);
-            _view.PauseMenu.Bind(_pauseMenu.RequestResume, _settingsPopup.Open);
+            _view.PauseMenu.Bind(_pauseMenu.RequestResume, _settingsPopup.Open, _pauseMenu.RequestExit);
             _view.PauseMenu.HideImmediate();
 
             _view.RunSummary.Bind(_result.RequestExit);

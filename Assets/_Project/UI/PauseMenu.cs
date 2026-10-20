@@ -9,6 +9,7 @@ namespace Game.UI
         private readonly Subject<Unit> _changed = new Subject<Unit>();
 
         private bool _resumeRequested;
+        private bool _exitRequested;
 
         public bool IsOpen { get; private set; }
 
@@ -18,6 +19,7 @@ namespace Game.UI
         {
             IsOpen = true;
             _resumeRequested = false;
+            _exitRequested = false;
 
             _changed.OnNext(Unit.Default);
         }
@@ -26,6 +28,7 @@ namespace Game.UI
         {
             IsOpen = false;
             _resumeRequested = false;
+            _exitRequested = false;
 
             _changed.OnNext(Unit.Default);
         }
@@ -36,6 +39,24 @@ namespace Game.UI
                 return;
 
             _resumeRequested = true;
+        }
+
+        public void RequestExit()
+        {
+            if (IsOpen == false)
+                return;
+
+            _exitRequested = true;
+        }
+
+        public bool ConsumeExitRequested()
+        {
+            if (_exitRequested == false)
+                return false;
+
+            _exitRequested = false;
+
+            return true;
         }
 
         public bool ConsumeResumeRequested()
