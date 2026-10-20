@@ -151,7 +151,7 @@ Volume_Danger (Art/Volumes/Volume_Danger.asset, в Atmosphere_Threat.prefab; к�
 ======================================================================
 
 Сравнение: «до» — билд 066 (коммит 83c1264e, тот же код без 067), «после» — билд HEAD 067. Ryzen 5 2600X + GTX 1070 Ti.
-Сырые сводки — 067_graphics-rework_screens\measurementsefore_summary.txt / after_summary.txt (+ посекундные CSV).
+Сырые сводки — 067_graphics-rework_screens/measurements/before_summary.txt / after_summary.txt (+ посекундные CSV).
 
                  кадр ср. / p95 / p99, мс      GPU, мс       рендер-поток, мс   SetPass   теневые кастеры   треугольники, млн
   плато 150 до    8.09 /  9.95 / 11.68          3.44          3.65               164       1312              10.9
