@@ -3,9 +3,9 @@
 
 #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
 
-half3 CharacterRim(float3 geometricNormalWS, half3 viewDirectionWS)
+half3 CharacterRim(InputData inputData)
 {
-    half facing = saturate(dot(normalize(geometricNormalWS), normalize(viewDirectionWS)));
+    half facing = saturate(dot(normalize(inputData.normalWS), normalize(inputData.viewDirectionWS)));
     half rim = pow(1.0h - facing, _RimPower) * _RimStrength;
     return _RimColor.rgb * rim;
 }
@@ -49,7 +49,7 @@ void CharacterLitPassFragment(
     InitializeBakedGIData(input, inputData);
 
     half4 color = UniversalFragmentPBR(inputData, surfaceData);
-    color.rgb += CharacterRim(input.normalWS.xyz, inputData.viewDirectionWS);
+    color.rgb += CharacterRim(inputData);
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
     color.a = OutputAlpha(color.a, IsSurfaceTypeTransparent(_Surface));
 
