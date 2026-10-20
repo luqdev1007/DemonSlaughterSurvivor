@@ -249,11 +249,6 @@ namespace Game.Simulation.Tests
                 return pressed;
             }
 
-            public bool ConsumeUltimatePressed()
-            {
-                return false;
-            }
-
             public void ResetLatches()
             {
                 DashPressed = false;

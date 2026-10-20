@@ -8,8 +8,6 @@ namespace Game.Core
 
         bool ConsumeDashPressed();
 
-        bool ConsumeUltimatePressed();
-
         void ResetLatches();
     }
 }

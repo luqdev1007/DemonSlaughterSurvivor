@@ -12,7 +12,6 @@ namespace Game.Services
 
         private bool _dashPressed;
         private bool _chargeReleased;
-        private bool _ultimatePressed;
         private bool _pausePressed;
 
         public InputService()
@@ -20,7 +19,6 @@ namespace Game.Services
             _input = new GameControls();
             _input.Gameplay.Dash.performed += OnDashPerformed;
             _input.Gameplay.ChargeDash.canceled += OnChargeCanceled;
-            _input.Gameplay.Ultimate.performed += OnUltimatePerformed;
             _input.Gameplay.Pause.performed += OnPausePerformed;
             _input.Enable();
         }
@@ -57,16 +55,6 @@ namespace Game.Services
             return true;
         }
 
-        public bool ConsumeUltimatePressed()
-        {
-            if (_ultimatePressed == false)
-                return false;
-
-            _ultimatePressed = false;
-
-            return true;
-        }
-
         public bool ConsumePausePressed()
         {
             if (_pausePressed == false)
@@ -81,7 +69,6 @@ namespace Game.Services
         {
             _dashPressed = false;
             _chargeReleased = false;
-            _ultimatePressed = false;
             _pausePressed = false;
         }
 
@@ -89,7 +76,6 @@ namespace Game.Services
         {
             _input.Gameplay.Dash.performed -= OnDashPerformed;
             _input.Gameplay.ChargeDash.canceled -= OnChargeCanceled;
-            _input.Gameplay.Ultimate.performed -= OnUltimatePerformed;
             _input.Gameplay.Pause.performed -= OnPausePerformed;
             _input.Disable();
             _input.Dispose();
@@ -103,11 +89,6 @@ namespace Game.Services
         private void OnChargeCanceled(InputAction.CallbackContext context)
         {
             _chargeReleased = true;
-        }
-
-        private void OnUltimatePerformed(InputAction.CallbackContext context)
-        {
-            _ultimatePressed = true;
         }
 
         private void OnPausePerformed(InputAction.CallbackContext context)

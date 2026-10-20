@@ -14,9 +14,8 @@ namespace Game.Simulation.Systems
     {
         public const string SourceId = "ult.berserk";
 
-        private readonly EcsFilterInject<Inc<Player, UltimateRequest, UltimateCharge>, Exc<BerserkMode, Dead, Dashing, SpecialAttack>> _filter = default;
+        private readonly EcsFilterInject<Inc<Player, UltimateCharge>, Exc<BerserkMode, Dead, Dashing, SpecialAttack>> _filter = default;
 
-        private readonly EcsPoolInject<UltimateRequest> _requests = default;
         private readonly EcsPoolInject<UltimateCharge> _charges = default;
         private readonly EcsPoolInject<BerserkMode> _modes = default;
         private readonly EcsPoolInject<PoweringUp> _poweringUps = default;
@@ -71,8 +70,6 @@ namespace Game.Simulation.Systems
                 }
 
                 StartPowerUp(hero);
-
-                _requests.Value.Del(hero);
             }
         }
 

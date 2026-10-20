@@ -56,51 +56,29 @@ namespace Game.Simulation.Tests
             Build();
 
             SetCharge(99.9f);
-            Press();
-            Step();
+            Step(8);
 
             Assert.IsFalse(InMode(), "the ultimate must not start below the maximum");
 
-            Step(8);
             SetCharge(100f);
-            Press();
             Step();
 
-            Assert.IsTrue(InMode());
+            Assert.IsTrue(InMode(), "full rage starts the mode on its own, without a press");
             Assert.AreEqual(ModeTicks, Mode().TotalTicks);
         }
 
         [Test]
-        public void PressWithinTheBufferStartsWhenRageFills()
+        public void RageFilledByHitsStartsTheMode()
         {
             Build();
 
-            SetCharge(99f);
-            Press();
-            Step(6);
+            for (int tick = 0; tick < 600 && InMode() == false; tick++)
+            {
+                Hit(20f);
+                Step();
+            }
 
-            Assert.IsFalse(InMode());
-
-            SetCharge(100f);
-            Step();
-
-            Assert.IsTrue(InMode(), "a press 100 ms before the rage fills is still inside the 120 ms buffer");
-        }
-
-        [Test]
-        public void PressOlderThanTheBufferIsForgotten()
-        {
-            Build();
-
-            SetCharge(99f);
-            Press();
-            Step(8);
-
-            SetCharge(100f);
-            Step();
-
-            Assert.IsFalse(InMode(), "a press 133 ms old must have expired");
-            Assert.IsFalse(_world.GetPool<UltimateRequest>().Has(_hero));
+            Assert.IsTrue(InMode(), "hits fill the rage, and the full rage starts the mode by itself");
         }
 
         [Test]
@@ -203,7 +181,7 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void SecondPressDuringTheModeDoesNothing()
+        public void FullRageDuringTheModeDoesNotRestartIt()
         {
             Build();
             StartMode();
@@ -212,16 +190,11 @@ namespace Game.Simulation.Tests
 
             int remaining = Mode().RemainingTicks;
 
-            Press();
             Step();
 
-            Assert.AreEqual(remaining - 1, Mode().RemainingTicks, "a second press must not restart or extend the mode");
+            Assert.AreEqual(remaining - 1, Mode().RemainingTicks, "the rage stays full during the mode, and that must not restart or extend it");
             Assert.AreEqual(ModeTicks, Mode().TotalTicks);
             Assert.AreEqual(4, CountModifiers(StartBerserkSystem.SourceId));
-
-            Step(10);
-
-            Assert.IsFalse(_world.GetPool<UltimateRequest>().Has(_hero), "the press expires instead of waiting for the mode to end");
         }
 
         [Test]
@@ -232,7 +205,6 @@ namespace Game.Simulation.Tests
             SetCharge(100f);
             _world.GetPool<Dead>().Add(_hero);
 
-            Press();
             Step(3);
 
             Assert.IsFalse(InMode());
@@ -245,7 +217,6 @@ namespace Game.Simulation.Tests
 
             Step(5);
             SetCharge(100f);
-            Press();
 
             int total = 5 + ModeTicks + 10;
 
@@ -386,18 +357,16 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void UltimatePressedMidDashWaitsInsteadOfExpiring()
+        public void FullRageMidDashWaitsForTheDashToEnd()
         {
             Build(PowerUpSeconds);
 
             SetCharge(100f);
             _world.GetPool<Dashing>().Add(_hero);
 
-            Press();
             Step(30);
 
             Assert.IsFalse(InMode(), "the ultimate must not start mid-dash");
-            Assert.IsTrue(_world.GetPool<UltimateRequest>().Has(_hero), "a press held through a 0.5 s dash must not expire");
 
             _world.GetPool<Dashing>().Del(_hero);
             Step();
@@ -457,8 +426,6 @@ namespace Game.Simulation.Tests
                     Hit(1f + random.NextUnit() * 20f);
                 else if (roll < 0.14f)
                     Receive(1f + random.NextUnit() * 20f);
-                else if (roll < 0.16f)
-                    Press();
 
                 Step();
 
@@ -518,12 +485,10 @@ namespace Game.Simulation.Tests
             _input = new FakeInput();
             _systems = new EcsSystems(_world);
 
-            _systems.Add(new ReadUltimateInputSystem());
             _systems.Add(new StartDashSystem());
             _systems.Add(new TickBerserkModeSystem());
             _systems.Add(new TickPowerUpSystem());
             _systems.Add(new StartBerserkSystem());
-            _systems.Add(new ExpireUltimateRequestSystem());
             _systems.Add(new RecomputeStatsSystem());
             _systems.Add(new ApplyMoveSpeedSystem());
             _systems.Add(new InterruptSwingSystem());
@@ -592,7 +557,6 @@ namespace Game.Simulation.Tests
         private void StartMode()
         {
             SetCharge(100f);
-            Press();
             Step();
 
             Assert.IsTrue(InMode(), "fixture: the mode did not start");
@@ -645,11 +609,6 @@ namespace Game.Simulation.Tests
         private float RawTo(int target)
         {
             return _lastRaw[target];
-        }
-
-        private void Press()
-        {
-            _input.UltimatePressed = true;
         }
 
         private void Hit(float amount)
@@ -754,8 +713,6 @@ namespace Game.Simulation.Tests
 
         private sealed class FakeInput : IInputService
         {
-            public bool UltimatePressed;
-
             public Vector2 MoveAxis => Vector2.zero;
 
             public bool ConsumeDashPressed()
@@ -763,19 +720,8 @@ namespace Game.Simulation.Tests
                 return false;
             }
 
-            public bool ConsumeUltimatePressed()
-            {
-                if (UltimatePressed == false)
-                    return false;
-
-                UltimatePressed = false;
-
-                return true;
-            }
-
             public void ResetLatches()
             {
-                UltimatePressed = false;
             }
         }
 

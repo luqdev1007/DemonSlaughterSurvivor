@@ -358,11 +358,6 @@ namespace Game.Simulation.Tests
                 return value;
             }
 
-            public bool ConsumeUltimatePressed()
-            {
-                return false;
-            }
-
             public void ResetLatches()
             {
             }

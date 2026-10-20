@@ -13,7 +13,6 @@ namespace Game.Simulation.Systems
             systems.Add(new ReadDashInputSystem());
             systems.Add(new ReadBackleapInputSystem());
             systems.Add(new ReadBlinkInputSystem());
-            systems.Add(new ReadUltimateInputSystem());
             // 2.  Abilities
             systems.Add(new TickDashCooldownSystem());
             systems.Add(new AdvanceDashSystem());
@@ -26,7 +25,6 @@ namespace Game.Simulation.Systems
             systems.Add(new TickBerserkModeSystem());
             systems.Add(new TickPowerUpSystem());
             systems.Add(new StartBerserkSystem());
-            systems.Add(new ExpireUltimateRequestSystem());
             // 3.  Spawn
             systems.Add(new SpawnPlayerSystem());
             systems.Add(new SpawnBreakablesSystem());
