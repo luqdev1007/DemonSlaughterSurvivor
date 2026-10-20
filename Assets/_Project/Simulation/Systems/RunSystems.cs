@@ -34,6 +34,7 @@ namespace Game.Simulation.Systems
             systems.Add(new SpawnWaveSystem());
             systems.Add(new SpawnRuneSystem());
             systems.Add(new ApplyLowHealthFurySystem());
+            systems.Add(new ApplyRapidFireSystem());
             systems.Add(new RecomputeStatsSystem());
             // 4.  AI
             systems.Add(new AcquireChaseTargetSystem());
@@ -81,6 +82,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ExpireSpecialAttackSystem());
             systems.Add(new StartDashFinisherSystem());
             systems.Add(new StartExecutionSystem());
+            systems.Add(new StartFlameSwingSystem());
             systems.Add(new ApplyExecutionThirstSystem());
             systems.Add(new StartCounterStrikeSystem());
             systems.Add(new StartSwingSystem());
@@ -103,6 +105,8 @@ namespace Game.Simulation.Systems
             systems.Add(new GrantHarvestHealSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
             systems.Add(new AdvanceExecutionSystem());
+            systems.Add(new AdvanceFlameSwingSystem());
+            systems.Add(new AdvanceFlameWaveSystem());
             systems.Add(new AdvanceDashFinisherSystem());
             systems.Add(new ResolveAreaStrikeSystem());
             systems.Add(new PulseFireSegmentsSystem());
@@ -169,6 +173,7 @@ namespace Game.Simulation.Systems
             systems.Add(new PlaySwingFeedbackSystem());
             systems.Add(new PlayLeapFeedbackSystem());
             systems.Add(new PlayExecutionFeedbackSystem());
+            systems.Add(new PlayFlameSwingFeedbackSystem());
             systems.Add(new PlayDashFinisherFeedbackSystem());
             systems.Add(new TickLeapImpactFxSystem());
             systems.Add(new SpawnLeapImpactFxSystem());

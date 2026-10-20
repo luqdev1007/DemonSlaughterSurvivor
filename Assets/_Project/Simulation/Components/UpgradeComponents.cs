@@ -19,6 +19,13 @@ namespace Game.Simulation.Components
 
     public struct LowHealthFury { public int Step; }
 
+    public struct RapidFire
+    {
+        public int CooldownTicks;
+        public int ActiveTicks;
+        public float Applied;
+    }
+
     public struct CounterStrikeArmed
     {
         public int RemainingTicks;

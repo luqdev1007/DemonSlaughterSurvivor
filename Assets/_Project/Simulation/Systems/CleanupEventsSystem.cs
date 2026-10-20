@@ -18,6 +18,7 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<LevelUpEvent>> _levelUps = default;
         private readonly EcsFilterInject<Inc<LeapStarted>> _leapStarts = default;
         private readonly EcsFilterInject<Inc<ExecutionStarted>> _executionStarts = default;
+        private readonly EcsFilterInject<Inc<FlameSwingStarted>> _flameSwingStarts = default;
         private readonly EcsFilterInject<Inc<RangedWindupStarted>> _windupStarts = default;
         private readonly EcsFilterInject<Inc<CastInterruptedEvent>> _castInterrupts = default;
         private readonly EcsFilterInject<Inc<DashEndedEvent>> _dashEnds = default;
@@ -29,6 +30,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<LevelUpEvent> _levelUpPool = default;
         private readonly EcsPoolInject<LeapStarted> _leapStartPool = default;
         private readonly EcsPoolInject<ExecutionStarted> _executionStartPool = default;
+        private readonly EcsPoolInject<FlameSwingStarted> _flameSwingStartPool = default;
         private readonly EcsPoolInject<RangedWindupStarted> _windupStartPool = default;
         private readonly EcsPoolInject<CastInterruptedEvent> _castInterruptPool = default;
         private readonly EcsPoolInject<DashEndedEvent> _dashEndPool = default;
@@ -68,6 +70,9 @@ namespace Game.Simulation.Systems
 
             foreach (int entity in _executionStarts.Value)
                 _executionStartPool.Value.Del(entity);
+
+            foreach (int entity in _flameSwingStarts.Value)
+                _flameSwingStartPool.Value.Del(entity);
 
             foreach (int entity in _windupStarts.Value)
                 _windupStartPool.Value.Del(entity);

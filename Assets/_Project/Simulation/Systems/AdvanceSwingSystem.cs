@@ -1,4 +1,5 @@
 using Game.Configs;
+using Game.Core;
 using Game.Simulation.Components;
 using Game.Simulation.Services;
 using Leopotam.EcsLite;
@@ -13,10 +14,12 @@ namespace Game.Simulation.Systems
     {
         private const int SegmentCapacity = 64;
         private const int CandidateCapacityReserve = 16;
+        private const float SweepMinReach = 0.05f;
 
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Swing>> _swings = default;
+        private readonly EcsFilterInject<Inc<TakenPerk>> _taken = default;
 
         private readonly EcsPoolInject<Swing> _swingPool = default;
         private readonly EcsPoolInject<Swinging> _swinging = default;
@@ -34,11 +37,13 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Velocity> _velocities = default;
         private readonly EcsPoolInject<Pushed> _pushes = default;
         private readonly EcsPoolInject<NotPushable> _notPushables = default;
+        private readonly EcsPoolInject<TakenPerk> _takenPool = default;
 
         private readonly EcsCustomInject<SpatialGrid> _grid = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<EnemyMotionBounds> _motionBounds = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
+        private readonly EcsCustomInject<IContentRegistry> _content = default;
 
         private Vector3[] _hands;
         private Vector3[] _tips;
@@ -113,7 +118,11 @@ namespace Game.Simulation.Systems
                 reach = Math.Max(reach, FlatDistance(_tips[index], ownerPosition));
             }
 
-            float radius = reach * swing.Reach + _motionBounds.Value.MaxEnemyBodyRadius;
+            float bladeReach = reach * swing.Reach;
+            bool sweeping = TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out SweepingStrikesConfig sweep, out int sweepLevel);
+            SweepingStrikesLevel sweepEntry = sweeping ? sweep.Level(sweepLevel) : null;
+            float sweepReach = sweeping && bladeReach > SweepMinReach ? swing.Reach * (bladeReach + sweepEntry.ExtraRadius) / bladeReach : 0f;
+            float radius = bladeReach + (sweeping ? sweepEntry.ExtraRadius : 0f) + _motionBounds.Value.MaxEnemyBodyRadius;
 
             _grid.Value.Query(ownerPosition, radius, _motionBounds.Value.CandidateSlack(delta), _candidates);
 
@@ -149,7 +158,24 @@ namespace Game.Simulation.Systems
                     swing.Reach);
 
                 if (hit == false)
+                {
+                    if (sweepReach > 0f && SwingSweep.Hits(
+                            _hands,
+                            _tips,
+                            count,
+                            pose,
+                            variant.HalfAngleDegrees + arcBonus,
+                            targetPosition,
+                            _bodyRadii.Value.Get(candidate).Value,
+                            _bodyHeights.Value.Get(candidate).Value,
+                            sweepReach))
+                    {
+                        RememberHit(ref swing, packed);
+                        SweepHit(world, packed, owner, ownerPosition, damage * sweepEntry.DamageShare, sweep);
+                    }
+
                     continue;
+                }
 
                 RememberHit(ref swing, packed);
 
@@ -174,6 +200,17 @@ namespace Game.Simulation.Systems
                     PushFromPoint.Apply(_pushes.Value, candidate, direction, swing.PushSpeed, swing.PushTicks);
                 }
             }
+        }
+
+        private void SweepHit(EcsWorld world, EcsPackedEntity target, int owner, Vector3 ownerPosition, float amount, SweepingStrikesConfig sweep)
+        {
+            ref DamageEvent damageEvent = ref _damageEvents.Value.Add(world.NewEntity());
+            damageEvent.Target = target;
+            damageEvent.Source = world.PackEntity(owner);
+            damageEvent.SourcePosition = ownerPosition;
+            damageEvent.Amount = amount;
+            damageEvent.Kind = DamageKind.Perk;
+            damageEvent.SourcePerk = sweep;
         }
 
         private static bool AlreadyHit(ref Swing swing, in EcsPackedEntity candidate)

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61b1f21972427e946a8f4e6d1ed3e0fa, type: 3}
+  m_Name: FlameSwing_Berserk
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.FlameSwingConfig
+  _levels:
+  - _cooldownSeconds: 8
+    _damageShare: 1.5
+    _distance: 8
+  - _cooldownSeconds: 7
+    _damageShare: 2
+    _distance: 9
+  - _cooldownSeconds: 6
+    _damageShare: 2.5
+    _distance: 10
+  _locksMovement: 1
+  _triggerRange: 6
+  _triggerHalfAngleDegrees: 60
+  _minEnemies: 2
+  _animatorTrigger: FlameSwing
+  _clipSeconds: 1.25
+  _releaseClipSeconds: 0.67
+  _playbackSpeed: 1.2
+  _startRadius: 1.2
+  _speed: 9
+  _halfAngleDegrees: 50
+  _thickness: 0.8
+  _pillarCount: 15
+  _pillarPrefab: {fileID: 2382217929639597898, guid: d7fc198d1bcacc648a6f037f7e71d391, type: 3}

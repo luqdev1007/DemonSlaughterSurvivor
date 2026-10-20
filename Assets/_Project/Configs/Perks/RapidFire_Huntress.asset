@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd339ceb86972034a93ed1c70a57b582, type: 3}
+  m_Name: RapidFire_Huntress
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.RapidFireConfig
+  _levels:
+  - _intervalSeconds: 10
+    _durationSeconds: 4
+    _attackSpeed: 0.3
+    _demonicAttackSpeed: 0.2
+  - _intervalSeconds: 9
+    _durationSeconds: 4.5
+    _attackSpeed: 0.4
+    _demonicAttackSpeed: 0.25
+  - _intervalSeconds: 8
+    _durationSeconds: 5
+    _attackSpeed: 0.5
+    _demonicAttackSpeed: 0.3
+  _demonicThreshold: 0.6

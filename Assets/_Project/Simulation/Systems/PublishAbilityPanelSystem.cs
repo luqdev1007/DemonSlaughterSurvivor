@@ -39,6 +39,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<ArcaneWaveCooldown> _waveCooldowns = default;
         private readonly EcsPoolInject<TornadoCooldown> _tornadoCooldowns = default;
         private readonly EcsPoolInject<FireballVolleyCooldown> _volleyCooldowns = default;
+        private readonly EcsPoolInject<RapidFire> _rapidFires = default;
+        private readonly EcsPoolInject<FlameSwingCooldown> _flameSwingCooldowns = default;
 
         private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -96,13 +98,21 @@ namespace Game.Simulation.Systems
                 || behaviour is DeathRayConfig
                 || behaviour is ArcaneWaveConfig
                 || behaviour is TornadoConfig
-                || behaviour is FireballVolleyConfig;
+                || behaviour is FireballVolleyConfig
+                || behaviour is RapidFireConfig
+                || behaviour is FlameSwingConfig;
         }
 
         private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
         {
             if (behaviour is ExecutionConfig && _executionCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _executionCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is FlameSwingConfig && _flameSwingCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _flameSwingCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is RapidFireConfig && _rapidFires.Value.Has(hero))
+                return Mathf.Max(0, _rapidFires.Value.Get(hero).CooldownTicks);
 
             if (behaviour is PowerShotConfig && _powerShotCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _powerShotCooldowns.Value.Get(hero).RemainingTicks);
