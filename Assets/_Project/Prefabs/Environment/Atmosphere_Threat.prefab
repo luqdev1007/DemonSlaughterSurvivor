@@ -107,5 +107,5 @@ MonoBehaviour:
     m_RotationOrder: 4
   _bossWeight: 0.9
   _blendSeconds: 3
-  _dangerFogDensity: 0.024
-  _dangerFogColor: {r: 0.14, g: 0.08, b: 0.11, a: 1}
+  _dangerFogDensity: 0.0125
+  _dangerFogColor: {r: 0.62, g: 0.59, b: 0.54, a: 1}
