@@ -127,7 +127,16 @@ namespace Game.Simulation.Systems
             _grid.Value.Query(ownerPosition, radius, _motionBounds.Value.CandidateSlack(delta), _candidates);
 
             float damage = _weaponDamages.Value.Get(weapon).Value * swing.DamageScale;
-            float arcBonus = _weaponPool.Value.Has(weapon) && _weaponPool.Value.Get(weapon).Config != null ? _weaponPool.Value.Get(weapon).Config.ArcBonusDegrees : 0f;
+            WeaponConfig weaponConfig = _weaponPool.Value.Has(weapon) ? _weaponPool.Value.Get(weapon).Config : null;
+            float arcBonus = weaponConfig != null ? weaponConfig.ArcBonusDegrees : 0f;
+            float pushSpeed = swing.PushSpeed;
+            int pushTicks = swing.PushTicks;
+
+            if (pushTicks <= 0 && weaponConfig != null && weaponConfig.HitPushSpeed > 0f && weaponConfig.HitPushSeconds > 0f)
+            {
+                pushSpeed = weaponConfig.HitPushSpeed;
+                pushTicks = Mathf.Max(1, Mathf.RoundToInt(weaponConfig.HitPushSeconds / delta));
+            }
 
             for (int index = 0; index < _candidates.Count; index++)
             {
@@ -172,6 +181,7 @@ namespace Game.Simulation.Systems
                     {
                         RememberHit(ref swing, packed);
                         SweepHit(world, packed, owner, ownerPosition, damage * sweepEntry.DamageShare, sweep);
+                        Push(candidate, ownerPosition, targetPosition, pose.Forward, pushSpeed, pushTicks);
                     }
 
                     continue;
@@ -193,13 +203,18 @@ namespace Game.Simulation.Systems
                 damageEvent.IsSlash = true;
                 damageEvent.SourcePerk = swing.SourcePerk;
 
-                if (swing.PushTicks > 0 && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)
-                {
-                    Vector3 direction = PushFromPoint.Direction(ownerPosition, targetPosition, pose.Forward);
-
-                    PushFromPoint.Apply(_pushes.Value, candidate, direction, swing.PushSpeed, swing.PushTicks);
-                }
+                Push(candidate, ownerPosition, targetPosition, pose.Forward, pushSpeed, pushTicks);
             }
+        }
+
+        private void Push(int candidate, Vector3 ownerPosition, Vector3 targetPosition, Vector3 forward, float speed, int ticks)
+        {
+            if (ticks <= 0 || speed <= 0f || _velocities.Value.Has(candidate) == false || _notPushables.Value.Has(candidate))
+                return;
+
+            Vector3 direction = PushFromPoint.Direction(ownerPosition, targetPosition, forward);
+
+            PushFromPoint.Apply(_pushes.Value, candidate, direction, speed, ticks);
         }
 
         private void SweepHit(EcsWorld world, EcsPackedEntity target, int owner, Vector3 ownerPosition, float amount, SweepingStrikesConfig sweep)

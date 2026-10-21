@@ -119,7 +119,10 @@ namespace Game.Simulation.Systems
                 }
 
                 if (pushes && distance <= config.PushRadius && _velocities.Value.Has(candidate) && _notPushables.Value.Has(candidate) == false)
+                {
                     PushFromPoint.Apply(_pushes.Value, candidate, direction, config.PushSpeed, pushTicks);
+                    _pushes.Value.Get(candidate).ArcHeight = config.PushArcHeight;
+                }
             }
         }
     }

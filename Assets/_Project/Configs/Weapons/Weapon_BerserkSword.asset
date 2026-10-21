@@ -17,6 +17,8 @@ MonoBehaviour:
   _cooldownSeconds: 0.25
   _reach: 1.25
   _arcBonusDegrees: 15
+  _hitPushSpeed: 6
+  _hitPushSeconds: 0.3
   _assistTurnSpeedDegrees: 720
   _assistMaxDegrees: 50
   _variants:

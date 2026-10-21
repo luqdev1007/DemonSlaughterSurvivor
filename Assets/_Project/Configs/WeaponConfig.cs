@@ -157,6 +157,10 @@ namespace Game.Configs
         [SerializeField] private float _reach = 1f;
         [SerializeField] private float _arcBonusDegrees;
 
+        [Header("Hit push")]
+        [SerializeField, Min(0f)] private float _hitPushSpeed;
+        [SerializeField, Min(0f)] private float _hitPushSeconds;
+
         [Header("Swing assist")]
         [SerializeField] private float _assistTurnSpeedDegrees = 720f;
         [SerializeField] private float _assistMaxDegrees = 50f;
@@ -182,6 +186,10 @@ namespace Game.Configs
         public float Reach => _reach;
 
         public float ArcBonusDegrees => _arcBonusDegrees;
+
+        public float HitPushSpeed => _hitPushSpeed;
+
+        public float HitPushSeconds => _hitPushSeconds;
 
         public float AssistTurnSpeedDegrees => _assistTurnSpeedDegrees;
 

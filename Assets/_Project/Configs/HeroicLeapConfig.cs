@@ -22,6 +22,7 @@ namespace Game.Configs
         [SerializeField] private float _pushRadius = 2.5f;
         [SerializeField] private float _pushSpeed = 5f;
         [SerializeField] private float _pushSeconds = 0.6f;
+        [SerializeField] private float _pushArcHeight;
 
         [Header("View")]
         [SerializeField] private float _arcHeight = 1.5f;
@@ -62,6 +63,8 @@ namespace Game.Configs
         public override float MaxPushSpeed => _pushSpeed;
 
         public float PushSeconds => _pushSeconds;
+
+        public float PushArcHeight => _pushArcHeight;
 
         public float ArcHeight => _arcHeight;
 
@@ -122,8 +125,8 @@ namespace Game.Configs
             if (_sectorHalfAngleDegrees <= 0f || _sectorHalfAngleDegrees > 180f || _sectorReach <= 0f)
                 throw new InvalidOperationException($"{label} strikes a sector of half angle {_sectorHalfAngleDegrees} deg to {_sectorReach} m; the angle must be in (0, 180] and the reach positive.");
 
-            if (_pushRadius < 0f || _pushSpeed < 0f || _pushSeconds < 0f)
-                throw new InvalidOperationException($"{label} pushes within {_pushRadius} m at {_pushSpeed} m/s for {_pushSeconds} s; none may be negative.");
+            if (_pushRadius < 0f || _pushSpeed < 0f || _pushSeconds < 0f || _pushArcHeight < 0f)
+                throw new InvalidOperationException($"{label} pushes within {_pushRadius} m at {_pushSpeed} m/s for {_pushSeconds} s with arc {_pushArcHeight} m; none may be negative.");
 
             if (_arcHeight < 0f || _impactFxSeconds < 0f)
                 throw new InvalidOperationException($"{label} has arc height {_arcHeight} m and impact effect {_impactFxSeconds} s; neither may be negative.");

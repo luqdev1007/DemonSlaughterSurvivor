@@ -29,9 +29,10 @@ MonoBehaviour:
   _surroundCount: 4
   _sectorHalfAngleDegrees: 60
   _sectorReach: 2.5
-  _pushRadius: 4
-  _pushSpeed: 5
-  _pushSeconds: 0.6
+  _pushRadius: 5
+  _pushSpeed: 11
+  _pushSeconds: 0.7
+  _pushArcHeight: 0.8
   _arcHeight: 1.5
   _impactFxPrefab: {fileID: 6511278628527712182, guid: 99d59f0cb6139c14ea5cdfd03051171f, type: 3}
   _impactFxSeconds: 0.4
