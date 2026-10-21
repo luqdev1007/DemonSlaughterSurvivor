@@ -11,18 +11,21 @@ namespace Game.Configs
         [Header("Waves")]
         [SerializeField, Min(1)] private int _waveCount = 3;
         [SerializeField, Range(1f, 360f)] private float _coneDegrees = 120f;
-        [SerializeField, Min(0f)] private float _startRadius = 0.8f;
-        [SerializeField, Min(0.1f)] private float _maxRadius = 9f;
-        [SerializeField, Min(0.1f)] private float _speed = 14f;
-        [SerializeField, Min(0.05f)] private float _thickness = 1f;
+        [SerializeField, Min(0f)] private float _startDistance = 0.8f;
+        [SerializeField, Min(0.1f)] private float _range = 10f;
+        [SerializeField, Min(0.1f)] private float _speed = 16f;
+        [SerializeField, Min(0.05f)] private float _halfWidth = 1f;
 
         [Header("Push")]
         [SerializeField, Min(0f)] private float _pushSpeed = 10f;
         [SerializeField, Min(0f)] private float _pushSeconds = 0.5f;
         [SerializeField, Min(0f)] private float _pushArcHeight = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _pushSideShare = 0.5f;
 
         [Header("View")]
-        [SerializeField] private GameObject _wavePrefab;
+        [SerializeField] private GameObject _burstPrefab;
+        [SerializeField, Min(0.1f)] private float _burstSpacing = 0.9f;
+        [SerializeField, Min(0.05f)] private float _burstSeconds = 1.4f;
 
         public override int LevelCount => _levels.Length;
 
@@ -30,15 +33,13 @@ namespace Game.Configs
 
         public float ConeDegrees => _coneDegrees;
 
-        public float WaveHalfAngleDegrees => _coneDegrees / _waveCount * 0.5f;
+        public float StartDistance => _startDistance;
 
-        public float StartRadius => _startRadius;
-
-        public float MaxRadius => _maxRadius;
+        public float Range => _range;
 
         public float Speed => _speed;
 
-        public float Thickness => _thickness;
+        public float HalfWidth => _halfWidth;
 
         public float PushSpeed => _pushSpeed;
 
@@ -48,7 +49,13 @@ namespace Game.Configs
 
         public float PushArcHeight => _pushArcHeight;
 
-        public GameObject WavePrefab => _wavePrefab;
+        public float PushSideShare => _pushSideShare;
+
+        public GameObject BurstPrefab => _burstPrefab;
+
+        public float BurstSpacing => _burstSpacing;
+
+        public float BurstSeconds => _burstSeconds;
 
         public ExecutionWavesLevel Level(int level)
         {
@@ -65,11 +72,11 @@ namespace Game.Configs
         {
             string label = $"{nameof(PerkConfig)} '{perk.Id}' execution waves '{name}'";
 
-            if (_wavePrefab == null)
-                throw new InvalidOperationException($"{label} is missing a wave view prefab.");
+            if (_burstPrefab == null)
+                throw new InvalidOperationException($"{label} is missing a burst view prefab.");
 
-            if (_maxRadius <= _startRadius)
-                throw new InvalidOperationException($"{label} starts at {_startRadius} m and ends at {_maxRadius} m; the waves would not travel.");
+            if (_range <= _startDistance)
+                throw new InvalidOperationException($"{label} starts at {_startDistance} m and ends at {_range} m; the waves would not travel.");
 
             for (int level = 1; level <= LevelCount; level++)
             {

@@ -18,11 +18,14 @@ MonoBehaviour:
   - _damageShare: 2.5
   _waveCount: 3
   _coneDegrees: 120
-  _startRadius: 0.8
-  _maxRadius: 9
-  _speed: 14
-  _thickness: 1
+  _startDistance: 0.8
+  _range: 10
+  _speed: 16
+  _halfWidth: 1
   _pushSpeed: 10
   _pushSeconds: 0.5
   _pushArcHeight: 0.5
-  _wavePrefab: {fileID: 5237154064876129976, guid: 49c93f146c90e044e8e1e5cb05e2a714, type: 3}
+  _pushSideShare: 0.5
+  _burstPrefab: {fileID: 2420121319563584244, guid: 8ae7300fa358d6f4d95b0bfffcc4997b, type: 3}
+  _burstSpacing: 0.9
+  _burstSeconds: 1.4

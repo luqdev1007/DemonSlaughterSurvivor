@@ -96,7 +96,8 @@ namespace Game.Simulation.Components
         public ExecutionWavesConfig Config;
         public Vector3 Origin;
         public Vector3 Direction;
-        public float Radius;
+        public float Travelled;
+        public float NextBurst;
         public float Damage;
         public EcsPackedEntity[] Hits;
         public int HitCount;
@@ -110,7 +111,8 @@ namespace Game.Simulation.Components
             c.Config = null;
             c.Origin = default;
             c.Direction = default;
-            c.Radius = 0f;
+            c.Travelled = 0f;
+            c.NextBurst = 0f;
             c.Damage = 0f;
             c.HitCount = 0;
         }

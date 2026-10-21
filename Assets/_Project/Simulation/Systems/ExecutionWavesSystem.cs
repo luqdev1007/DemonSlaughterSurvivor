@@ -38,6 +38,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Pushed> _pushes = default;
         private readonly EcsPoolInject<NotPushable> _notPushables = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
+        private readonly EcsPoolInject<LeapImpactFx> _bursts = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
@@ -76,17 +77,17 @@ namespace Game.Simulation.Systems
             {
                 ref ForceWave wave = ref _wavePool.Value.Get(entity);
 
-                float previous = wave.Radius;
+                float previous = wave.Travelled;
 
-                wave.Radius = Mathf.Min(wave.Config.MaxRadius, previous + wave.Config.Speed * delta);
+                wave.Travelled = Mathf.Min(wave.Config.Range, previous + wave.Config.Speed * delta);
 
                 if (wave.Owner.Unpack(world, out int owner))
                     Strike(world, ref wave, owner, previous, delta);
 
-                Scale(entity, wave.Radius);
+                Burst(world, ref wave, delta);
 
-                if (wave.Radius >= wave.Config.MaxRadius)
-                    Retire(world, entity);
+                if (wave.Travelled >= wave.Config.Range)
+                    world.DelEntity(entity);
             }
         }
 
@@ -116,36 +117,27 @@ namespace Game.Simulation.Systems
 
             for (int index = 0; index < config.WaveCount; index++)
             {
-                Vector3 direction = Quaternion.AngleAxis(first + step * index, Vector3.up) * forward;
-                int entity = world.NewEntity();
-
-                ref ForceWave wave = ref _wavePool.Value.Add(entity);
+                ref ForceWave wave = ref _wavePool.Value.Add(world.NewEntity());
                 wave.Owner = world.PackEntity(owner);
                 wave.Config = config;
                 wave.Origin = origin;
-                wave.Direction = direction;
-                wave.Radius = config.StartRadius;
+                wave.Direction = Quaternion.AngleAxis(first + step * index, Vector3.up) * forward;
+                wave.Travelled = config.StartDistance;
+                wave.NextBurst = config.StartDistance;
                 wave.Damage = damage;
-
-                _positions.Value.Add(entity).Value = origin;
-                _facings.Value.Add(entity).Value = direction;
-                _notIndexed.Value.Add(entity);
-                _views.Value.Add(entity).Value = _viewFactory.Value.Create(config.WavePrefab, origin);
-
-                Scale(entity, wave.Radius);
             }
         }
 
         private void Strike(EcsWorld world, ref ForceWave wave, int owner, float previous, float delta)
         {
             ExecutionWavesConfig config = wave.Config;
-            float halfThickness = config.Thickness * 0.5f;
-            float maxBody = _motionBounds.Value.MaxEnemyBodyRadius;
-            float halfAngle = config.WaveHalfAngleDegrees * Mathf.Deg2Rad;
             int pushTicks = Mathf.Max(1, Mathf.RoundToInt(config.PushSeconds / delta));
             bool pushes = config.PushSpeed > 0f && config.PushSeconds > 0f;
+            Vector3 from = wave.Origin + wave.Direction * previous;
+            Vector3 to = wave.Origin + wave.Direction * wave.Travelled;
+            float halfStep = (wave.Travelled - previous) * 0.5f;
 
-            _grid.Value.Query(wave.Origin, wave.Radius + halfThickness + maxBody, _motionBounds.Value.CandidateSlack(delta), _candidates);
+            _grid.Value.Query((from + to) * 0.5f, halfStep + config.HalfWidth + _motionBounds.Value.MaxEnemyBodyRadius, _motionBounds.Value.CandidateSlack(delta), _candidates);
 
             for (int index = 0; index < _candidates.Count; index++)
             {
@@ -160,13 +152,14 @@ namespace Game.Simulation.Systems
                 Vector3 offset = _positions.Value.Get(candidate).Value - wave.Origin;
                 offset.y = 0f;
 
-                float distance = offset.magnitude;
+                float along = Vector3.Dot(offset, wave.Direction);
                 float body = _bodyRadii.Value.Get(candidate).Value;
+                Vector3 lateral = offset - wave.Direction * along;
+                float closest = Mathf.Clamp(along, previous, wave.Travelled);
+                Vector3 gap = offset - wave.Direction * closest;
+                float reach = config.HalfWidth + body;
 
-                if (distance > wave.Radius + halfThickness + body || distance < previous - halfThickness - body)
-                    continue;
-
-                if (distance > body && Vector3.Dot(offset / distance, wave.Direction) < Mathf.Cos(Mathf.Min(Mathf.PI, halfAngle + body / distance)))
+                if (gap.x * gap.x + gap.z * gap.z > reach * reach)
                     continue;
 
                 EcsPackedEntity packed = world.PackEntity(candidate);
@@ -188,32 +181,30 @@ namespace Game.Simulation.Systems
                 if (pushes == false || _velocities.Value.Has(candidate) == false || _notPushables.Value.Has(candidate))
                     continue;
 
-                Vector3 direction = PushFromPoint.Direction(wave.Origin, wave.Origin + offset, wave.Direction);
+                Vector3 direction = PushFromPoint.Direction(Vector3.zero, wave.Direction + lateral.normalized * config.PushSideShare, wave.Direction);
 
                 PushFromPoint.Apply(_pushes.Value, candidate, direction, config.PushSpeed, pushTicks);
                 _pushes.Value.Get(candidate).ArcHeight = config.PushArcHeight;
             }
         }
 
-        private void Scale(int entity, float radius)
+        private void Burst(EcsWorld world, ref ForceWave wave, float delta)
         {
-            if (_views.Value.Has(entity) && _views.Value.Get(entity).Value is IAreaView area)
-                area.SetAreaScale(Mathf.Max(0.01f, radius));
-        }
+            ExecutionWavesConfig config = wave.Config;
+            int ticks = Mathf.Max(1, Mathf.RoundToInt(config.BurstSeconds / delta));
 
-        private void Retire(EcsWorld world, int entity)
-        {
-            if (_views.Value.Has(entity))
+            while (wave.NextBurst <= wave.Travelled + 1e-4f)
             {
-                ref View view = ref _views.Value.Get(entity);
+                Vector3 at = wave.Origin + wave.Direction * wave.NextBurst;
+                int entity = world.NewEntity();
 
-                if (view.Value != null)
-                    _viewFactory.Value.Release(view.Value);
+                _bursts.Value.Add(entity).RemainingTicks = ticks;
+                _positions.Value.Add(entity).Value = at;
+                _notIndexed.Value.Add(entity);
+                _views.Value.Add(entity).Value = _viewFactory.Value.Create(config.BurstPrefab, at);
 
-                view.Value = null;
+                wave.NextBurst += config.BurstSpacing;
             }
-
-            world.DelEntity(entity);
         }
 
         private static bool AlreadyHit(ref ForceWave wave, in EcsPackedEntity candidate)

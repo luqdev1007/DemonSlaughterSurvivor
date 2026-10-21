@@ -47,7 +47,7 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void ThreeWavesCoverTheConeInFrontAndHitEachEnemyOnce()
+        public void ThreeStraightWavesFanOutInTheConeAndHitEachEnemyOnce()
         {
             Build();
 
@@ -56,21 +56,24 @@ namespace Game.Simulation.Tests
             int edge = SpawnEnemy(Polar(55f, 3f));
             int outside = SpawnEnemy(Polar(80f, 3f));
             int behind = SpawnEnemy(Polar(180f, 2f));
-            int beyond = SpawnEnemy(Polar(0f, _config.MaxRadius + 1.5f));
+            int beyond = SpawnEnemy(Polar(0f, _config.Range + 1.5f));
+            int between = SpawnEnemy(Polar(20f, 7f));
 
             FinishExecution();
-            Run(Mathf.CeilToInt(_config.MaxRadius / _config.Speed / Tick) + 2);
+            Run(Mathf.CeilToInt(_config.Range / _config.Speed / Tick) + 2);
 
             float damage = WeaponDamage * _config.Level(1).DamageShare;
+            int burstsPerWave = Mathf.FloorToInt((_config.Range - _config.StartDistance) / _config.BurstSpacing + 1e-4f) + 1;
 
-            Assert.AreEqual(3, _views.Created, "one view per wave");
-            Assert.AreEqual(3, _views.Released, "the waves are gone at the end of their range");
+            Assert.AreEqual(3 * burstsPerWave, _views.Created, "a trail of bursts along each wave");
+            Assert.AreEqual(0, _world.Filter<ForceWave>().End().GetEntitiesCount(), "the waves are gone at the end of their range");
             Assert.AreEqual(damage, Total(ahead), 1e-4f);
             Assert.AreEqual(damage, Total(left), 1e-4f);
             Assert.AreEqual(damage, Total(edge), 1e-4f, "55 deg is inside the 120 deg cone");
             Assert.AreEqual(0f, Total(outside), "80 deg is outside the cone");
             Assert.AreEqual(0f, Total(behind));
             Assert.AreEqual(0f, Total(beyond));
+            Assert.AreEqual(0f, Total(between), "7 m out the lines are 2.4 m apart from a point between them");
         }
 
         [Test]
