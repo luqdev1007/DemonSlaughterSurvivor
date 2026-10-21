@@ -20,6 +20,42 @@ namespace Game.Simulation.Components
 
     public struct LightningArrowCooldown { public int RemainingTicks; }
 
+    public struct ChakramCooldown { public int RemainingTicks; }
+
+    public struct Chakram : IEcsAutoReset<Chakram>
+    {
+        public const int InitialHitCapacity = 32;
+
+        public ChakramConfig Config;
+        public EcsPackedEntity Owner;
+        public float StartAngleDegrees;
+        public float SpinDegrees;
+        public int ElapsedTicks;
+        public int TotalTicks;
+        public float Damage;
+        public float BleedTickDamage;
+        public int BleedTicks;
+        public EcsPackedEntity[] Hits;
+        public int HitCount;
+
+        public void AutoReset(ref Chakram c)
+        {
+            if (c.Hits == null)
+                c.Hits = new EcsPackedEntity[InitialHitCapacity];
+
+            c.Config = null;
+            c.Owner = default;
+            c.StartAngleDegrees = 0f;
+            c.SpinDegrees = 0f;
+            c.ElapsedTicks = 0;
+            c.TotalTicks = 0;
+            c.Damage = 0f;
+            c.BleedTickDamage = 0f;
+            c.BleedTicks = 0;
+            c.HitCount = 0;
+        }
+    }
+
     public struct LightningArrowRandom { public uint State; }
 
     public struct LightningChain

@@ -8,6 +8,7 @@ namespace Game.Simulation.Components
     {
         Burning = 0,
         Marked = 1,
+        Bleeding = 2,
     }
 
     public struct StatusFx
@@ -23,6 +24,17 @@ namespace Game.Simulation.Components
         public EcsPackedEntity Source;
         public float TickDamage;
         public float CritChanceBonus;
+        public int RemainingTicks;
+        public int TickCountdown;
+        public bool HasFx;
+    }
+
+    public struct Bleeding
+    {
+        public PerkBehaviourConfig SourcePerk;
+        public EcsPackedEntity Source;
+        public float TickDamage;
+        public int TickTicks;
         public int RemainingTicks;
         public int TickCountdown;
         public bool HasFx;

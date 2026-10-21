@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6466f9849e36c5c4aaa72c9cb9c1d65c, type: 3}
+  m_Name: ExecutionWaves_Berserk
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.ExecutionWavesConfig
+  _levels:
+  - _damageShare: 1.5
+  - _damageShare: 2
+  - _damageShare: 2.5
+  _waveCount: 3
+  _coneDegrees: 120
+  _startRadius: 0.8
+  _maxRadius: 9
+  _speed: 14
+  _thickness: 1
+  _pushSpeed: 10
+  _pushSeconds: 0.5
+  _pushArcHeight: 0.5
+  _wavePrefab: {fileID: 5237154064876129976, guid: 49c93f146c90e044e8e1e5cb05e2a714, type: 3}

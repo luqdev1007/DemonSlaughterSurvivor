@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53717ce3cd87b6640ab973e8d9198c21, type: 3}
+  m_Name: Perk_ExecutionWaves
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.PerkConfig
+  _id: perk.execution-waves
+  _displayName: "\u0412\u043E\u043B\u043D\u044B \u043A\u0430\u0437\u043D\u0438"
+  _description: "\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0432 \xAB\u041A\u0430\u0437\u043D\u044C\xBB,
+    \u0433\u0435\u0440\u043E\u0439 \u0432\u044B\u043F\u0443\u0441\u043A\u0430\u0435\u0442
+    \u043F\u0435\u0440\u0435\u0434 \u0441\u043E\u0431\u043E\u0439 \u0442\u0440\u0438
+    \u0441\u0438\u043B\u043E\u0432\u044B\u0435 \u0432\u043E\u043B\u043D\u044B \u043A\u043E\u043D\u0443\u0441\u043E\u043C
+    120\xB0. \u041A\u0430\u0436\u0434\u0430\u044F \u0432\u043E\u043B\u043D\u0430
+    \u043D\u0430\u043D\u043E\u0441\u0438\u0442 150\u2013250% \u0443\u0440\u043E\u043D\u0430
+    \u043E\u0440\u0443\u0436\u0438\u044F \u0438 \u043E\u0442\u0431\u0440\u0430\u0441\u044B\u0432\u0430\u0435\u0442
+    \u0432\u0440\u0430\u0433\u043E\u0432. \u0422\u0440\u0435\u0431\u0443\u0435\u0442
+    \xAB\u0413\u0435\u0440\u043E\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u043F\u0440\u044B\u0436\u043E\u043A\xBB
+    \u0438 \xAB\u041A\u0430\u0437\u043D\u044C\xBB."
+  _icon: {fileID: 21300000, guid: 84604ddc6d0bbbf44abca69413772668, type: 3}
+  _rarity: 3
+  _levels:
+  - _modifiers: []
+  - _modifiers: []
+  - _modifiers: []
+  _behaviour: {fileID: 11400000, guid: a04687c998bb05945bf5969da448774c, type: 2}
+  _requires:
+  - {fileID: 11400000, guid: 8750939a386203348a1e5e7ceb78ceca, type: 2}
+  - {fileID: 11400000, guid: 3cd0b45e2b9c08a48abc2b728554007b, type: 2}
+  _characters:
+  - {fileID: 11400000, guid: 29d13c4cfee513e429c8e2e39949af05, type: 2}

@@ -29,7 +29,6 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<AgileDashCooldown> _agileCooldowns = default;
         private readonly EcsPoolInject<CounterStrikeCooldown> _counterCooldowns = default;
         private readonly EcsPoolInject<SlicingDashCooldown> _slicingCooldowns = default;
-        private readonly EcsPoolInject<PunishingLeapCooldown> _punishCooldowns = default;
         private readonly EcsPoolInject<PowerShotCooldown> _powerShotCooldowns = default;
         private readonly EcsPoolInject<ArrowRainCooldown> _arrowRainCooldowns = default;
         private readonly EcsPoolInject<LightningArrowCooldown> _lightningCooldowns = default;
@@ -41,6 +40,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<FireballVolleyCooldown> _volleyCooldowns = default;
         private readonly EcsPoolInject<RapidFire> _rapidFires = default;
         private readonly EcsPoolInject<FlameSwingCooldown> _flameSwingCooldowns = default;
+        private readonly EcsPoolInject<ChakramCooldown> _chakramCooldowns = default;
 
         private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -89,7 +89,6 @@ namespace Game.Simulation.Systems
                 || behaviour is AgileDashConfig
                 || behaviour is CounterStrikeConfig
                 || behaviour is SlicingDashConfig
-                || behaviour is PunishingLeapConfig
                 || behaviour is PowerShotConfig
                 || behaviour is ArrowRainConfig
                 || behaviour is LightningArrowConfig
@@ -100,13 +99,17 @@ namespace Game.Simulation.Systems
                 || behaviour is TornadoConfig
                 || behaviour is FireballVolleyConfig
                 || behaviour is RapidFireConfig
-                || behaviour is FlameSwingConfig;
+                || behaviour is FlameSwingConfig
+                || behaviour is ChakramConfig;
         }
 
         private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
         {
             if (behaviour is ExecutionConfig && _executionCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _executionCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is ChakramConfig && _chakramCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _chakramCooldowns.Value.Get(hero).RemainingTicks);
 
             if (behaviour is FlameSwingConfig && _flameSwingCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _flameSwingCooldowns.Value.Get(hero).RemainingTicks);
@@ -152,9 +155,6 @@ namespace Game.Simulation.Systems
 
             if (behaviour is SlicingDashConfig && _slicingCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _slicingCooldowns.Value.Get(hero).RemainingTicks);
-
-            if (behaviour is PunishingLeapConfig && _punishCooldowns.Value.Has(hero))
-                return Mathf.Max(0, _punishCooldowns.Value.Get(hero).RemainingTicks);
 
             return 0;
         }

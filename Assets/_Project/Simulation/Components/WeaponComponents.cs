@@ -86,6 +86,36 @@ namespace Game.Simulation.Components
 
     public struct ExecutionStarted { }
 
+    public struct ExecutionFinishedEvent { public EcsPackedEntity Owner; }
+
+    public struct ForceWave : IEcsAutoReset<ForceWave>
+    {
+        public const int InitialHitCapacity = 32;
+
+        public EcsPackedEntity Owner;
+        public ExecutionWavesConfig Config;
+        public Vector3 Origin;
+        public Vector3 Direction;
+        public float Radius;
+        public float Damage;
+        public EcsPackedEntity[] Hits;
+        public int HitCount;
+
+        public void AutoReset(ref ForceWave c)
+        {
+            if (c.Hits == null)
+                c.Hits = new EcsPackedEntity[InitialHitCapacity];
+
+            c.Owner = default;
+            c.Config = null;
+            c.Origin = default;
+            c.Direction = default;
+            c.Radius = 0f;
+            c.Damage = 0f;
+            c.HitCount = 0;
+        }
+    }
+
     public struct FlameSwingCooldown { public int RemainingTicks; }
 
     public struct FlameSwing

@@ -99,12 +99,14 @@ namespace Game.Simulation.Systems
             systems.Add(new ArcaneWaveSystem());
             systems.Add(new LightningShieldSystem());
             systems.Add(new TornadoSystem());
+            systems.Add(new ChakramSystem());
             systems.Add(new ElementalWeaknessSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new GrantHarvestHealSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
             systems.Add(new AdvanceExecutionSystem());
+            systems.Add(new ExecutionWavesSystem());
             systems.Add(new AdvanceFlameSwingSystem());
             systems.Add(new AdvanceFlameWaveSystem());
             systems.Add(new AdvanceDashFinisherSystem());
@@ -122,7 +124,6 @@ namespace Game.Simulation.Systems
             systems.Add(new SweepSlicingDashSystem());
             systems.Add(new SweepEnemyChargeSystem());
             systems.Add(new InterruptCastSystem());
-            systems.Add(new PunishLeapLandingSystem());
             systems.Add(new DetectContactDamageSystem());
             systems.Add(new ApplyBossBlindZoneSystem());
             systems.Add(new StartGemFlightSystem());
@@ -131,6 +132,7 @@ namespace Game.Simulation.Systems
             systems.Add(new TickInvulnerabilitySystem());
             systems.Add(new TickProjectilePassThroughSystem());
             systems.Add(new BurningSystem());
+            systems.Add(new BleedingSystem());
             systems.Add(new ResolveHitOutcomeSystem());
             systems.Add(new ApplyDamageSystem());
             // 10. Death

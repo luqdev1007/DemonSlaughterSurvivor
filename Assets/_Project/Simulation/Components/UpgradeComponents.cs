@@ -13,8 +13,6 @@ namespace Game.Simulation.Components
 
     public struct CounterStrikeCooldown { public int RemainingTicks; }
 
-    public struct PunishingLeapCooldown { public int RemainingTicks; }
-
     public struct ExecutionThirstActive { }
 
     public struct LowHealthFury { public int Step; }

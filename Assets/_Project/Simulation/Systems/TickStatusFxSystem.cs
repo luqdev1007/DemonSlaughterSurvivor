@@ -15,6 +15,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Burning> _burning = default;
         private readonly EcsPoolInject<ElementMark> _marks = default;
+        private readonly EcsPoolInject<Bleeding> _bleeding = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<View> _views = default;
 
@@ -54,6 +55,9 @@ namespace Game.Simulation.Systems
 
         private bool HasStatus(int owner, StatusKind kind)
         {
+            if (kind == StatusKind.Bleeding)
+                return _bleeding.Value.Has(owner);
+
             return kind == StatusKind.Burning ? _burning.Value.Has(owner) : _marks.Value.Has(owner);
         }
 
@@ -64,6 +68,9 @@ namespace Game.Simulation.Systems
 
             if (kind == StatusKind.Marked && _marks.Value.Has(owner))
                 _marks.Value.Get(owner).HasFx = false;
+
+            if (kind == StatusKind.Bleeding && _bleeding.Value.Has(owner))
+                _bleeding.Value.Get(owner).HasFx = false;
         }
     }
 }

@@ -19,6 +19,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
+        private readonly EcsPoolInject<ExecutionFinishedEvent> _finishedEvents = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
 
@@ -44,6 +45,9 @@ namespace Game.Simulation.Systems
                 {
                     Hit(world, owner, ref execution);
                     execution.NextHit++;
+
+                    if (execution.NextHit == config.HitCount)
+                        _finishedEvents.Value.Add(world.NewEntity()).Owner = execution.Owner;
                 }
 
                 execution.ElapsedTicks++;
