@@ -13,7 +13,6 @@ namespace Game.Simulation.Systems
     public sealed class AdvanceArrowsSystem : IEcsInitSystem, IEcsRunSystem
     {
         private const int CandidateCapacityReserve = 16;
-        private const float FullCircleDegrees = 180f;
 
         public const string ExplosionStreamId = "stream.explosive-arrow";
 
@@ -181,29 +180,12 @@ namespace Game.Simulation.Systems
 
             ExplosiveArrowLevel entry = config.Level(level);
             bool demonic = DualityForm.IsDemonic(_dualities.Value, owner);
-            float chance = demonic ? Mathf.Min(1f, entry.Chance * config.DemonicChanceScale) : entry.Chance;
 
-            if (SimulationRandom.NextUnit(ref _explosionRandoms.Value.Get(owner).State) >= chance)
+            if (SimulationRandom.NextUnit(ref _explosionRandoms.Value.Get(owner).State) >= ArrowExplosion.Chance(config, entry, demonic))
                 return;
 
-            ref AreaStrike strike = ref _strikes.Value.Add(world.NewEntity());
-            strike.Owner = projectile.Source;
-            strike.Origin = at;
-            strike.Forward = Vector3.forward;
-            strike.Reach = config.Radius * (demonic ? config.DemonicRadiusScale : 1f);
-            strike.HalfAngleDegrees = FullCircleDegrees;
-            strike.Damage = projectile.Damage * entry.DamageScale * (demonic ? config.DemonicDamageScale : 1f);
-            strike.Kind = DamageKind.Perk;
-            strike.SourcePerk = config;
-            strike.PushSpeed = config.PushSpeed;
-            strike.PushSeconds = config.PushSeconds;
-            strike.PushArcHeight = config.PushArcHeight;
-
-            int fx = world.NewEntity();
-            _impacts.Value.Add(fx).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(config.FxSeconds / _clock.Value.Delta));
-            _positions.Value.Add(fx).Value = at;
-            _notIndexed.Value.Add(fx);
-            _views.Value.Add(fx).Value = _viewFactory.Value.Create(config.FxPrefab, at);
+            ArrowExplosion.Detonate(world, projectile.Source, config, entry, demonic, projectile.Damage, at,
+                _strikes.Value, _impacts.Value, _positions.Value, _notIndexed.Value, _views.Value, _viewFactory.Value, _clock.Value.Delta);
         }
 
         private void Query(in Projectile projectile, Vector3 from, Vector3 to)

@@ -110,6 +110,9 @@ namespace Game.Simulation.Systems
 
             amount -= AbsorbWithShield(target, eventEntity, amount);
 
+            if (damageEvent.Execute && _players.Value.Has(target) == false)
+                amount = Mathf.Max(amount, health.Current);
+
             health.Current -= amount;
 
             ref DamageApplied applied = ref _applied.Value.Add(eventEntity);

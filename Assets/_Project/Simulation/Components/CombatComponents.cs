@@ -59,6 +59,8 @@ namespace Game.Simulation.Components
         public bool IsMagic;
         public DamageElement Element;
         public float CritChanceBonus;
+        public bool ForceCrit;
+        public bool Execute;
         public PerkBehaviourConfig SourcePerk;
     }
 

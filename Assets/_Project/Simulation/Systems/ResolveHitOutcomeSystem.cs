@@ -92,7 +92,7 @@ namespace Game.Simulation.Systems
             if (damage.IsCrit)
                 return;
 
-            if (SimulationRandom.NextUnit(ref _random) >= attacker.CritChance + damage.CritChanceBonus)
+            if (damage.ForceCrit == false && SimulationRandom.NextUnit(ref _random) >= attacker.CritChance + damage.CritChanceBonus)
                 return;
 
             damage.Amount *= attacker.CritMultiplier;

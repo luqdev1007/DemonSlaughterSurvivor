@@ -100,6 +100,7 @@ namespace Game.Simulation.Systems
             systems.Add(new LightningShieldSystem());
             systems.Add(new TornadoSystem());
             systems.Add(new ChakramSystem());
+            systems.Add(new KillShotSystem());
             systems.Add(new ElementalWeaknessSystem());
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());

@@ -12,6 +12,7 @@ namespace Game.Simulation.Systems
     public sealed class ArrowRainSystem : IEcsInitSystem, IEcsRunSystem
     {
         public const string StreamId = "stream.arrow-rain";
+        public const string BombardmentStreamId = "stream.bombardment";
 
         private const int CandidateCapacityReserve = 16;
         private const float FullCircleDegrees = 180f;
@@ -37,6 +38,9 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<AreaStrike> _strikes = default;
+        private readonly EcsPoolInject<BombardmentRandom> _bombardmentRandoms = default;
+        private readonly EcsPoolInject<LeapImpactFx> _impactFx = default;
+        private readonly EcsPoolInject<Duality> _dualities = default;
 
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<RunContext> _context = default;
@@ -77,13 +81,13 @@ namespace Game.Simulation.Systems
                     continue;
 
                 ArrowRainLevel entry = config.Level(level);
-                Volley(world, hero, config, entry, bowDamage * entry.DamageScale, delta);
+                Volley(world, hero, config, entry, bowDamage, delta);
 
                 _cooldowns.Value.Add(hero).RemainingTicks = Mathf.Max(1, Mathf.RoundToInt(entry.CooldownSeconds * AbilityCooldowns.Scale(_cooldownScales.Value, hero) / delta));
             }
 
             foreach (int impact in _impacts.Value)
-                Advance(world, impact);
+                Advance(world, impact, delta);
         }
 
         private bool Gather(int hero, float range)
@@ -105,7 +109,7 @@ namespace Game.Simulation.Systems
             return _candidates.Count > 0;
         }
 
-        private void Volley(EcsWorld world, int hero, ArrowRainConfig config, ArrowRainLevel entry, float damage, float delta)
+        private void Volley(EcsWorld world, int hero, ArrowRainConfig config, ArrowRainLevel entry, float bowDamage, float delta)
         {
             if (_randoms.Value.Has(hero) == false)
                 _randoms.Value.Add(hero).State = SimulationRandom.StreamState(_context.Value.Seed, StreamId);
@@ -137,11 +141,12 @@ namespace Game.Simulation.Systems
                 impact.DelayTicks = delay;
                 impact.FallTicks = Mathf.Max(1, Mathf.RoundToInt(config.FallSeconds / delta));
                 impact.LingerTicks = Mathf.Max(1, Mathf.RoundToInt(config.LingerSeconds / delta));
-                impact.Damage = damage;
+                impact.Damage = bowDamage * entry.DamageScale;
+                impact.BowDamage = bowDamage;
             }
         }
 
-        private void Advance(EcsWorld world, int entity)
+        private void Advance(EcsWorld world, int entity, float delta)
         {
             ref ArrowRainImpact impact = ref _impactPool.Value.Get(entity);
 
@@ -179,7 +184,12 @@ namespace Game.Simulation.Systems
                     _positions.Value.Get(entity).Value = _positions.Value.Get(target).Value;
 
                 if (--impact.FallTicks == 0)
+                {
                     Strike(world, in impact, _positions.Value.Get(entity).Value);
+
+                    if (hasTarget)
+                        Bombard(world, in impact, _positions.Value.Get(entity).Value, delta);
+                }
 
                 return;
             }
@@ -204,6 +214,27 @@ namespace Game.Simulation.Systems
             strike.Damage = impact.Damage;
             strike.Kind = DamageKind.Perk;
             strike.SourcePerk = impact.Config;
+        }
+
+        private void Bombard(EcsWorld world, in ArrowRainImpact impact, Vector3 at, float delta)
+        {
+            if (impact.Owner.Unpack(world, out int owner) == false)
+                return;
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out BombardmentConfig bombardment, out int bombardmentLevel) == false)
+                return;
+
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, owner, out ExplosiveArrowConfig explosive, out int explosiveLevel) == false)
+                return;
+
+            if (_bombardmentRandoms.Value.Has(owner) == false)
+                _bombardmentRandoms.Value.Add(owner).State = SimulationRandom.StreamState(_context.Value.Seed, BombardmentStreamId);
+
+            if (SimulationRandom.NextUnit(ref _bombardmentRandoms.Value.Get(owner).State) >= bombardment.Level(bombardmentLevel).Chance)
+                return;
+
+            ArrowExplosion.Detonate(world, impact.Owner, explosive, explosive.Level(explosiveLevel), DualityForm.IsDemonic(_dualities.Value, owner), impact.BowDamage, at,
+                _strikes.Value, _impactFx.Value, _positions.Value, _notIndexed.Value, _views.Value, _viewFactory.Value, delta);
         }
 
         private bool TryFindBowDamage(EcsWorld world, int hero, out float damage)

@@ -41,6 +41,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<RapidFire> _rapidFires = default;
         private readonly EcsPoolInject<FlameSwingCooldown> _flameSwingCooldowns = default;
         private readonly EcsPoolInject<ChakramCooldown> _chakramCooldowns = default;
+        private readonly EcsPoolInject<KillShotCooldown> _killShotCooldowns = default;
 
         private readonly EcsCustomInject<IAbilityPanelSink> _sink = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
@@ -100,7 +101,8 @@ namespace Game.Simulation.Systems
                 || behaviour is FireballVolleyConfig
                 || behaviour is RapidFireConfig
                 || behaviour is FlameSwingConfig
-                || behaviour is ChakramConfig;
+                || behaviour is ChakramConfig
+                || behaviour is KillShotConfig;
         }
 
         private int ResolveRemainingTicks(int hero, PerkBehaviourConfig behaviour)
@@ -110,6 +112,9 @@ namespace Game.Simulation.Systems
 
             if (behaviour is ChakramConfig && _chakramCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _chakramCooldowns.Value.Get(hero).RemainingTicks);
+
+            if (behaviour is KillShotConfig && _killShotCooldowns.Value.Has(hero))
+                return Mathf.Max(0, _killShotCooldowns.Value.Get(hero).RemainingTicks);
 
             if (behaviour is FlameSwingConfig && _flameSwingCooldowns.Value.Has(hero))
                 return Mathf.Max(0, _flameSwingCooldowns.Value.Get(hero).RemainingTicks);

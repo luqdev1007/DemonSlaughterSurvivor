@@ -35,6 +35,8 @@ namespace Game.Simulation.Components
         public float Damage;
         public float BleedTickDamage;
         public int BleedTicks;
+        public bool Returns;
+        public float ReturnDamage;
         public EcsPackedEntity[] Hits;
         public int HitCount;
 
@@ -52,6 +54,8 @@ namespace Game.Simulation.Components
             c.Damage = 0f;
             c.BleedTickDamage = 0f;
             c.BleedTicks = 0;
+            c.Returns = false;
+            c.ReturnDamage = 0f;
             c.HitCount = 0;
         }
     }
@@ -72,6 +76,8 @@ namespace Game.Simulation.Components
 
     public struct ArrowRainRandom { public uint State; }
 
+    public struct BombardmentRandom { public uint State; }
+
     public struct ArrowRainImpact
     {
         public ArrowRainConfig Config;
@@ -81,5 +87,46 @@ namespace Game.Simulation.Components
         public int FallTicks;
         public int LingerTicks;
         public float Damage;
+        public float BowDamage;
+    }
+
+    public struct KillShotCooldown { public int RemainingTicks; }
+
+    public struct KillShotAim
+    {
+        public EcsPackedEntity Target;
+        public int Ticks;
+    }
+
+    public struct KillShot : IEcsAutoReset<KillShot>
+    {
+        public const int InitialHitCapacity = 32;
+
+        public KillShotConfig Config;
+        public EcsPackedEntity Owner;
+        public EcsPackedEntity Target;
+        public Vector3 Direction;
+        public float Damage;
+        public float PierceDamage;
+        public float ExecuteThreshold;
+        public int RemainingTicks;
+        public EcsPackedEntity[] Hits;
+        public int HitCount;
+
+        public void AutoReset(ref KillShot c)
+        {
+            if (c.Hits == null)
+                c.Hits = new EcsPackedEntity[InitialHitCapacity];
+
+            c.Config = null;
+            c.Owner = default;
+            c.Target = default;
+            c.Direction = Vector3.forward;
+            c.Damage = 0f;
+            c.PierceDamage = 0f;
+            c.ExecuteThreshold = 0f;
+            c.RemainingTicks = 0;
+            c.HitCount = 0;
+        }
     }
 }

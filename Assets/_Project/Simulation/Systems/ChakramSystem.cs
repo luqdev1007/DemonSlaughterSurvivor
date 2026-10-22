@@ -140,6 +140,12 @@ namespace Game.Simulation.Systems
             chakram.BleedTickDamage = bowDamage * entry.BleedDamageScale * config.BleedTickSeconds;
             chakram.BleedTicks = Mathf.RoundToInt(entry.BleedSeconds / delta);
 
+            if (TakenBehaviourLookup.TryFind(world, _taken.Value, _takenPool.Value, _content.Value, hero, out ChakramReturnConfig back, out int backLevel))
+            {
+                chakram.Returns = true;
+                chakram.ReturnDamage = chakram.Damage * back.Level(backLevel).DamageScale;
+            }
+
             Vector3 at = Place(origin, config, startDegrees, 0f);
 
             _positions.Value.Add(entity).Value = at;
@@ -150,7 +156,9 @@ namespace Game.Simulation.Systems
 
         private static Vector3 Place(Vector3 center, ChakramConfig config, float startDegrees, float progress)
         {
-            float radius = Mathf.Lerp(config.StartRadius, config.EndRadius, progress);
+            float radius = progress <= 1f
+                ? Mathf.Lerp(config.StartRadius, config.EndRadius, progress)
+                : Mathf.Lerp(config.EndRadius, config.StartRadius, progress - 1f);
             float angle = (startDegrees + 360f * config.Turns * progress) * Mathf.Deg2Rad;
 
             return new Vector3(center.x + Mathf.Sin(angle) * radius, 0f, center.z + Mathf.Cos(angle) * radius);
@@ -161,7 +169,9 @@ namespace Game.Simulation.Systems
             ref Chakram chakram = ref _chakramPool.Value.Get(entity);
             ChakramConfig config = chakram.Config;
 
-            if (chakram.Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner) || chakram.ElapsedTicks >= chakram.TotalTicks)
+            int lifeTicks = chakram.Returns ? chakram.TotalTicks * 2 : chakram.TotalTicks;
+
+            if (chakram.Owner.Unpack(world, out int owner) == false || _dead.Value.Has(owner) || chakram.ElapsedTicks >= lifeTicks)
             {
                 Remove(world, entity);
 
@@ -169,6 +179,12 @@ namespace Game.Simulation.Systems
             }
 
             chakram.ElapsedTicks++;
+
+            if (chakram.Returns && chakram.ElapsedTicks == chakram.TotalTicks + 1)
+            {
+                chakram.HitCount = 0;
+                chakram.Damage = chakram.ReturnDamage;
+            }
 
             ref Position position = ref _positions.Value.Get(entity);
             Vector3 from = position.Value;
