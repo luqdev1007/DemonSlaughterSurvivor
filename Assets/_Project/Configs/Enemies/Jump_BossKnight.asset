@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c585df087a4c7044827b72b7bf0db48, type: 3}
+  m_Name: Jump_BossKnight
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.JumpAbilityConfig
+  _id: ability.jump.boss_knight
+  _triggerRange: 6
+  _cooldownSeconds: 7
+  _behindRange: 5
+  _behindWeightScale: 5
+  _turnSpeedDegrees: 360
+  _liftHeight: 0.9
+  _liftStartClipSeconds: 0.45
+  _radius: 4.5
+  _damage: 40
+  _impactFxPrefab: {fileID: 6511278628527712182, guid: 99d59f0cb6139c14ea5cdfd03051171f, type: 3}
+  _impactFxSeconds: 1.5
+  _impactFxScale: 1.8
+  _impactClipSeconds: 1.15
+  _clipSeconds: 2.17
+  _playbackSpeed: 1.25

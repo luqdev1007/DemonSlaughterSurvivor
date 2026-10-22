@@ -16,17 +16,22 @@ MonoBehaviour:
   _viewPrefab: {fileID: 7985096020183796014, guid: f8ee9e4a484c961429ebcfb9ee350517, type: 3}
   _moveSpeed: 2.5
   _turnSpeed: 240
+  _moveSpeedSpread: 0
   _bodyRadius: 0.7
   _bodyHeight: 2.8
   _maxHealth: 1500
   _contactDamage: 30
+  _isElite: 0
   _gem: {fileID: 0}
   _rangedAttack: {fileID: 0}
   _boss: {fileID: 11400000, guid: b62df07ca74bc3b45a1796b4f14cef35, type: 2}
   _charge: {fileID: 11400000, guid: 8fd18d80b13de4b4f96e0f430b8bc05a, type: 2}
   _spin: {fileID: 11400000, guid: 5dc9013099ef62f41994aa21e50d7294, type: 2}
   _heavyStrike: {fileID: 11400000, guid: 6a3ff4a1c469b4a4c8414cda5ecb6435, type: 2}
+  _jump: {fileID: 11400000, guid: cd3e7b29b2d0e2e43a5b8ac3e2a5823d, type: 2}
+  _tints: []
   _dismemberedViewPrefab: {fileID: 0}
   _dismemberChance: 0
+  _deathEmbers: 0
   _separationRadius: 1
   _separationStrength: 0

@@ -52,6 +52,8 @@ namespace Game.View
                     return _feedback.ShakeEliteDeath;
                 case ShakeKind.BossDeath:
                     return _feedback.ShakeBossDeath;
+                case ShakeKind.BossSlam:
+                    return _feedback.ShakeBossSlam;
                 default:
                     return 0f;
             }

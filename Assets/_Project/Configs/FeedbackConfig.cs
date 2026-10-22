@@ -31,6 +31,7 @@ namespace Game.Configs
         [SerializeField] private float _shakeUltimate = 0.4f;
         [SerializeField] private float _shakeEliteDeath = 0.3f;
         [SerializeField] private float _shakeBossDeath = 0.9f;
+        [SerializeField] private float _shakeBossSlam = 0.55f;
 
         [Header("Boss Death Slow Motion")]
         [SerializeField, Range(0.05f, 1f)] private float _bossDeathSlowMotionScale = 0.3f;
@@ -114,6 +115,8 @@ namespace Game.Configs
         public float ShakeEliteDeath => _shakeEliteDeath;
 
         public float ShakeBossDeath => _shakeBossDeath;
+
+        public float ShakeBossSlam => _shakeBossSlam;
 
         public float EnemyDeathSeconds => _enemyDeathSeconds;
 

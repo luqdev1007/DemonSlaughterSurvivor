@@ -10,7 +10,9 @@ namespace Game.Core
         Recover = 5,
         StrikeWindup = 6,
         StrikeLock = 7,
-        StrikeRecover = 8
+        StrikeRecover = 8,
+        JumpAir = 9,
+        JumpRecover = 10
     }
 
     public enum GroundMarker

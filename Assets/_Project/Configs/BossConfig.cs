@@ -13,6 +13,7 @@ namespace Game.Configs
         [SerializeField] private float _chargeWeight = 1f;
         [SerializeField] private float _spinWeight = 1f;
         [SerializeField] private float _heavyStrikeWeight = 1f;
+        [SerializeField] private float _jumpWeight = 1f;
 
         [Header("Spawn")]
         [SerializeField] private float _minSpawnDistanceToHero = 12f;
@@ -35,6 +36,8 @@ namespace Game.Configs
         public float SpinWeight => _spinWeight;
 
         public float HeavyStrikeWeight => _heavyStrikeWeight;
+
+        public float JumpWeight => _jumpWeight;
 
         public float MinSpawnDistanceToHero => _minSpawnDistanceToHero;
 
@@ -70,6 +73,7 @@ namespace Game.Configs
             RequireNonNegative(label, nameof(_chargeWeight), _chargeWeight);
             RequireNonNegative(label, nameof(_spinWeight), _spinWeight);
             RequireNonNegative(label, nameof(_heavyStrikeWeight), _heavyStrikeWeight);
+            RequireNonNegative(label, nameof(_jumpWeight), _jumpWeight);
             RequireNonNegative(label, nameof(_minSpawnDistanceToHero), _minSpawnDistanceToHero);
 
             if (_blindBackFromDegrees < _blindSideFromDegrees)

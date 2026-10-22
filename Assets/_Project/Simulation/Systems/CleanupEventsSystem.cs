@@ -14,6 +14,7 @@ namespace Game.Simulation.Systems
         private readonly EcsFilterInject<Inc<LeapLandedEvent>> _landedEvents = default;
         private readonly EcsFilterInject<Inc<AreaStrikeEvent>> _areaStrikeEvents = default;
         private readonly EcsFilterInject<Inc<ExecutionFinishedEvent>> _executionFinishedEvents = default;
+        private readonly EcsFilterInject<Inc<EnemySlamEvent>> _slamEvents = default;
         private readonly EcsFilterInject<Inc<DiedEvent>> _diedEvents = default;
         private readonly EcsFilterInject<Inc<SwingStarted>> _swingStarts = default;
         private readonly EcsFilterInject<Inc<LevelUpEvent>> _levelUps = default;
@@ -58,6 +59,9 @@ namespace Game.Simulation.Systems
                 world.DelEntity(entity);
 
             foreach (int entity in _executionFinishedEvents.Value)
+                world.DelEntity(entity);
+
+            foreach (int entity in _slamEvents.Value)
                 world.DelEntity(entity);
 
             foreach (int entity in _diedEvents.Value)

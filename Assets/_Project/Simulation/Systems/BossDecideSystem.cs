@@ -22,6 +22,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<EnemyCharge> _charges = default;
         private readonly EcsPoolInject<EnemySpin> _spins = default;
         private readonly EcsPoolInject<EnemyHeavyStrike> _heavyStrikes = default;
+        private readonly EcsPoolInject<EnemyJump> _jumps = default;
+        private readonly EcsPoolInject<Facing> _facings = default;
         private readonly EcsPoolInject<BossRandom> _randoms = default;
         private readonly EcsPoolInject<ChaseTarget> _chaseTargets = default;
         private readonly EcsPoolInject<Position> _positions = default;
@@ -53,6 +55,9 @@ namespace Game.Simulation.Systems
 
                 if (enemy.HeavyStrike != null)
                     enemy.HeavyStrike.Validate(enemy);
+
+                if (enemy.Jump != null)
+                    enemy.Jump.Validate(enemy);
             }
         }
 
@@ -84,7 +89,8 @@ namespace Game.Simulation.Systems
                 float chargeWeight = CanCharge(entity, distance) ? boss.ChargeWeight : 0f;
                 float spinWeight = CanSpin(entity, distance) ? boss.SpinWeight : 0f;
                 float strikeWeight = CanHeavyStrike(entity, distance) ? boss.HeavyStrikeWeight : 0f;
-                float total = chargeWeight + spinWeight + strikeWeight;
+                float jumpWeight = CanJump(entity, distance) ? boss.JumpWeight * ResolveBehindScale(entity, target, distance) : 0f;
+                float total = chargeWeight + spinWeight + strikeWeight + jumpWeight;
 
                 if (total <= 0f)
                     continue;
@@ -95,8 +101,10 @@ namespace Game.Simulation.Systems
                     StartCharge(entity, ref action, delta);
                 else if (roll < chargeWeight + spinWeight)
                     StartSpin(entity, ref action, delta);
-                else
+                else if (roll < chargeWeight + spinWeight + strikeWeight)
                     StartHeavyStrike(entity, ref action, delta);
+                else
+                    StartJump(entity, ref action, delta);
             }
         }
 
@@ -137,6 +145,40 @@ namespace Game.Simulation.Systems
             strike.ImpactPending = false;
 
             EnemyActionPhases.Enter(ref action, EnemyActionPhase.StrikeWindup, strike.Config.WindupSeconds, delta);
+        }
+
+        private bool CanJump(int entity, float distance)
+        {
+            if (_jumps.Value.Has(entity) == false)
+                return false;
+
+            ref EnemyJump jump = ref _jumps.Value.Get(entity);
+
+            return jump.CooldownTicks <= 0 && distance <= jump.Config.TriggerRange;
+        }
+
+        private float ResolveBehindScale(int entity, Vector3 target, float distance)
+        {
+            JumpAbilityConfig config = _jumps.Value.Get(entity).Config;
+
+            if (distance > config.BehindRange)
+                return 1f;
+
+            Vector3 facing = _facings.Value.Get(entity).Value;
+            Vector3 toTarget = target - _positions.Value.Get(entity).Value;
+
+            return facing.x * toTarget.x + facing.z * toTarget.z < 0f ? config.BehindWeightScale : 1f;
+        }
+
+        private void StartJump(int entity, ref EnemyAction action, float delta)
+        {
+            ref EnemyJump jump = ref _jumps.Value.Get(entity);
+
+            jump.CooldownTicks = EnemyActionPhases.ToCooldownTicks(jump.Config.CooldownSeconds, delta);
+            jump.ImpactPending = false;
+            jump.Lift = 0f;
+
+            EnemyActionPhases.Enter(ref action, EnemyActionPhase.JumpAir, jump.Config.AirSeconds, delta);
         }
 
         private bool CanCharge(int entity, float distance)

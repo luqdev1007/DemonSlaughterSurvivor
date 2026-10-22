@@ -1,4 +1,5 @@
 using Game.Simulation.Components;
+using Game.Simulation.Services;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using UnityEngine;
@@ -30,6 +31,9 @@ namespace Game.Simulation.Systems
                     continue;
 
                 if (_actions.Value.Has(boss) == false || _actions.Value.Get(boss).Phase == EnemyActionPhase.None)
+                    continue;
+
+                if (EnemyActionPhases.IsJump(_actions.Value.Get(boss).Phase))
                     continue;
 
                 if (damageEvent.Target.Unpack(world, out int hero) == false || _players.Value.Has(hero) == false)

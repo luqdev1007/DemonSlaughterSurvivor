@@ -16,6 +16,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<EnemyCharge> _charges = default;
         private readonly EcsPoolInject<EnemySpin> _spins = default;
         private readonly EcsPoolInject<EnemyHeavyStrike> _heavyStrikes = default;
+        private readonly EcsPoolInject<EnemyJump> _jumps = default;
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<View> _views = default;
 
@@ -42,8 +43,13 @@ namespace Game.Simulation.Systems
                     DescribeSpin(entity, ref action, delta, ref cue);
                 else if (EnemyActionPhases.IsHeavyStrike(action.Phase) && _heavyStrikes.Value.Has(entity))
                     DescribeHeavyStrike(entity, ref action, delta, ref cue);
+                else if (EnemyActionPhases.IsJump(action.Phase) && _jumps.Value.Has(entity))
+                    DescribeJump(entity, ref action, delta, ref cue);
 
                 view.Value.SetAction(cue);
+
+                if (_jumps.Value.Has(entity))
+                    view.Value.SetLift(_jumps.Value.Get(entity).Lift);
             }
         }
 
@@ -71,6 +77,16 @@ namespace Game.Simulation.Systems
                     cue.Pose = ActionPose.Recover;
                     break;
             }
+        }
+
+        private void DescribeJump(int entity, ref EnemyAction action, float delta, ref ActionCue cue)
+        {
+            JumpAbilityConfig config = _jumps.Value.Get(entity).Config;
+            bool air = action.Phase == EnemyActionPhase.JumpAir;
+            float clipSeconds = air ? config.ImpactClipSeconds : config.ClipSeconds - config.ImpactClipSeconds;
+
+            cue.Pose = air ? ActionPose.JumpAir : ActionPose.JumpRecover;
+            cue.PlaybackSpeed = clipSeconds / (Mathf.Max(1, action.PhaseTotalTicks) * delta);
         }
 
         private void DescribeHeavyStrike(int entity, ref EnemyAction action, float delta, ref ActionCue cue)

@@ -34,6 +34,7 @@ namespace Game.Configs
         [SerializeField] private ChargeAbilityConfig _charge;
         [SerializeField] private SpinAbilityConfig _spin;
         [SerializeField] private HeavyStrikeAbilityConfig _heavyStrike;
+        [SerializeField] private JumpAbilityConfig _jump;
 
         [Header("Variation")]
         [SerializeField] private Color[] _tints = Array.Empty<Color>();
@@ -76,6 +77,8 @@ namespace Game.Configs
         public SpinAbilityConfig Spin => _spin;
 
         public HeavyStrikeAbilityConfig HeavyStrike => _heavyStrike;
+
+        public JumpAbilityConfig Jump => _jump;
 
         public float PeakMoveSpeed => (_spin == null ? _moveSpeed : _moveSpeed * Mathf.Max(1f, _spin.MoveSpeedMultiplier)) * (1f + _moveSpeedSpread);
 

@@ -15,7 +15,9 @@ namespace Game.Simulation.Components
         SpinRecover = 7,
         StrikeWindup = 8,
         StrikeLock = 9,
-        StrikeRecover = 10
+        StrikeRecover = 10,
+        JumpAir = 11,
+        JumpRecover = 12
     }
 
     public struct Boss { public BossConfig Config; }
@@ -52,6 +54,16 @@ namespace Game.Simulation.Components
         public bool ImpactPending;
         public float TurnDegreesPerSecond;
     }
+
+    public struct EnemyJump
+    {
+        public JumpAbilityConfig Config;
+        public int CooldownTicks;
+        public bool ImpactPending;
+        public float Lift;
+    }
+
+    public struct EnemySlamEvent { public Vector3 Position; }
 
     public struct EnemySpin
     {

@@ -7,5 +7,6 @@ namespace Game.Core
         Ultimate = 2,
         EliteDeath = 3,
         BossDeath = 4,
+        BossSlam = 5,
     }
 }

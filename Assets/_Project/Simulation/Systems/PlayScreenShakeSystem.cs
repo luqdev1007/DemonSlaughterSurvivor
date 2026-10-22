@@ -11,6 +11,7 @@ namespace Game.Simulation.Systems
 
         private readonly EcsFilterInject<Inc<DamageEvent, DamageApplied>> _hits = default;
         private readonly EcsFilterInject<Inc<LeapLandedEvent>> _landings = default;
+        private readonly EcsFilterInject<Inc<EnemySlamEvent>> _slams = default;
         private readonly EcsFilterInject<Inc<Player, UltimateCharge>> _heroes = default;
 
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
@@ -39,6 +40,9 @@ namespace Game.Simulation.Systems
 
             if (_landings.Value.GetEntitiesCount() > 0)
                 _shake.Value.Shake(ShakeKind.Landing);
+
+            if (_slams.Value.GetEntitiesCount() > 0)
+                _shake.Value.Shake(ShakeKind.BossSlam);
 
             bool isBerserk = false;
 

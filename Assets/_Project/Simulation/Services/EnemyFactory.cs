@@ -41,6 +41,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<EnemyCharge> _charges;
         private readonly EcsPool<EnemySpin> _spins;
         private readonly EcsPool<EnemyHeavyStrike> _heavyStrikes;
+        private readonly EcsPool<EnemyJump> _jumps;
 
         public EnemyFactory(EcsWorld world, IViewFactory viewFactory, StatModifiers statModifiers)
         {
@@ -76,6 +77,7 @@ namespace Game.Simulation.Services
             _charges = world.GetPool<EnemyCharge>();
             _spins = world.GetPool<EnemySpin>();
             _heavyStrikes = world.GetPool<EnemyHeavyStrike>();
+            _jumps = world.GetPool<EnemyJump>();
         }
 
         public const string SpawnModifierSource = "enemy.spawn";
@@ -154,6 +156,9 @@ namespace Game.Simulation.Services
 
             if (config.HeavyStrike != null)
                 _heavyStrikes.Add(entity).Config = config.HeavyStrike;
+
+            if (config.Jump != null)
+                _jumps.Add(entity).Config = config.Jump;
 
             if (config.IsElite || affix != null)
             {
