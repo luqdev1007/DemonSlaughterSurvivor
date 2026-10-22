@@ -14,7 +14,6 @@ namespace Game.Configs
         [SerializeField, Min(0.1f)] private float _endRadius = 9f;
         [SerializeField, Min(0.1f)] private float _turns = 1.5f;
         [SerializeField, Min(0.05f)] private float _hitRadius = 0.6f;
-        [SerializeField] private float _spinDegreesPerSecond = 900f;
         [SerializeField, Min(0f)] private float _triggerRange = 11f;
 
         [Header("Slow")]
@@ -39,8 +38,6 @@ namespace Game.Configs
         public float Turns => _turns;
 
         public float HitRadius => _hitRadius;
-
-        public float SpinDegreesPerSecond => _spinDegreesPerSecond;
 
         public float TriggerRange => _triggerRange;
 

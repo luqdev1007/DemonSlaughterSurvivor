@@ -191,8 +191,6 @@ namespace Game.Simulation.Systems
             Vector3 to = Place(_positions.Value.Get(owner).Value, config, chakram.StartAngleDegrees, chakram.ElapsedTicks / (float)chakram.TotalTicks);
 
             position.Value = to;
-            chakram.SpinDegrees += config.SpinDegreesPerSecond * delta;
-            _facings.Value.Get(entity).Value = Quaternion.AngleAxis(chakram.SpinDegrees, Vector3.up) * Vector3.forward;
 
             Cut(world, ref chakram, owner, from, to, delta);
         }

@@ -29,12 +29,11 @@ MonoBehaviour:
     _bleedDamageScale: 0.55
     _bleedSeconds: 4
   _lifeSeconds: 2.4
-  _startRadius: 0.8
-  _endRadius: 9
+  _startRadius: 0.56
+  _endRadius: 6.3
   _turns: 1.5
   _hitRadius: 0.6
-  _spinDegreesPerSecond: 900
-  _triggerRange: 11
+  _triggerRange: 8
   _slow: 0.35
   _slowSeconds: 2
   _bleedTickSeconds: 0.5

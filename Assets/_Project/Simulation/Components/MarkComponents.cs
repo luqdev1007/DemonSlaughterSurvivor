@@ -29,7 +29,6 @@ namespace Game.Simulation.Components
         public ChakramConfig Config;
         public EcsPackedEntity Owner;
         public float StartAngleDegrees;
-        public float SpinDegrees;
         public int ElapsedTicks;
         public int TotalTicks;
         public float Damage;
@@ -48,7 +47,6 @@ namespace Game.Simulation.Components
             c.Config = null;
             c.Owner = default;
             c.StartAngleDegrees = 0f;
-            c.SpinDegrees = 0f;
             c.ElapsedTicks = 0;
             c.TotalTicks = 0;
             c.Damage = 0f;
