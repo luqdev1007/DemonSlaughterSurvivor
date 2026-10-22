@@ -29,12 +29,15 @@ namespace Game.UI
             { StatId.Evasion, "уклонение" },
             { StatId.AttackPower, "сила атаки" },
             { StatId.SpellPower, "сила заклинаний" },
-            { StatId.DamageDealt, "наносимый урон" }
+            { StatId.DamageDealt, "наносимый урон" },
+            { StatId.LifeStealScale, "сила вампиризма" },
+            { StatId.MagicDamage, "магический урон" }
         };
 
         private static bool IsFraction(StatId stat)
         {
-            return stat == StatId.LifeOnHit || stat == StatId.LifeOnKill || stat == StatId.CritChance || stat == StatId.Evasion;
+            return stat == StatId.LifeOnHit || stat == StatId.LifeOnKill || stat == StatId.CritChance || stat == StatId.Evasion
+                || stat == StatId.LifeStealScale || stat == StatId.MagicDamage;
         }
 
         public static string Label(StatId stat)

@@ -33,6 +33,8 @@ namespace Game.Simulation.Tests
                 { "AttackPower", 19 },
                 { "SpellPower", 20 },
                 { "DamageDealt", 21 },
+                { "LifeStealScale", 22 },
+                { "MagicDamage", 23 },
             });
         }
 

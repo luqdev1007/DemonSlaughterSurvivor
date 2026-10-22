@@ -18,6 +18,7 @@ MonoBehaviour:
   _viewPrefab: {fileID: 5239093810765877517, guid: 289d0f510530afb43a04cc295c030882, type: 3}
   _menuIdleClip: {fileID: 7400000, guid: 68afc9e2c3e868a4b9504d933ae96076, type: 2}
   _menuSelectClip: {fileID: 7400000, guid: ce4381157a0fd8445b7d13f16e937685, type: 2}
+  _menuSelectMask: {fileID: 0}
   _moveSpeed: 5
   _turnSpeed: 1200
   _aimDeadZone: 1.2
@@ -42,10 +43,20 @@ MonoBehaviour:
   _lowHealthFury: {fileID: 0}
   _pickupRadius: 3
   _experience: {fileID: 11400000, guid: 810d3fda96e086643898af6c4dfed372, type: 2}
+  _levelGrowth:
+  - _stat: 7
+    _op: 3
+    _value: 0.02
+  - _stat: 13
+    _op: 3
+    _value: -0.015
   _dash: {fileID: 0}
   _startingWeapon: {fileID: 0}
   _bow: {fileID: 11400000, guid: 7e1aa1ebf54aa5748a0081206cc1ae2c, type: 2}
+  _staff: {fileID: 0}
   _backleap: {fileID: 11400000, guid: afe01a7ec20adbe4388a87f6c90d469e, type: 2}
+  _blink: {fileID: 0}
   _rage: {fileID: 0}
   _duality: {fileID: 11400000, guid: a538ce8de9c35bb468e6774edd06cd42, type: 2}
+  _concentration: {fileID: 0}
   _ultimate: {fileID: 0}

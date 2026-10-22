@@ -41,6 +41,7 @@ namespace Game.Simulation.Systems
                 ref HealEvent healEvent = ref _healEvents.Value.Add(eventEntity);
                 healEvent.Target = world.PackEntity(hero);
                 healEvent.Amount = fraction * _maxHealths.Value.Get(hero).Value;
+                healEvent.LifeSteal = true;
             }
         }
 

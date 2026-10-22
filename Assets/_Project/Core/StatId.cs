@@ -22,6 +22,8 @@ namespace Game.Core
         Evasion = 18,
         AttackPower = 19,
         SpellPower = 20,
-        DamageDealt = 21
+        DamageDealt = 21,
+        LifeStealScale = 22,
+        MagicDamage = 23
     }
 }

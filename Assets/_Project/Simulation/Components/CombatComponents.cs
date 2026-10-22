@@ -106,6 +106,8 @@ namespace Game.Simulation.Components
         public float SpellPowerBase;
         public float DamageDealt;
         public float DamageDealtBase;
+        public float MagicDamageBonus;
+        public float MagicDamageBonusBase;
     }
 
     public struct CombatRandom { public uint State; }
@@ -148,6 +150,7 @@ namespace Game.Simulation.Components
     {
         public EcsPackedEntity Target;
         public float Amount;
+        public bool LifeSteal;
     }
 
     public struct LifeSteal
@@ -156,6 +159,8 @@ namespace Game.Simulation.Components
         public float OnKillBase;
         public float OnHit;
         public float OnHitBase;
+        public float ScaleBonus;
+        public float ScaleBonusBase;
     }
 
     public struct PendingFinish { public int RemainingTicks; }

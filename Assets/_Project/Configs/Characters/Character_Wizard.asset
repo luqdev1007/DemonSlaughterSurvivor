@@ -43,6 +43,10 @@ MonoBehaviour:
   _lowHealthFury: {fileID: 0}
   _pickupRadius: 3
   _experience: {fileID: 11400000, guid: 810d3fda96e086643898af6c4dfed372, type: 2}
+  _levelGrowth:
+  - _stat: 23
+    _op: 1
+    _value: 0.03
   _dash: {fileID: 0}
   _startingWeapon: {fileID: 0}
   _bow: {fileID: 0}

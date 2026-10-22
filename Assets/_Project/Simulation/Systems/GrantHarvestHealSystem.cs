@@ -48,6 +48,7 @@ namespace Game.Simulation.Systems
                 ref HealEvent heal = ref _healEvents.Value.Add(world.NewEntity());
                 heal.Target = ended.Owner;
                 heal.Amount = share * _maxHealths.Value.Get(hero).Value;
+                heal.LifeSteal = true;
             }
         }
     }

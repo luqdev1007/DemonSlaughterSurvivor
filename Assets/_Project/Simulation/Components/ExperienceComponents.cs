@@ -8,6 +8,8 @@ namespace Game.Simulation.Components
 
     public struct Experience { public int Level; public int Current; public float LuckCarry; }
 
+    public struct LevelGrowthApplied { public int Level; }
+
     public struct GemDrop { public GemConfig Config; }
 
     public struct Gem { public int Experience; }

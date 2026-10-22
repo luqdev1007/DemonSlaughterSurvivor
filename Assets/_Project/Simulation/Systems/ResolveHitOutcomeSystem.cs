@@ -86,6 +86,9 @@ namespace Game.Simulation.Systems
 
             damage.Amount *= (1f + Mathf.Max(0f, power) / PowerScale) * Mathf.Max(0f, attacker.DamageDealt);
 
+            if (damage.IsMagic)
+                damage.Amount *= 1f + Mathf.Max(0f, attacker.MagicDamageBonus);
+
             if (damage.IsCrit)
                 return;
 

@@ -270,6 +270,7 @@ namespace Game.Simulation.Systems
                 ref LifeSteal lifeSteal = ref _lifeSteals.Value.Get(target);
                 lifeSteal.OnKill = StatFormula.Evaluate(lifeSteal.OnKillBase, Total(StatId.LifeOnKill));
                 lifeSteal.OnHit = StatFormula.Evaluate(lifeSteal.OnHitBase, Total(StatId.LifeOnHit));
+                lifeSteal.ScaleBonus = StatFormula.Evaluate(lifeSteal.ScaleBonusBase, Total(StatId.LifeStealScale));
             }
 
             if (_combatStats.Value.Has(target))
@@ -283,6 +284,7 @@ namespace Game.Simulation.Systems
                 combat.AttackPower = StatFormula.Evaluate(combat.AttackPowerBase, Total(StatId.AttackPower));
                 combat.SpellPower = StatFormula.Evaluate(combat.SpellPowerBase, Total(StatId.SpellPower));
                 combat.DamageDealt = StatFormula.Evaluate(combat.DamageDealtBase, Total(StatId.DamageDealt));
+                combat.MagicDamageBonus = StatFormula.Evaluate(combat.MagicDamageBonusBase, Total(StatId.MagicDamage));
             }
         }
 
@@ -371,6 +373,7 @@ namespace Game.Simulation.Systems
                     return _pickupRadii.Value.Has(target);
                 case StatId.LifeOnKill:
                 case StatId.LifeOnHit:
+                case StatId.LifeStealScale:
                     return _lifeSteals.Value.Has(target);
                 case StatId.CritChance:
                 case StatId.Armor:
@@ -380,6 +383,7 @@ namespace Game.Simulation.Systems
                 case StatId.AttackPower:
                 case StatId.SpellPower:
                 case StatId.DamageDealt:
+                case StatId.MagicDamage:
                     return _combatStats.Value.Has(target);
                 default:
                     return false;

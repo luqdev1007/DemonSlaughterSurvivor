@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Configs
@@ -59,6 +61,9 @@ namespace Game.Configs
         [Header("Experience")]
         [SerializeField] private float _pickupRadius = 1.5f;
         [SerializeField] private ExperienceConfig _experience;
+
+        [Header("Level Growth")]
+        [SerializeField] private StatModifierEntry[] _levelGrowth = Array.Empty<StatModifierEntry>();
 
         [Header("Abilities")]
         [SerializeField] private DashAbilityConfig _dash;
@@ -129,6 +134,8 @@ namespace Game.Configs
         public float PickupRadius => _pickupRadius;
 
         public ExperienceConfig Experience => _experience;
+
+        public IReadOnlyList<StatModifierEntry> LevelGrowth => _levelGrowth ?? Array.Empty<StatModifierEntry>();
 
         public DashAbilityConfig Dash => _dash;
 

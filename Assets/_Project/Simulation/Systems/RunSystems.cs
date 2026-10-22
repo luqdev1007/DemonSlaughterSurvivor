@@ -161,6 +161,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ApplyHealSystem());
             systems.Add(new AccumulateDualitySystem());
             systems.Add(new AdvanceLevelSystem());
+            systems.Add(new ApplyLevelGrowthSystem());
             systems.Add(new OfferUpgradesSystem());
             systems.Add(new OfferItemsSystem());
             // 12. ViewSync
