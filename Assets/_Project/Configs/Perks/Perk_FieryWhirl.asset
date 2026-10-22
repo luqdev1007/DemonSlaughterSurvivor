@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53717ce3cd87b6640ab973e8d9198c21, type: 3}
+  m_Name: Perk_FieryWhirl
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.PerkConfig
+  _id: perk.fiery-whirl
+  _displayName: "\u041E\u0433\u043D\u0435\u043D\u043D\u044B\u0439 \u0432\u0438\u0445\u0440\u044C"
+  _description: "\u0412\u0438\u0445\u0440\u044C \u043A\u043B\u0438\u043D\u043A\u043E\u0432
+    \u0432\u044B\u043F\u0443\u0441\u043A\u0430\u0435\u0442 \u0432\u043E\u043A\u0440\u0443\u0433
+    \u0431\u0435\u0440\u0441\u0435\u0440\u043A\u0430 \u043C\u0430\u043B\u0443\u044E
+    \u0432\u043E\u043B\u043D\u0443 \u043F\u043B\u0430\u043C\u0435\u043D\u043D\u043E\u0433\u043E
+    \u0437\u0430\u043C\u0430\u0445\u0430: \u043A\u043E\u043B\u044C\u0446\u043E\u043C
+    \u043D\u0430 \u0432\u0441\u0435 360\xB0, \u0432\u0434\u0432\u043E\u0435 \u043C\u0435\u043D\u044C\u0448\u0435
+    \u043F\u043E \u0434\u0430\u043B\u044C\u043D\u043E\u0441\u0442\u0438, \u0443\u0440\u043E\u043D\u0443
+    \u0438 \u0440\u0430\u0437\u043C\u0435\u0440\u0443."
+  _icon: {fileID: 21300000, guid: 6a3fb9963fb36ac49ac25095ee92a4fe, type: 3}
+  _rarity: 2
+  _levels:
+  - _modifiers: []
+  _behaviour: {fileID: 11400000, guid: 09d9b052803b38744aa43a734433bb6a, type: 2}
+  _requires:
+  - {fileID: 11400000, guid: 3370f85ca9fa86d40a935b65c9f99a4f, type: 2}
+  - {fileID: 11400000, guid: c177d78708149fa4fa451ab51a0c5c78, type: 2}
+  _characters:
+  - {fileID: 11400000, guid: 29d13c4cfee513e429c8e2e39949af05, type: 2}

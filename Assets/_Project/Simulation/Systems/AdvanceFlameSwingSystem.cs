@@ -79,41 +79,11 @@ namespace Game.Simulation.Systems
 
             direction.Normalize();
 
-            Vector3 origin = _positions.Value.Get(owner).Value;
-            origin.y = 0f;
-
             FlameSwingLevel entry = config.Level(level);
-            int wave = world.NewEntity();
+            FlameWaveShape shape = FlameWaveShape.Of(config, entry, config.HalfAngleDegrees, config.PillarCount, 1f);
 
-            ref FlameWave data = ref _waves.Value.Add(wave);
-            data.Owner = world.PackEntity(owner);
-            data.Config = config;
-            data.Origin = origin;
-            data.Direction = direction;
-            data.Radius = config.StartRadius;
-            data.MaxRadius = entry.Distance;
-            data.Damage = weaponDamage * entry.DamageShare;
-
-            EcsPackedEntity packedWave = world.PackEntity(wave);
-            int count = config.PillarCount;
-
-            for (int index = 0; index < count; index++)
-            {
-                float angle = count == 1 ? 0f : Mathf.Lerp(-config.HalfAngleDegrees, config.HalfAngleDegrees, index / (float)(count - 1));
-                Vector3 outward = Quaternion.Euler(0f, angle, 0f) * direction;
-                Vector3 point = origin + outward * config.StartRadius;
-
-                int pillar = world.NewEntity();
-
-                ref FlameWavePillar pillarData = ref _pillars.Value.Add(pillar);
-                pillarData.Wave = packedWave;
-                pillarData.AngleDegrees = angle;
-
-                _positions.Value.Add(pillar).Value = point;
-                _facings.Value.Add(pillar).Value = outward;
-                _notIndexed.Value.Add(pillar);
-                _views.Value.Add(pillar).Value = _viewFactory.Value.Create(config.PillarPrefab, point);
-            }
+            FlameWaves.Spawn(world, owner, config, _positions.Value.Get(owner).Value, direction, weaponDamage * entry.DamageShare, in shape,
+                _waves.Value, _pillars.Value, _positions.Value, _facings.Value, _notIndexed.Value, _views.Value, _viewFactory.Value);
         }
 
         private bool TryFindWeaponDamage(EcsWorld world, int owner, out float damage)

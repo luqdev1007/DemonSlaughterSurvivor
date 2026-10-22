@@ -141,6 +141,9 @@ namespace Game.Simulation.Components
         public float Radius;
         public float MaxRadius;
         public float Damage;
+        public float HalfAngleDegrees;
+        public float Thickness;
+        public float Speed;
         public EcsPackedEntity[] Hits;
         public int HitCount;
 
@@ -156,6 +159,9 @@ namespace Game.Simulation.Components
             c.Radius = 0f;
             c.MaxRadius = 0f;
             c.Damage = 0f;
+            c.HalfAngleDegrees = 0f;
+            c.Thickness = 0f;
+            c.Speed = 0f;
             c.HitCount = 0;
         }
     }

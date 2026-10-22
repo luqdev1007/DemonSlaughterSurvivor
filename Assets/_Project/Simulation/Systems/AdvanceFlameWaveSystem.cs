@@ -54,7 +54,7 @@ namespace Game.Simulation.Systems
 
                 float previous = wave.Radius;
 
-                wave.Radius = Mathf.Min(wave.MaxRadius, previous + wave.Config.Speed * delta);
+                wave.Radius = Mathf.Min(wave.MaxRadius, previous + wave.Speed * delta);
 
                 if (wave.Owner.Unpack(world, out int owner))
                     Burn(world, ref wave, owner, previous, delta);
@@ -85,9 +85,9 @@ namespace Game.Simulation.Systems
         private void Burn(EcsWorld world, ref FlameWave wave, int owner, float previous, float delta)
         {
             FlameSwingConfig config = wave.Config;
-            float halfThickness = config.Thickness * 0.5f;
+            float halfThickness = wave.Thickness * 0.5f;
             float maxBody = _motionBounds.Value.MaxEnemyBodyRadius;
-            float halfAngle = config.HalfAngleDegrees * Mathf.Deg2Rad;
+            float halfAngle = wave.HalfAngleDegrees * Mathf.Deg2Rad;
 
             _grid.Value.Query(wave.Origin, wave.Radius + halfThickness + maxBody, _motionBounds.Value.CandidateSlack(delta), _candidates);
 
