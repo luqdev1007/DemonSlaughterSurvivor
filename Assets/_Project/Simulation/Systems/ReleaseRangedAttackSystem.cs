@@ -23,6 +23,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Projectile> _projectiles = default;
         private readonly EcsPoolInject<View> _views = default;
         private readonly EcsPoolInject<NotIndexed> _notIndexed = default;
+        private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
 
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
@@ -49,7 +50,9 @@ namespace Game.Simulation.Systems
 
                 RangedAttackConfig config = attack.Config;
 
-                attack.CooldownTicks = Mathf.Max(0, Mathf.RoundToInt(config.CooldownSeconds / delta));
+                float attackSpeed = _attackSpeeds.Value.Has(entity) ? _attackSpeeds.Value.Get(entity).Value : 1f;
+
+                attack.CooldownTicks = Mathf.Max(0, Mathf.RoundToInt(config.CooldownSeconds / attackSpeed / delta));
 
                 Shoot(world, entity, config, delta);
             }

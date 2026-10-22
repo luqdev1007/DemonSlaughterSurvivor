@@ -20,6 +20,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<Position> _positions = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<RangedWindupStarted> _started = default;
+        private readonly EcsPoolInject<AttackSpeed> _attackSpeeds = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
@@ -72,7 +73,8 @@ namespace Game.Simulation.Systems
                 if (RangedTarget.IsWithin(_positions.Value.Get(entity).Value, target, config.Range) == false)
                     continue;
 
-                int ticks = Mathf.Max(1, Mathf.RoundToInt(config.WindupSeconds / delta));
+                float attackSpeed = _attackSpeeds.Value.Has(entity) ? _attackSpeeds.Value.Get(entity).Value : 1f;
+                int ticks = Mathf.Max(1, Mathf.RoundToInt(config.WindupSeconds / attackSpeed / delta));
 
                 attack.WindupTicks = ticks;
                 attack.PlaybackSpeed = config.ReleaseClipSeconds / (ticks * delta);

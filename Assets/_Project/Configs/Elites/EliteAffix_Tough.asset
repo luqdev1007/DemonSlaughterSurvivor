@@ -19,5 +19,5 @@ MonoBehaviour:
     _op: 3
     _value: 1.5
   _scale: 1.25
-  _vfxPrefab: {fileID: 0}
-  _vfxOffset: {x: 0, y: 0, z: 0}
+  _vfxPrefab: {fileID: 8102421303510684653, guid: b07131fe7f2398b4abb7263e7295f6c2, type: 3}
+  _vfxOffset: {x: 0, y: 0.05, z: 0}

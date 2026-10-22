@@ -30,6 +30,7 @@ namespace Game.Simulation.Services
         private readonly EcsPool<View> _views;
         private readonly EcsPool<GemDrop> _gemDrops;
         private readonly EcsPool<RangedAttack> _rangedAttacks;
+        private readonly EcsPool<AttackSpeed> _attackSpeeds;
         private readonly EcsPool<Boss> _bosses;
         private readonly EcsPool<Elite> _elites;
         private readonly EcsPool<EliteAffix> _eliteAffixes;
@@ -64,6 +65,7 @@ namespace Game.Simulation.Services
             _views = world.GetPool<View>();
             _gemDrops = world.GetPool<GemDrop>();
             _rangedAttacks = world.GetPool<RangedAttack>();
+            _attackSpeeds = world.GetPool<AttackSpeed>();
             _bosses = world.GetPool<Boss>();
             _elites = world.GetPool<Elite>();
             _eliteAffixes = world.GetPool<EliteAffix>();
@@ -130,7 +132,13 @@ namespace Game.Simulation.Services
                 _gemDrops.Add(entity).Config = config.Gem;
 
             if (config.RangedAttack != null)
+            {
                 _rangedAttacks.Add(entity).Config = config.RangedAttack;
+
+                ref AttackSpeed attackSpeed = ref _attackSpeeds.Add(entity);
+                attackSpeed.Base = 1f;
+                attackSpeed.Value = 1f;
+            }
 
             if (config.RangedAttack != null && config.RangedAttack.Interruptible)
                 _interruptibles.Add(entity);
