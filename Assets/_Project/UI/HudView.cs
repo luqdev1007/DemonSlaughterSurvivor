@@ -38,7 +38,7 @@ namespace Game.UI
 
         [Header("Victory")]
         [SerializeField] private GameObject _victoryBanner;
-        [SerializeField] private RunSummaryView _runSummary;
+        [SerializeField] private RunEndView _runEnd;
 
         [Header("Pause")]
         [SerializeField] private PauseMenuView _pauseMenu;
@@ -63,7 +63,7 @@ namespace Game.UI
             && _dps != null && _dps.IsWired
             && _experienceFill != null && _levelText != null
             && _bossBar != null && _bossFill != null && _bossName != null && _bossMarker != null && _bossMarker.IsWired && _victoryBanner != null
-            && _runSummary != null && _runSummary.IsWired
+            && _runEnd != null && _runEnd.IsWired
             && _pauseMenu != null && _pauseMenu.IsWired;
 
         public UpgradeChoiceView UpgradeChoice => _upgradeChoice;
@@ -86,7 +86,7 @@ namespace Game.UI
 
         public BossMarkerView BossMarker => _bossMarker;
 
-        public RunSummaryView RunSummary => _runSummary;
+        public RunEndView RunEnd => _runEnd;
 
         public float ExperienceFill => _experienceFill.anchorMax.x;
 

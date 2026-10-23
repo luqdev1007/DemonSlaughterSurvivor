@@ -4,6 +4,6 @@ namespace Game.Core
     {
         void ShowVictory();
 
-        void ShowSummary(float runSeconds);
+        void ShowRunEnd(RunReport report, RunRewards rewards);
     }
 }

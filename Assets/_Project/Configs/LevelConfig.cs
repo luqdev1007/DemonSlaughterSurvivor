@@ -5,6 +5,7 @@ namespace Game.Configs
     [CreateAssetMenu(fileName = "Level", menuName = "Game/Content/Level")]
     public sealed class LevelConfig : ContentConfig
     {
+        [SerializeField] private string _displayName;
         [SerializeField] private string _sceneName;
 
         [Header("Camera")]
@@ -35,6 +36,8 @@ namespace Game.Configs
         [Header("Meta rewards")]
         [SerializeField, Min(0f)] private float _memoryShardsPerEffectiveDamage = 0.01f;
         [SerializeField, Min(0)] private int _bossMemoryShards = 500;
+
+        public string DisplayName => string.IsNullOrEmpty(_displayName) ? Id : _displayName;
 
         public string SceneName => _sceneName;
 

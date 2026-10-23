@@ -2,6 +2,7 @@ using Game.Configs;
 using Game.Core;
 using Game.Meta;
 using Game.Services;
+using Game.UI;
 using System;
 using UnityEngine;
 using VContainer;
@@ -48,6 +49,8 @@ namespace Game.Bootstrap
             builder.Register<MetaLoadoutBuilder>(Lifetime.Singleton).As<IRunLoadoutSource>();
 
             builder.Register<RunRewardService>(Lifetime.Singleton).As<IRunRewardService>();
+
+            builder.Register<MenuRoute>(Lifetime.Singleton).As<IMenuRoute>();
 
             builder.RegisterInstance(_scenesConfig);
 

@@ -47,6 +47,7 @@ namespace Game.Bootstrap
         private readonly RunStats _runStats;
         private readonly DpsMeter _dpsMeter;
         private readonly IRunRewardService _rewardService;
+        private readonly IMenuRoute _menuRoute;
         private readonly IPauseInput _pauseInput;
         private readonly IPointerInput _pointerInput;
         private readonly IDashInput _dashInput;
@@ -110,6 +111,7 @@ namespace Game.Bootstrap
             RunStats runStats,
             DpsMeter dpsMeter,
             IRunRewardService rewardService,
+            IMenuRoute menuRoute,
             IPauseInput pauseInput,
             IPointerInput pointerInput,
             IDashInput dashInput,
@@ -158,6 +160,7 @@ namespace Game.Bootstrap
             _runStats = runStats;
             _dpsMeter = dpsMeter;
             _rewardService = rewardService;
+            _menuRoute = menuRoute;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -307,14 +310,7 @@ namespace Game.Bootstrap
 
             GrantRewards(_outcome.Reason == RunEndReason.Victory);
 
-            if (_outcome.Reason == RunEndReason.Victory)
-            {
-                FinishWithVictoryAsync().Forget();
-
-                return;
-            }
-
-            _launcher.FinishAsync().Forget();
+            ShowRunEndAsync(_outcome.Reason == RunEndReason.Victory).Forget();
         }
 
         public void RequestSlowMotion(float timeScale, float realSeconds)
@@ -381,25 +377,41 @@ namespace Game.Bootstrap
             _itemChoiceState = null;
         }
 
-        private async UniTaskVoid FinishWithVictoryAsync()
+        private async UniTaskVoid ShowRunEndAsync(bool victory)
         {
             ReleaseSlowMotion();
 
-            _resultSink.ShowVictory();
+            if (victory)
+                _resultSink.ShowVictory();
 
             _isVictoryFrozen = true;
             _timeScaleBeforeVictory = Time.timeScale;
             Time.timeScale = 0f;
 
-            await UniTask.Delay(TimeSpan.FromSeconds(_levelConfig.Feedback.VictoryBannerSeconds), ignoreTimeScale: true);
+            if (victory)
+                await UniTask.Delay(TimeSpan.FromSeconds(_levelConfig.Feedback.VictoryBannerSeconds), ignoreTimeScale: true);
 
-            _resultSink.ShowSummary(_clock.Elapsed);
+            _resultSink.ShowRunEnd(_report, _rewards);
 
-            await UniTask.WaitUntil(_resultInput.ConsumeExitRequested);
+            RunExitChoice choice = RunExitChoice.Menu;
+
+            await UniTask.WaitUntil(() => _resultInput.TryConsumeExit(out choice));
 
             ReleaseVictoryFreeze();
 
-            await _launcher.FinishAsync();
+            switch (choice)
+            {
+                case RunExitChoice.Again:
+                    await _launcher.RestartAsync();
+                    break;
+                case RunExitChoice.Upgrade:
+                    _menuRoute.RequestUpgrade();
+                    await _launcher.FinishAsync();
+                    break;
+                default:
+                    await _launcher.FinishAsync();
+                    break;
+            }
         }
 
         private void GrantRewards(bool victory)

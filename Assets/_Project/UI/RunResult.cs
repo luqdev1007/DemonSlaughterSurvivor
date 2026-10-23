@@ -7,39 +7,46 @@ namespace Game.UI
     public sealed class RunResult : IRunResultSink, IRunResultInput, IDisposable
     {
         private readonly ReactiveProperty<bool> _victory = new ReactiveProperty<bool>();
-        private readonly ReactiveProperty<bool> _summary = new ReactiveProperty<bool>();
+        private readonly ReactiveProperty<bool> _runEnd = new ReactiveProperty<bool>();
 
         private bool _exitRequested;
+        private RunExitChoice _exitChoice;
 
         public ReadOnlyReactiveProperty<bool> Victory => _victory;
 
-        public ReadOnlyReactiveProperty<bool> Summary => _summary;
+        public ReadOnlyReactiveProperty<bool> RunEnd => _runEnd;
 
-        public float RunSeconds { get; private set; }
+        public RunReport Report { get; private set; }
+
+        public RunRewards Rewards { get; private set; }
 
         public void ShowVictory()
         {
             _victory.Value = true;
         }
 
-        public void ShowSummary(float runSeconds)
+        public void ShowRunEnd(RunReport report, RunRewards rewards)
         {
-            RunSeconds = runSeconds;
+            Report = report;
+            Rewards = rewards;
             _exitRequested = false;
 
-            _summary.Value = true;
+            _runEnd.Value = true;
         }
 
-        public void RequestExit()
+        public void RequestExit(RunExitChoice choice)
         {
-            if (_summary.Value == false)
+            if (_runEnd.Value == false)
                 return;
 
+            _exitChoice = choice;
             _exitRequested = true;
         }
 
-        public bool ConsumeExitRequested()
+        public bool TryConsumeExit(out RunExitChoice choice)
         {
+            choice = _exitChoice;
+
             if (_exitRequested == false)
                 return false;
 
@@ -51,7 +58,7 @@ namespace Game.UI
         public void Dispose()
         {
             _victory.Dispose();
-            _summary.Dispose();
+            _runEnd.Dispose();
         }
     }
 }

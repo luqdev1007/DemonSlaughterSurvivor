@@ -21,6 +21,8 @@ namespace Game.Bootstrap
         private readonly IRunLoadoutSource _loadouts;
 
         private RunLifetimeScope _runScope;
+        private RunRequest _lastRequest;
+        private bool _hasLastRequest;
         private bool _isStarting;
         private bool _isFinishing;
 
@@ -51,6 +53,8 @@ namespace Game.Bootstrap
             ct.ThrowIfCancellationRequested();
 
             _isStarting = true;
+            _lastRequest = request;
+            _hasLastRequest = true;
 
             try
             {
@@ -74,6 +78,14 @@ namespace Game.Bootstrap
             {
                 _isStarting = false;
             }
+        }
+
+        public UniTask RestartAsync()
+        {
+            if (_hasLastRequest == false)
+                throw new InvalidOperationException($"{nameof(RunLauncher)}.{nameof(RestartAsync)} was called before any run was started.");
+
+            return StartAsync(_lastRequest, CancellationToken.None);
         }
 
         public async UniTask FinishAsync()
