@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe29d59f658d46d498a8be5fdfbcc8cd, type: 3}
+  m_Name: KnightBanner_Relic
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.KnightBannerConfig
+  _levels: 5
+  _tags:
+  - Charge
+  - Physical
+  _cooldownSeconds: 12
+  _cooldownReductionPerLevel: 1
+  _minCooldownSeconds: 1
+  _damageShare: 3
+  _damageSharePerLevel: 0.4
+  _hitReach: 0.8
+  _pushSpeed: 16
+  _pushSeconds: 0.35

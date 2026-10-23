@@ -367,6 +367,17 @@ namespace Game.UI
 
             Line(column, string.Join("  ", tags) + (inserted ? "   Вставлена в это оружие." : "   Не вставлена: эффект не работает."), 20f, null, MetaPalette.Dim);
 
+            PerkBehaviourConfig behaviour = shown.Effect.GrantedPerk != null ? shown.Effect.GrantedPerk.Behaviour : null;
+            float share = behaviour == null ? 0f : behaviour.WeaponDamageShare(level);
+
+            if (share > 0f)
+            {
+                float weaponDamage = WeaponDamage(weapon);
+                float boost = TagBoost(weapon, shown.Tags);
+                string boostText = boost > 1f ? $" × <b>{boost:0.##}</b> (самоцветы)" : string.Empty;
+                Line(column, $"<color={MetaPalette.Tag(MetaPalette.Dim)}>удар = урон оружия <b>{weaponDamage:0.#}</b> × <b>{share * 100f:0}%</b>{boostText} = <b>{weaponDamage * share * boost:0}</b> · перезарядка <b>{behaviour.CooldownSeconds(level):0.#} с</b></color>", 20f);
+            }
+
             if (shown.Effect.NotImplemented)
                 Line(column, $"<color={MetaPalette.Tag(MetaPalette.Ember)}>Скоро: боевой эффект реликвии ещё в разработке.</color>", 20f);
 
@@ -409,6 +420,39 @@ namespace Game.UI
                 TMP_Text label = UiKit.Text(slot.transform, "Caption", _style.BodyFont, 15f, owned ? MetaPalette.Gold : MetaPalette.Faint, TextAlignmentOptions.Center, caption);
                 UiKit.Area(label.rectTransform, new Vector2(0f, 0.02f), new Vector2(1f, 0.28f));
             }
+        }
+
+        private float WeaponDamage(UniqueWeaponConfig weapon)
+        {
+            int level = Mathf.Max(1, _meta.WeaponLevel(weapon.Id));
+            CharacterConfig character = weapon.Character;
+            float swordDamage = character != null && character.StartingWeapon != null ? character.StartingWeapon.Damage : 0f;
+
+            return swordDamage * weapon.DamageScale * (1f + weapon.LevelDamageBonus(level) + TreeWeaponDamageBonus());
+        }
+
+        private float TagBoost(UniqueWeaponConfig weapon, IReadOnlyList<string> tags)
+        {
+            float increased = 0f;
+
+            foreach (WeaponSocket socket in weapon.Sockets)
+            {
+                string content = _meta.SocketContent(weapon.Id, socket.Id);
+
+                if (string.IsNullOrEmpty(content) || _content.TryGet(content, out SocketGemConfig gem) == false)
+                    continue;
+
+                foreach (TuningEntry entry in gem.Effect.Tuning)
+                {
+                    foreach (string tag in tags)
+                    {
+                        if (entry.Key == TuningEntry.TagPrefix + tag && entry.Op == StatOp.Increased)
+                            increased += entry.Value;
+                    }
+                }
+            }
+
+            return 1f + increased;
         }
 
         private bool HasTagBoost(UniqueWeaponConfig weapon, string tag)

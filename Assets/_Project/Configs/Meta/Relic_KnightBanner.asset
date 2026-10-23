@@ -18,9 +18,6 @@ MonoBehaviour:
   _bossName: "Падший рыцарь"
   _echo: "Эхо «Прицельного натиска»"
   _description: "Раз в 12 с (−1 с за уровень) следующий рывок становится натиском рыцаря: замах, разгон и таран по линии. Урон — 300% урона оружия (+40 п.п. за уровень), сильное отбрасывание."
-  _tags:
-  - Charge
-  - Physical
   _menuOrder: 0
   _icon: {fileID: 0}
   _maxLevel: 5
@@ -28,5 +25,5 @@ MonoBehaviour:
   _effect:
     _modifiers: []
     _tuning: []
-    _grantedPerk: {fileID: 0}
-    _notImplemented: 1
+    _grantedPerk: {fileID: 11400000, guid: 9d92f356db9c5f889f454053e8cfc5e8, type: 2}
+    _notImplemented: 0

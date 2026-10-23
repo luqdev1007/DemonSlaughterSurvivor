@@ -11,6 +11,7 @@ namespace Game.Simulation.Services
 
         private readonly TuningSpec[] _specs;
         private readonly Dictionary<PerkBehaviourConfig, string> _perkIds = new Dictionary<PerkBehaviourConfig, string>();
+        private readonly Dictionary<string, string> _tagKeys = new Dictionary<string, string>();
 
         public Tuning(IReadOnlyList<TuningSpec> specs, IContentRegistry content)
         {
@@ -66,7 +67,15 @@ namespace Game.Simulation.Services
             float value = baseValue;
 
             for (int index = 0; index < tags.Count; index++)
-                value = Resolve(TagPrefix + tags[index], parameter, value);
+            {
+                if (_tagKeys.TryGetValue(tags[index], out string key) == false)
+                {
+                    key = TagPrefix + tags[index];
+                    _tagKeys.Add(tags[index], key);
+                }
+
+                value = Resolve(key, parameter, value);
+            }
 
             return value;
         }

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53717ce3cd87b6640ab973e8d9198c21, type: 3}
+  m_Name: Perk_MetaKnightBanner
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.PerkConfig
+  _id: perk.meta.knight-banner
+  _displayName: "Знамя неистового наступления"
+  _description: "Реликвия: раз в N с следующий рывок становится натиском рыцаря."
+  _icon: {fileID: 0}
+  _rarity: 2
+  _levels:
+  - _modifiers: []
+  - _modifiers: []
+  - _modifiers: []
+  - _modifiers: []
+  - _modifiers: []
+  _behaviour: {fileID: 11400000, guid: 185b90a2ceec5393afe8e1044337c565, type: 2}
+  _requires: []
+  _characters: []
+  _grantedOnly: 1

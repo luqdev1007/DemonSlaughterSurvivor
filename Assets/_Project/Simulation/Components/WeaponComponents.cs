@@ -39,6 +39,30 @@ namespace Game.Simulation.Components
 
     public struct SteelThirst { public int RemainingSwings; }
 
+    public struct KnightBanner : IEcsAutoReset<KnightBanner>
+    {
+        public const int InitialHitCapacity = 32;
+
+        public int CooldownTicks;
+        public bool WasDashing;
+        public bool Charging;
+        public float Damage;
+        public EcsPackedEntity[] Hits;
+        public int HitCount;
+
+        public void AutoReset(ref KnightBanner c)
+        {
+            if (c.Hits == null)
+                c.Hits = new EcsPackedEntity[InitialHitCapacity];
+
+            c.CooldownTicks = 0;
+            c.WasDashing = false;
+            c.Charging = false;
+            c.Damage = 0f;
+            c.HitCount = 0;
+        }
+    }
+
     public struct SwingEndedEvent
     {
         public EcsPackedEntity Owner;

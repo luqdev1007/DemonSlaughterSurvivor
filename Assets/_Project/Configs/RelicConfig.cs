@@ -12,7 +12,6 @@ namespace Game.Configs
         [SerializeField] private string _bossName;
         [SerializeField] private string _echo;
         [SerializeField, TextArea] private string _description;
-        [SerializeField] private string[] _tags = Array.Empty<string>();
         [SerializeField] private int _menuOrder;
         [SerializeField] private Sprite _icon;
         [SerializeField, Min(1)] private int _maxLevel = 5;
@@ -24,7 +23,7 @@ namespace Game.Configs
         public string BossName => _bossName;
         public string Echo => _echo;
         public string Description => _description;
-        public IReadOnlyList<string> Tags => _tags ?? Array.Empty<string>();
+        public IReadOnlyList<string> Tags => Effect.GrantedPerk != null && Effect.GrantedPerk.Behaviour != null ? Effect.GrantedPerk.Behaviour.Tags : Array.Empty<string>();
         public int MenuOrder => _menuOrder;
         public Sprite Icon => _icon;
         public int MaxLevel => _maxLevel;

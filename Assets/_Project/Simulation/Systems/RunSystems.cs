@@ -126,6 +126,7 @@ namespace Game.Simulation.Systems
             systems.Add(new ImpactEnemyJumpSystem());
             // 8.  Collision
             systems.Add(new SweepDashPushSystem());
+            systems.Add(new KnightBannerSystem());
             systems.Add(new SweepSlicingDashSystem());
             systems.Add(new SweepEnemyChargeSystem());
             systems.Add(new InterruptCastSystem());
