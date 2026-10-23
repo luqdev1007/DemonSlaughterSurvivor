@@ -16,6 +16,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
         private readonly EcsPoolInject<Dead> _dead = default;
         private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
+        private readonly EcsPoolInject<Recovery> _recoveries = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -45,6 +46,9 @@ namespace Game.Simulation.Systems
 
                 if (healEvent.LifeSteal && _lifeSteals.Value.Has(target))
                     amount *= 1f + Mathf.Max(0f, _lifeSteals.Value.Get(target).ScaleBonus);
+
+                if (_recoveries.Value.Has(target))
+                    amount *= Mathf.Max(0f, _recoveries.Value.Get(target).Healing);
 
                 health.Current = Mathf.Min(health.Current + amount, max);
             }

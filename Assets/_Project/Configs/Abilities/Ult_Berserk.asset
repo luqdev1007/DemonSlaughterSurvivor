@@ -28,6 +28,9 @@ MonoBehaviour:
   - _stat: 8
     _op: 3
     _value: 0.5
+  - _stat: 26
+    _op: 3
+    _value: 0
   - _stat: 11
     _op: 1
     _value: 0.01

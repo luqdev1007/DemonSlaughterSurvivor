@@ -13,6 +13,8 @@ namespace Game.Simulation.Systems
     public sealed class StartBerserkSystem : IEcsInitSystem, IEcsRunSystem
     {
         public const string SourceId = "ult.berserk";
+        public const string DurationParameter = "duration";
+        public const string ModifierParameterPrefix = "mod_";
 
         private readonly EcsFilterInject<Inc<Player, UltimateCharge>, Exc<BerserkMode, Dead, Dashing, SpecialAttack>> _filter = default;
 
@@ -25,8 +27,10 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<StatModifiers> _statModifiers = default;
+        private readonly EcsCustomInject<Tuning> _tuning = default;
 
         private BerserkAbilityConfig _config;
+        private string[] _modifierParameters;
 
         public void Init(IEcsSystems systems)
         {
@@ -38,6 +42,12 @@ namespace Game.Simulation.Systems
                 return;
 
             Validate(_config);
+
+            IReadOnlyList<StatModifierEntry> entries = _config.Modifiers;
+            _modifierParameters = new string[entries == null ? 0 : entries.Count];
+
+            for (int index = 0; index < _modifierParameters.Length; index++)
+                _modifierParameters[index] = ModifierParameterPrefix + entries[index].Stat;
         }
 
         public void Run(IEcsSystems systems)
@@ -52,7 +62,8 @@ namespace Game.Simulation.Systems
                 if (charge.Value < charge.Max)
                     continue;
 
-                int ticks = Mathf.Max(1, Mathf.RoundToInt(_config.DurationSeconds / _clock.Value.Delta));
+                float seconds = Resolve(DurationParameter, _config.DurationSeconds);
+                int ticks = Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(seconds, _config.PowerUpSeconds + _clock.Value.Delta) / _clock.Value.Delta));
 
                 ref BerserkMode mode = ref _modes.Value.Add(hero);
                 mode.RemainingTicks = ticks;
@@ -65,12 +76,21 @@ namespace Game.Simulation.Systems
                 for (int index = 0; index < modifiers.Count; index++)
                 {
                     StatModifierEntry entry = modifiers[index];
+                    float value = Resolve(_modifierParameters[index], entry.Value);
 
-                    _statModifiers.Value.Add(hero, entry.Stat, entry.Op, entry.Value, SourceId);
+                    if (Mathf.Approximately(value, 0f))
+                        continue;
+
+                    _statModifiers.Value.Add(hero, entry.Stat, entry.Op, value, SourceId);
                 }
 
                 StartPowerUp(hero);
             }
+        }
+
+        private float Resolve(string parameter, float baseValue)
+        {
+            return _tuning.Value == null ? baseValue : _tuning.Value.Resolve(_config.Id, parameter, baseValue);
         }
 
         private void StartPowerUp(int hero)

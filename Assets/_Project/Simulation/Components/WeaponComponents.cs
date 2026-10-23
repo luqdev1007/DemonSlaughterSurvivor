@@ -37,6 +37,8 @@ namespace Game.Simulation.Components
 
     public struct SwingStarted { }
 
+    public struct SteelThirst { public int RemainingSwings; }
+
     public struct SwingEndedEvent
     {
         public EcsPackedEntity Owner;

@@ -65,6 +65,7 @@ namespace Game.Bootstrap
         private UpgradeChoiceGate _choiceGate;
         private SpatialGrid _spatialGrid;
         private StatModifiers _statModifiers;
+        private Tuning _tuning;
         private EnemyMotionBounds _motionBounds;
 
         private float _accumulator;
@@ -177,6 +178,8 @@ namespace Game.Bootstrap
 
             _statModifiers = new StatModifiers(_world);
 
+            _tuning = new Tuning(_context.Tuning, _registry);
+
             CharacterConfig character = _registry.Get<CharacterConfig>(_context.CharacterId);
 
             _motionBounds = EnemyMotionBounds.From(character, _levelConfig.Waves, _registry.All<PerkConfig>());
@@ -210,6 +213,7 @@ namespace Game.Bootstrap
                 _inputConfig,
                 _spatialGrid,
                 _statModifiers,
+                _tuning,
                 _motionBounds,
                 _outcome,
                 _vitalsSink,
@@ -372,6 +376,7 @@ namespace Game.Bootstrap
 
             _spatialGrid = null;
             _statModifiers = null;
+            _tuning = null;
             _motionBounds = null;
             _choiceGate = null;
             _itemChoiceState = null;

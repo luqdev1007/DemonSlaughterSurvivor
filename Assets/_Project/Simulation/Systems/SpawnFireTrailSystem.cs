@@ -10,6 +10,8 @@ namespace Game.Simulation.Systems
 {
     public sealed class SpawnFireTrailSystem : IEcsInitSystem, IEcsRunSystem
     {
+        public const string LifetimeParameter = "segment_lifetime";
+
         private const int PointCapacity = 16;
 
         private readonly EcsWorldInject _world = default;
@@ -30,6 +32,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<IContentRegistry> _content = default;
         private readonly EcsCustomInject<IViewFactory> _viewFactory = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
+        private readonly EcsCustomInject<Tuning> _tuning = default;
 
         private Vector3[] _points;
 
@@ -60,7 +63,8 @@ namespace Game.Simulation.Systems
                 int count = TrailPlacement.Place(_previousPositions.Value.Get(hero).Value, _positions.Value.Get(hero).Value, config.SegmentSpacing, ref trail.Carried, _points);
 
                 FlamingDashLevel entry = config.Level(level);
-                int lifetime = Mathf.Max(1, Mathf.RoundToInt(entry.LifetimeSeconds / _clock.Value.Delta));
+                float lifetimeSeconds = _tuning.Value == null ? entry.LifetimeSeconds : _tuning.Value.Resolve(config, LifetimeParameter, entry.LifetimeSeconds);
+                int lifetime = Mathf.Max(1, Mathf.RoundToInt(lifetimeSeconds / _clock.Value.Delta));
 
                 for (int index = 0; index < count; index++)
                 {

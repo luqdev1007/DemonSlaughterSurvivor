@@ -9,6 +9,8 @@ namespace Game.Simulation.Systems
 {
     public sealed class AdvanceExecutionSystem : IEcsRunSystem
     {
+        public const string LowHealthThresholdParameter = "low_health_threshold";
+
         private readonly EcsWorldInject _world = default;
 
         private readonly EcsFilterInject<Inc<Execution>> _executions = default;
@@ -22,6 +24,7 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<ExecutionFinishedEvent> _finishedEvents = default;
 
         private readonly EcsCustomInject<SimulationClock> _clock = default;
+        private readonly EcsCustomInject<Tuning> _tuning = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -83,7 +86,9 @@ namespace Game.Simulation.Systems
             damageEvent.Target = world.PackEntity(target);
             damageEvent.Source = world.PackEntity(owner);
             damageEvent.SourcePosition = _positions.Value.Get(owner).Value;
-            damageEvent.Amount = config.HitDamage(config.Level(execution.Level), current, max);
+            float threshold = _tuning.Value == null ? config.LowHealthThreshold : _tuning.Value.Resolve(config, LowHealthThresholdParameter, config.LowHealthThreshold);
+
+            damageEvent.Amount = config.HitDamage(config.Level(execution.Level), current, max, threshold);
             damageEvent.Kind = DamageKind.Perk;
             damageEvent.IsSlash = true;
             damageEvent.SourcePerk = config;

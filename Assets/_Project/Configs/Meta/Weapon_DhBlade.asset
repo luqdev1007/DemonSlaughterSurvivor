@@ -60,8 +60,8 @@ MonoBehaviour:
     _effect:
       _modifiers: []
       _tuning: []
-      _grantedPerk: {fileID: 0}
-      _notImplemented: 1
+      _grantedPerk: {fileID: 11400000, guid: 13f5edff052f514897ba097f2bc8dad3, type: 2}
+      _notImplemented: 0
   - _id: blade_awakening
     _unlockLevel: 10
     _displayName: "Пробуждение клинка"

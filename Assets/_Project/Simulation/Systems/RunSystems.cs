@@ -107,6 +107,7 @@ namespace Game.Simulation.Systems
             // 7.  AttackLifetime
             systems.Add(new AdvanceSwingSystem());
             systems.Add(new GrantHarvestHealSystem());
+            systems.Add(new SteelThirstSystem());
             systems.Add(new AdvanceHeroicLeapSystem());
             systems.Add(new AdvanceExecutionSystem());
             systems.Add(new ExecutionWavesSystem());
@@ -162,6 +163,7 @@ namespace Game.Simulation.Systems
             systems.Add(new CollectHealOrbsSystem());
             systems.Add(new TickActiveRuneSystem());
             systems.Add(new TickHunterMarksSystem());
+            systems.Add(new RegenerateHealthSystem());
             systems.Add(new ApplyHealSystem());
             systems.Add(new AccumulateDualitySystem());
             systems.Add(new AdvanceLevelSystem());

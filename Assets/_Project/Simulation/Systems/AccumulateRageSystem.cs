@@ -22,6 +22,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageEvent> _damageEvents = default;
         private readonly EcsPoolInject<Breakable> _breakables = default;
 
+        private readonly EcsPoolInject<RageGain> _rageGains = default;
+
         private readonly EcsCustomInject<RunContext> _context = default;
         private readonly EcsCustomInject<IContentRegistry> _content = default;
 
@@ -82,6 +84,9 @@ namespace Game.Simulation.Systems
 
                 if (inCombat == false)
                     continue;
+
+                if (_rageGains.Value.Has(hero))
+                    gain *= Mathf.Max(0f, _rageGains.Value.Get(hero).Value);
 
                 state.TicksSinceCombat = 0;
                 charge.Value = Mathf.Clamp(charge.Value + gain, 0f, charge.Max);

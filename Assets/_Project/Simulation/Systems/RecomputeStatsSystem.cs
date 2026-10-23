@@ -36,6 +36,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DamageTaken> _damageTakens = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
         private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
+        private readonly EcsPoolInject<Recovery> _recoveries = default;
+        private readonly EcsPoolInject<RageGain> _rageGains = default;
         private readonly EcsPoolInject<CombatStats> _combatStats = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
         private readonly EcsPoolInject<Dead> _dead = default;
@@ -273,6 +275,19 @@ namespace Game.Simulation.Systems
                 lifeSteal.ScaleBonus = StatFormula.Evaluate(lifeSteal.ScaleBonusBase, Total(StatId.LifeStealScale));
             }
 
+            if (_recoveries.Value.Has(target))
+            {
+                ref Recovery recovery = ref _recoveries.Value.Get(target);
+                recovery.Regen = StatFormula.Evaluate(recovery.RegenBase, Total(StatId.HealthRegen));
+                recovery.Healing = StatFormula.Evaluate(recovery.HealingBase, Total(StatId.HealingReceived));
+            }
+
+            if (_rageGains.Value.Has(target))
+            {
+                ref RageGain rageGain = ref _rageGains.Value.Get(target);
+                rageGain.Value = StatFormula.Evaluate(rageGain.Base, Total(StatId.RageGain));
+            }
+
             if (_combatStats.Value.Has(target))
             {
                 ref CombatStats combat = ref _combatStats.Value.Get(target);
@@ -375,6 +390,11 @@ namespace Game.Simulation.Systems
                 case StatId.LifeOnHit:
                 case StatId.LifeStealScale:
                     return _lifeSteals.Value.Has(target);
+                case StatId.HealthRegen:
+                case StatId.HealingReceived:
+                    return _recoveries.Value.Has(target);
+                case StatId.RageGain:
+                    return _rageGains.Value.Has(target);
                 case StatId.CritChance:
                 case StatId.Armor:
                 case StatId.MagicResist:

@@ -156,6 +156,14 @@ namespace Game.Simulation.Components
         public bool LifeSteal;
     }
 
+    public struct Recovery
+    {
+        public float Regen;
+        public float RegenBase;
+        public float Healing;
+        public float HealingBase;
+    }
+
     public struct LifeSteal
     {
         public float OnKill;

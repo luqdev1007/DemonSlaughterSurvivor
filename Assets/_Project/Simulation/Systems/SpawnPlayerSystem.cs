@@ -29,6 +29,9 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<BodyRadius> _bodyRadii = default;
         private readonly EcsPoolInject<PickupRadius> _pickupRadii = default;
         private readonly EcsPoolInject<LifeSteal> _lifeSteals = default;
+        private readonly EcsPoolInject<Recovery> _recoveries = default;
+        private readonly EcsPoolInject<RageGain> _rageGains = default;
+        private readonly EcsPoolInject<TakenPerk> _takenPerks = default;
         private readonly EcsPoolInject<Experience> _experiences = default;
         private readonly EcsPoolInject<Health> _healths = default;
         private readonly EcsPoolInject<MaxHealth> _maxHealths = default;
@@ -159,6 +162,12 @@ namespace Game.Simulation.Systems
             lifeSteal.OnHitBase = character.LifeOnHit;
             lifeSteal.OnHit = character.LifeOnHit;
 
+            ref Recovery recovery = ref _recoveries.Value.Add(entity);
+            recovery.RegenBase = 0f;
+            recovery.Regen = 0f;
+            recovery.HealingBase = 1f;
+            recovery.Healing = 1f;
+
             ref HitInvulnerability hitInvulnerability = ref _hitInvulnerabilities.Value.Add(entity);
             hitInvulnerability.Seconds = character.HitInvulnerabilitySeconds;
 
@@ -201,6 +210,10 @@ namespace Game.Simulation.Systems
                 charge.Max = rage.Max;
 
                 _rageStates.Value.Add(entity);
+
+                ref RageGain rageGain = ref _rageGains.Value.Add(entity);
+                rageGain.Base = 1f;
+                rageGain.Value = 1f;
             }
 
             ref Height height = ref _heights.Value.Add(entity);
@@ -253,7 +266,56 @@ namespace Game.Simulation.Systems
                 statModifiers.Add(entity, spec.Stat, spec.Op, spec.Value, spec.SourceId);
             }
 
+            GrantPerks(entity, statModifiers);
+
             statModifiers.MarkDirty(entity);
+        }
+
+        private void GrantPerks(int hero, StatModifiers statModifiers)
+        {
+            IReadOnlyList<GrantedPerkSpec> granted = _context.Value.GrantedPerks;
+            EcsWorld world = _world.Value;
+
+            for (int index = 0; index < granted.Count; index++)
+            {
+                GrantedPerkSpec spec = granted[index];
+                PerkConfig perk = _content.Value.Get<PerkConfig>(spec.PerkId);
+
+                if (spec.Level < 1 || spec.Level > perk.MaxLevel)
+                    throw new InvalidOperationException(
+                        $"The meta grants perk '{perk.Id}' at level {spec.Level}, but it has levels 1..{perk.MaxLevel}.");
+
+                if (HasPerk(world, hero, perk.Id))
+                    continue;
+
+                int entity = world.NewEntity();
+
+                ref TakenPerk taken = ref _takenPerks.Value.Add(entity);
+                taken.Owner = world.PackEntity(hero);
+                taken.PerkId = perk.Id;
+                taken.Level = spec.Level;
+
+                IReadOnlyList<StatModifierEntry> modifiers = perk.Level(spec.Level).Modifiers;
+
+                if (modifiers == null)
+                    continue;
+
+                for (int modifier = 0; modifier < modifiers.Count; modifier++)
+                    statModifiers.Add(hero, modifiers[modifier].Stat, modifiers[modifier].Op, modifiers[modifier].Value, perk.Id);
+            }
+        }
+
+        private bool HasPerk(EcsWorld world, int hero, string perkId)
+        {
+            foreach (int entity in world.Filter<TakenPerk>().End())
+            {
+                ref TakenPerk taken = ref _takenPerks.Value.Get(entity);
+
+                if (taken.PerkId == perkId && taken.Owner.Unpack(world, out int owner) && owner == hero)
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ValidateRage(RageConfig rage)

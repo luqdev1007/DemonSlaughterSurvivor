@@ -71,9 +71,14 @@ namespace Game.Configs
 
         public float HitDamage(ExecutionLevel level, float currentHealth, float maxHealth)
         {
+            return HitDamage(level, currentHealth, maxHealth, _lowHealthThreshold);
+        }
+
+        public float HitDamage(ExecutionLevel level, float currentHealth, float maxHealth, float lowHealthThreshold)
+        {
             float damage = level.HealthShare * Mathf.Max(0f, currentHealth) + level.FlatDamage;
 
-            if (maxHealth > 0f && currentHealth < maxHealth * _lowHealthThreshold)
+            if (maxHealth > 0f && currentHealth < maxHealth * lowHealthThreshold)
                 damage *= _lowHealthMultiplier;
 
             return damage;

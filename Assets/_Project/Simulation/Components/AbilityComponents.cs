@@ -71,6 +71,8 @@ namespace Game.Simulation.Components
 
     public struct RageState { public int TicksSinceCombat; }
 
+    public struct RageGain { public float Value; public float Base; }
+
     public struct BerserkMode { public int RemainingTicks; public int TotalTicks; }
 
     public struct PoweringUp { public int RemainingTicks; public int TotalTicks; }
