@@ -1,0 +1,634 @@
+<title>Мета демон-хантера</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: game-UI mockup — top wallet bar, tab strip, each screen = stage (visual) + side panel (details). Single dark look by choice. */
+:root{
+  --void:#0c0a0b; --stone:#161213; --ash:#221c1d; --line:#3a2f2f; --bone:#eadfcd; --dim:#9d8f82; --faint:#6b5f57;
+  --blood:#c3262f; --blood-deep:#6e1117; --ember:#e7843a; --gold:#d8b25a;
+  --mem:#7cd0e0; --mag:#a98bff; --gem-red:#e0414b; --gem-blue:#4f8dff; --gem-green:#43c47c;
+  --f-display:"Cormorant SC","Cormorant Garamond",Georgia,serif;
+  --f-body:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  --f-data:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--void);color:var(--bone)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.45;min-height:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+#embers{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.55}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible,g[data-node]:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.num{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+
+/* top bar */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:18px 12px;border-bottom:1px solid var(--line)}
+.logo{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:.08em;line-height:1}
+.logo b{color:var(--blood)}
+.logo small{display:block;font-family:var(--f-body);font-size:12px;letter-spacing:.14em;color:var(--dim);font-weight:500;margin-top:4px;text-transform:uppercase}
+.wallet{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.chip{display:flex;align-items:center;gap:8px;background:var(--stone);border:1px solid var(--line);border-radius:4px;padding:6px 12px 6px 8px}
+.chip .lbl{font-size:12px;color:var(--dim);line-height:1.1}
+.chip .num{font-size:16px}
+.chip.mem .num{color:var(--mem)} .chip.mag .num{color:var(--mag)} .chip.rel .num{color:var(--gold)}
+.chip.bump{animation:bump .5s}
+@keyframes bump{40%{transform:scale(1.08);border-color:var(--ember)}}
+.dev{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--faint)}
+.dev button{background:none;border:1px dashed var(--line);border-radius:3px;padding:3px 8px;color:var(--dim)}
+.dev button:hover{border-color:var(--dim);color:var(--bone)}
+
+/* tabs */
+.tabs-scroll{overflow-x:auto;margin-top:6px}
+.tabs{display:flex;gap:4px;min-width:max-content}
+.tab{background:none;border:none;border-bottom:2px solid transparent;padding:12px 16px 10px;font-family:var(--f-display);font-weight:700;font-size:19px;letter-spacing:.04em;color:var(--dim)}
+.tab:hover{color:var(--bone)}
+.tab[aria-selected="true"]{color:var(--bone);border-bottom-color:var(--blood)}
+.tab .k{font-family:var(--f-data);font-size:11px;color:var(--faint);margin-right:6px;font-weight:500}
+
+.screen{padding-top:22px}
+.note{border-left:2px solid var(--ember);background:linear-gradient(90deg,rgba(231,132,58,.08),transparent 70%);padding:10px 14px;font-size:14px;color:var(--dim);max-width:78ch}
+.note b{color:var(--bone);font-weight:500}
+.notes-off .note{display:none}
+h2{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.03em;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:700;font-size:21px;margin:0;letter-spacing:.02em}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:500}
+
+.btn{border:1px solid var(--line);background:var(--ash);padding:9px 16px;border-radius:3px;font-weight:500}
+.btn:hover:not(:disabled){border-color:var(--dim)}
+.btn.primary{background:linear-gradient(180deg,#8c1820,var(--blood-deep));border-color:var(--blood);color:#fff}
+.btn.primary:hover:not(:disabled){filter:brightness(1.15)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn .cost{font-family:var(--f-data);margin-left:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.seg button{background:var(--stone);border:none;padding:6px 12px;font-size:14px;color:var(--dim)}
+.seg button[aria-pressed="true"]{background:var(--ash);color:var(--bone);box-shadow:inset 0 -2px 0 var(--blood)}
+
+/* ===== RUN END ===== */
+.outcome{text-align:center;padding:18px 0 6px}
+.outcome h1{font-family:var(--f-display);font-weight:700;font-size:clamp(46px,9vw,92px);line-height:1;margin:0;letter-spacing:.08em;
+  background:linear-gradient(180deg,#ff8a7a,var(--blood) 55%,var(--blood-deep));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(195,38,47,.35))}
+.outcome.lose h1{background:linear-gradient(180deg,#b9aea4,#6b5f57);-webkit-background-clip:text;background-clip:text;filter:none}
+.outcome .sub{color:var(--dim);margin-top:8px}
+.run-ctrl{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px 0 22px;align-items:center;font-size:13px;color:var(--faint)}
+.rewards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:820px){.rewards{grid-template-columns:1fr}}
+.rcard{position:relative;background:linear-gradient(180deg,var(--stone),#110e0f);border:1px solid var(--line);border-radius:6px;padding:20px 18px 18px;display:flex;flex-direction:column;gap:12px;overflow:hidden;
+  animation:rise .6s both}
+.rcard:nth-child(2){animation-delay:.12s}.rcard:nth-child(3){animation-delay:.24s}
+@keyframes rise{from{transform:translateY(14px);opacity:.3}}
+.rcard::before{content:"";position:absolute;inset:0 0 auto;height:2px;background:var(--c)}
+.rcard .glow{position:absolute;top:-60px;left:50%;width:220px;height:160px;transform:translateX(-50%);background:radial-gradient(closest-side,var(--c),transparent);opacity:.18;pointer-events:none}
+.rcard .head{display:flex;align-items:center;gap:12px}
+.rcard .big{font-family:var(--f-data);font-size:38px;line-height:1;color:var(--c)}
+.rcard .what{font-size:13px;color:var(--dim)}
+.rcard .lines{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:4px;font-size:14px}
+.rcard .lines div{display:flex;justify-content:space-between;gap:10px}
+.rcard .lines span:first-child{color:var(--dim)}
+.rcard.off{filter:grayscale(1);opacity:.55}
+.relic-face{display:flex;gap:14px;align-items:center}
+.relic-face .rn{font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--gold);line-height:1.1}
+.run-actions{display:flex;justify-content:center;gap:10px;margin:24px 0 18px;flex-wrap:wrap}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(5,3,4,.75);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal .box{background:var(--stone);border:1px solid var(--line);border-radius:6px;max-width:520px;width:100%;padding:20px;max-height:90vh;overflow:auto}
+.stats{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px}
+.stats td{padding:7px 0;border-bottom:1px solid var(--line)}
+.stats td:last-child{text-align:right;font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.stats tr.sub td{color:var(--faint);font-size:13px;padding-top:0}
+
+/* ===== ARSENAL ===== */
+.arsenal{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
+@media(max-width:860px){.arsenal{grid-template-columns:1fr}}
+.weapon-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.wp{background:var(--stone);border:1px solid var(--line);border-radius:4px;padding:8px 12px;text-align:left;min-width:150px}
+.wp .n{font-family:var(--f-display);font-weight:700;font-size:17px}
+.wp .s{font-size:12px;color:var(--dim)}
+.wp[aria-pressed="true"]{border-color:var(--blood);background:linear-gradient(180deg,#2a1416,var(--stone))}
+.wp.locked{opacity:.5}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 45%,rgba(195,38,47,.16),transparent 62%),linear-gradient(180deg,#141011,#0e0b0c);border:1px solid var(--line);border-radius:6px;display:flex;justify-content:center;padding:10px 0}
+.stage svg{width:min(100%,300px);height:auto;display:block}
+.socket{cursor:pointer}
+.socket .ring{transition:stroke-width .15s}
+.socket:hover .ring,.socket.sel .ring{stroke-width:4}
+.socket.sel .halo{opacity:1}
+.socket .halo{opacity:0;transition:opacity .2s}
+.wlvl{position:absolute;top:12px;left:14px;font-size:13px;color:var(--dim)}
+.wlvl b{display:block;font-family:var(--f-display);font-size:22px;color:var(--bone)}
+.panel{background:var(--stone);border:1px solid var(--line);border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv dt{color:var(--dim)} .kv dd{margin:0;text-align:right;font-family:var(--f-data)}
+.traits{display:grid;gap:8px}
+.trait{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start;font-size:14px}
+.trait .lv{font-family:var(--f-data);font-size:12px;border:1px solid var(--line);border-radius:3px;text-align:center;padding:3px 0;color:var(--dim)}
+.trait.on .lv{border-color:var(--ember);color:var(--ember)}
+.trait.off{color:var(--faint)}
+.trait b{font-weight:700;color:var(--bone)} .trait.off b{color:var(--dim)}
+.pick-list{display:grid;gap:6px}
+.pick{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;background:var(--ash);border:1px solid var(--line);border-radius:4px;padding:8px 10px;text-align:left}
+.pick:hover:not(:disabled){border-color:var(--dim)}
+.pick .t{font-weight:700;font-size:15px}.pick .d{font-size:13px;color:var(--dim)}
+.pick .q{font-family:var(--f-data);font-size:13px;color:var(--dim)}
+.pick:disabled{opacity:.4;cursor:not-allowed}
+.relic-box{border:1px solid rgba(216,178,90,.35);background:linear-gradient(180deg,rgba(216,178,90,.07),transparent);border-radius:5px;padding:12px;display:grid;gap:8px;font-size:14px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;border:1px solid var(--line);border-radius:20px;padding:1px 9px;color:var(--dim)}
+.tag.hot{border-color:var(--ember);color:var(--ember)}
+.calc{font-family:var(--f-data);font-size:13px;color:var(--dim)}
+.calc b{color:var(--bone);font-weight:500}
+.collection{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cslot{aspect-ratio:1;border:1px solid var(--line);border-radius:5px;display:flex;align-items:center;justify-content:center;background:var(--ash);position:relative;max-width:100%}
+.cslot.own{border-color:rgba(216,178,90,.6)}
+.cslot span{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:11px;color:var(--faint)}
+
+/* ===== TREE ===== */
+.tree-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+@media(max-width:900px){.tree-layout{grid-template-columns:1fr}}
+.tree-scroll{overflow-x:auto;background:radial-gradient(ellipse at 15% 50%,rgba(195,38,47,.14),transparent 55%),#0f0c0d;border:1px solid var(--line);border-radius:6px}
+.tree-scroll svg{display:block;min-width:760px;width:100%;height:auto}
+g[data-node]{cursor:pointer}
+g[data-node] .shape{transition:filter .2s}
+g[data-node]:hover .shape{filter:brightness(1.35)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--dim);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px;border:1.5px solid var(--dim)}
+.node-type{display:inline-block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:2px;background:var(--ash);color:var(--dim)}
+.pips{display:flex;gap:4px}
+.pips i{width:16px;height:5px;background:var(--ash);border-radius:1px}
+.pips i.on{background:var(--ember)}
+.perk-ref{font-size:13px;color:var(--ember)}
+
+/* ===== GLOBAL ===== */
+.gl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:860px){.gl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.gl-grid{grid-template-columns:1fr}}
+.gcard{background:var(--stone);border:1px solid var(--line);border-radius:5px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.gcard .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.gcard .nm{font-family:var(--f-display);font-weight:700;font-size:19px}
+.gcard .eff{font-size:14px;color:var(--dim)}
+.gcard .eff b{color:var(--mem);font-family:var(--f-data);font-weight:500}
+.gcard .btn{margin-top:auto}
+.progress{height:6px;background:var(--ash);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--blood),var(--ember));transition:width .4s}
+.paragon{position:relative;margin-top:26px;border:1px solid rgba(231,132,58,.4);border-radius:6px;padding:18px;background:linear-gradient(180deg,rgba(231,132,58,.06),transparent 40%)}
+.paragon.locked .pg-body{filter:blur(2px) grayscale(.8);opacity:.35;pointer-events:none}
+.lockmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;background:var(--stone);border:1px solid var(--line);padding:14px 20px;border-radius:5px;width:min(90%,380px)}
+.pg-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+@media(max-width:860px){.pg-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pgc{background:var(--ash);border:1px solid var(--line);border-radius:5px;padding:12px;display:grid;gap:6px;text-align:center}
+.pgc .rk{font-family:var(--f-data);font-size:30px;color:var(--ember);line-height:1}
+.pgc .nm{font-family:var(--f-display);font-weight:700;font-size:17px}
+.pgc .eff{font-size:13px;color:var(--dim)}
+.chart-wrap{overflow-x:auto;margin-top:16px}
+.chart-wrap svg{display:block;min-width:520px;width:100%;height:auto}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ash);border:1px solid var(--ember);padding:10px 16px;border-radius:4px;z-index:30;font-size:14px;max-width:90vw}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--dim);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<canvas id="embers" aria-hidden="true"></canvas>
+<div class="wrap" id="app">
+  <header class="bar">
+    <div class="logo">DEMON <b>SLAUGHTER</b><small>Прототип мета-экранов · Охотник на демонов</small></div>
+    <div class="wallet">
+      <div class="chip mem" id="chip-mem" title="Осколки воспоминаний"><span id="ico-mem"></span><div><div class="lbl">Осколки воспоминаний</div><div class="num" id="w-mem">0</div></div></div>
+      <div class="chip mag" id="chip-mag" title="Магические осколки"><span id="ico-mag"></span><div><div class="lbl">Магические осколки</div><div class="num" id="w-mag">0</div></div></div>
+      <div class="chip rel" id="chip-rel" title="Реликвии"><span id="ico-rel"></span><div><div class="lbl">Реликвии</div><div class="num" id="w-rel">0</div></div></div>
+    </div>
+  </header>
+  <div class="row" style="justify-content:space-between;padding-top:8px">
+    <div class="dev">тест:
+      <button id="dev-mem">+1000 воспоминаний</button>
+      <button id="dev-mag">+300 магических</button>
+      <button id="dev-reset">сброс</button>
+    </div>
+    <label class="dev" style="cursor:pointer"><input type="checkbox" id="notes-toggle" checked> заметки дизайна</label>
+  </div>
+  <div class="tabs-scroll"><nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="run" aria-selected="true"><span class="k">I</span>Итоги забега</button>
+    <button class="tab" role="tab" data-tab="arsenal" aria-selected="false"><span class="k">II</span>Оружие и реликвии</button>
+    <button class="tab" role="tab" data-tab="tree" aria-selected="false"><span class="k">III</span>Древо охотника</button>
+    <button class="tab" role="tab" data-tab="global" aria-selected="false"><span class="k">IV</span>Общая сила</button>
+  </nav></div>
+
+  <!-- RUN END -->
+  <section class="screen" id="tab-run">
+    <div class="outcome" id="outcome"><h1 id="out-title">ПОБЕДА</h1><div class="sub" id="out-sub"></div></div>
+    <div class="run-ctrl">исход забега (для прототипа):
+      <div class="seg"><button data-out="win" aria-pressed="true">Победа над боссом</button><button data-out="lose" aria-pressed="false">Смерть на 11:42</button></div>
+    </div>
+    <div class="rewards" id="rewards"></div>
+    <div class="run-actions">
+      <button class="btn" id="btn-stats">Статистика забега</button>
+      <button class="btn primary" id="btn-claim">Забрать награды</button>
+      <button class="btn" id="btn-again" hidden>Сыграть ещё раз</button>
+    </div>
+    <div class="note"><b>Как считается.</b> Осколки воспоминаний = эффективный урон (без оверкилла, обрезан по остатку HP цели) × коэффициент уровня из конфига + фикс за босса. Магические осколки = сумма по найденным предметам с весом редкости. Обе награды выдаются и при смерти. Реликвия падает только за первую победу над боссом; при повторной победе ничего связанного с ней не даём. Статистика забега без подсветки, отдельной кнопкой.</div>
+  </section>
+
+  <!-- ARSENAL -->
+  <section class="screen" id="tab-arsenal" hidden>
+    <div class="weapon-pick" id="weapon-pick"></div>
+    <div class="arsenal">
+      <div>
+        <div class="stage" id="stage"></div>
+        <div class="note" style="margin-top:14px"><b>Оружие — единственный мета-слот героя.</b> В нём гнёзда: самоцветы по цвету гнезда (призматическое принимает любой) и одно гнездо реликвии. Уровень оружия качается за магические осколки и открывает гнёзда и свойства. Свойства каждого оружия свои: «Жажда стали» у клинка и «Цепь казни» у топора — это твои идеи из реликвии, переехавшие в само оружие. Кликни по гнезду.</div>
+      </div>
+      <div class="panel" id="arsenal-panel"></div>
+    </div>
+  </section>
+
+  <!-- TREE -->
+  <section class="screen" id="tab-tree" hidden>
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <div><div class="eyebrow">Древо героя · за осколки воспоминаний</div><h2>Охотник на демонов</h2></div>
+      <button class="btn" id="tree-reset">Сбросить древо (вернуть осколки)</button>
+    </div>
+    <div class="tree-layout">
+      <div>
+        <div class="tree-scroll"><svg id="tree" viewBox="0 0 1000 560" role="img" aria-label="Древо охотника"></svg></div>
+        <div class="legend">
+          <span><i style="border-radius:50%"></i>Свойство класса (ранги)</span>
+          <span><i style="border-color:var(--ember)"></i>Модификатор перка из забега</span>
+          <span><i style="transform:rotate(45deg);border-color:var(--blood)"></i>Ключевой выбор (одно из двух)</span>
+          <span><i style="border-radius:50%;border-color:var(--gold)"></i>Золотой узел</span>
+        </div>
+      </div>
+      <div class="panel" id="tree-panel"></div>
+    </div>
+    <div class="note" style="margin-top:16px"><b>Структура в духе артефакта Легиона.</b> Три ветки по осям героя: ярость, клинок, демоническая рука. Модификаторы меняют конкретные перки забега, поэтому каждый новый перк автоматически даёт пару узлов. Ключевой узел заставляет выбрать стиль. Золотой узел требует дойти до конца двух веток из трёх.</div>
+  </section>
+
+  <!-- GLOBAL -->
+  <section class="screen" id="tab-global" hidden>
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <div><div class="eyebrow">Общая сила · все герои · за осколки воспоминаний</div><h2>Пассивы игрока</h2></div>
+      <div style="min-width:240px;flex:0 1 320px"><div class="muted" id="gl-prog-txt"></div><div class="progress"><i id="gl-prog"></i></div></div>
+    </div>
+    <div class="gl-grid" id="gl-grid" style="margin-top:14px"></div>
+    <div class="paragon" id="paragon">
+      <div class="pg-body">
+        <div class="eyebrow">Открывается в конце общей прокачки</div>
+        <h2>Парагон <span class="muted" style="font-family:var(--f-body);font-size:15px">бесконечные ранги, цена растёт на 6% за ранг</span></h2>
+        <div class="pg-grid" id="pg-grid"></div>
+        <div class="chart-wrap"><svg id="chart" viewBox="0 0 640 240" role="img" aria-label="Сила врагов и героя в бесконечном режиме"></svg></div>
+        <div class="muted" id="chart-cap" style="margin-top:6px"></div>
+      </div>
+      <div class="lockmsg" id="pg-lock"></div>
+    </div>
+    <div class="note" style="margin-top:16px"><b>Почему Парагон не ломает игру.</b> Сила врагов в бесконечном режиме растёт экспоненциально, Парагон даёт линейный прирост с растущей ценой. Всегда есть стена, а каждый ранг сдвигает её на какие-то секунды. Модель на графике условная, но наглядно показывает петлю: дольше держишься → плотнее враги → больше эффективного урона → больше осколков.</div>
+  </section>
+</div>
+
+<div class="modal" id="modal" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <div class="row" style="justify-content:space-between"><h3 id="m-title">Статистика забега</h3><button class="btn" id="m-close">Закрыть</button></div>
+  <table class="stats" id="stats"></table>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const fmt=n=>Math.round(n).toLocaleString('ru-RU');
+
+/* ---------- icons ---------- */
+const icoMem=(s=26)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><defs><linearGradient id="gm${s}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9f6ff"/><stop offset="1" stop-color="#2f8aa3"/></linearGradient></defs><path d="M16 2 L22 12 L18 30 L10 16 Z" fill="url(#gm${s})"/><path d="M16 2 L18 30 L10 16 Z" fill="#0c0a0b" opacity=".25"/><path d="M24 8 L28 14 L25 22 L22 14Z" fill="url(#gm${s})" opacity=".7"/></svg>`;
+const icoMag=(s=26)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><defs><linearGradient id="gg${s}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3d7ff"/><stop offset="1" stop-color="#5a33c7"/></linearGradient></defs><path d="M16 3 L27 13 L16 29 L5 13 Z" fill="url(#gg${s})"/><path d="M5 13 L27 13 L16 29Z" fill="#0c0a0b" opacity=".22"/><path d="M11 13 L16 3 L21 13" fill="none" stroke="#fff" stroke-opacity=".5"/></svg>`;
+const icoRelic=(s=26,on=true)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M9 3 V29" stroke="${on?'#8a6a2a':'#4a403a'}" stroke-width="2"/><path d="M10 4 H26 L22 11 L26 18 H10Z" fill="${on?'#9b1d24':'#3a2f2f'}" stroke="${on?'#d8b25a':'#5a4e46'}" stroke-width="1.2"/><circle cx="17" cy="11" r="3" fill="${on?'#d8b25a':'#5a4e46'}"/></svg>`;
+const GEMC={red:['#ff9aa0','#e0414b','#6e1117'],blue:['#b7d2ff','#4f8dff','#13306e'],green:['#b5f5cf','#43c47c','#0f4d2c']};
+const gem=(c,s=28,id='')=>{const [a,b,d]=GEMC[c];const g='gz'+c+s+id;return `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><defs><radialGradient id="${g}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${d}"/></radialGradient></defs><polygon points="16,2 28,9 28,23 16,30 4,23 4,9" fill="url(#${g})"/><polygon points="16,8 22,12 22,20 16,24 10,20 10,12" fill="#fff" opacity=".14"/></svg>`};
+$('#ico-mem').innerHTML=icoMem();$('#ico-mag').innerHTML=icoMag();$('#ico-rel').innerHTML=icoRelic();
+
+/* ---------- data ---------- */
+const GEMS={
+  ruby:{c:'red',n:'Рубин гнева',d:'+8% к накоплению ярости'},
+  garnet:{c:'red',n:'Гранат крови',d:'Удар по 3+ врагам лечит 1% HP'},
+  sapphire:{c:'blue',n:'Сапфир бури',d:'Перезарядка рывка −10%'},
+  charge:{c:'blue',n:'Сапфир натиска',d:'+15% урона эффектов с тегом «Натиск»',tag:'Натиск'},
+  emerald:{c:'green',n:'Изумруд стойкости',d:'+5% к максимальному HP'},
+};
+const WEAPONS={
+  blade:{n:'Клинок охотника',s:'Средняя скорость · 40 урона',base:40,spd:1.0,forge:0,
+    sockets:[{id:'relic',type:'relic',lvl:1,x:100,y:346,r:24},{id:'s1',type:'red',lvl:1,x:100,y:270,r:15},{id:'s2',type:'blue',lvl:3,x:100,y:195,r:15},{id:'s3',type:'prism',lvl:5,x:100,y:120,r:15}],
+    traits:[{lvl:2,n:'Тяжесть клинка',t:'Каждый 4-й взмах широкий: дуга +60%'},{lvl:6,n:'Жажда стали',t:'Удар по 3+ врагам разом: +50% скорости атаки на 3 удара'},{lvl:10,n:'Пробуждение клинка',t:'Во время ульты взмахи оставляют кровавые дуги-снаряды'}]},
+  axe:{n:'Топор палача',s:'Медленный · 58 урона',base:58,spd:0.75,forge:600,
+    sockets:[{id:'relic',type:'relic',lvl:1,x:62,y:128,r:22},{id:'s1',type:'red',lvl:1,x:100,y:250,r:14},{id:'s2',type:'red',lvl:3,x:100,y:330,r:14},{id:'s3',type:'prism',lvl:5,x:100,y:410,r:14}],
+    traits:[{lvl:2,n:'Раскол',t:'Крит снижает броню цели на 10% на 4 с'},{lvl:6,n:'Цепь казни',t:'3 крита подряд → следующие 3 крита наносят ×3 урона'},{lvl:10,n:'Плаха',t:'Удар по элитке ниже 15% HP мгновенно её казнит'}]},
+  scythe:{n:'Коса жнеца',s:'Скоро · откроется позже',locked:true},
+};
+const RELIC={id:'knight',n:'Знамя неистового наступления',boss:'Падший рыцарь',echo:'Эхо «Прицельного натиска»',
+  t:'Раз в 12 с следующий рывок становится натиском рыцаря: замах, разгон и таран по линии. Урон зависит от урона оружия, сильное отбрасывание.',tags:['Натиск','Физика']};
+
+/* tree */
+const N=[
+ {id:'core',x:90,y:280,type:'core',n:'Охотник на демонов',max:1,cost:[0],d:'Стартовый узел. Демоническая рука пробуждена.'},
+ {id:'r1',x:240,y:150,type:'class',n:'Кипящая кровь',max:3,cost:[80,160,240],p:['core'],d:r=>`+${5*r}% к накоплению ярости`,step:'+5% за ранг'},
+ {id:'r2',x:380,y:110,type:'class',n:'Затяжная ярость',max:3,cost:[120,200,300],p:['r1'],d:r=>`Ульта длится на ${r} с дольше`,step:'+1 с за ранг'},
+ {id:'r3',x:520,y:110,type:'mod',n:'Вихрь без конца',perk:'Вихрь клинков',max:1,cost:[300],p:['r2'],d:'Контрудар-вихрь делает второй круг с 50% урона'},
+ {id:'k1',x:670,y:55,type:'key',n:'Холодная ярость',max:1,cost:[600],p:['r3'],ex:'k2',d:'Ульта на 30% короче, но больше не увеличивает получаемый урон'},
+ {id:'k2',x:670,y:175,type:'key',n:'Кровавая ярость',max:1,cost:[600],p:['r3'],ex:'k1',d:'Ульта на 50% дольше, но лечение во время неё отключено'},
+ {id:'b1',x:260,y:280,type:'class',n:'Тяжёлая рука',max:3,cost:[80,160,240],p:['core'],d:r=>`+${4*r}% к урону оружия`,step:'+4% за ранг'},
+ {id:'b2',x:420,y:280,type:'mod',n:'Чуткий палач',perk:'Казнь',max:1,cost:[300],p:['b1'],d:'Порог срабатывания казни на элитке +5% HP'},
+ {id:'b3',x:580,y:280,type:'mod',n:'Пылающий прыжок',perk:'Героический прыжок',max:1,cost:[350],p:['b2'],d:'Место приземления горит 3 с'},
+ {id:'d1',x:240,y:410,type:'class',n:'Адское пламя',max:3,cost:[80,160,240],p:['core'],d:r=>`+${10*r}% к урону фаерболов руки`,step:'+10% за ранг'},
+ {id:'d2',x:380,y:450,type:'mod',n:'Долгий след',perk:'Пламенный рывок',max:1,cost:[300],p:['d1'],d:'Огненный след горит на 50% дольше'},
+ {id:'d3',x:520,y:450,type:'mod',n:'Второй прилив',perk:'Огненная волна',max:1,cost:[350],p:['d2'],d:'Огненная волна выпускается дважды'},
+ {id:'gold',x:860,y:280,type:'gold',n:'Двойной залп',max:1,cost:[1500],gate:[['k1','k2'],['b3'],['d3']],need:2,d:'Демоническая рука стреляет двумя фаерболами вместо одного'},
+];
+const E=[['core','r1'],['r1','r2'],['r2','r3'],['r3','k1'],['r3','k2'],['core','b1'],['b1','b2'],['b2','b3'],['core','d1'],['d1','d2'],['d2','d3'],['k1','gold'],['k2','gold'],['b3','gold'],['d3','gold']];
+
+const GL=[
+ {id:'ms',n:'Скорость бега',u:'%',v:2},{id:'crit',n:'Шанс крита',u:'%',v:1},{id:'pick',n:'Радиус подбора',u:'%',v:10},
+ {id:'luck',n:'Удача',u:'%',v:5,x:'больше редких предметов → больше магических осколков'},{id:'regen',n:'Регенерация',u:' HP/с',v:0.2},{id:'armor',n:'Броня',u:'',v:2},
+];
+const PG=[{id:'hp',n:'Живучесть',d:'+1% HP'},{id:'dmg',n:'Мощь',d:'+1% урона'},{id:'aoe',n:'Опустошение',d:'+1% урона по области'},{id:'heal',n:'Восполнение',d:'+1% к лечению'}];
+const PG_UNLOCK=20;
+
+const RUN={
+ win:{title:'ПОБЕДА',sub:'Двор замка · Охотник на демонов · 14:32 · Падший рыцарь повержен',
+   dealt:251940,eff:184320,coef:0.01,boss:500,items:[['обычный',6,5],['редкий',3,15],['эпический',1,40]],relic:true,
+   stats:[['Лучший DPS','1 284'],['Всего нанесено урона','251 940'],['Получено урона','1 912'],['Время','14:32'],['Убито врагов','1 406'],['Убито элиток','9'],['Найдено предметов','10'],['Подобрано сфер','1 288'],['Разрушено объектов','23']]},
+ lose:{title:'ПОРАЖЕНИЕ',sub:'Двор замка · Охотник на демонов · пал на 11:42, до босса не дошёл',
+   dealt:160870,eff:121400,coef:0.01,boss:0,items:[['обычный',4,5],['редкий',2,15]],relic:false,
+   stats:[['Лучший DPS','1 097'],['Всего нанесено урона','160 870'],['Получено урона','2 340'],['Время','11:42'],['Убито врагов','1 022'],['Убито элиток','5'],['Найдено предметов','6'],['Подобрано сфер','914'],['Разрушено объектов','17']]},
+};
+
+/* ---------- state ---------- */
+const fresh=()=>({mem:1500,mag:260,relicOwned:false,relicLvl:1,out:'win',claimed:false,weapon:'blade',owned:{blade:true,axe:false},
+  wlvl:{blade:1,axe:1},socket:{blade:{},axe:{}},inv:{ruby:1,garnet:1,sapphire:1,charge:1,emerald:1},
+  tree:{core:1},gl:{},pg:{hp:0,dmg:0,aoe:0,heal:0},sel:'relic',node:'core'});
+let S=fresh();
+
+const toast=(m)=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2400)};
+const bump=id=>{const c=$(id);c.classList.remove('bump');void c.offsetWidth;c.classList.add('bump')};
+function wallet(){ $('#w-mem').textContent=fmt(S.mem);$('#w-mag').textContent=fmt(S.mag);$('#w-rel').textContent=S.relicOwned?1:0 }
+function spend(cur,n){ if(S[cur]<n){toast(cur==='mem'?'Не хватает осколков воспоминаний':'Не хватает магических осколков');return false} S[cur]-=n;wallet();bump(cur==='mem'?'#chip-mem':'#chip-mag');return true}
+
+/* ---------- RUN ---------- */
+function rewardsOf(o){const r=RUN[o];const mem=Math.round(r.eff*r.coef)+r.boss;const mag=r.items.reduce((s,[,c,w])=>s+c*w,0);return {mem,mag}}
+function countUp(el,to){const t0=performance.now(),d=1100;const f=t=>{const k=Math.min(1,(t-t0)/d);el.textContent=fmt(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)};
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)el.textContent=fmt(to);else requestAnimationFrame(f)}
+function renderRun(){
+  const r=RUN[S.out],rw=rewardsOf(S.out);
+  $('#outcome').classList.toggle('lose',S.out==='lose');$('#out-title').textContent=r.title;$('#out-sub').textContent=r.sub;
+  $$('[data-out]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.out===S.out));
+  const relicRepeat=r.relic&&S.relicOwned&&!S.claimedRelicThisRun;
+  $('#rewards').innerHTML=`
+  <div class="rcard" style="--c:var(--mem)"><div class="glow"></div>
+    <div class="head">${icoMem(40)}<div><div class="big num" id="cu-mem">0</div><div class="what">Осколки воспоминаний</div></div></div>
+    <div class="lines">
+      <div><span>Эффективный урон</span><span class="num">${fmt(r.eff)}</span></div>
+      <div><span>× коэффициент уровня</span><span class="num">${r.coef}</span></div>
+      <div><span>= за урон</span><span class="num">${fmt(r.eff*r.coef)}</span></div>
+      <div><span>Босс «Падший рыцарь»</span><span class="num">${r.boss?'+'+r.boss:'—'}</span></div>
+      <div><span style="color:var(--faint)">Оверкилл не учтён</span><span class="num" style="color:var(--faint)">${fmt(r.dealt-r.eff)}</span></div>
+    </div></div>
+  <div class="rcard" style="--c:var(--mag)"><div class="glow"></div>
+    <div class="head">${icoMag(40)}<div><div class="big num" id="cu-mag">0</div><div class="what">Магические осколки</div></div></div>
+    <div class="lines">${r.items.map(([n,c,w])=>`<div><span>${c} × ${n} (по ${w})</span><span class="num">${c*w}</span></div>`).join('')}
+      <div><span style="color:var(--faint)">Удача повышает редкость находок</span><span></span></div></div></div>
+  <div class="rcard ${r.relic&&!relicRepeat?'':'off'}" style="--c:var(--gold)"><div class="glow"></div>
+    <div class="relic-face">${icoRelic(54,r.relic)}<div><div class="eyebrow">${r.relic?(relicRepeat?'Повторная победа':'Реликвия босса'):'Нет реликвии'}</div><div class="rn">${r.relic?RELIC.n:'Босс не повержен'}</div></div></div>
+    <div class="lines" style="display:block;color:var(--dim)">${r.relic?(relicRepeat?'Реликвия уже в коллекции. Повторно не выпадает и ничем не компенсируется.':`<b style="color:var(--bone);font-weight:500">${RELIC.echo}.</b> ${RELIC.t}`):'Реликвия выдаётся только за победу над боссом уровня.'}</div></div>`;
+  countUp($('#cu-mem'),rw.mem);countUp($('#cu-mag'),rw.mag);
+  $('#btn-claim').disabled=S.claimed;$('#btn-claim').textContent=S.claimed?'Награды получены':'Забрать награды';$('#btn-again').hidden=!S.claimed;
+}
+$$('[data-out]').forEach(b=>b.onclick=()=>{if(S.claimed)S.claimed=false;S.out=b.dataset.out;S.claimedRelicThisRun=false;renderRun()});
+$('#btn-claim').onclick=()=>{const rw=rewardsOf(S.out);S.mem+=rw.mem;S.mag+=rw.mag;let msg=`+${fmt(rw.mem)} воспоминаний, +${rw.mag} магических`;
+  if(RUN[S.out].relic&&!S.relicOwned){S.relicOwned=true;S.claimedRelicThisRun=true;msg+=', реликвия в коллекции'}
+  S.claimed=true;wallet();bump('#chip-mem');bump('#chip-mag');renderRun();toast(msg)};
+$('#btn-again').onclick=()=>{S.claimed=false;S.claimedRelicThisRun=false;renderRun()};
+$('#btn-stats').onclick=()=>{$('#stats').innerHTML=RUN[S.out].stats.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join('');$('#modal').hidden=false;$('#m-close').focus()};
+$('#m-close').onclick=()=>$('#modal').hidden=true;$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').hidden=true};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal').hidden=true});
+
+/* ---------- ARSENAL ---------- */
+const W=()=>WEAPONS[S.weapon];
+const wDmg=w=>WEAPONS[w].base*(1+0.03*(S.wlvl[w]-1))*(1+0.04*(S.tree.b1||0));
+const wCost=l=>Math.round(40*Math.pow(l,1.35));
+const relicCost=l=>80*l;
+function weaponSVG(w){
+  const defs=`<defs>
+   <linearGradient id="steel" x1="0" x2="1"><stop offset="0" stop-color="#5d5a5c"/><stop offset=".45" stop-color="#d9d4cf"/><stop offset=".55" stop-color="#9a9592"/><stop offset="1" stop-color="#3d3a3c"/></linearGradient>
+   <linearGradient id="dark" x1="0" x2="1"><stop offset="0" stop-color="#2a1d1a"/><stop offset=".5" stop-color="#5a3f30"/><stop offset="1" stop-color="#1f1513"/></linearGradient>
+   <linearGradient id="goldm" x1="0" x2="1"><stop offset="0" stop-color="#6b4a1a"/><stop offset=".5" stop-color="#d8b25a"/><stop offset="1" stop-color="#5a3c12"/></linearGradient>
+   <linearGradient id="prism" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0414b"/><stop offset=".5" stop-color="#4f8dff"/><stop offset="1" stop-color="#43c47c"/></linearGradient>
+   <filter id="glow"><feGaussianBlur stdDeviation="6"/></filter></defs>`;
+  let body='';
+  if(w==='blade'){body=`
+   <path d="M100 18 L116 62 L114 330 L86 330 L84 62Z" fill="#c3262f" opacity=".35" filter="url(#glow)"/>
+   <path d="M100 18 L116 62 L114 330 L86 330 L84 62Z" fill="url(#steel)" stroke="#1a1617" stroke-width="2"/>
+   <path d="M100 40 L100 318" stroke="#2a2526" stroke-width="3" opacity=".6"/>
+   <path d="M86 300 Q70 280 84 250 M114 300 Q130 280 116 250" stroke="#7a1218" stroke-width="2" fill="none" opacity=".7"/>
+   <path d="M14 336 Q40 326 70 334 L130 334 Q160 326 186 336 Q170 352 140 356 L60 356 Q30 352 14 336Z" fill="url(#dark)" stroke="#120d0d" stroke-width="2"/>
+   <path d="M14 336 Q4 344 10 356 M186 336 Q196 344 190 356" stroke="#5a3f30" stroke-width="5" fill="none" stroke-linecap="round"/>
+   <rect x="90" y="358" width="20" height="118" rx="4" fill="#2a1a16" stroke="#120d0d" stroke-width="2"/>
+   ${[0,1,2,3,4,5,6].map(i=>`<path d="M90 ${368+i*15} L110 ${376+i*15}" stroke="#5a3f30" stroke-width="3"/>`).join('')}
+   <path d="M100 478 L116 494 L100 512 L84 494Z" fill="url(#goldm)" stroke="#120d0d" stroke-width="2"/>`}
+  else{body=`
+   <rect x="94" y="56" width="12" height="470" rx="4" fill="url(#dark)" stroke="#120d0d" stroke-width="2"/>
+   <path d="M98 70 C40 30 6 100 18 210 C40 168 70 162 98 172Z" fill="#c3262f" opacity=".35" filter="url(#glow)"/>
+   <path d="M98 70 C40 30 6 100 18 210 C40 168 70 162 98 172Z" fill="url(#steel)" stroke="#1a1617" stroke-width="2"/>
+   <path d="M30 196 C44 150 60 96 92 78" stroke="#2a2526" stroke-width="2" fill="none" opacity=".6"/>
+   <path d="M106 90 L150 110 L106 140Z" fill="url(#steel)" stroke="#1a1617" stroke-width="2"/>
+   <rect x="88" y="60" width="24" height="20" rx="3" fill="url(#goldm)"/>
+   ${[0,1,2,3].map(i=>`<rect x="92" y="${440+i*18}" width="16" height="8" fill="#5a3f30"/>`).join('')}
+   <path d="M100 528 L110 540 L100 552 L90 540Z" fill="url(#goldm)"/>`}
+  const socks=WEAPONS[w].sockets.map(s=>{
+    const locked=S.wlvl[w]<s.lvl, val=S.socket[w][s.id];
+    const stroke=s.type==='relic'?'url(#goldm)':s.type==='prism'?'url(#prism)':GEMC[s.type][1];
+    let inner='';
+    if(locked)inner=`<text x="${s.x}" y="${s.y+4}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#9d8f82">ур.${s.lvl}</text>`;
+    else if(s.type==='relic'&&val)inner=`<g transform="translate(${s.x-s.r*0.8},${s.y-s.r*0.8}) scale(${s.r*1.6/32})">${icoRelic(32).replace(/<\/?svg[^>]*>/g,'')}</g>`;
+    else if(val){const c=GEMS[val].c;const k=s.r*1.5/32;inner=`<g transform="translate(${s.x-s.r*0.75},${s.y-s.r*0.75}) scale(${k})">${gem(c,32,s.id+w).replace(/<\/?svg[^>]*>/g,'')}</g>`}
+    return `<g class="socket ${S.sel===s.id?'sel':''}" data-socket="${s.id}" tabindex="0" role="button" aria-label="Гнездо ${s.type}">
+      <circle class="halo" cx="${s.x}" cy="${s.y}" r="${s.r+9}" fill="none" stroke="#e7843a" stroke-width="2" stroke-dasharray="4 4"/>
+      <circle cx="${s.x}" cy="${s.y}" r="${s.r}" fill="#0c0a0b" opacity="${locked?.6:1}"/>
+      <circle class="ring" cx="${s.x}" cy="${s.y}" r="${s.r}" fill="none" stroke="${stroke}" stroke-width="2.5" opacity="${locked?.35:1}"/>${inner}</g>`}).join('');
+  return `<svg viewBox="0 0 200 560">${defs}${body}${socks}</svg>`;
+}
+function renderWeaponPick(){
+  $('#weapon-pick').innerHTML=Object.entries(WEAPONS).map(([k,w])=>{
+    const own=S.owned[k];const sub=w.locked?w.s:own?w.s:`Выковать за ${w.forge} маг. осколков`;
+    return `<button class="wp ${w.locked||!own?'locked':''}" data-w="${k}" aria-pressed="${S.weapon===k}" ${w.locked?'disabled':''}><div class="n">${w.n}</div><div class="s">${sub}</div></button>`}).join('');
+  $$('[data-w]').forEach(b=>b.onclick=()=>{const k=b.dataset.w;
+    if(!S.owned[k]){if(!spend('mag',WEAPONS[k].forge))return;S.owned[k]=true;toast(`${WEAPONS[k].n} выкован`)}
+    S.weapon=k;S.sel='relic';renderArsenal()});
+}
+function renderArsenal(){
+  renderWeaponPick();
+  const w=W(),wl=S.wlvl[S.weapon];
+  $('#stage').innerHTML=`<div class="wlvl">Уровень оружия<b class="num">${wl} / 10</b></div>${weaponSVG(S.weapon)}`;
+  $$('#stage [data-socket]').forEach(g=>{g.onclick=()=>{S.sel=g.dataset.socket;renderArsenal()};g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();g.onclick()}}});
+  const sock=w.sockets.find(s=>s.id===S.sel), locked=wl<sock.lvl, cur=S.socket[S.weapon][sock.id];
+  const dmg=wDmg(S.weapon);
+  const chargeIn=Object.values(S.socket[S.weapon]).includes('charge');
+  const relicMult=3+0.4*(S.relicLvl-1), relicDmg=dmg*relicMult*(chargeIn?1.15:1), relicCd=12-(S.relicLvl-1);
+  const typeName={relic:'Гнездо реликвии',red:'Красное гнездо',blue:'Синее гнездо',prism:'Призматическое гнездо'}[sock.type];
+  let slotUI='';
+  if(locked)slotUI=`<div class="muted">Откроется на ${sock.lvl} уровне оружия.</div>`;
+  else if(sock.type==='relic'){
+    slotUI=S.relicOwned?`<div class="pick-list"><button class="pick" id="relic-toggle">${icoRelic(30)}<div><div class="t">${RELIC.n}</div><div class="d">${RELIC.boss} · ${RELIC.echo}</div></div><span class="q">${cur?'Извлечь':'Вставить'}</span></button></div>`
+      :`<div class="muted">Коллекция пуста. Победи Падшего рыцаря на экране «Итоги забега» и забери награды.</div>`;
+  } else {
+    const fits=Object.entries(GEMS).filter(([,g])=>sock.type==='prism'||g.c===sock.type);
+    slotUI=`${cur?`<button class="btn" id="gem-out">Извлечь «${GEMS[cur].n}»</button>`:''}
+      <div class="pick-list">${fits.map(([k,g])=>`<button class="pick" data-gem="${k}" ${S.inv[k]<1?'disabled':''}>${gem(g.c,30,'l'+k)}<div><div class="t">${g.n}</div><div class="d">${g.d}</div></div><span class="q">×${S.inv[k]}</span></button>`).join('')}</div>
+      ${sock.type!=='prism'?`<div class="muted">Сюда подходят только ${sock.type==='red'?'красные':'синие'} самоцветы. Изумруд встанет лишь в призматическое гнездо.</div>`:''}`;
+  }
+  const nextCost=wCost(wl);
+  $('#arsenal-panel').innerHTML=`
+   <div><div class="eyebrow">Уникальное оружие</div><h3>${w.n}</h3></div>
+   <dl class="kv"><dt>Урон оружия</dt><dd>${dmg.toFixed(1)}</dd><dt>Скорость атаки</dt><dd>${w.spd} уд/с</dd><dt>Бонус уровня</dt><dd>+${3*(wl-1)}%</dd><dt>«Тяжёлая рука» из древа</dt><dd>+${4*(S.tree.b1||0)}%</dd></dl>
+   <button class="btn primary" id="w-up" ${wl>=10?'disabled':''}>${wl>=10?'Максимальный уровень':`Улучшить до ур. ${wl+1}`}${wl<10?`<span class="cost">${nextCost} ◆</span>`:''}</button>
+   <div class="traits">${w.traits.map(t=>`<div class="trait ${wl>=t.lvl?'on':'off'}"><span class="lv">ур.${t.lvl}</span><div><b>${t.n}.</b> ${t.t}</div></div>`).join('')}</div>
+   <div style="border-top:1px solid var(--line);padding-top:12px;display:grid;gap:10px">
+     <div class="eyebrow">Выбрано: ${typeName}</div>${slotUI}</div>
+   ${S.relicOwned?`<div class="relic-box">
+     <div class="row" style="justify-content:space-between"><b style="font-family:var(--f-display);font-size:18px;color:var(--gold)">${RELIC.n}</b><span class="num" style="color:var(--gold)">ур. ${S.relicLvl}/5</span></div>
+     <div>${RELIC.t}</div>
+     <div class="tags">${RELIC.tags.map(t=>`<span class="tag ${t==='Натиск'&&chargeIn?'hot':''}">${t}</span>`).join('')}</div>
+     <div class="calc">таран = урон оружия <b>${dmg.toFixed(1)}</b> × <b>${Math.round(relicMult*100)}%</b>${chargeIn?' × <b>1.15</b> (Сапфир натиска)':''} = <b>${Math.round(relicDmg)}</b> · перезарядка <b>${relicCd} с</b></div>
+     <div class="muted">${S.socket[S.weapon].relic?'Вставлена в это оружие.':'Не вставлена: эффект не работает.'} Одна и та же реликвия на тяжёлом топоре бьёт сильнее, на клинке чаще срабатывают свойства оружия.</div>
+     <button class="btn" id="relic-up" ${S.relicLvl>=5?'disabled':''}>${S.relicLvl>=5?'Реликвия максимальна':'Улучшить реликвию'}${S.relicLvl<5?`<span class="cost">${relicCost(S.relicLvl)} ◆</span>`:''}</button>
+   </div>`:''}
+   <div><div class="eyebrow" style="margin-bottom:8px">Коллекция реликвий</div><div class="collection">
+     <div class="cslot ${S.relicOwned?'own':''}">${icoRelic(34,S.relicOwned)}<span>${S.relicOwned?'Рыцарь':'?'}</span></div>
+     <div class="cslot">${icoRelic(34,false)}<span>босс 2</span></div><div class="cslot">${icoRelic(34,false)}<span>босс 3</span></div><div class="cslot">${icoRelic(34,false)}<span>босс 4</span></div></div></div>`;
+  $('#w-up').onclick=()=>{if(spend('mag',nextCost)){S.wlvl[S.weapon]++;const t=w.traits.find(t=>t.lvl===S.wlvl[S.weapon]);const s=w.sockets.find(s=>s.lvl===S.wlvl[S.weapon]);toast(t?`Открыто свойство «${t.n}»`:s?'Открыто новое гнездо':`${w.n}: уровень ${S.wlvl[S.weapon]}`);renderArsenal()}};
+  const ru=$('#relic-up');if(ru)ru.onclick=()=>{if(spend('mag',relicCost(S.relicLvl))){S.relicLvl++;renderArsenal()}};
+  const rt=$('#relic-toggle');if(rt)rt.onclick=()=>{const other=Object.keys(S.socket).find(k=>k!==S.weapon&&S.socket[k].relic);
+    if(cur){delete S.socket[S.weapon].relic}else{if(other){delete S.socket[other].relic;toast(`Реликвия перенесена из «${WEAPONS[other].n}»`)}S.socket[S.weapon].relic=RELIC.id}renderArsenal()};
+  $$('[data-gem]').forEach(b=>b.onclick=()=>{const k=b.dataset.gem;if(cur)S.inv[cur]++;S.inv[k]--;S.socket[S.weapon][sock.id]=k;renderArsenal()});
+  const go=$('#gem-out');if(go)go.onclick=()=>{S.inv[cur]++;delete S.socket[S.weapon][sock.id];renderArsenal()};
+}
+
+/* ---------- TREE ---------- */
+const rk=id=>S.tree[id]||0;
+function avail(n){
+  if(n.type==='core')return true;
+  if(n.ex&&rk(n.ex))return false;
+  if(n.gate)return n.gate.filter(g=>g.some(rk)).length>=n.need;
+  return n.p.every(p=>rk(p)>0);
+}
+function shape(n){
+  const r=rk(n.id),av=avail(n),full=r>=n.max;
+  const col={core:'#c3262f',class:'#eadfcd',mod:'#e7843a',key:'#c3262f',gold:'#d8b25a'}[n.type];
+  const fill=r?(n.type==='gold'?'#3a2a10':n.type==='mod'?'#3a200e':'#2a1416'):'#141011';
+  const op=(r||av)?1:.35, sw=S.node===n.id?4:2.2;
+  let s;const R=n.type==='gold'?34:n.type==='core'?32:n.type==='key'?26:24;
+  if(n.type==='mod')s=`<rect class="shape" x="${n.x-R}" y="${n.y-R}" width="${2*R}" height="${2*R}" rx="5" fill="${fill}" stroke="${col}" stroke-width="${sw}"/>`;
+  else if(n.type==='key')s=`<rect class="shape" x="${n.x-R}" y="${n.y-R}" width="${2*R}" height="${2*R}" rx="3" transform="rotate(45 ${n.x} ${n.y})" fill="${fill}" stroke="${col}" stroke-width="${sw}"/>`;
+  else s=`<circle class="shape" cx="${n.x}" cy="${n.y}" r="${R}" fill="${fill}" stroke="${col}" stroke-width="${sw}"/>${n.type==='gold'?`<circle cx="${n.x}" cy="${n.y}" r="${R+8}" fill="none" stroke="${col}" stroke-opacity=".4" stroke-dasharray="3 5"/>`:''}`;
+  const glyph={core:'☩',class:'',mod:'⚔',key:'◆',gold:'✦'}[n.type];
+  const g=n.type==='class'?`<text x="${n.x}" y="${n.y+6}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="16" fill="${r?'#e7843a':'#9d8f82'}">${r}/${n.max}</text>`
+     :`<text x="${n.x}" y="${n.y+7}" text-anchor="middle" font-size="20" fill="${r?col:'#6b5f57'}">${glyph}</text>`;
+  const lbl=`<text x="${n.x}" y="${n.y+R+(n.type==='key'?24:20)}" text-anchor="middle" font-family="Alegreya Sans,sans-serif" font-size="15" fill="${r?'#eadfcd':av?'#b8aa9b':'#6b5f57'}">${n.n}</text>`;
+  const halo=r&&full?`<circle cx="${n.x}" cy="${n.y}" r="${R+4}" fill="${col}" opacity=".12"/>`:'';
+  return `<g data-node="${n.id}" tabindex="0" role="button" aria-label="${n.n}" opacity="${op}">${halo}${s}${g}${lbl}</g>`;
+}
+function renderTree(){
+  const byId=Object.fromEntries(N.map(n=>[n.id,n]));
+  const edges=E.map(([a,b])=>{const A=byId[a],B=byId[b];const on=rk(a)>0&&(rk(b)>0);const half=rk(a)>0&&avail(B);
+    const mx=(A.x+B.x)/2;return `<path d="M${A.x} ${A.y} C${mx} ${A.y} ${mx} ${B.y} ${B.x} ${B.y}" fill="none" stroke="${on?'#c3262f':half?'#7a4a2c':'#2e2627'}" stroke-width="${on?4:2.5}" ${on?'':'stroke-dasharray="6 6"'}/>`}).join('');
+  $('#tree').innerHTML=`<defs><radialGradient id="tg"><stop offset="0" stop-color="#c3262f" stop-opacity=".25"/><stop offset="1" stop-color="#c3262f" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="90" cy="280" r="120" fill="url(#tg)"/>
+    <text x="300" y="40" font-family="Cormorant SC,serif" font-size="18" fill="#6b5f57" letter-spacing="3">ЯРОСТЬ</text>
+    <text x="300" y="250" font-family="Cormorant SC,serif" font-size="18" fill="#6b5f57" letter-spacing="3">КЛИНОК</text>
+    <text x="300" y="540" font-family="Cormorant SC,serif" font-size="18" fill="#6b5f57" letter-spacing="3">ДЕМОНИЧЕСКАЯ РУКА</text>
+    ${edges}${N.map(shape).join('')}`;
+  $$('#tree [data-node]').forEach(g=>{g.onclick=()=>{S.node=g.dataset.node;renderTree()};g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();g.onclick()}}});
+  const n=byId[S.node],r=rk(n.id),av=avail(n),full=r>=n.max,cost=n.cost[Math.min(r,n.max-1)];
+  const tn={core:'Начало',class:'Свойство класса',mod:'Модификатор перка',key:'Ключевой выбор',gold:'Золотой узел'}[n.type];
+  const desc=typeof n.d==='function'?n.d(Math.max(r,1)):n.d;
+  let why='';
+  if(!av&&!full){
+    if(n.ex&&rk(n.ex))why=`Закрыто: выбран «${byId[n.ex].n}». Сбрось древо, чтобы поменять.`;
+    else if(n.gate)why=`Нужно дойти до конца двух веток из трёх (сейчас: ${n.gate.filter(g=>g.some(rk)).length}).`;
+    else why=`Сначала изучи «${n.p.map(p=>byId[p].n).join('», «')}».`;
+  }
+  $('#tree-panel').innerHTML=`
+    <span class="node-type">${tn}</span>
+    <h3>${n.n}</h3>
+    ${n.perk?`<div class="perk-ref">Меняет перк забега: «${n.perk}»</div>`:''}
+    <div>${desc}${n.step?` <span class="muted">(${n.step})</span>`:''}</div>
+    ${n.max>1?`<div class="pips">${Array.from({length:n.max},(_,i)=>`<i class="${i<r?'on':''}"></i>`).join('')}</div>`:''}
+    ${n.ex?`<div class="muted">Исключает «${byId[n.ex].n}»: ${byId[n.ex].d}</div>`:''}
+    ${why?`<div class="muted" style="color:var(--ember)">${why}</div>`:''}
+    ${n.type==='core'?'<div class="muted">Всегда открыт.</div>':`<button class="btn primary" id="node-buy" ${full||!av?'disabled':''}>${full?'Изучено':'Изучить'}${full?'':`<span class="cost">${fmt(cost)}</span>`}</button>`}
+    <div class="muted" style="border-top:1px solid var(--line);padding-top:10px">Потрачено на древо: <span class="num">${fmt(treeSpent())}</span> осколков воспоминаний</div>`;
+  const b=$('#node-buy');if(b)b.onclick=()=>{if(spend('mem',cost)){S.tree[n.id]=r+1;renderTree();if(n.id==='b1')toast('Урон оружия вырос — видно во вкладке «Оружие»')}};
+}
+function treeSpent(){return N.reduce((s,n)=>s+n.cost.slice(0,rk(n.id)).reduce((a,b)=>a+b,0),0)}
+$('#tree-reset').onclick=()=>{S.mem+=treeSpent();S.tree={core:1};wallet();bump('#chip-mem');renderTree();toast('Древо сброшено, осколки возвращены')};
+
+/* ---------- GLOBAL ---------- */
+const glCost=r=>60*(r+1);
+const pgCost=r=>Math.round(200*Math.pow(1.06,r));
+const glTotal=()=>GL.reduce((s,g)=>s+(S.gl[g.id]||0),0);
+function renderGlobal(){
+  const tot=glTotal();
+  $('#gl-prog-txt').innerHTML=`Изучено рангов: <span class="num">${tot} / ${GL.length*5}</span> · Парагон с ${PG_UNLOCK}`;
+  $('#gl-prog').style.width=Math.min(100,tot/PG_UNLOCK*100)+'%';
+  $('#gl-grid').innerHTML=GL.map(g=>{const r=S.gl[g.id]||0;const full=r>=5;
+    return `<div class="gcard"><div class="top"><span class="nm">${g.n}</span><span class="num muted">${r}/5</span></div>
+      <div class="pips">${[0,1,2,3,4].map(i=>`<i class="${i<r?'on':''}"></i>`).join('')}</div>
+      <div class="eff">Сейчас <b>+${+(r*g.v).toFixed(1)}${g.u}</b>${full?'':` → +${+((r+1)*g.v).toFixed(1)}${g.u}`}${g.x?`<br>${g.x}`:''}</div>
+      <button class="btn" data-gl="${g.id}" ${full?'disabled':''}>${full?'Максимум':'Улучшить'}${full?'':`<span class="cost">${glCost(r)}</span>`}</button></div>`}).join('');
+  $$('[data-gl]').forEach(b=>b.onclick=()=>{const id=b.dataset.gl,r=S.gl[id]||0;if(spend('mem',glCost(r))){S.gl[id]=r+1;renderGlobal();if(glTotal()===PG_UNLOCK)toast('Парагон открыт')}});
+  const open=tot>=PG_UNLOCK;
+  $('#paragon').classList.toggle('locked',!open);$('#pg-lock').hidden=open;
+  $('#pg-lock').innerHTML=`<h3>Парагон закрыт</h3><div class="muted">Изучи ещё <span class="num">${Math.max(0,PG_UNLOCK-tot)}</span> рангов общей силы. Для теста жми «+1000 воспоминаний» сверху.</div>`;
+  $('#pg-grid').innerHTML=PG.map(p=>{const r=S.pg[p.id];return `<div class="pgc"><div class="rk num">${r}</div><div class="nm">${p.n}</div><div class="eff">${p.d} за ранг · сейчас +${r}%</div>
+     <button class="btn" data-pg="${p.id}" ${open?'':'disabled'}>Ранг ${r+1}<span class="cost">${fmt(pgCost(r))}</span></button></div>`}).join('');
+  $$('[data-pg]').forEach(b=>b.onclick=()=>{const id=b.dataset.pg;if(spend('mem',pgCost(S.pg[id]))){S.pg[id]++;renderGlobal()}});
+  renderChart();
+}
+function renderChart(){
+  const P=Object.values(S.pg).reduce((a,b)=>a+b,0)+glTotal()*0.5;
+  const W=640,H=240,l=48,r=16,t=16,b=36,X=m=>l+m/30*(W-l-r),Y=v=>H-b-v/20*(H-t-b);
+  const hero=3*(1+0.012*P), wall=Math.min(30,Math.log(hero)/Math.log(1.1));
+  let pts=[];for(let m=0;m<=30;m+=.5){const v=Math.min(20.5,Math.pow(1.1,m));pts.push(`${X(m).toFixed(1)},${Y(v).toFixed(1)}`)}
+  const grid=[0,5,10,15,20].map(v=>`<line x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2e2627"/><text x="${l-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="#9d8f82" font-family="JetBrains Mono,monospace">${v}×</text>`).join('')
+   +[0,5,10,15,20,25,30].map(m=>`<text x="${X(m)}" y="${H-b+18}" text-anchor="middle" font-size="11" fill="#9d8f82" font-family="JetBrains Mono,monospace">${m}</text>`).join('');
+  $('#chart').innerHTML=`${grid}
+   <text x="${W-r}" y="${H-4}" text-anchor="end" font-size="11" fill="#6b5f57" font-family="Alegreya Sans,sans-serif">минута бесконечного забега</text>
+   <rect x="${X(wall)}" y="${t}" width="${Math.max(0,X(30)-X(wall))}" height="${H-t-b}" fill="#c3262f" opacity=".07"/>
+   <polyline points="${pts.join(' ')}" fill="none" stroke="#c3262f" stroke-width="2.5"/>
+   <line x1="${l}" x2="${W-r}" y1="${Y(hero)}" y2="${Y(hero)}" stroke="#7cd0e0" stroke-width="2.5"/>
+   <circle cx="${X(wall)}" cy="${Y(hero)}" r="5" fill="#eadfcd"/>
+   <text x="${X(wall)+8}" y="${Y(hero)-8}" font-size="12" fill="#eadfcd" font-family="Alegreya Sans,sans-serif">стена ≈ ${wall.toFixed(1)} мин</text>
+   <text x="${X(23)}" y="${Y(Math.min(19,Math.pow(1.1,23)))-8}" font-size="12" fill="#c3262f" font-family="Alegreya Sans,sans-serif" text-anchor="end">сила врагов 1.1^мин</text>
+   <text x="${l+6}" y="${Y(hero)+16}" font-size="12" fill="#7cd0e0" font-family="Alegreya Sans,sans-serif">сила героя</text>`;
+  $('#chart-cap').textContent=`Условная модель: каждый ранг Парагона двигает стену на секунды, а не делает героя бессмертным. Сейчас суммарно ${Object.values(S.pg).reduce((a,b)=>a+b,0)} рангов Парагона.`;
+}
+
+/* ---------- tabs & dev ---------- */
+const R={run:renderRun,arsenal:renderArsenal,tree:renderTree,global:renderGlobal};
+let cur='run';
+function show(t){cur=t;$$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));$$('.screen').forEach(s=>s.hidden=s.id!=='tab-'+t);R[t]();
+  try{localStorage.setItem('dss-tab',t)}catch(e){}}
+$$('.tab').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+$('#dev-mem').onclick=()=>{S.mem+=1000;wallet();bump('#chip-mem');R[cur]()};
+$('#dev-mag').onclick=()=>{S.mag+=300;wallet();bump('#chip-mag');R[cur]()};
+$('#dev-reset').onclick=()=>{S=fresh();wallet();R[cur]();toast('Прототип сброшен')};
+$('#notes-toggle').onchange=e=>document.body.classList.toggle('notes-off',!e.target.checked);
+wallet();
+let start='run';try{start=localStorage.getItem('dss-tab')||'run'}catch(e){}
+if(location.hash&&R[location.hash.slice(1)])start=location.hash.slice(1);
+show(R[start]?start:'run');
+
+/* ---------- embers ---------- */
+const cv=$('#embers'),cx=cv.getContext('2d');let ps=[];
+function rs(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}rs();addEventListener('resize',rs);
+const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+for(let i=0;i<46;i++)ps.push({x:Math.random(),y:Math.random(),v:.0006+Math.random()*.0014,s:.6+Math.random()*1.8,w:Math.random()*6.28});
+function tick(){cx.clearRect(0,0,cv.width,cv.height);for(const p of ps){if(!still){p.y-=p.v;p.w+=.02;if(p.y<-.02){p.y=1.02;p.x=Math.random()}}
+  const x=(p.x+Math.sin(p.w)*.006)*cv.width,y=p.y*cv.height,a=Math.min(1,p.y*1.4);
+  cx.fillStyle=`rgba(231,${90+Math.round(p.s*20)},50,${.55*a})`;cx.beginPath();cx.arc(x,y,p.s*devicePixelRatio,0,6.28);cx.fill()}
+  if(!still)requestAnimationFrame(tick)}tick();
+})();
+</script>
