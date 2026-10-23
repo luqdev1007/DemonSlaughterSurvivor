@@ -47,6 +47,9 @@ namespace Game.Simulation.Systems
                 if (_dealt.Value != null)
                     _dealt.Value.Record(applied.Amount);
 
+                if (_stats.Value != null)
+                    _stats.Value.RecordDamageDealt(applied.Amount, applied.Effective);
+
                 if (_sink.Value == null)
                     continue;
 

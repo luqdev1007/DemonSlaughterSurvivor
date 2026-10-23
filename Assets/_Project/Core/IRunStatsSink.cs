@@ -9,5 +9,15 @@ namespace Game.Core
         void RecordEnemyKilled();
 
         void RecordItemFound();
+
+        void RecordItemTaken(int rarity);
+
+        void RecordDamageDealt(float amount, float effective);
+
+        void RecordEliteKilled();
+
+        void RecordBreakableDestroyed();
+
+        void RecordBossKilled(string bossId);
     }
 }

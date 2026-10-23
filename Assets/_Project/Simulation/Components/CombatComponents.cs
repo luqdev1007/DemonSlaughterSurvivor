@@ -76,6 +76,7 @@ namespace Game.Simulation.Components
     public struct DamageApplied
     {
         public float Amount;
+        public float Effective;
         public bool OnEnemy;
         public int TargetKey;
         public Vector3 Anchor;

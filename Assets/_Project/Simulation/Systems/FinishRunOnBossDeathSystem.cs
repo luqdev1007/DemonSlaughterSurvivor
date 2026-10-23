@@ -23,6 +23,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<RunOutcome> _outcome = default;
         private readonly EcsCustomInject<SimulationClock> _clock = default;
         private readonly EcsCustomInject<LevelConfig> _level = default;
+        private readonly EcsCustomInject<IRunStatsSink> _stats = default;
 
         public void Init(IEcsSystems systems)
         {
@@ -56,7 +57,11 @@ namespace Game.Simulation.Systems
 
             foreach (int entity in _dying.Value)
             {
-                float seconds = _bosses.Value.Get(entity).Config.DeathSeconds;
+                BossConfig boss = _bosses.Value.Get(entity).Config;
+                float seconds = boss.DeathSeconds;
+
+                if (_stats.Value != null)
+                    _stats.Value.RecordBossKilled(boss.Id);
 
                 int victory = _world.Value.NewEntity();
 

@@ -113,10 +113,13 @@ namespace Game.Simulation.Systems
             if (damageEvent.Execute && _players.Value.Has(target) == false)
                 amount = Mathf.Max(amount, health.Current);
 
+            float healthBefore = health.Current;
+
             health.Current -= amount;
 
             ref DamageApplied applied = ref _applied.Value.Add(eventEntity);
             applied.Amount = amount;
+            applied.Effective = Mathf.Clamp(amount, 0f, Mathf.Max(0f, healthBefore));
             applied.TargetKey = target;
             applied.OnEnemy = _enemies.Value.Has(target);
 

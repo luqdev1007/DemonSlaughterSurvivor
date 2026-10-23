@@ -18,6 +18,8 @@ namespace Game.Simulation.Systems
         private readonly EcsPoolInject<DiedEvent> _diedEvents = default;
         private readonly EcsPoolInject<Player> _players = default;
         private readonly EcsPoolInject<Enemy> _enemies = default;
+        private readonly EcsPoolInject<Elite> _elites = default;
+        private readonly EcsPoolInject<Breakable> _breakables = default;
         private readonly EcsPoolInject<MoveIntent> _intents = default;
         private readonly EcsPoolInject<DashRequest> _dashRequests = default;
         private readonly EcsPoolInject<PendingFinish> _pendingFinishes = default;
@@ -69,8 +71,17 @@ namespace Game.Simulation.Systems
                 if (_players.Value.Has(entity))
                     StopPlayer(entity);
 
-                if (_stats.Value != null && _enemies.Value.Has(entity))
+                if (_stats.Value == null)
+                    continue;
+
+                if (_enemies.Value.Has(entity))
                     _stats.Value.RecordEnemyKilled();
+
+                if (_elites.Value.Has(entity))
+                    _stats.Value.RecordEliteKilled();
+
+                if (_breakables.Value.Has(entity))
+                    _stats.Value.RecordBreakableDestroyed();
             }
         }
 

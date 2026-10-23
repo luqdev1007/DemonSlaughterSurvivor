@@ -3,6 +3,7 @@ using Game.Configs;
 using Game.Core;
 using Game.Simulation.Services;
 using Game.Simulation.Systems;
+using Game.UI;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using System;
@@ -43,6 +44,9 @@ namespace Game.Bootstrap
         private readonly IRunResultSink _resultSink;
         private readonly IRunResultInput _resultInput;
         private readonly IRunStatsSink _statsSink;
+        private readonly RunStats _runStats;
+        private readonly DpsMeter _dpsMeter;
+        private readonly IRunRewardService _rewardService;
         private readonly IPauseInput _pauseInput;
         private readonly IPointerInput _pointerInput;
         private readonly IDashInput _dashInput;
@@ -73,6 +77,8 @@ namespace Game.Bootstrap
         private bool _isSlowMotion;
         private float _slowMotionEndTime;
         private float _timeScaleBeforeSlowMotion;
+        private RunReport _report;
+        private RunRewards _rewards;
 
         public RunEntryPoint(
             RunContext context,
@@ -101,6 +107,9 @@ namespace Game.Bootstrap
             IRunResultSink resultSink,
             IRunResultInput resultInput,
             IRunStatsSink statsSink,
+            RunStats runStats,
+            DpsMeter dpsMeter,
+            IRunRewardService rewardService,
             IPauseInput pauseInput,
             IPointerInput pointerInput,
             IDashInput dashInput,
@@ -146,6 +155,9 @@ namespace Game.Bootstrap
             _resultSink = resultSink;
             _resultInput = resultInput;
             _statsSink = statsSink;
+            _runStats = runStats;
+            _dpsMeter = dpsMeter;
+            _rewardService = rewardService;
             _levelConfig = levelConfig;
             _inputConfig = inputConfig;
         }
@@ -293,6 +305,8 @@ namespace Game.Bootstrap
             if (_isFinishing == false)
                 return;
 
+            GrantRewards(_outcome.Reason == RunEndReason.Victory);
+
             if (_outcome.Reason == RunEndReason.Victory)
             {
                 FinishWithVictoryAsync().Forget();
@@ -388,6 +402,31 @@ namespace Game.Bootstrap
             await _launcher.FinishAsync();
         }
 
+        private void GrantRewards(bool victory)
+        {
+            if (_rewards != null)
+                return;
+
+            _report = new RunReport(
+                _context.LevelId,
+                _context.CharacterId,
+                victory,
+                _clock.Elapsed,
+                _runStats.EffectiveDamage,
+                _runStats.DamageDealt,
+                _runStats.DamageTaken,
+                _dpsMeter.BestDps,
+                _runStats.EnemiesKilled,
+                _runStats.ElitesKilled,
+                _runStats.ItemsFound,
+                _runStats.ItemsByRarity,
+                _runStats.GemsCollected,
+                _runStats.BreakablesDestroyed,
+                _runStats.BossesKilled);
+
+            _rewards = _rewardService.Grant(_report);
+        }
+
         private void ReleaseVictoryFreeze()
         {
             if (_isVictoryFrozen == false)
@@ -445,6 +484,8 @@ namespace Game.Bootstrap
         private void ExitFromMenu()
         {
             _isFinishing = true;
+
+            GrantRewards(false);
 
             ReleaseMenuPause();
 

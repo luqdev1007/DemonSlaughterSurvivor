@@ -23,6 +23,7 @@ namespace Game.Simulation.Systems
         private readonly EcsCustomInject<IUpgradeChoiceInput> _input = default;
         private readonly EcsCustomInject<IItemChoiceSink> _sink = default;
         private readonly EcsCustomInject<ItemChoiceState> _state = default;
+        private readonly EcsCustomInject<IRunStatsSink> _stats = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -40,6 +41,9 @@ namespace Game.Simulation.Systems
                     continue;
 
                 Equip(hero, state.Slots[index], state.Offers[index]);
+
+                if (_stats.Value != null)
+                    _stats.Value.RecordItemTaken(state.Offers[index].Rarity);
 
                 _choices.Value.Del(hero);
                 _drops.Value.Get(hero).Count--;
