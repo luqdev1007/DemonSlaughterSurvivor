@@ -18,11 +18,13 @@ namespace Game.Editor
         private const string StylePath = "Assets/_Project/Prefabs/UI/MetaUiStyle.asset";
         private const string HudPath = "Assets/_Project/Prefabs/UI/Hud.prefab";
         private const int RunEndSortingOrder = 1100;
+        private const int HubSortingOrder = 500;
+        private const string MainMenuPath = "Assets/_Project/Scenes/MainMenu.unity";
 
         private const string Characters =
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" +
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
-            "«»—–…·×−±→←↑↓©®°№ ";
+            "«»—–…·×−±→←↑↓©®°№ ◆■□▲";
 
         [MenuItem("Game/Meta/Build Body Font")]
         public static void BuildFont()
@@ -151,6 +153,62 @@ namespace Game.Editor
             }
 
             Debug.Log("Meta UI: run end screen built into " + HudPath);
+        }
+
+        [MenuItem("Game/Meta/Build Hub In Main Menu")]
+        public static void BuildHub()
+        {
+            UnityEngine.SceneManagement.Scene scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(MainMenuPath);
+            MetaUiStyle style = AssetDatabase.LoadAssetAtPath<MetaUiStyle>(StylePath);
+
+            MainMenuView menu = Object.FindAnyObjectByType<MainMenuView>(FindObjectsInactive.Include);
+            Transform play = menu.transform.Find("PlayButton");
+            Transform upgrade = menu.transform.Find("UpgradeButton");
+
+            if (upgrade == null)
+            {
+                upgrade = Object.Instantiate(play.gameObject, menu.transform).transform;
+                upgrade.name = "UpgradeButton";
+                upgrade.SetSiblingIndex(play.GetSiblingIndex() + 1);
+            }
+
+            upgrade.GetComponentInChildren<TMP_Text>(true).text = "ПРОКАЧКА";
+
+            string[] order = { "PlayButton", "UpgradeButton", "SettingsButton", "QuitButton" };
+
+            for (int index = 0; index < order.Length; index++)
+            {
+                RectTransform button = (RectTransform)menu.transform.Find(order[index]);
+                button.anchoredPosition = new Vector2((index - 1.5f) * 221f, button.anchoredPosition.y);
+            }
+
+            foreach (MetaHubView existing in Object.FindObjectsByType<MetaHubView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                Object.DestroyImmediate(existing.gameObject);
+
+            GameObject root = CreateOverlay("MetaHub", null, HubSortingOrder);
+            MetaHubView hub = root.AddComponent<MetaHubView>();
+            UiFade fade = root.AddComponent<UiFade>();
+
+            SerializedObject fadeSerialized = new SerializedObject(fade);
+            Set(fadeSerialized, "_group", root.GetComponent<CanvasGroup>());
+            fadeSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject hubSerialized = new SerializedObject(hub);
+            Set(hubSerialized, "_style", style);
+            Set(hubSerialized, "_fade", fade);
+            hubSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject menuSerialized = new SerializedObject(menu);
+            Set(menuSerialized, "_upgradeButton", upgrade.GetComponent<Button>());
+            Set(menuSerialized, "_hub", hub);
+            menuSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            root.SetActive(false);
+
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+            UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+
+            Debug.Log("Meta UI: hub built into " + MainMenuPath);
         }
 
         public static GameObject CreateOverlay(string name, Transform parent, int sortingOrder)

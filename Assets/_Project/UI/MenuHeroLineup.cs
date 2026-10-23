@@ -65,6 +65,16 @@ namespace Game.UI
                 Select(initial, false);
         }
 
+        public void Show(string heroId)
+        {
+            int index = IndexOf(heroId);
+
+            if (index < 0 || index == _selected)
+                return;
+
+            Select(index, true);
+        }
+
         public void SetInteractable(bool interactable)
         {
             _interactable = interactable;

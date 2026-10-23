@@ -108,6 +108,7 @@ namespace Game.Configs
         [SerializeField] private string _displayName;
         [SerializeField, TextArea] private string _description;
         [SerializeField] private string _rankNote;
+        [SerializeField] private float _displayPerRank;
         [SerializeField, Min(1)] private int _maxRank = 1;
         [SerializeField] private int[] _costs = Array.Empty<int>();
         [SerializeField] private string[] _parents = Array.Empty<string>();
@@ -123,6 +124,7 @@ namespace Game.Configs
         public string DisplayName => _displayName;
         public string Description => _description;
         public string RankNote => _rankNote;
+        public float DisplayPerRank => _displayPerRank;
         public int MaxRank => _maxRank;
         public IReadOnlyList<int> Costs => _costs ?? Array.Empty<int>();
         public IReadOnlyList<string> Parents => _parents ?? Array.Empty<string>();

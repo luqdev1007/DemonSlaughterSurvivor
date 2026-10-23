@@ -21,6 +21,7 @@ MonoBehaviour:
     _displayName: "Колдун"
     _description: "Стартовый узел."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 0
@@ -40,6 +41,7 @@ MonoBehaviour:
     _displayName: "Арканный фокус"
     _description: "+{0}% к урону."
     _rankNote: "+4% за ранг"
+    _displayPerRank: 4
     _maxRank: 3
     _costs:
     - 80

@@ -60,7 +60,7 @@ namespace Game.UI
             RectTransform rect = Rect(name, parent);
             Image image = rect.gameObject.AddComponent<Image>();
             image.sprite = sprite;
-            image.color = color;
+            image.color = color.linear;
             image.raycastTarget = raycast;
             image.preserveAspect = false;
 
@@ -88,7 +88,7 @@ namespace Game.UI
             text.alignment = alignment;
             text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.Normal;
-            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.overflowMode = TextOverflowModes.Overflow;
             text.richText = true;
             text.text = value;
 

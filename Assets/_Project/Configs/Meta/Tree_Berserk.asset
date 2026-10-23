@@ -21,6 +21,7 @@ MonoBehaviour:
     _displayName: "Охотник на демонов"
     _description: "Стартовый узел. Демоническая рука пробуждена."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 0
@@ -40,6 +41,7 @@ MonoBehaviour:
     _displayName: "Кипящая кровь"
     _description: "Ярость копится быстрее: +{0}% к накоплению."
     _rankNote: "+5% за ранг"
+    _displayPerRank: 5
     _maxRank: 3
     _costs:
     - 80
@@ -65,6 +67,7 @@ MonoBehaviour:
     _displayName: "Затяжная ярость"
     _description: "Ульта длится на {0} с дольше."
     _rankNote: "+1 с за ранг"
+    _displayPerRank: 1
     _maxRank: 3
     _costs:
     - 120
@@ -92,6 +95,7 @@ MonoBehaviour:
     _displayName: "Вихрь без конца"
     _description: "Вихрь клинков делает второй круг с 50% урона."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 300
@@ -112,6 +116,7 @@ MonoBehaviour:
     _displayName: "Холодная ярость"
     _description: "Ульта на 30% короче, но больше не увеличивает получаемый урон."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 600
@@ -142,6 +147,7 @@ MonoBehaviour:
     _displayName: "Кровавая ярость"
     _description: "Ульта на 50% дольше, но лечение во время неё отключено."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 600
@@ -172,6 +178,7 @@ MonoBehaviour:
     _displayName: "Тяжёлая рука"
     _description: "+{0}% к урону оружия."
     _rankNote: "+4% за ранг"
+    _displayPerRank: 4
     _maxRank: 3
     _costs:
     - 80
@@ -197,6 +204,7 @@ MonoBehaviour:
     _displayName: "Чуткий палач"
     _description: "Казнь: порог низкого HP элитки +5% (удвоенный урон срабатывает раньше)."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 300
@@ -222,6 +230,7 @@ MonoBehaviour:
     _displayName: "Пылающий прыжок"
     _description: "Героический прыжок: место приземления горит 3 с."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 350
@@ -242,6 +251,7 @@ MonoBehaviour:
     _displayName: "Адское пламя"
     _description: "+{0}% к урону фаерболов руки."
     _rankNote: "+10% за ранг"
+    _displayPerRank: 10
     _maxRank: 3
     _costs:
     - 80
@@ -264,6 +274,7 @@ MonoBehaviour:
     _displayName: "Долгий след"
     _description: "Пламенный рывок: огненный след горит на 50% дольше."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 300
@@ -289,6 +300,7 @@ MonoBehaviour:
     _displayName: "Второй прилив"
     _description: "Огненная волна выпускается дважды."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 350
@@ -309,6 +321,7 @@ MonoBehaviour:
     _displayName: "Двойной залп"
     _description: "Демоническая рука стреляет двумя фаерболами вместо одного."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 1500

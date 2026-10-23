@@ -21,6 +21,7 @@ MonoBehaviour:
     _displayName: "Охотница"
     _description: "Стартовый узел."
     _rankNote: ""
+    _displayPerRank: 0
     _maxRank: 1
     _costs:
     - 0
@@ -40,6 +41,7 @@ MonoBehaviour:
     _displayName: "Твёрдая рука"
     _description: "+{0}% к скорости атаки."
     _rankNote: "+3% за ранг"
+    _displayPerRank: 3
     _maxRank: 3
     _costs:
     - 80

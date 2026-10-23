@@ -16,6 +16,8 @@ namespace Game.UI
         [SerializeField] private Button _playButton;
         [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _quitButton;
+        [SerializeField] private Button _upgradeButton;
+        [SerializeField] private MetaHubView _hub;
         [SerializeField] private SettingsPopupView _settingsPopup;
 
         [SerializeField] private string _levelId;
@@ -33,10 +35,15 @@ namespace Game.UI
         private IContentRegistry _content;
         private IHeroSelection _heroSelection;
         private string _characterId;
+        private IMetaProgress _meta;
+        private IMenuRoute _menuRoute;
+        private MetaHubPresenter _hubPresenter;
 
         [Inject]
-        public void Construct(IRunLauncher runLauncher, ISoundSettings soundSettings, ICombatTextSettings combatText, IContentRegistry content, IHeroSelection heroSelection)
+        public void Construct(IRunLauncher runLauncher, ISoundSettings soundSettings, ICombatTextSettings combatText, IContentRegistry content, IHeroSelection heroSelection, IMetaProgress meta, IMenuRoute menuRoute)
         {
+            _meta = meta;
+            _menuRoute = menuRoute;
             _launcher = runLauncher;
             _soundSettings = soundSettings;
             _combatText = combatText;
@@ -46,9 +53,10 @@ namespace Game.UI
 
         private void Start()
         {
-            if (_playButton == null || _settingsButton == null || _quitButton == null || _settingsPopup == null || _settingsPopup.IsWired == false)
+            if (_playButton == null || _settingsButton == null || _quitButton == null || _upgradeButton == null || _settingsPopup == null || _settingsPopup.IsWired == false
+                || _hub == null || _hub.IsWired == false)
                 throw new InvalidOperationException(
-                    $"{nameof(MainMenuView)} needs the play, settings and quit buttons and a wired {nameof(SettingsPopupView)} assigned.");
+                    $"{nameof(MainMenuView)} needs the play, upgrade, settings and quit buttons, a wired {nameof(SettingsPopupView)} and a wired {nameof(MetaHubView)} assigned.");
 
             _lifeTime = this.GetCancellationTokenOnDestroy();
 
@@ -59,6 +67,13 @@ namespace Game.UI
             _quitButton.onClick.AddListener(OnQuitClicked);
 
             BuildHeroChoice();
+
+            _hubPresenter = new MetaHubPresenter(_hub, _meta, _content, _heroSelection);
+            _hubPresenter.Closed += OnHubClosed;
+            _upgradeButton.onClick.AddListener(OpenHub);
+
+            if (_menuRoute.ConsumeUpgradeRequest())
+                OpenHub();
         }
 
         private void OnDestroy()
@@ -71,6 +86,16 @@ namespace Game.UI
 
             if (_quitButton != null)
                 _quitButton.onClick.RemoveListener(OnQuitClicked);
+
+            if (_upgradeButton != null)
+                _upgradeButton.onClick.RemoveListener(OpenHub);
+
+            if (_hubPresenter != null)
+            {
+                _hubPresenter.Closed -= OnHubClosed;
+                _hubPresenter.Dispose();
+                _hubPresenter = null;
+            }
 
             _settings?.Dispose();
             _settings = null;
@@ -130,6 +155,27 @@ namespace Game.UI
             StartRunAsync().Forget();
         }
 
+        private void OpenHub()
+        {
+            if (_isStarting)
+                return;
+
+            _hubPresenter.Open(_characterId);
+        }
+
+        private void OnHubClosed()
+        {
+            string selected = _heroSelection.SelectedCharacterId;
+
+            if (string.IsNullOrEmpty(selected) || _content.TryGet(selected, out CharacterConfig _) == false)
+                return;
+
+            _characterId = selected;
+
+            if (_lineup != null)
+                _lineup.Show(selected);
+        }
+
         private void OnQuitClicked()
         {
             Application.Quit();
@@ -166,6 +212,7 @@ namespace Game.UI
             _playButton.interactable = interactable;
             _settingsButton.interactable = interactable;
             _quitButton.interactable = interactable;
+            _upgradeButton.interactable = interactable;
 
             if (_lineup != null)
                 _lineup.SetInteractable(interactable);
