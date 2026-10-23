@@ -1,0 +1,159 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79f602a631e7bb24fbb3f5f339b214d6, type: 3}
+  m_Name: GlobalPower
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.GlobalPowerConfig
+  _id: meta.global_power
+  _passives:
+  - _id: global_move_speed
+    _displayName: "Скорость бега"
+    _description: "Все герои бегают быстрее."
+    _displayPerRank: 2
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 1
+        _op: 2
+        _value: 0.02
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: global_crit_chance
+    _displayName: "Шанс крита"
+    _description: "Шанс критического удара всех героев."
+    _displayPerRank: 1
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 14
+        _op: 1
+        _value: 0.01
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: global_pickup_radius
+    _displayName: "Радиус подбора"
+    _description: "Сферы опыта притягиваются издалека."
+    _displayPerRank: 10
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 9
+        _op: 2
+        _value: 0.1
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: global_luck
+    _displayName: "Удача"
+    _description: "Повышает редкость находок, то есть магических осколков."
+    _displayPerRank: 5
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 17
+        _op: 1
+        _value: 5
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: global_regen
+    _displayName: "Регенерация"
+    _description: "Здоровье понемногу восстанавливается само."
+    _displayPerRank: 0.2
+    _displayUnit: " HP/с"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 25
+        _op: 1
+        _value: 0.2
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: global_armor
+    _displayName: "Броня"
+    _description: "Снижает физический урон по герою."
+    _displayPerRank: 2
+    _displayUnit: ""
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 15
+        _op: 1
+        _value: 2
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  _maxRank: 5
+  _rankCostBase: 60
+  _paragon:
+  - _id: paragon_vitality
+    _displayName: "Живучесть"
+    _description: "+1% HP за ранг."
+    _displayPerRank: 1
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 2
+        _op: 2
+        _value: 0.01
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: paragon_might
+    _displayName: "Мощь"
+    _description: "+1% урона за ранг."
+    _displayPerRank: 1
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 21
+        _op: 2
+        _value: 0.01
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: paragon_devastation
+    _displayName: "Опустошение"
+    _description: "+1% урона по области за ранг."
+    _displayPerRank: 1
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers: []
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 1
+  - _id: paragon_restoration
+    _displayName: "Восполнение"
+    _description: "+1% к лечению за ранг."
+    _displayPerRank: 1
+    _displayUnit: "%"
+    _icon: {fileID: 0}
+    _effect:
+      _modifiers:
+      - _stat: 26
+        _op: 2
+        _value: 0.01
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  _paragonUnlockRanks: 20
+  _paragonCostBase: 200
+  _paragonCostGrowth: 1.06

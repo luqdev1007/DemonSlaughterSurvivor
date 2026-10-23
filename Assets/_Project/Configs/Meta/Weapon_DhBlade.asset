@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c16df4d8968ef6458fa0006fcbb0fed, type: 3}
+  m_Name: Weapon_DhBlade
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.UniqueWeaponConfig
+  _id: dh_weapon_blade
+  _character: {fileID: 11400000, guid: 29d13c4cfee513e429c8e2e39949af05, type: 2}
+  _displayName: "Клинок охотника"
+  _subtitle: "Средняя скорость"
+  _menuOrder: 0
+  _comingLater: 0
+  _art: {fileID: 0}
+  _damageScale: 1
+  _attackSpeedScale: 1
+  _forgeCost: 0
+  _maxLevel: 10
+  _upgradeCostBase: 40
+  _upgradeCostExponent: 1.35
+  _damagePerLevel: 0.03
+  _sockets:
+  - _id: relic
+    _kind: 0
+    _unlockLevel: 1
+    _position: {x: 100, y: 346}
+  - _id: s1
+    _kind: 1
+    _unlockLevel: 1
+    _position: {x: 100, y: 270}
+  - _id: s2
+    _kind: 2
+    _unlockLevel: 3
+    _position: {x: 100, y: 195}
+  - _id: s3
+    _kind: 4
+    _unlockLevel: 5
+    _position: {x: 100, y: 120}
+  _traits:
+  - _id: blade_heavy_edge
+    _unlockLevel: 2
+    _displayName: "Тяжесть клинка"
+    _description: "Каждый 4-й взмах широкий: дуга +60%."
+    _effect:
+      _modifiers: []
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 1
+  - _id: blade_steel_thirst
+    _unlockLevel: 6
+    _displayName: "Жажда стали"
+    _description: "Удар по 3+ врагам разом: +50% скорости атаки на 3 удара."
+    _effect:
+      _modifiers: []
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 1
+  - _id: blade_awakening
+    _unlockLevel: 10
+    _displayName: "Пробуждение клинка"
+    _description: "Во время ульты взмахи оставляют кровавые дуги-снаряды."
+    _effect:
+      _modifiers: []
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 1

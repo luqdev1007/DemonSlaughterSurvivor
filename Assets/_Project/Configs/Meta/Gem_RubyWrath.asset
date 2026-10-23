@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172dff45b7cc063408ab331988216d04, type: 3}
+  m_Name: Gem_RubyWrath
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.SocketGemConfig
+  _id: gem_ruby_wrath
+  _color: 0
+  _displayName: "Рубин гнева"
+  _description: "+8% к накоплению ярости."
+  _menuOrder: 0
+  _icon: {fileID: 0}
+  _effect:
+    _modifiers:
+    - _stat: 24
+      _op: 2
+      _value: 0.08
+    _tuning: []
+    _grantedPerk: {fileID: 0}
+    _notImplemented: 0

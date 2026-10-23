@@ -1,5 +1,6 @@
 using Game.Configs;
 using Game.Core;
+using Game.Meta;
 using Game.Services;
 using System;
 using UnityEngine;
@@ -39,6 +40,14 @@ namespace Game.Bootstrap
             builder.Register<GameSettings>(Lifetime.Singleton).As<ISoundSettings>().As<ICombatTextSettings>().As<IHeroSelection>();
 
             builder.RegisterInstance(new ContentRegistry(_contentDatabase.Entries)).As<IContentRegistry>();
+
+            builder.Register<FileSaveStorage>(Lifetime.Singleton).As<ISaveStorage>();
+
+            builder.Register<MetaProgress>(Lifetime.Singleton).AsSelf().As<IMetaProgress>();
+
+            builder.Register<MetaLoadoutBuilder>(Lifetime.Singleton).As<IRunLoadoutSource>();
+
+            builder.Register<RunRewardService>(Lifetime.Singleton).As<IRunRewardService>();
 
             builder.RegisterInstance(_scenesConfig);
 

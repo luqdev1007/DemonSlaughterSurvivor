@@ -1,0 +1,70 @@
+068 — Мета-прогрессия (шаг 9), автономная сессия 2026-10-23
+================================================================
+
+Ветка: feature/meta-progression (от main @ 047f7cce).
+Задание: docs/meta/dss-meta.html (в задании назван meta-prototype.html — такого файла нет, прототип лежит как dss-meta.html).
+
+----------------------------------------------------------------
+1. ЧТО НАЙДЕНО В КОДЕ ДО НАЧАЛА (§0.2)
+----------------------------------------------------------------
+
+1.1 Предметы.
+ - Есть: предметы внутри забега с элиток (2026-10-17, отчёт 063). Дроп — QueueItemDropsSystem
+   (после DropGemsSystem, Inc<Enemy, Elite, DiedEvent>) → PendingItemDrops героя → OfferItemsSystem
+   (окно из 4 карточек, поток stream.item-offers) → ApplyItemChoiceSystem (герой выбирает одну).
+   Шанс «случайно с обычных / гарантированно с особых» в коде НЕ так: предмет даёт КАЖДАЯ элитка
+   (окно сразу при убийстве), обычные враги предметов не дают.
+ - Редкость у предмета ЕСТЬ: Configs/Rarity.cs — Common/Rare/Epic/Legendary (веса 60/28/10/2 в
+   loot.gameplay), роллится на каждую карточку (ItemOfferData.Rarity).
+ - Удача уже влияет на редкость: вес редкости r × (1 + удача/100 × r) (ItemRoller, 2026-10-18).
+ - Подбор фиксируется: OfferItemsSystem зовёт IRunStatsSink.RecordItemFound() на каждое окно;
+   редкость взятого — только в ApplyItemChoiceSystem (никуда не публиковалась).
+
+1.2 Экраны.
+ - Главное меню: сцена MainMenu, MainMenuView (Играть / Настройки / Выход + выбор героя
+   MenuHeroLineup, герой хранится в settings.json). Кнопки «Прокачка» нет.
+ - Пауза: PauseMenu/PauseMenuView (Esc), кнопка «Выход» в меню.
+ - Конец забега: ПОБЕДА — баннер, затем панель RunSummaryView в Hud.prefab (строки статистики,
+   кнопка «Выход в меню»), RunEntryPoint.FinishWithVictoryAsync держит timeScale 0 и ждёт
+   IRunResultInput.ConsumeExitRequested. ПОРАЖЕНИЕ — экрана нет: через 4.5 с после смерти
+   RunLauncher.FinishAsync сразу уводит в меню.
+ - Баг «игра замирает после победы» в журнале закрыт 2026-10-17 (F9) и 2026-10-20 (итоги);
+   проверка — см. §5.
+
+1.3 Сейвы.
+ - Мета-сейва нет. Сборка Game.Meta существует и пуста.
+ - Есть только settings.json (Services/GameSettings): JsonUtility, поле Version, запись
+   File.WriteAllText БЕЗ атомарности, при несовпадении версии — дефолты.
+
+1.4 Пайплайн статов (StatId, Core/StatId.cs, номера заморожены StatIdTableTests).
+ Есть и подключены в бою: MoveSpeed(1), MaxHealth(2), DashCooldown(4), WeaponDamage(5),
+ AttackSpeed(7), DamageTaken(8), PickupRadius(9), LifeOnKill/LifeOnHit(10/11), AbilityCooldown(13),
+ CritChance(14), Armor(15), Luck(17), DamageDealt(21), LifeStealScale(22) и др.
+ Нет: регенерации, множителя получаемого лечения, накопления ярости, урона по области.
+ Шов меты уже заложен: RunContext.StartModifiers (сегодня пустой массив из RunLauncher),
+ SpawnPlayerSystem превращает его в модификаторы героя; оружие наследует WeaponDamage/AttackSpeed
+ от владельца (OwnerLink).
+
+1.5 Герои.
+ - character.berserk («Берсерк») — это и есть «демон-хантер» задания: его перки — Вихрь клинков
+   (perk.counter-strike), Казнь (perk.execution), Героический прыжок (perk.heroic-leap), Пламенный
+   рывок (perk.flaming-dash), а также Пламенный замах, Огненный вихрь, Кровавая жатва, Размашистые
+   удары, Неутолимая (execution-thirst), Волны казни; непринятые 061 — Ловкий/Режущий рывок.
+ - character.huntress, character.wizard.
+ - РАСХОЖДЕНИЯ с заданием: у берсерка НЕТ «демонической руки с фаерболами» (фаерболы — у Колдуна,
+   perk.fireball-volley) и НЕТ перка «Огненная волна» (ближайшее — «Пламенный замах», который
+   выпускает FlameWave, но это другой перк). Узлы dh_hellfire, dh_second_surge, dh_double_volley
+   опираются на несуществующее → NotImplemented (см. §4).
+ - Меч берсерка (weapon.berserk_sword): урон 20, кулдаун 0.25 с (темп задаёт длина клипа),
+   а не 40 урона / 1.0 уд/с прототипа.
+
+1.6 Boss Knight.
+ - BossConfig id boss.knight, EnemyConfig enemy.boss_knight; таран — ability.charge.boss_knight
+   (ChargeAbilityConfig, EnemyCharge, SweepEnemyChargeSystem).
+ - Смерть: DiedEvent на сущности с Boss → FinishRunOnBossDeathSystem (группа 10) рождает
+   PendingVictory на BossConfig.DeathSeconds → RunOutcome.Finish(Victory).
+
+1.7 Имена, которые уже заняты.
+ - GemConfig уже существует — это СФЕРЫ ОПЫТА (gem.blue/green/yellow). Самоцветы меты названы
+   SocketGemConfig, чтобы не путать.
+ - Сборки: Game.UI не видит Game.Meta (ARCHITECTURE §15) → связь через интерфейсы Game.Core.

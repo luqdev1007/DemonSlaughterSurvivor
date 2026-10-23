@@ -35,6 +35,9 @@ namespace Game.Simulation.Tests
                 { "DamageDealt", 21 },
                 { "LifeStealScale", 22 },
                 { "MagicDamage", 23 },
+                { "RageGain", 24 },
+                { "HealthRegen", 25 },
+                { "HealingReceived", 26 },
             });
         }
 

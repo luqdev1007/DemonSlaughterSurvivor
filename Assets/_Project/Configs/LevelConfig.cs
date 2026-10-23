@@ -32,6 +32,10 @@ namespace Game.Configs
         [SerializeField] private GameObject _hudPrefab;
         [SerializeField] private GameObject _threatAtmospherePrefab;
 
+        [Header("Meta rewards")]
+        [SerializeField, Min(0f)] private float _memoryShardsPerEffectiveDamage = 0.01f;
+        [SerializeField, Min(0)] private int _bossMemoryShards = 500;
+
         public string SceneName => _sceneName;
 
         public GameObject CameraRigPrefab => _cameraRigPrefab;
@@ -63,5 +67,9 @@ namespace Game.Configs
         public GameObject HudPrefab => _hudPrefab;
 
         public GameObject ThreatAtmospherePrefab => _threatAtmospherePrefab;
+
+        public float MemoryShardsPerEffectiveDamage => _memoryShardsPerEffectiveDamage;
+
+        public int BossMemoryShards => _bossMemoryShards;
     }
 }

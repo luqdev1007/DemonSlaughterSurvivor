@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c565c0177b94c04db826e12f5215009, type: 3}
+  m_Name: Tree_Wizard
+  m_EditorClassIdentifier: Game.Configs::Game.Configs.HeroTreeConfig
+  _id: tree.wizard
+  _character: {fileID: 11400000, guid: 49ecc0355588c4847aa8b308d2923c46, type: 2}
+  _displayName: "Колдун"
+  _nodes:
+  - _id: wz_core
+    _type: 0
+    _displayName: "Колдун"
+    _description: "Стартовый узел."
+    _rankNote: ""
+    _maxRank: 1
+    _costs:
+    - 0
+    _parents: []
+    _excludes: 
+    _gates: []
+    _gatesRequired: 0
+    _perk: {fileID: 0}
+    _position: {x: 90, y: 280}
+    _effect:
+      _modifiers: []
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  - _id: wz_arcane_focus
+    _type: 1
+    _displayName: "Арканный фокус"
+    _description: "+{0}% к урону."
+    _rankNote: "+4% за ранг"
+    _maxRank: 3
+    _costs:
+    - 80
+    - 160
+    - 240
+    _parents:
+    - wz_core
+    _excludes: 
+    _gates: []
+    _gatesRequired: 0
+    _perk: {fileID: 0}
+    _position: {x: 260, y: 280}
+    _effect:
+      _modifiers:
+      - _stat: 21
+        _op: 2
+        _value: 0.04
+      _tuning: []
+      _grantedPerk: {fileID: 0}
+      _notImplemented: 0
+  _branchLabels: []

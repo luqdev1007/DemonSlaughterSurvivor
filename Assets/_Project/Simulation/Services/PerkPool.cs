@@ -43,7 +43,7 @@ namespace Game.Simulation.Services
 
             for (int index = 0; index < perks.Count; index++)
             {
-                if (perks[index] != null && perks[index].IsAvailableFor(characterId))
+                if (perks[index] != null && perks[index].GrantedOnly == false && perks[index].IsAvailableFor(characterId))
                     available.Add(perks[index]);
             }
 

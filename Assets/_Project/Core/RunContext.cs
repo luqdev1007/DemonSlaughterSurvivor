@@ -6,21 +6,22 @@ namespace Game.Core
     public sealed class RunContext
     {
         public RunContext(string levelId, string characterId, RunMode mode, int seed, IReadOnlyList<StatModifierSpec> startModifiers)
+            : this(levelId, characterId, mode, seed, new RunLoadout(startModifiers, Array.Empty<TuningSpec>(), Array.Empty<GrantedPerkSpec>()))
         {
-            if (startModifiers == null)
-                throw new ArgumentNullException(nameof(startModifiers));
+        }
+
+        public RunContext(string levelId, string characterId, RunMode mode, int seed, RunLoadout loadout)
+        {
+            if (loadout == null)
+                throw new ArgumentNullException(nameof(loadout));
 
             LevelId = levelId;
             CharacterId = characterId;
             Mode = mode;
             Seed = seed;
-
-            StatModifierSpec[] copy = new StatModifierSpec[startModifiers.Count];
-
-            for (int index = 0; index < copy.Length; index++)
-                copy[index] = startModifiers[index];
-
-            StartModifiers = copy;
+            StartModifiers = loadout.Modifiers;
+            Tuning = loadout.Tuning;
+            GrantedPerks = loadout.GrantedPerks;
         }
 
         public string LevelId { get; }
@@ -28,5 +29,7 @@ namespace Game.Core
         public RunMode Mode { get; }
         public int Seed { get; }
         public IReadOnlyList<StatModifierSpec> StartModifiers { get; }
+        public IReadOnlyList<TuningSpec> Tuning { get; }
+        public IReadOnlyList<GrantedPerkSpec> GrantedPerks { get; }
     }
 }

@@ -18,6 +18,7 @@ namespace Game.Bootstrap
         private readonly ISeedSource _seedSource;
         private readonly IContentRegistry _content;
         private readonly ScenesConfig _scenes;
+        private readonly IRunLoadoutSource _loadouts;
 
         private RunLifetimeScope _runScope;
         private bool _isStarting;
@@ -28,13 +29,15 @@ namespace Game.Bootstrap
             ISceneLoader sceneLoader,
             ISeedSource seedSource,
             IContentRegistry content,
-            ScenesConfig scenes)
+            ScenesConfig scenes,
+            IRunLoadoutSource loadouts)
         {
             _projectScope = projectScope;
             _sceneLoader = sceneLoader;
             _seedSource = seedSource;
             _content = content;
             _scenes = scenes;
+            _loadouts = loadouts;
         }
 
         public async UniTask StartAsync(RunRequest request, CancellationToken ct)
@@ -53,7 +56,7 @@ namespace Game.Bootstrap
             {
                 await StopAndSettleAsync();
 
-                RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next(), Array.Empty<StatModifierSpec>());
+                RunContext runContext = new RunContext(request.LevelId, request.CharacterId, request.Mode, _seedSource.Next(), _loadouts.Build(request.CharacterId));
 
                 LevelConfig level = _content.Get<LevelConfig>(request.LevelId);
 

@@ -23,6 +23,9 @@ namespace Game.Configs
         [Header("Characters")]
         [SerializeField] private CharacterConfig[] _characters = Array.Empty<CharacterConfig>();
 
+        [Header("Meta")]
+        [SerializeField] private bool _grantedOnly;
+
         public string DisplayName => _displayName;
 
         public Sprite Icon => _icon;
@@ -32,6 +35,8 @@ namespace Game.Configs
         public PerkBehaviourConfig Behaviour => _behaviour;
 
         public bool HasBehaviour => _behaviour != null;
+
+        public bool GrantedOnly => _grantedOnly;
 
         public IReadOnlyList<PerkConfig> Requires => _requires ?? Array.Empty<PerkConfig>();
 
