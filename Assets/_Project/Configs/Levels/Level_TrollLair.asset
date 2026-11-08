@@ -15,5 +15,5 @@ MonoBehaviour:
   _id: level.troll_lair
   _displayName: "Логово троллей"
   _sceneName: Gameplay
-  _environmentPrefab: {fileID: 0}
+  _environmentPrefab: {fileID: 7222960959259420826, guid: e1f88b20dfb21514caacf1a8624bac2f, type: 3}
   _waves: {fileID: 0}

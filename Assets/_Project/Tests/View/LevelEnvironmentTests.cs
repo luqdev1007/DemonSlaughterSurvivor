@@ -10,6 +10,8 @@ namespace Game.View.Tests
     {
         private const string LevelPath = "Assets/_Project/Configs/Levels/Level_Gameplay.asset";
         private const string PrefabPath = "Assets/_Project/Prefabs/Environment/CastleCourtyardEnvironment.prefab";
+        private const string TrollLevelPath = "Assets/_Project/Configs/Levels/Level_TrollLair.asset";
+        private const string TrollPrefabPath = "Assets/_Project/Prefabs/Environment/TrollLairEnvironment.prefab";
 
         [Test]
         public void CastleLevelReferencesSerializedEnvironmentWithTerrainCollidersAndLight()
@@ -66,6 +68,31 @@ namespace Game.View.Tests
             finally
             {
                 Object.DestroyImmediate(level);
+            }
+        }
+
+        [Test]
+        public void TrollLevelReferencesEnvironmentWithoutBlockingArena()
+        {
+            LevelConfig level = AssetDatabase.LoadAssetAtPath<LevelConfig>(TrollLevelPath);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TrollPrefabPath);
+
+            Assert.NotNull(level);
+            Assert.NotNull(prefab);
+            Assert.AreSame(prefab, level.EnvironmentPrefab);
+            Assert.NotNull(prefab.transform.Find("Ground"));
+            Assert.NotNull(prefab.transform.Find("Walls"));
+            Assert.NotNull(prefab.transform.Find("Rocks"));
+            Assert.NotNull(prefab.transform.Find("Lighting"));
+            Assert.NotNull(prefab.transform.Find("Decoration"));
+
+            foreach (Collider collider in prefab.GetComponentsInChildren<Collider>(true))
+            {
+                if (!collider.enabled || collider.transform.IsChildOf(prefab.transform.Find("Ground")) ||
+                    collider.transform.IsChildOf(prefab.transform.Find("Walls")))
+                    continue;
+
+                Assert.Fail($"Unexpected active decoration collider: {collider.name}");
             }
         }
     }
