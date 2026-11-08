@@ -15,6 +15,7 @@ MonoBehaviour:
   _id: level.gameplay
   _displayName: "Двор замка"
   _sceneName: Gameplay
+  _environmentPrefab: {fileID: 2730254679988926368, guid: a405c12b5cd9afb45abc32ed9ad4b17d, type: 3}
   _cameraRigPrefab: {fileID: 3911450467373040526, guid: fce0a7a1b1fd605479921c4e854897d3, type: 3}
   _cameraYaw: 45
   _cameraPitch: 50

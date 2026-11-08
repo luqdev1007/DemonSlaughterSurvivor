@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Game.Configs;
 using Game.Core;
+using Game.View;
 using System;
 using System.Threading;
 using UnityEngine;
@@ -21,6 +22,8 @@ namespace Game.Bootstrap
         private readonly IRunLoadoutSource _loadouts;
 
         private RunLifetimeScope _runScope;
+        private LevelEnvironment _environment;
+        private bool _needsSettle;
         private RunRequest _lastRequest;
         private bool _hasLastRequest;
         private bool _isStarting;
@@ -66,13 +69,21 @@ namespace Game.Bootstrap
 
                 await _sceneLoader.LoadAsync(level.SceneName, CancellationToken.None);
 
+                _environment = new LevelEnvironment(level);
+
                 _runScope = _projectScope.CreateChild<RunLifetimeScope>(
                     builder =>
                     {
                         builder.RegisterInstance(runContext);
                         builder.RegisterInstance(level);
+                        builder.RegisterInstance(_environment);
                     },
                     RunScopeName);
+            }
+            catch
+            {
+                Stop();
+                throw;
             }
             finally
             {
@@ -93,7 +104,7 @@ namespace Game.Bootstrap
             if (_isFinishing)
                 return;
 
-            if (_runScope == null)
+            if (_runScope == null && _environment == null)
                 return;
 
             _isFinishing = true;
@@ -114,13 +125,24 @@ namespace Game.Bootstrap
 
         public void Stop()
         {
-            _runScope?.Dispose();
-            _runScope = null;
+            if (_runScope != null || _environment != null)
+                _needsSettle = true;
+
+            try
+            {
+                _runScope?.Dispose();
+            }
+            finally
+            {
+                _runScope = null;
+                _environment?.Dispose();
+                _environment = null;
+            }
         }
 
         private async UniTask StopAndSettleAsync()
         {
-            if (_runScope == null)
+            if (_runScope == null && _environment == null && _needsSettle == false)
                 return;
 
             Stop();
@@ -132,6 +154,8 @@ namespace Game.Bootstrap
             {
                 await UniTask.NextFrame();
             }
+
+            _needsSettle = false;
         }
 
         public void Dispose()
