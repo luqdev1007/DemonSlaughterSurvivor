@@ -7,6 +7,7 @@ namespace Game.Configs
     {
         [SerializeField] private string _displayName;
         [SerializeField] private string _sceneName;
+        [SerializeField] private GameObject _environmentPrefab;
 
         [Header("Camera")]
         [SerializeField] private GameObject _cameraRigPrefab;
@@ -40,6 +41,7 @@ namespace Game.Configs
         public string DisplayName => string.IsNullOrEmpty(_displayName) ? Id : _displayName;
 
         public string SceneName => _sceneName;
+        public GameObject EnvironmentPrefab => _environmentPrefab;
 
         public GameObject CameraRigPrefab => _cameraRigPrefab;
 
