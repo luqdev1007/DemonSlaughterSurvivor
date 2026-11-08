@@ -83,6 +83,20 @@ namespace Game.UI
                 _hovered = -1;
         }
 
+        public void SetVisible(bool visible)
+        {
+            gameObject.SetActive(visible);
+            _stand.gameObject.SetActive(visible);
+
+            if (_labelRoot != null)
+                _labelRoot.gameObject.SetActive(visible);
+
+            if (_selectionLight != null)
+                _selectionLight.enabled = visible;
+
+            SetInteractable(visible);
+        }
+
         public void OnPointerClick(PointerEventData eventData)
         {
             if (_interactable == false || eventData.button != PointerEventData.InputButton.Left)

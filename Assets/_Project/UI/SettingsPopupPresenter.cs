@@ -9,6 +9,8 @@ namespace Game.UI
         private readonly ISoundSettings _settings;
         private readonly ICombatTextSettings _combatText;
 
+        public event Action Closed;
+
         public SettingsPopupPresenter(SettingsPopupView view, ISoundSettings settings, ICombatTextSettings combatText)
         {
             _view = view;
@@ -28,6 +30,7 @@ namespace Game.UI
         public void Close()
         {
             _view.Hide();
+            Closed?.Invoke();
         }
 
         public void Dispose()

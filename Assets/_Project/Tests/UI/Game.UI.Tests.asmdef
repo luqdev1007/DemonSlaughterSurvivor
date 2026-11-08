@@ -1,0 +1,18 @@
+{
+    "name": "Game.UI.Tests",
+    "rootNamespace": "Game.UI.Tests",
+    "references": [
+        "GUID:ceb3c7199e60cf4498e3bcb367773fe7",
+        "GUID:d8736e7cd172166448a7dce4a1836224",
+        "GUID:fe2eb48c0d24d974687db78c2941b844"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
