@@ -20,7 +20,8 @@ namespace Game.Core
             IReadOnlyList<int> itemsByRarity,
             int gemsCollected,
             int breakablesDestroyed,
-            IReadOnlyList<string> bossesKilled)
+            IReadOnlyList<string> bossesKilled,
+            RunMode mode = RunMode.Story)
         {
             LevelId = levelId;
             CharacterId = characterId;
@@ -37,6 +38,7 @@ namespace Game.Core
             GemsCollected = gemsCollected;
             BreakablesDestroyed = breakablesDestroyed;
             BossesKilled = Copy(bossesKilled);
+            Mode = mode;
         }
 
         public string LevelId { get; }
@@ -54,6 +56,7 @@ namespace Game.Core
         public int GemsCollected { get; }
         public int BreakablesDestroyed { get; }
         public IReadOnlyList<string> BossesKilled { get; }
+        public RunMode Mode { get; }
 
         private static T[] Copy<T>(IReadOnlyList<T> source)
         {

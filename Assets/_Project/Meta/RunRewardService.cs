@@ -20,7 +20,7 @@ namespace Game.Meta
         {
             RunRewards rewards = Compute(report);
 
-            _progress.GrantRewards(rewards, report.Victory ? report.BossesKilled : System.Array.Empty<string>());
+            _progress.GrantRewards(rewards, report.Victory ? report.BossesKilled : System.Array.Empty<string>(), report);
 
             return rewards;
         }

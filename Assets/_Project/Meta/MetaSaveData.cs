@@ -6,7 +6,7 @@ namespace Game.Meta
     [Serializable]
     public sealed class MetaSaveData
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         public int Version = CurrentVersion;
         public int MemoryShards;
@@ -19,6 +19,7 @@ namespace Game.Meta
         public List<RankRecord> Gems = new List<RankRecord>();
         public List<RelicRecord> Relics = new List<RelicRecord>();
         public List<string> DefeatedBosses = new List<string>();
+        public List<string> CompletedLevelIds = new List<string>();
     }
 
     [Serializable]

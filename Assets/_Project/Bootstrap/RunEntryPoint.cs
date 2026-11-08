@@ -439,7 +439,8 @@ namespace Game.Bootstrap
                 _runStats.ItemsByRarity,
                 _runStats.GemsCollected,
                 _runStats.BreakablesDestroyed,
-                _runStats.BossesKilled);
+                _runStats.BossesKilled,
+                _context.Mode);
 
             _rewards = _rewardService.Grant(_report);
         }

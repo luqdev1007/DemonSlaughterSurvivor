@@ -10,6 +10,7 @@ namespace Game.Configs
         [SerializeField] private LevelConfig _level;
         [SerializeField] private LevelConfig[] _prerequisites;
         [SerializeField] private Sprite _preview;
+        [SerializeField] private string _expectedFinalBossId;
 
         public CampaignLevel(LevelConfig level, LevelConfig[] prerequisites, Sprite preview = null)
         {
@@ -21,6 +22,7 @@ namespace Game.Configs
         public LevelConfig Level => _level;
         public IReadOnlyList<LevelConfig> Prerequisites => _prerequisites ?? Array.Empty<LevelConfig>();
         public Sprite Preview => _preview;
+        public string ExpectedFinalBossId => _expectedFinalBossId;
     }
 
     [CreateAssetMenu(fileName = "Campaign", menuName = "Game/Content/Campaign")]

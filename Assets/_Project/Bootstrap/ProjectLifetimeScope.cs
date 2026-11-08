@@ -44,7 +44,7 @@ namespace Game.Bootstrap
 
             builder.Register<FileSaveStorage>(Lifetime.Singleton).As<ISaveStorage>();
 
-            builder.Register<MetaProgress>(Lifetime.Singleton).AsSelf().As<IMetaProgress>();
+            builder.Register<MetaProgress>(Lifetime.Singleton).AsSelf().As<IMetaProgress>().As<ICampaignProgress>();
 
             builder.Register<MetaLoadoutBuilder>(Lifetime.Singleton).As<IRunLoadoutSource>();
 

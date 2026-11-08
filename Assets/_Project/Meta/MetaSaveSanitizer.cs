@@ -17,6 +17,10 @@ namespace Game.Meta
             data.Gems ??= new List<RankRecord>();
             data.Relics ??= new List<RelicRecord>();
             data.DefeatedBosses ??= new List<string>();
+            data.CompletedLevelIds ??= new List<string>();
+
+            HashSet<string> completed = new HashSet<string>(System.StringComparer.Ordinal);
+            data.CompletedLevelIds.RemoveAll(id => string.IsNullOrWhiteSpace(id) || completed.Add(id) == false);
 
             data.MemoryShards = Mathf.Max(0, data.MemoryShards);
             data.MagicShards = Mathf.Max(0, data.MagicShards);

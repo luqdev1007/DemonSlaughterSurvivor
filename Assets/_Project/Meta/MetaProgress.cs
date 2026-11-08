@@ -2,11 +2,12 @@ using Game.Configs;
 using Game.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Game.Meta
 {
-    public sealed class MetaProgress : IMetaProgress
+    public sealed class MetaProgress : IMetaProgress, ICampaignProgress
     {
         public const string FileName = "meta.json";
         public const string CorruptFileName = "meta.corrupt.json";
@@ -16,8 +17,10 @@ namespace Game.Meta
         private readonly IContentRegistry _content;
         private readonly ISaveStorage _storage;
         private readonly GlobalPowerConfig _global;
+        private readonly CampaignConfig _campaign;
 
         private MetaSaveData _data;
+        private bool _writesBlocked;
 
         public MetaProgress(IContentRegistry content, ISaveStorage storage)
         {
@@ -28,6 +31,9 @@ namespace Game.Meta
 
             IReadOnlyList<GlobalPowerConfig> globals = content.All<GlobalPowerConfig>();
             _global = globals.Count > 0 ? globals[0] : null;
+            IReadOnlyList<CampaignConfig> campaigns = content.All<CampaignConfig>();
+            _campaign = campaigns.Count > 0 ? campaigns[0] : null;
+            _campaign?.Validate();
 
             _data = Load();
         }
@@ -41,6 +47,36 @@ namespace Game.Meta
         public int MagicShards => _data.MagicShards;
 
         public int RelicCount => _data.Relics.Count;
+
+        public bool CanSave => _writesBlocked == false;
+
+        public bool LastSaveSucceeded { get; private set; }
+
+        public IReadOnlyList<string> CompletedLevelIds => Array.AsReadOnly(_data.CompletedLevelIds.ToArray());
+
+        public bool IsCompleted(string levelId) => _data.CompletedLevelIds.Contains(levelId);
+
+        public bool IsAvailable(string levelId)
+        {
+            if (_campaign == null || string.IsNullOrEmpty(levelId))
+                return false;
+
+            foreach (CampaignLevel entry in _campaign.Levels)
+            {
+                if (entry.Level.Id != levelId)
+                    continue;
+
+                foreach (LevelConfig prerequisite in entry.Prerequisites)
+                {
+                    if (IsCompleted(prerequisite.Id) == false)
+                        return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
 
         public int GlobalRank(string passiveId)
         {
@@ -538,13 +574,19 @@ namespace Game.Meta
 
         public void DebugReset()
         {
+            if (_writesBlocked)
+            {
+                Debug.LogWarning("Meta progress reset was blocked because the original save could not be safely loaded.");
+                return;
+            }
+
             _storage.Delete(FileName);
             _data = Fresh();
 
             Commit();
         }
 
-        internal void GrantRewards(RunRewards rewards, IReadOnlyList<string> bossesKilled)
+        internal void GrantRewards(RunRewards rewards, IReadOnlyList<string> bossesKilled, RunReport report)
         {
             _data.MemoryShards += rewards.MemoryShards;
             _data.MagicShards += rewards.MagicShards;
@@ -556,6 +598,24 @@ namespace Game.Meta
             {
                 if (string.IsNullOrEmpty(bossId) == false && _data.DefeatedBosses.Contains(bossId) == false)
                     _data.DefeatedBosses.Add(bossId);
+            }
+
+            if (report != null && report.Victory && report.Mode == RunMode.Story && _campaign != null)
+            {
+                foreach (CampaignLevel entry in _campaign.Levels)
+                {
+                    string expectedBoss = entry.ExpectedFinalBossId;
+
+                    if (entry.Level.Id != report.LevelId || string.IsNullOrWhiteSpace(expectedBoss) ||
+                        _content.TryGet(report.LevelId, out LevelConfig registeredLevel) == false ||
+                        ReferenceEquals(registeredLevel, entry.Level) == false || bossesKilled.Contains(expectedBoss) == false)
+                        continue;
+
+                    if (_data.CompletedLevelIds.Contains(report.LevelId) == false)
+                        _data.CompletedLevelIds.Add(report.LevelId);
+
+                    break;
+                }
             }
 
             Commit();
@@ -725,9 +785,18 @@ namespace Game.Meta
 
         private void Save()
         {
+            LastSaveSucceeded = false;
+
+            if (_writesBlocked)
+            {
+                Debug.LogWarning("Meta progress was not saved because writing is blocked after a failed load.");
+                return;
+            }
+
             try
             {
                 _storage.Write(FileName, JsonUtility.ToJson(_data, true));
+                LastSaveSucceeded = true;
             }
             catch (Exception exception)
             {
@@ -746,9 +815,7 @@ namespace Game.Meta
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"Meta progress could not be read, a fresh one is used: {exception.Message}");
-
-                return Fresh();
+                return BlockWrites($"Meta progress could not be read: {exception.Message}");
             }
 
             MetaSaveData data;
@@ -760,34 +827,56 @@ namespace Game.Meta
             catch (Exception exception)
             {
                 data = null;
-                Debug.LogWarning($"Meta progress is corrupt ({exception.Message}); a copy is kept in {CorruptFileName}, a fresh progress is used.");
+                Debug.LogWarning($"Meta progress is corrupt ({exception.Message}).");
             }
 
             if (data == null)
             {
                 KeepCorruptCopy(json);
-
-                return Fresh();
+                return BlockWrites("Meta progress could not be deserialized.");
             }
 
             if (data.Version > MetaSaveData.CurrentVersion)
             {
-                Debug.LogWarning($"Meta progress has version {data.Version}, newer than {MetaSaveData.CurrentVersion}; a copy is kept in {CorruptFileName}, a fresh progress is used.");
-                KeepCorruptCopy(json);
-
-                return Fresh();
+                return BlockWrites($"Meta progress version {data.Version} is newer than supported version {MetaSaveData.CurrentVersion}.");
             }
 
-            MetaSaveSanitizer.Sanitize(data, _content, _global);
-            EnsureStartingWeapons(data);
+            if (data.Version < 1)
+                return BlockWrites($"Meta progress version {data.Version} is unsupported.");
+
+            if (data.Version == 1)
+            {
+                data.CompletedLevelIds = new List<string>();
+                data.Version = MetaSaveData.CurrentVersion;
+            }
+
+            try
+            {
+                MetaSaveSanitizer.Sanitize(data, _content, _global);
+                EnsureStartingWeapons(data);
+            }
+            catch (Exception exception)
+            {
+                return BlockWrites($"Meta progress could not be validated: {exception.Message}");
+            }
 
             return data;
+        }
+
+        private MetaSaveData BlockWrites(string reason)
+        {
+            _writesBlocked = true;
+            Debug.LogWarning($"{reason} Original save is preserved; meta progress writes are blocked for this session.");
+            return Fresh();
         }
 
         private void KeepCorruptCopy(string json)
         {
             try
             {
+                if (_storage.TryRead(CorruptFileName, out _))
+                    return;
+
                 _storage.Write(CorruptFileName, json ?? string.Empty);
             }
             catch (Exception exception)

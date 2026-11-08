@@ -17,7 +17,9 @@ MonoBehaviour:
   - _level: {fileID: 11400000, guid: b73acb659a2a5f048b05aa42eef55ac5, type: 2}
     _prerequisites: []
     _preview: {fileID: 0}
+    _expectedFinalBossId: boss.knight
   - _level: {fileID: 11400000, guid: fcd4db85a9224dbba0578876cb185110, type: 2}
     _prerequisites:
     - {fileID: 11400000, guid: b73acb659a2a5f048b05aa42eef55ac5, type: 2}
     _preview: {fileID: 0}
+    _expectedFinalBossId: boss.demon_lord
