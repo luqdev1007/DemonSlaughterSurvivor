@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: Enemy_DemonLord
   m_EditorClassIdentifier: Game.Configs::Game.Configs.EnemyConfig
   _id: enemy.demon_lord
-  _viewPrefab: {fileID: 7652976427810117555, guid: 9ad365ced9a732c45ab080f29df8cbc7, type: 3}
-  _moveSpeed: 2.5
+  _viewPrefab: {fileID: 5938078658766835176, guid: 38b1922170f7136498c051e00fc90ae3, type: 3}
+  _moveSpeed: 2.2
   _turnSpeed: 240
   _moveSpeedSpread: 0
-  _bodyRadius: 1
-  _bodyHeight: 3
-  _maxHealth: 1500
-  _contactDamage: 30
+  _bodyRadius: 1.05
+  _bodyHeight: 3.2
+  _maxHealth: 1800
+  _contactDamage: 35
   _isElite: 0
   _gem: {fileID: 0}
   _rangedAttack: {fileID: 0}

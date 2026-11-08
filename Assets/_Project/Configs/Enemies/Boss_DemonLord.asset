@@ -19,7 +19,7 @@ MonoBehaviour:
   _spinWeight: 0
   _heavyStrikeWeight: 0
   _jumpWeight: 0
-  _minSpawnDistanceToHero: 12
+  _minSpawnDistanceToHero: 14
   _blindSideFromDegrees: 60
   _blindBackFromDegrees: 120
   _blindSideDamage: 0.25

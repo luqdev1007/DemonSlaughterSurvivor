@@ -145,7 +145,7 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void TrollLairRemainsUnregisteredWhileDemonLordViewIsIncomplete()
+        public void TrollLairAndDemonLordAreRegisteredWithValidWaveReferences()
         {
             ContentDatabase database = AssetDatabase.LoadAssetAtPath<ContentDatabase>(DatabasePath);
             LevelConfig level = AssetDatabase.LoadAssetAtPath<LevelConfig>("Assets/_Project/Configs/Levels/Level_TrollLair.asset");
@@ -159,15 +159,12 @@ namespace Game.Simulation.Tests
             Assert.NotNull(level.Feedback);
             Assert.AreSame(boss, demonLord.Boss);
             Assert.NotNull(demonLord.ViewPrefab);
-            Assert.IsNull(demonLord.ViewPrefab.GetComponent("ViewInterpolator"));
-            Assert.IsFalse(registry.Contains(level.Id));
-            Assert.IsFalse(registry.Contains(demonLord.Id));
-            Assert.IsFalse(registry.Contains(level.Waves.Id));
-
-            List<IContentEntry> staged = new List<IContentEntry>(database.Entries) { boss, demonLord, level.Waves };
-            ContentRegistry stagedRegistry = new ContentRegistry(staged);
-            Assert.DoesNotThrow(() => WaveTimelineValidator.Validate(level.Waves, stagedRegistry));
-            Assert.Throws<InvalidOperationException>(() => WaveTimelineValidator.Validate(level.Waves, registry));
+            Assert.IsNotNull(demonLord.ViewPrefab.GetComponent("ViewInterpolator"));
+            Assert.AreSame(level, registry.Get<LevelConfig>(level.Id));
+            Assert.AreSame(demonLord, registry.Get<EnemyConfig>(demonLord.Id));
+            Assert.AreSame(boss, registry.Get<BossConfig>(boss.Id));
+            Assert.AreSame(level.Waves, registry.Get<WaveTimelineConfig>(level.Waves.Id));
+            Assert.DoesNotThrow(() => WaveTimelineValidator.Validate(level.Waves, registry));
         }
 
         private EnemyConfig CreateEnemy(string id)

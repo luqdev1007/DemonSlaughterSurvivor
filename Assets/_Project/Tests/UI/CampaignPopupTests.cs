@@ -32,11 +32,11 @@ namespace Game.UI.Tests
         }
 
         [Test]
-        public void CompletedFirstLevelMakesUnregisteredTrollLairComingSoon()
+        public void CompletedFirstLevelMakesRegisteredTrollLairReady()
         {
             StubProgress progress = new StubProgress { FirstCompleted = true };
-            Assert.AreEqual(CampaignTileState.ComingSoon, CampaignPopupPresenter.StateFor(_campaign.Levels[1], progress, _content));
-            Assert.IsFalse(_content.TryGet(_campaign.Levels[1].Level.Id, out LevelConfig _));
+            Assert.AreEqual(CampaignTileState.Ready, CampaignPopupPresenter.StateFor(_campaign.Levels[1], progress, _content));
+            Assert.IsTrue(_content.TryGet(_campaign.Levels[1].Level.Id, out LevelConfig _));
         }
 
         [Test]

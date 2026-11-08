@@ -27,7 +27,7 @@ namespace Game.Simulation.Tests
         }
 
         [Test]
-        public void CatalogAssetHasTwoLevelsAndOnlyReadyLevelsAreRegistered()
+        public void CatalogAssetHasTwoRegisteredCampaignLevels()
         {
             CampaignConfig campaign = AssetDatabase.LoadAssetAtPath<CampaignConfig>(CampaignPath);
             LevelConfig troll = AssetDatabase.LoadAssetAtPath<LevelConfig>(TrollPath);
@@ -50,7 +50,7 @@ namespace Game.Simulation.Tests
 
             ContentRegistry registry = new ContentRegistry(database.Entries);
             Assert.AreSame(campaign, registry.Get<CampaignConfig>(campaign.Id));
-            Assert.IsFalse(registry.Contains(troll.Id));
+            Assert.AreSame(troll, registry.Get<LevelConfig>(troll.Id));
             Assert.AreSame(campaign.Levels[0].Level, registry.Get<LevelConfig>(CampaignConfig.FirstLevelId));
             Assert.IsNotNull(registry.Get<LevelConfig>("level.stress"));
         }
