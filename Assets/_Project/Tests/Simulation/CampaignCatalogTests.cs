@@ -43,8 +43,8 @@ namespace Game.Simulation.Tests
             Assert.AreEqual("level.troll_lair", troll.Id);
             Assert.AreEqual("Логово троллей", troll.DisplayName);
             Assert.AreEqual("Gameplay", troll.SceneName);
-            Assert.IsNull(troll.EnvironmentPrefab);
-            Assert.IsNull(troll.Waves);
+            Assert.IsNotNull(troll.EnvironmentPrefab);
+            Assert.IsNotNull(troll.Waves);
             Assert.AreEqual(1, campaign.Levels[1].Prerequisites.Count);
             Assert.AreSame(campaign.Levels[0].Level, campaign.Levels[1].Prerequisites[0]);
 

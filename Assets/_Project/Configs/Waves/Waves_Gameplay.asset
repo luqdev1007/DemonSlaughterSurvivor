@@ -21,10 +21,8 @@ MonoBehaviour:
     _liveFloor: 15
     _refillRatePerSecond: 2
     _enemies:
-    - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
-      _weight: 0.5
     - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
-      _weight: 0.5
+      _weight: 1
     - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
       _weight: 0.25
     _guaranteed: []
@@ -40,11 +38,11 @@ MonoBehaviour:
     _liveFloor: 45
     _refillRatePerSecond: 3
     _enemies:
-    - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
+    - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
       _weight: 1
     _guaranteed:
     - _offsetSeconds: 10
-      _enemy: {fileID: 11400000, guid: 5c4d8ad96055c5140913d77e93b29e29, type: 2}
+      _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
       _count: 5
     _swarms:
     - _offsetSeconds: 22
@@ -58,9 +56,9 @@ MonoBehaviour:
     _liveFloor: 0
     _refillRatePerSecond: 0
     _enemies:
-    - _enemy: {fileID: 11400000, guid: fbfa99bca129b8b49815fd88c0149726, type: 2}
-      _weight: 1
     - _enemy: {fileID: 11400000, guid: 1c8b317316897194cab188a1ea9c273f, type: 2}
+      _weight: 1
+    - _enemy: {fileID: 11400000, guid: 7b9d8fb5a4f5dac4488e6a0ca6ce7ade, type: 2}
       _weight: 1
     _guaranteed:
     - _offsetSeconds: 0

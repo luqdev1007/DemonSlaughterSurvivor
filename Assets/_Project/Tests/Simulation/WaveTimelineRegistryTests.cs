@@ -13,6 +13,8 @@ namespace Game.Simulation.Tests
     public sealed class WaveTimelineRegistryTests
     {
         private const string DatabasePath = "Assets/_Project/Configs/ContentDatabase.asset";
+        private const string CastlePath = "Assets/_Project/Configs/Waves/Waves_Gameplay.asset";
+        private const string LairPath = "Assets/_Project/Configs/Waves/Waves_TrollLair.asset";
 
         private readonly List<Object> _owned = new List<Object>();
 
@@ -80,6 +82,92 @@ namespace Game.Simulation.Tests
             ContentRegistry registry = new ContentRegistry(new IContentEntry[] { enemy, timeline });
 
             Assert.DoesNotThrow(() => WaveTimelineValidator.Validate(timeline, registry));
+        }
+
+        [Test]
+        public void CastleWavesContainOnlyKnightsArchersAndFinalBossKnight()
+        {
+            WaveTimelineConfig timeline = AssetDatabase.LoadAssetAtPath<WaveTimelineConfig>(CastlePath);
+
+            Assert.NotNull(timeline);
+            Assert.AreEqual(3, timeline.Waves.Count);
+            Assert.AreEqual(30f, timeline.Waves[0].DurationSeconds);
+            Assert.AreEqual(45f, timeline.Waves[1].DurationSeconds);
+            Assert.AreEqual(600f, timeline.Waves[2].DurationSeconds);
+
+            for (int waveIndex = 0; waveIndex < timeline.Waves.Count; waveIndex++)
+            {
+                Wave wave = timeline.Waves[waveIndex];
+
+                foreach (WeightedEnemy entry in wave.Enemies)
+                    Assert.IsTrue(entry.Enemy.Id == "enemy.knight_shield" || entry.Enemy.Id == "enemy.archer");
+
+                foreach (GuaranteedSpawn entry in wave.Guaranteed)
+                {
+                    if (waveIndex == 2)
+                        Assert.AreEqual("boss.knight", entry.Enemy.Boss.Id);
+                    else
+                        Assert.AreEqual("enemy.archer", entry.Enemy.Id);
+                }
+            }
+
+            Assert.AreEqual(0, timeline.Waves[0].Guaranteed.Count);
+            Assert.AreEqual(1, timeline.Waves[1].Guaranteed.Count);
+            Assert.AreEqual(1, timeline.Waves[2].Guaranteed.Count);
+            Assert.AreEqual(0f, timeline.Waves[2].Guaranteed[0].OffsetSeconds);
+        }
+
+        [Test]
+        public void TrollLairWavesContainOnlyTrollsDevilsAndFinalDemonLord()
+        {
+            WaveTimelineConfig timeline = AssetDatabase.LoadAssetAtPath<WaveTimelineConfig>(LairPath);
+            LevelConfig level = AssetDatabase.LoadAssetAtPath<LevelConfig>("Assets/_Project/Configs/Levels/Level_TrollLair.asset");
+
+            Assert.NotNull(timeline);
+            Assert.NotNull(level);
+            Assert.AreSame(timeline, level.Waves);
+            Assert.AreEqual(45f, level.ArenaRadius);
+            Assert.AreEqual(30f, timeline.SpawnRadius);
+            Assert.AreEqual(3, timeline.Waves.Count);
+            Assert.AreEqual(30f, timeline.Waves[0].DurationSeconds);
+            Assert.AreEqual(45f, timeline.Waves[1].DurationSeconds);
+            Assert.AreEqual(600f, timeline.Waves[2].DurationSeconds);
+
+            foreach (Wave wave in timeline.Waves)
+            {
+                foreach (WeightedEnemy entry in wave.Enemies)
+                    Assert.IsTrue(entry.Enemy.Id == "enemy.troll" || entry.Enemy.Id == "enemy.devil");
+            }
+
+            Assert.AreEqual("enemy.troll", timeline.Waves[1].Guaranteed[0].Enemy.Id);
+            Assert.AreEqual("boss.demon_lord", timeline.Waves[2].Guaranteed[0].Enemy.Boss.Id);
+            Assert.AreEqual(0f, timeline.Waves[2].Guaranteed[0].OffsetSeconds);
+        }
+
+        [Test]
+        public void TrollLairRemainsUnregisteredWhileDemonLordViewIsIncomplete()
+        {
+            ContentDatabase database = AssetDatabase.LoadAssetAtPath<ContentDatabase>(DatabasePath);
+            LevelConfig level = AssetDatabase.LoadAssetAtPath<LevelConfig>("Assets/_Project/Configs/Levels/Level_TrollLair.asset");
+            EnemyConfig demonLord = AssetDatabase.LoadAssetAtPath<EnemyConfig>("Assets/_Project/Configs/Enemies/Enemy_DemonLord.asset");
+            BossConfig boss = AssetDatabase.LoadAssetAtPath<BossConfig>("Assets/_Project/Configs/Enemies/Boss_DemonLord.asset");
+            ContentRegistry registry = new ContentRegistry(database.Entries);
+
+            Assert.NotNull(level.EnvironmentPrefab);
+            Assert.NotNull(level.CameraRigPrefab);
+            Assert.NotNull(level.HudPrefab);
+            Assert.NotNull(level.Feedback);
+            Assert.AreSame(boss, demonLord.Boss);
+            Assert.NotNull(demonLord.ViewPrefab);
+            Assert.IsNull(demonLord.ViewPrefab.GetComponent("ViewInterpolator"));
+            Assert.IsFalse(registry.Contains(level.Id));
+            Assert.IsFalse(registry.Contains(demonLord.Id));
+            Assert.IsFalse(registry.Contains(level.Waves.Id));
+
+            List<IContentEntry> staged = new List<IContentEntry>(database.Entries) { boss, demonLord, level.Waves };
+            ContentRegistry stagedRegistry = new ContentRegistry(staged);
+            Assert.DoesNotThrow(() => WaveTimelineValidator.Validate(level.Waves, stagedRegistry));
+            Assert.Throws<InvalidOperationException>(() => WaveTimelineValidator.Validate(level.Waves, registry));
         }
 
         private EnemyConfig CreateEnemy(string id)
